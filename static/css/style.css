@@ -1,0 +1,305 @@
+/* static/css/style.css - V4 - Layout Adjustments */
+
+/* --- Global Styles & Design Tokens --- */
+:root {
+    /* ... (משתנים קיימים ללא שינוי) ... */
+    --bg-color: #0B0C10;
+    --bg-secondary: #1F2833;
+    --card-bg-color: #1A1A1D;
+    --text-color: #C5C6C7;
+    --text-heading-color: #FFFFFF;
+    --text-muted-color: #66FCF1;
+    --primary-accent-color: #66FCF1;
+    --secondary-accent-color: #45A29E;
+    --border-color: #45A29E;
+    --shadow-color: rgba(0, 0, 0, 0.7);
+    --scrollbar-thumb-color: var(--secondary-accent-color);
+    --scrollbar-track-color: var(--bg-secondary);
+    --font-body: 'Assistant', sans-serif;
+    --font-heading: 'Poppins', sans-serif;
+    --header-height: 70px;
+    --card-width: 240px;
+    --card-height: 360px;
+    --card-gap: 25px;
+    --container-padding: 30px;
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --transition-fast: 0.2s ease-in-out;
+    --transition-medium: 0.4s ease-in-out;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track-color); border-radius: var(--border-radius-md); }
+::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb-color); border-radius: var(--border-radius-md); border: 2px solid var(--scrollbar-track-color); transition: background-color var(--transition-fast); }
+::-webkit-scrollbar-thumb:hover { background-color: var(--primary-accent-color); }
+
+body {
+    font-family: var(--font-body);
+    background: linear-gradient(180deg, var(--bg-color) 0%, #111821 100%);
+    color: var(--text-color);
+    line-height: 1.6;
+    direction: rtl;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+.container { width: 95%; max-width: 1700px; margin: 0 auto; padding: 0 var(--container-padding); }
+a { color: var(--primary-accent-color); text-decoration: none; transition: color var(--transition-fast); }
+a:hover, a:focus { color: var(--text-heading-color); outline: none; }
+img { max-width: 100%; height: auto; display: block; }
+
+/* --- Header --- */
+.site-header {
+    height: var(--header-height);
+    background-color: rgba(11, 12, 16, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(69, 162, 158, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.header-content {
+    display: flex;
+    /* justify-content: space-between; <-- הוסר כדי לאפשר ל-margin-left: auto לעבוד */
+    align-items: center;
+    height: 100%;
+}
+
+/* הלוגו הוסר מה-HTML, אין צורך בכלל הזה יותר */
+/* .logo { ... } */
+
+.main-nav {
+    display: flex;
+    gap: 25px;
+    /* הדחיפה לימין נעשית על ידי ה-margin-left: auto כאן */
+    margin-left: auto; /* דוחף את הניווט ואת מה שאחריו (actions) לימין */
+    margin-right: 30px; /* מוסיף רווח בין הניווט לפעולות */
+}
+.main-nav a { /* סגנון קישורי ניווט ללא שינוי */
+    font-family: var(--font-heading);
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--text-color);
+    padding: 5px 0;
+    position: relative;
+    transition: color var(--transition-fast);
+}
+.main-nav a::after {
+    content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px;
+    background-color: var(--primary-accent-color); transition: width var(--transition-medium);
+}
+.main-nav a:hover, .main-nav a:focus { color: var(--text-heading-color); }
+.main-nav a:hover::after, .main-nav a:focus::after { width: 100%; }
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    /* ה-margin-left: auto בניווט דוחף את הבלוק הזה לימין */
+}
+
+.search-container { /* עיצוב החיפוש ללא שינוי מהותי במיקום כאן */
+    display: flex;
+    align-items: center;
+    background-color: rgba(31, 40, 51, 0.7);
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    transition: all var(--transition-fast);
+}
+.search-container:focus-within { border-color: var(--primary-accent-color); background-color: var(--bg-secondary); box-shadow: 0 0 8px rgba(102, 252, 241, 0.3); }
+#searchInput { padding: 8px 12px; border: none; background-color: transparent; color: var(--text-color); font-family: var(--font-body); font-size: 0.95em; outline: none; width: 180px; transition: width var(--transition-medium); }
+#searchInput:focus { width: 250px; }
+#searchInput::placeholder { color: #888; }
+.search-container button { background-color: transparent; border: none; color: var(--text-muted-color); padding: 0 10px; cursor: pointer; font-size: 1em; height: 36px; display: flex; align-items: center; transition: color var(--transition-fast); }
+.search-container button:hover { color: var(--text-heading-color); }
+
+/* הברכה הוסרה מה-Header, אין צורך בכלל הזה */
+/* .greeting { ... } */
+
+/* --- Main Content --- */
+.main-content {
+    padding-top: 40px; /* הקטנת רווח עליון קצת */
+    padding-bottom: 50px;
+    flex-grow: 1;
+}
+
+/* --- Page Greeting (Moved from header) --- */
+.page-greeting {
+    margin-bottom: 45px; /* רווח מתחת לברכה ולפני הקטגוריות */
+    padding-left: 10px; /* ריווח קל מהקצה */
+    border-right: 4px solid var(--primary-accent-color); /* קו הדגשה בצד ימין */
+    padding-right: 20px; /* רווח מהקו */
+}
+.page-greeting h1 {
+    font-family: var(--font-heading);
+    font-size: 2.4em; /* כותרת גדולה */
+    font-weight: 700;
+    color: var(--text-heading-color);
+    margin-bottom: 5px;
+}
+.page-greeting p {
+    font-size: 1.1em;
+    color: var(--text-color);
+}
+
+/* --- Category Section --- */
+.category-section {
+    margin-bottom: 60px;
+}
+.category-section h2 {
+    font-family: var(--font-heading);
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: var(--text-heading-color);
+    position: relative;
+    /* padding-left הוסר, אין צורך בו יותר */
+}
+/* הקו הדקורטיבי משמאל הוסר */
+/* .category-section h2::before { ... } */
+
+
+/* --- Item Row (Horizontal Scroll) --- */
+.item-row { /* ללא שינוי */
+    display: flex; overflow-x: auto; overflow-y: hidden; padding-bottom: 30px;
+    margin-bottom: -30px; gap: var(--card-gap); scroll-snap-type: x mandatory; position: relative;
+}
+.item-row::before, .item-row::after { /* ללא שינוי */
+    content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
+}
+.item-row::before { right: 0; background: linear-gradient(to left, var(--bg-color), transparent); }
+.item-row::after { left: 0; background: linear-gradient(to right, var(--bg-color), transparent); }
+
+
+/* --- Item Card (Movie/Series) --- */
+.item-card { /* ללא שינוי */
+    background-color: var(--card-bg-color); border-radius: var(--border-radius-md); width: var(--card-width); flex-shrink: 0;
+    scroll-snap-align: start; position: relative; overflow: hidden; transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+    box-shadow: 0 8px 20px var(--shadow-color); cursor: pointer;
+}
+.item-card:hover, .item-card:focus-within { transform: scale(1.05) translateY(-8px); box-shadow: 0 15px 35px var(--shadow-color); z-index: 10; outline: none; }
+
+.card-image-container { /* ללא שינוי */
+    width: 100%; height: var(--card-height); position: relative; overflow: hidden; border-radius: var(--border-radius-md);
+}
+.card-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-medium); }
+.item-card:hover .card-image-container img, .item-card:focus-within .card-image-container img { transform: scale(1.1); }
+
+/* --- Card Overlay (Appears on Hover) --- */
+.card-overlay { /* ללא שינוי */
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 10%, rgba(0, 0, 0, 0.6) 50%, transparent 100%);
+    opacity: 0; transition: opacity var(--transition-medium); display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; pointer-events: none;
+}
+.item-card:hover .card-overlay, .item-card:focus-within .card-overlay { opacity: 1; pointer-events: auto; }
+
+.play-button { /* ללא שינוי */
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid var(--text-heading-color); color: var(--text-heading-color); width: 60px; height: 60px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center; font-size: 1.5em; cursor: pointer; opacity: 0;
+    transition: transform var(--transition-fast), opacity var(--transition-fast), background-color var(--transition-fast); z-index: 3;
+}
+.item-card:hover .play-button, .item-card:focus-within .play-button { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.play-button:hover { background-color: rgba(255, 255, 255, 0.4); transform: translate(-50%, -50%) scale(1.1); }
+.play-button i { margin-left: 3px; }
+
+.card-title { /* ללא שינוי */
+    font-family: var(--font-heading); font-size: 1.1em; font-weight: 600; color: var(--text-heading-color); margin-bottom: 10px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+    transform: translateY(10px); opacity: 0; transition: transform 0.3s 0.1s ease, opacity 0.3s 0.1s ease;
+}
+.item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; }
+
+.card-actions { /* ללא שינוי */
+    display: flex; gap: 10px; opacity: 0; transition: opacity 0.3s 0.2s ease;
+}
+.item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
+.card-actions button { /* ללא שינוי */
+    background-color: rgba(40, 40, 40, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); color: var(--text-heading-color);
+    width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+    font-size: 0.8em; cursor: pointer; transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+.card-actions button:hover { background-color: rgba(60, 60, 60, 0.9); transform: scale(1.1); }
+
+/* --- Rank Number Styling --- */
+.rank-number { /* ללא שינוי */
+    position: absolute; left: -15px; bottom: 10px; width: 60px; height: 60px;
+    display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none;
+}
+.rank-circle-bg { /* ללא שינוי */
+    width: 100%; height: 100%; position: absolute; transform: rotate(-90deg); stroke-linecap: round;
+}
+.rank-circle-bg path { fill: none; stroke: rgba(11, 12, 16, 0.7); stroke-width: 4; }
+.rank-text { /* ללא שינוי */
+    font-family: var(--font-heading); font-size: 1.8em; font-weight: 700; color: var(--primary-accent-color);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8); line-height: 1; z-index: 1;
+}
+
+
+/* --- Footer --- */
+.site-footer-bottom { /* ללא שינוי */
+    text-align: center; padding: 25px 0; margin-top: auto; background-color: var(--bg-color);
+    border-top: 1px solid rgba(69, 162, 158, 0.1); font-size: 0.9em; color: var(--text-muted-color);
+}
+
+/* --- No Results Message --- */
+#noResultsMessage { /* ללא שינוי */
+    text-align: center; font-size: 1.2em; color: var(--text-color); margin: 60px auto; padding: 25px;
+    background-color: var(--bg-secondary); border-radius: var(--border-radius-md); max-width: 450px;
+    border: 1px solid var(--border-color); display: none;
+}
+
+/* --- Responsive Adjustments --- */
+/* התאמות רספונסיביות קיימות ללא שינוי, למעט Header */
+@media (max-width: 1400px) { /* ... */ }
+@media (max-width: 1200px) { /* ... */ }
+
+@media (max-width: 992px) {
+    :root { /* ... (משתנים קיימים) ... */ }
+    .main-nav { display: none; } /* עדיין מוסתר */
+    .header-content { /* אין צורך בשינוי כאן כי הניווט מוסתר */ }
+    .greeting { /* הוסר מה-Header */ }
+    /* ... (שאר ההתאמות ל-992px) ... */
+    .page-greeting h1 { font-size: 2em; }
+    .page-greeting p { font-size: 1em; }
+}
+
+@media (max-width: 768px) {
+    :root { /* ... */ }
+    .header-content { padding: 0 15px; /* Adjust padding inside header */ }
+    .logo { /* הוסר */ }
+    .header-actions { /* סידור ברירת המחדל ישים את החיפוש מימין */
+         flex-grow: 1; /* תופס את כל הרוחב הזמין */
+         justify-content: flex-end; /* דוחף את התוכן (חיפוש) ימינה */
+    }
+    .search-container {
+        /* order הוסר, flex-grow ו-justify-content למעלה מטפלים בזה */
+        margin-left: 0;
+        flex-grow: 0; /* לא מתרחב יותר ממה שצריך */
+        /* margin-right: 15px; <-- אופציונלי, אם רוצים רווח קטן מהקצה */
+    }
+     #searchInput { width: 180px; /* רוחב קבוע יותר במסך קטן */ }
+     #searchInput:focus { width: 220px; } /* הרחבה קטנה יותר */
+     /* ... (שאר ההתאמות ל-768px) ... */
+    .page-greeting h1 { font-size: 1.8em; }
+}
+
+@media (max-width: 576px) {
+    :root { /* ... */ }
+    .logo { /* הוסר */ }
+    .search-container { width: auto; /* מתאים את עצמו לתוכן */ }
+     #searchInput { width: 150px; } /* עוד יותר קטן */
+     #searchInput:focus { width: 180px; }
+     /* ... (שאר ההתאמות ל-576px) ... */
+    .page-greeting h1 { font-size: 1.6em; }
+    .page-greeting p { font-size: 0.9em; }
+    .page-greeting { padding-right: 15px; border-right-width: 3px;}
+}
+
+
