@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סינמה פריים - חווית הצפייה האולטימטיבית</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-content">
+            <!-- הלוגו הוסר -->
+            <!-- <div class="logo">סינמה<span class="logo-prime">פריים</span></div> -->
+
+            <nav class="main-nav">
+                <a href="#">בית</a>
+                <a href="#">סרטים</a>
+                <a href="#">סדרות</a>
+                <a href="#">הרשימה שלי</a>
+            </nav>
+
+            <!-- הברכה הוסרה מכאן -->
+            <div class="header-actions">
+                 <!-- מיקום החיפוש נשאר כאן, נשלוט במיקום הסופי עם CSS -->
+                 <div class="search-container">
+                    <input type="search" id="searchInput" placeholder="חיפוש...">
+                    <button aria-label="Search"><i class="fas fa-search"></i></button>
+                 </div>
+                 <!-- ניתן להוסיף כאן אייקונים אחרים בעתיד -->
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <!-- הוספת הברכה כאן -->
+        <div class="page-greeting">
+            <h1>{{ greeting }}!</h1>
+            <p>מה נראה היום?</p> <!-- טקסט משנה אופציונלי -->
+        </div>
+
+        <!-- הלולאה של הקטגוריות מתחילה אחרי הברכה -->
+        {% for category_name, items_in_category in categories.items() %}
+            <section class="category-section">
+                <h2>{{ category_name }}</h2>
+                <div class="item-row">
+                    {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפות ביותר השבוע" %}
+                    {% for item in items_in_category %}
+                        <div class="item-card" data-title="{{ item.title.lower() }}" tabindex="0">
+                            <div class="card-image-container">
+                                <img src="{{ item.poster }}" alt="{{ item.title }}" loading="lazy">
+                                {% if is_ranked_category and loop.index <= 15 %}
+                                    <span class="rank-number">
+                                        <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
+                                        <span class="rank-text">{{ loop.index }}</span>
+                                    </span>
+                                {% endif %}
+                                <div class="card-overlay">
+                                     <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
+                                     <h3 class="card-title">{{ item.title }}</h3>
+                                     <div class="card-actions">
+                                         <button aria-label="Add to list"><i class="fas fa-plus"></i></button>
+                                         <button aria-label="More info"><i class="fas fa-info-circle"></i></button>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+        <div id="noResultsMessage" style="display: none;">לא נמצאו תוצאות התואמות את החיפוש שלך.</div>
+    </main>
+
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <p>© {{ now().year }} סינמה פריים. כל הזכויות שמורות.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
