@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: flask-site
+    env: python
+    buildCommand: ""
+    startCommand: "python main.py"
