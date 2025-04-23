@@ -200,6 +200,9 @@
      border: 1px solid var(--primary-accent-color);
      border-radius: var(--border-radius-sm);
      color: var(--text-color);
+     /* Added padding-bottom for image container */
+     padding-bottom: 25px;
+     position: relative; /* Needed for absolute positioning of image */
 }
 
 #selectedOmdbMovieDetails h4,
@@ -211,7 +214,8 @@
 
 #selectedOmdbMovieDetails p,
 #selectedOmdbSeriesDetails p {
-    margin-bottom: 5px;
+    margin-bottom: 8px; /* Increased space */
+    word-break: break-word; /* Allow plot text to wrap */
 }
 
 #selectedOmdbMovieDetails strong,
@@ -219,15 +223,17 @@
     color: var(--text-heading-color);
 }
 
+ /* Position the poster image absolutely within the details box */
  #selectedOmdbMovieDetails img,
  #selectedOmdbSeriesDetails img {
-     margin-top: 10px;
-     max-width: 100px;
+     position: absolute;
+     bottom: 15px; /* Adjust position from bottom */
+     left: 15px; /* Position from left (in RTL) */
+     max-width: 80px; /* Made image slightly smaller */
      height: auto;
      border-radius: var(--border-radius-sm);
-     display: block; /* Ensure it takes its own line */
-     margin-left: auto; /* Push image to the left (in RTL) */
-     margin-right: 0;
+     box-shadow: 2px 2px 8px rgba(0,0,0,0.5); /* Added small shadow */
+     display: block; /* Ensure it takes space when visible */
  }
 
 /* Manual IMDb Input - initially hidden */
@@ -287,6 +293,19 @@
      .omdb-search-input button {
          width: 100%;
          text-align: center;
+     }
+     /* Adjust poster position in responsive view */
+     #selectedOmdbMovieDetails img,
+     #selectedOmdbSeriesDetails img {
+         position: static; /* Revert to normal flow */
+         margin-top: 15px;
+         margin-left: auto; /* Center or align as block */
+         margin-right: auto;
+         max-width: 100px;
+     }
+      #selectedOmdbMovieDetails,
+     #selectedOmdbSeriesDetails {
+         padding-bottom: 15px; /* Remove extra padding when image is not absolute */
      }
 }
 
