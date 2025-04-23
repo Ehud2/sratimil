@@ -11,7 +11,7 @@ app = Flask(__name__)
 # WARNING: Hardcoding secrets is insecure! Use environment variables in real applications.
 app.config['SECRET_KEY'] = 'moviesilsuperdupersecretkey' # <-- REPLACE with a strong, random key
 app.config['GOOGLE_CLIENT_ID'] = '657393464441-iaq7khpbqlr7iksaf8oua7l431noljd1.apps.googleusercontent.com'
-app.config['GOOGLE_CLIENT_SECRET'] = 'YOUR_GOOGLE_CLIENT_SECRET_HERE' # <-- REPLACE with your actual Client Secret
+app.config['GOOGLE_CLIENT_SECRET'] = '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' # <-- REPLACE with your actual Client Secret
 
 # Basic check if secrets seem to be placeholders (improve as needed)
 if 'YOUR_GOOGLE_CLIENT_SECRET_HERE' in app.config['GOOGLE_CLIENT_SECRET'] or \
