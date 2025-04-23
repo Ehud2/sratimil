@@ -8,6 +8,7 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moviesilsuperdupersecretkey')
 
+# Note: Using placeholder values. Replace with your actual credentials in production/environment variables.
 app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '367711020009-o70b96v4cv604acg2hqv60k8c5mjmhtr.apps.googleusercontent.com')
 app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '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')
 app.config['GOOGLE_DISCOVERY_URL'] = (
@@ -26,6 +27,11 @@ oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
+# --- User Whitelist for Admin Features ---
+ADMIN_EMAIL = 'ehudverbin@gmail.com'
+# ----------------------------------------
+
+
 CATEGORIES = [
     "הסרטים הנצפים ביותר השבוע",
     "הסדרות הנצפים ביותר השבוע",
@@ -37,6 +43,7 @@ CATEGORIES = [
 ]
 
 def load_movies_data():
+    # This is dummy data. In a real app, load from a database or file.
     dummy_movies = {
         "tt0133093": {
             "title": "המטריקס",
@@ -58,6 +65,17 @@ def load_movies_data():
          },
     }
     return dummy_movies
+
+# Dummy function to simulate loading series data
+def load_series_data():
+    # This should load actual series data, perhaps structured differently
+    # for the 'Add Episode' dropdown. For now, just a dummy list.
+    dummy_series = [
+        {"id": "tt0903747", "title": "שובר שורות"},
+        {"id": "tt0944947", "title": "משחקי הכס"},
+        # Add more dummy series as needed
+    ]
+    return dummy_series
 
 
 def categorize_movies(movies_data):
@@ -122,16 +140,15 @@ def google_callback():
             flash('התחברות עם גוגל נכשלה: לא הושגו פרטי משתמש.', 'error')
             return redirect(url_for('index'))
 
-
         session['user'] = userinfo
         session.permanent = True
-        flash('התחברת בהצלחה עם גוגל!', 'success')
+        flash('התחברת בהצלחה!', 'success') # Updated flash message
         return redirect(url_for('index'))
 
     except Exception as e:
         print(f"OAuth callback error: {e}")
         traceback.print_exc()
-        flash('התחברות עם גוגל נכשלה. אנא וודא שההרשאות המתאימות אושרו ונסה שוב.', 'error')
+        flash('התחברות נכשלה. אנא ודא שההרשאות המתאימות אושרו ונסה שוב.', 'error') # Updated flash message
         return redirect(url_for('index'))
 
 @app.route('/logout')
@@ -154,23 +171,66 @@ def index():
                            greeting=greeting,
                            categories=categories,
                            current_year=current_year,
-                           user=user
+                           user=user # Pass the user object
                            )
 
+@app.route('/add', methods=['GET', 'POST'])
+def add_content():
+    user = session.get('user')
+    # Check if user is logged in and is the authorized admin email
+    if not user or user.get('email') != ADMIN_EMAIL:
+        abort(403) # Forbidden
+
+    # Dummy data for series dropdown (replace with actual data loading)
+    available_series = load_series_data()
+
+    if request.method == 'POST':
+        # This is where you would handle the form submission
+        # For now, just print the form data and flash a message
+        print("Form Data Received:")
+        print(request.form)
+        content_type = request.form.get('content_type')
+        if content_type == 'movie':
+            flash('בקשה להוספת סרט התקבלה (עדיין לא מיושם).', 'info')
+        elif content_type == 'series':
+             flash('בקשה להוספת סדרה התקבלה (עדיין לא מיושם).', 'info')
+        elif content_type == 'episode':
+            flash('בקשה להוספת פרק התקבלה (עדיין לא מיושם).', 'info')
+        else:
+             flash('סוג תוכן לא ידוע.', 'warning')
+
+
+        # You would typically process the data here and save it
+        # Then redirect, e.g., back to the add page or index
+        return redirect(url_for('add_content'))
+
+    # For GET request, render the add page
+    return render_template('add.html',
+                           user=user,
+                           categories=CATEGORIES, # Pass categories for the series dropdown (optional, can be loaded in template)
+                           available_series=available_series # Pass dummy series data
+                           )
+
+
+# Error handlers
 @app.errorhandler(403)
 def forbidden(e):
-    return render_template('403.html'), 403
+    user = session.get('user')
+    return render_template('403.html', user=user), 403
 
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template('404.html'), 404
+    user = session.get('user')
+    return render_template('404.html', user=user), 404
 
 @app.errorhandler(500)
 def internal_server_error(e):
     print(f"SERVER ERROR: {e}")
     tb_str = traceback.format_exc()
     print(f"SERVER ERROR TRACEBACK:\n{tb_str}")
-    return render_template('500.html'), 500
+    user = session.get('user')
+    return render_template('500.html', user=user), 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
