@@ -22,7 +22,13 @@ google = oauth.register(
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
     client_kwargs={'scope': 'openid email profile'},
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    oidc_claims_options={
+        "iss": {
+            "essential": True,
+            "values": ["https://accounts.google.com", "accounts.google.com"]
+        }
+    }
 )
 
 login_manager = LoginManager()
@@ -100,7 +106,6 @@ dummy_content = {
         {"id": 603, "title": "ספיידרמן: ברחבי ממדי העכביש", "poster": "https://placehold.co/240x360/512DA8/ffffff?text=Spider-Verse"},
     ]
 }
-
 
 def get_greeting():
     name_part = f" {current_user.name}" if current_user.is_authenticated and hasattr(current_user, 'name') else ""
