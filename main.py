@@ -1,6 +1,7 @@
 # main.py
 import datetime
 from flask import Flask, render_template
+# import os # You might need os if you read environment variables, but not strictly needed for the Gunicorn fix itself
 
 app = Flask(__name__)
 
@@ -84,10 +85,9 @@ def index():
     """הנתיב הראשי, מרנדר את דף הבית"""
     greeting = get_greeting()
     categories = dummy_content
+    # Calculate current year in the route for clarity and pass it to template
+    current_year = datetime.datetime.utcnow().year
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
-                           now=datetime.datetime.utcnow)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+                           current_year=current_year) # Pass the year explicitly
