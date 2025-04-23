@@ -1,0 +1,308 @@
+/* add.css - Specific styles for the Add Content page */
+
+.add-content-form-container {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 5px 15px var(--shadow-color);
+    direction: rtl; /* Ensure correct direction for Hebrew form */
+}
+
+.add-content-form-container h1 {
+    font-family: var(--font-heading);
+    color: var(--text-heading-color);
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    font-size: 1em;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="url"]:focus,
+.form-group select:focus {
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
+    outline: none;
+}
+
+/* Style for the radio button group */
+.form-group.content-type-selector .radio-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    justify-content: center; /* Center the radio buttons */
+}
+
+.form-group.content-type-selector .radio-group input[type="radio"] {
+    display: none; /* Hide the actual radio button */
+}
+
+.form-group.content-type-selector .radio-group label {
+    display: inline-block; /* Make labels clickable blocks */
+    background-color: var(--card-bg-color);
+    padding: 10px 15px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    font-weight: 400; /* Lighter weight for button-like labels */
+}
+
+.form-group.content-type-selector .radio-group input[type="radio"]:checked + label {
+    background-color: var(--primary-accent-color);
+    border-color: var(--primary-accent-color);
+    color: var(--bg-color); /* Dark text on bright background */
+    font-weight: 600; /* Bold text for selected label */
+}
+
+.form-group.content-type-selector .radio-group label:hover {
+    background-color: var(--bg-secondary); /* Darker on hover */
+}
+
+/* Style for the different form sections (controlled by JS) */
+.form-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px dashed rgba(102, 252, 241, 0.3);
+}
+
+.form-section h2 {
+     font-family: var(--font-heading);
+     font-size: 1.6em;
+     color: var(--text-heading-color);
+     margin-bottom: 25px;
+     text-align: center;
+}
+
+
+/* OMDB Search Section */
+.omdb-search-section {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 20px;
+    margin-top: 30px;
+    margin-bottom: 20px; /* Add space below search section */
+    background-color: rgba(40, 40, 40, 0.5);
+}
+
+.omdb-search-section h3 {
+    color: var(--text-heading-color);
+    margin-bottom: 15px;
+    font-family: var(--font-heading);
+    font-size: 1.4em;
+}
+
+.omdb-search-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.omdb-search-input input {
+    flex-grow: 1;
+     padding: 10px;
+     background-color: var(--card-bg-color);
+     border: 1px solid var(--border-color);
+     border-radius: var(--border-radius-sm);
+     color: var(--text-color);
+     font-family: var(--font-body);
+     font-size: 1em;
+ }
+.omdb-search-input input:focus {
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
+    outline: none;
+}
+
+.omdb-search-input button {
+    padding: 10px 20px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-secondary);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1em;
+    transition: background-color var(--transition-fast);
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.omdb-search-input button:hover {
+    background-color: var(--secondary-accent-color);
+}
+
+/* OMDB Results List */
+#omdbSeriesResults, #omdbMovieResults {
+    list-style: none;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+#omdbSeriesResults li, #omdbMovieResults li {
+    background-color: var(--card-bg-color);
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#omdbSeriesResults li:hover, #omdbMovieResults li:hover {
+    background-color: rgba(40, 40, 40, 0.7);
+}
+
+#omdbSeriesResults li span, #omdbMovieResults li span {
+    color: var(--text-color);
+}
+
+#omdbSeriesResults li .result-year, #omdbMovieResults li .result-year {
+    font-size: 0.9em;
+    color: var(--text-muted-color);
+    flex-shrink: 0; /* Prevent year from being cut off */
+    margin-left: 10px; /* Space between title and year */
+}
+
+/* Style for selected item in OMDB results */
+#omdbSeriesResults li.selected-result, #omdbMovieResults li.selected-result {
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+}
+
+#omdbSeriesResults li.selected-result span, #omdbMovieResults li.selected-result span {
+     color: var(--bg-color);
+}
+#omdbSeriesResults li.selected-result .result-year, #omdbMovieResults li.selected-result .result-year {
+     color: rgba(11, 12, 16, 0.8);
+ }
+
+/* Style for the details block populated by OMDB */
+#selectedOmdbSeriesDetails, #selectedOmdbMovieDetails {
+     margin-top: 15px;
+     padding: 15px;
+     background-color: rgba(69, 162, 158, 0.2);
+     border: 1px solid var(--primary-accent-color);
+     border-radius: var(--border-radius-sm);
+     color: var(--text-color);
+     word-break: break-word; /* Prevent long words from overflowing */
+}
+
+#selectedOmdbSeriesDetails p, #selectedOmdbMovieDetails p {
+    margin-bottom: 5px;
+}
+
+#selectedOmdbSeriesDetails strong, #selectedOmdbMovieDetails strong {
+    color: var(--text-heading-color);
+}
+
+ #selectedOmdbSeriesDetails img, #selectedOmdbMovieDetails img {
+     margin-top: 10px;
+     max-width: 100px;
+     height: auto;
+     border-radius: var(--border-radius-sm);
+ }
+
+
+/* Submit button */
+.form-submit-button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-top: 30px;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.form-submit-button:hover {
+    background-color: var(--secondary-accent-color);
+    transform: translateY(-2px);
+}
+
+/* Optional: Manual input alternative if OMDB fails/isn't used */
+.manual-imdb-input {
+     margin-top: 20px;
+     padding-top: 20px;
+     border-top: 1px dashed rgba(102, 252, 241, 0.3);
+}
+
+.manual-imdb-input label {
+     margin-bottom: 8px;
+}
+
+/* Add responsiveness if needed, similar to style.css */
+@media (max-width: 768px) {
+     .add-content-form-container {
+         padding: 20px;
+     }
+     .form-section h2 {
+         font-size: 1.4em;
+     }
+     .omdb-search-section {
+         padding: 15px;
+     }
+     .omdb-search-section h3 {
+         font-size: 1.2em;
+     }
+}
+
+@media (max-width: 576px) {
+    .add-content-form-container {
+         padding: 15px;
+     }
+     .form-section h2 {
+         font-size: 1.2em;
+     }
+     .omdb-search-input {
+         flex-direction: column;
+         gap: 15px;
+     }
+     .omdb-search-input button {
+         width: 100%;
+         text-align: center;
+     }
+     .form-group.content-type-selector .radio-group {
+         gap: 10px;
+     }
+     .form-group.content-type-selector .radio-group label {
+         padding: 8px 12px;
+         font-size: 0.9em;
+     }
+}
