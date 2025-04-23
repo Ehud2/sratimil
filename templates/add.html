@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>הוספת תוכן - סינמה פריים</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/add.css') }}"> {# Link to the new add.css #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/add.css') }}"> {# Link to the new CSS #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
@@ -26,10 +26,9 @@
                 <a href="#">סרטים</a>
                 <a href="#">סדרות</a>
                 <a href="#">הרשימה שלי</a>
-                {# This link is only visible if the user is logged in as the admin #}
-                {% if user and user.email == 'ehudverbin@gmail.com' %}
+                {# --- Admin link (always show on this page for consistency, already protected by Flask route) --- #}
                 <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
-                {% endif %}
+                {# --------------------------------- #}
             </nav>
 
             <div class="auth-container">
@@ -38,9 +37,9 @@
                         <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
                     </a>
                 {% else %}
-                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# link here #}
-                         <img src="data:image/png;base64,iVBORw0KGgo... (truncated for brevity)" alt="Sign in with Google" loading="lazy">
+                    {# Fallback for logged out state, though this page is protected #}
+                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
+                         <img src="link here" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -63,126 +62,123 @@
     {% endwith %}
 
     <main class="container main-content">
-        <div class="add-content-form-container">
+        <div class="add-movie-form-container">
             <h1>הוספת תוכן חדש</h1>
 
-            <form action="#" method="post"> {# Action and Method will be set later when backend is added #}
-
+            <form method="POST" action="{{ url_for('add_content') }}">
                 <div class="form-group content-type-selector">
-                    <label>סוג התוכן להוספה:</label>
-                    <div class="radio-group">
-                        <input type="radio" id="addSeries" name="contentType" value="series" checked>
-                        <label for="addSeries">סדרה</label>
-
-                        <input type="radio" id="addEpisode" name="contentType" value="episode">
-                        <label for="addEpisode">פרק</label>
-
-                        <input type="radio" id="addMovie" name="contentType" value="movie">
-                        <label for="addMovie">סרט</label>
-                    </div>
+                    <label>סוג התוכן:</label><br>
+                    <input type="radio" id="type_movie" name="content_type" value="movie" checked>
+                    <label for="type_movie">סרט</label><br>
+                    <input type="radio" id="type_series" name="content_type" value="series">
+                    <label for="type_series">סדרה</label><br>
+                    <input type="radio" id="type_episode" name="content_type" value="episode">
+                    <label for="type_episode">פרק</label>
                 </div>
 
-                {# --- Add Series Form Section --- #}
-                <div id="seriesForm" class="form-section">
-                    <h2>הוספת סדרה חדשה</h2>
+                {# --- Movie Section --- #}
+                <div id="movie-form" class="content-form-section">
                     <div class="form-group">
-                        <label for="seriesTitle">שם הסדרה:</label>
-                        <input type="text" id="seriesTitle" name="seriesTitle" required>
+                        <label for="movie_title">שם הסרט:</label>
+                        <input type="text" id="movie_title" name="movie_title" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="seriesImdbId">IMDb ID (אופציונלי):</label>
-                        <input type="text" id="seriesImdbId" name="seriesImdbId">
+                        <label for="movie_imdb_id">IMDb ID של הסרט (לדוגמה tt1234567):</label>
+                        <input type="text" id="movie_imdb_id" name="movie_imdb_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
-
-                    {# OMDB Search Section for Series - Placeholder for future functionality #}
-                    <div class="omdb-search-section">
-                        <h3>חיפוש פרטי סדרה ב-OMDB</h3>
+                     <div class="form-group">
+                        <label for="movie_video_url">קישור לקובץ וידאו:</label>
+                        <input type="url" id="movie_video_url" name="movie_video_url" required>
+                    </div>
+                     <div class="omdb-search-section">
+                        <h3>חיפוש אוטומטי ב-OMDb (עבור פרטים כמו פוסטר):</h3>
                         <div class="omdb-search-input">
-                            <input type="text" id="seriesOmdbSearch" placeholder='חפש לפי שם הסדרה (למשל: "Breaking Bad")'>
-                            <button type="button" id="searchSeriesOmdbButton">חיפוש OMDB</button>
+                             <input type="text" id="omdb_movie_search_term" placeholder="חפש סרט לפי שם...">
+                             <button type="button" id="search_movie_omdb_button">חפש</button>
                         </div>
-                        <ul id="omdbSeriesResults">
-                            {# Results will be populated here by JavaScript #}
-                        </ul>
-                         <div id="selectedOmdbSeriesDetails" style="display: none;">
-                            {# Selected details will be shown here #}
-                        </div>
+                         <ul id="omdbMovieResults">
+                             {# Search results will appear here #}
+                         </ul>
+                         <div id="selectedOmdbMovieDetails" style="display: none;">
+                             <h4>פרטים נבחרים:</h4>
+                              <p><strong>כותרת:</strong> <span id="omdbMovieTitleDisplay"></span></p>
+                             <p><strong>שנת יציאה:</strong> <span id="omdbMovieYearDisplay"></span></p>
+                             <p><strong>IMDb ID:</strong> <span id="omdbMovieIdDisplay"></span></p>
+                             <img id="omdbMoviePosterDisplay" src="" alt="פוסטר">
+                              <input type="hidden" id="hidden_movie_poster_url" name="movie_poster_url"> {# Hidden input for poster #}
+                         </div>
                     </div>
                 </div>
 
-                {# --- Add Episode Form Section --- #}
-                <div id="episodeForm" class="form-section" style="display: none;"> {# Initially hidden #}
-                    <h2>הוספת פרק חדש</h2>
+                {# --- Series Section --- #}
+                <div id="series-form" class="content-form-section hidden-form-section">
                     <div class="form-group">
-                        <label for="episodeSeries">בחר סדרה:</label>
-                        <select id="episodeSeries" name="episodeSeries" required>
-                            <option value="">-- בחר סדרה קיימת --</option>
-                            {% for series in series_list %}
+                        <label for="series_title">שם הסדרה:</label>
+                        <input type="text" id="series_title" name="series_title">
+                    </div>
+                    <div class="form-group">
+                        <label for="series_imdb_id">IMDb ID של הסדרה (לדוגמה tt1234567):</label>
+                        <input type="text" id="series_imdb_id" name="series_imdb_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
+                    </div>
+                     <div class="omdb-search-section">
+                        <h3>חיפוש אוטומטי ב-OMDb (עבור פרטים כמו פוסטר):</h3>
+                        <div class="omdb-search-input">
+                             <input type="text" id="omdb_series_search_term" placeholder="חפש סדרה לפי שם...">
+                             <button type="button" id="search_series_omdb_button">חפש</button>
+                        </div>
+                         <ul id="omdbSeriesResults">
+                             {# Search results will appear here #}
+                         </ul>
+                         <div id="selectedOmdbSeriesDetails" style="display: none;">
+                             <h4>פרטים נבחרים:</h4>
+                              <p><strong>כותרת:</strong> <span id="omdbSeriesTitleDisplay"></span></p>
+                             <p><strong>שנת יציאה:</strong> <span id="omdbSeriesYearDisplay"></span></p>
+                             <p><strong>IMDb ID:</strong> <span id="omdbSeriesIdDisplay"></span></p>
+                              <img id="omdbSeriesPosterDisplay" src="" alt="פוסטר">
+                             <input type="hidden" id="hidden_series_poster_url" name="series_poster_url"> {# Hidden input for poster #}
+                         </div>
+                    </div>
+                     {# Note: Series typically doesn't have a main video URL, episodes do. #}
+                     {# Add fields for description, genre, etc. here if needed later. #}
+                </div>
+
+                {# --- Episode Section --- #}
+                <div id="episode-form" class="content-form-section hidden-form-section">
+                    <div class="form-group">
+                        <label for="episode_series_id">בחר סדרה:</label>
+                        <select id="episode_series_id" name="episode_series_id">
+                            <option value="">-- בחר סדרה --</option>
+                            {# Loop through available_series passed from Flask #}
+                            {% for series in available_series %}
                                 <option value="{{ series.id }}">{{ series.title }}</option>
                             {% endfor %}
+                            {# Add an option for manual series ID if needed #}
+                            <option value="manual">-- סדרה לא ברשימה (הזן ידנית) --</option>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <label for="episodeTitle">שם הפרק:</label>
-                        <input type="text" id="episodeTitle" name="episodeTitle" required>
+                     {# Manual series ID input, initially hidden #}
+                    <div class="form-group hidden-manual-series-id" id="manual_series_id_group">
+                         <label for="manual_episode_series_id">IMDb ID של הסדרה (הזנה ידנית):</label>
+                         <input type="text" id="manual_episode_series_id" name="manual_episode_series_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
 
+                    <div class="form-group">
+                        <label for="episode_title">שם הפרק:</label>
+                        <input type="text" id="episode_title" name="episode_title">
+                    </div>
                      <div class="form-group">
-                        <label for="episodeNumber">מספר הפרק:</label>
-                        <input type="text" id="episodeNumber" name="episodeNumber" placeholder="למשל: S01E01" required>
+                        <label for="episode_number">מספר הפרק:</label>
+                        <input type="number" id="episode_number" name="episode_number" min="1">
                     </div>
-
-                    <div class="form-group">
-                        <label for="episodeVideoUrl">קישור לקובץ וידאו:</label>
-                        <input type="url" id="episodeVideoUrl" name="episodeVideoUrl" required>
-                    </div>
-                </div>
-
-                {# --- Add Movie Form Section --- #}
-                <div id="movieForm" class="form-section" style="display: none;"> {# Initially hidden #}
-                     <h2>הוספת סרט חדש</h2>
-                    <div class="form-group">
-                        <label for="movieTitle">שם הסרט:</label>
-                        <input type="text" id="movieTitle" name="movieTitle" required>
-                    </div>
-
                      <div class="form-group">
-                        <label for="movieImdbId">IMDb ID (אופציונלי):</label>
-                        <input type="text" id="movieImdbId" name="movieImdbId">
+                        <label for="episode_season">מספר עונה:</label>
+                        <input type="number" id="episode_season" name="episode_season" min="1">
                     </div>
-
-                    {# OMDB Search Section for Movie - Placeholder for future functionality #}
-                     <div class="omdb-search-section">
-                        <h3>חיפוש פרטי סרט ב-OMDB</h3>
-                        <div class="omdb-search-input">
-                            <input type="text" id="movieOmdbSearch" placeholder='חפש לפי שם הסרט (למשל: "The Matrix")'>
-                            <button type="button" id="searchMovieOmdbButton">חיפוש OMDB</button>
-                        </div>
-                        <ul id="omdbMovieResults">
-                            {# Results will be populated here by JavaScript #}
-                        </ul>
-                        <div id="selectedOmdbMovieDetails" style="display: none;">
-                            {# Selected details will be shown here #}
-                        </div>
-                    </div>
-
-
                     <div class="form-group">
-                        <label for="movieVideoUrl">קישור לקובץ וידאו:</label>
-                        <input type="url" id="movieVideoUrl" name="movieVideoUrl" required>
+                        <label for="episode_video_url">קישור לקובץ וידאו של הפרק:</label>
+                        <input type="url" id="episode_video_url" name="episode_video_url">
                     </div>
-
-                    <div class="form-group">
-                        <label for="movieCategory">בחר קטגוריה:</label>
-                        <select id="movieCategory" name="movieCategory" required>
-                            <option value="">-- בחר קטגוריה --</option>
-                             {% for category in categories %}
-                                <option value="{{ category }}">{{ category }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                     {# Add fields for episode IMDb ID, plot summary, etc. if needed #}
                 </div>
 
 
@@ -197,35 +193,211 @@
         </div>
     </footer>
 
-    {# Basic JavaScript to switch between form sections #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const radioButtons = document.querySelectorAll('input[name="contentType"]');
-            const formSections = document.querySelectorAll('.form-section');
+            const contentTypes = document.querySelectorAll('input[name="content_type"]');
+            const formSections = document.querySelectorAll('.content-form-section');
+            const episodeSeriesSelect = document.getElementById('episode_series_id');
+            const manualSeriesIdGroup = document.getElementById('manual_series_id_group');
 
-            function showSelectedForm() {
-                const selectedValue = document.querySelector('input[name="contentType"]:checked').value;
+            function showFormSection(type) {
                 formSections.forEach(section => {
-                    section.style.display = 'none';
+                    section.classList.add('hidden-form-section');
                 });
-                document.getElementById(selectedValue + 'Form').style.display = 'block';
+                document.getElementById(type + '-form').classList.remove('hidden-form-section');
+
+                 // Set required attributes based on selected type
+                document.querySelectorAll('#movie-form input').forEach(input => input.required = type === 'movie' && input.id !== 'movie_imdb_id' && input.id !== 'omdb_movie_search_term');
+                document.querySelectorAll('#series-form input').forEach(input => input.required = type === 'series' && input.id !== 'series_imdb_id' && input.id !== 'omdb_series_search_term');
+                 document.querySelectorAll('#episode-form input, #episode-form select').forEach(input => {
+                      // Skip the manual input for now, handle its required status separately
+                      if (input.id !== 'manual_episode_series_id') {
+                           input.required = type === 'episode';
+                      }
+                 });
+
+                 // Ensure movie video URL is required for movies
+                 const movieVideoUrlInput = document.getElementById('movie_video_url');
+                 if (movieVideoUrlInput) {
+                     movieVideoUrlInput.required = type === 'movie';
+                 }
+                 // Ensure episode video URL is required for episodes
+                  const episodeVideoUrlInput = document.getElementById('episode_video_url');
+                  if (episodeVideoUrlInput) {
+                      episodeVideoUrlInput.required = type === 'episode';
+                  }
+
+                  // Adjust required status for manual series ID input
+                 if (type === 'episode') {
+                      manualSeriesIdGroup.style.display = episodeSeriesSelect.value === 'manual' ? 'block' : 'none';
+                      document.getElementById('manual_episode_series_id').required = episodeSeriesSelect.value === 'manual';
+                 } else {
+                     manualSeriesIdGroup.style.display = 'none';
+                     document.getElementById('manual_episode_series_id').required = false;
+                 }
             }
 
-            radioButtons.forEach(radio => {
-                radio.addEventListener('change', showSelectedForm);
-            });
-
-            // Show the default selected form on page load
-            showSelectedForm();
-
-             // Basic function to handle placeholder button clicks
-            const searchButtons = document.querySelectorAll('.omdb-search-input button');
-            searchButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    alert('פונקציית חיפוש OMDB טרם ממומשת.');
+            contentTypes.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    showFormSection(this.value);
                 });
             });
-        });
+
+            // Handle manual series ID input visibility based on dropdown
+            if (episodeSeriesSelect) {
+                 episodeSeriesSelect.addEventListener('change', function() {
+                      if (this.value === 'manual') {
+                           manualSeriesIdGroup.style.display = 'block';
+                           document.getElementById('manual_episode_series_id').required = true;
+                      } else {
+                           manualSeriesIdGroup.style.display = 'none';
+                            document.getElementById('manual_episode_series_id').required = false;
+                      }
+                      // Update required status for other episode fields when series is selected/manual is chosen
+                       document.querySelectorAll('#episode-form input, #episode-form select').forEach(input => {
+                            if (input.id !== 'manual_episode_series_id') { // Exclude manual input
+                                input.required = true; // All other episode fields are required if episode type is selected
+                            }
+                       });
+                 });
+            }
+
+
+            // Show the initial form section based on which radio is checked (movie by default)
+            const initialChecked = document.querySelector('input[name="content_type"]:checked');
+            if (initialChecked) {
+                showFormSection(initialChecked.value);
+            } else {
+                 // Default to movie if none checked
+                 document.getElementById('type_movie').checked = true;
+                 showFormSection('movie');
+            }
+
+            // --- Dummy OMDB Search Logic ---
+            // These buttons/inputs are placeholders. Real OMDB integration requires JS/AJAX.
+            const searchMovieOmdbButton = document.getElementById('search_movie_omdb_button');
+            const searchSeriesOmdbButton = document.getElementById('search_series_omdb_button');
+            const omdbMovieSearchTermInput = document.getElementById('omdb_movie_search_term');
+            const omdbSeriesSearchTermInput = document.getElementById('omdb_series_search_term');
+            const omdbMovieResultsUl = document.getElementById('omdbMovieResults');
+            const omdbSeriesResultsUl = document.getElementById('omdbSeriesResults');
+            const selectedOmdbMovieDetailsDiv = document.getElementById('selectedOmdbMovieDetails');
+            const selectedOmdbSeriesDetailsDiv = document.getElementById('selectedOmdbSeriesDetails');
+            const hiddenMoviePosterUrl = document.getElementById('hidden_movie_poster_url');
+             const hiddenSeriesPosterUrl = document.getElementById('hidden_series_poster_url');
+             const movieTitleInput = document.getElementById('movie_title');
+            const movieImdbIdInput = document.getElementById('movie_imdb_id');
+             const seriesTitleInput = document.getElementById('series_title');
+             const seriesImdbIdInput = document.getElementById('series_imdb_id');
+
+
+            function populateDummyResults(resultsUl, detailsDiv, hiddenPosterInput, titleInput, idInput, type) {
+                resultsUl.innerHTML = ''; // Clear previous results
+                detailsDiv.style.display = 'none'; // Hide details
+                 hiddenPosterInput.value = ''; // Clear hidden poster URL
+
+                const dummyResults = [
+                    { Title: "Example " + type + " 1", Year: "2020", imdbID: "tt1234567", Poster: "https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg" },
+                    { Title: "Another " + type + " Title", Year: "2018", imdbID: "tt7654321", Poster: "https://m.media-amazon.com/images/M/MV5BMjMwNDkxMTgzOF5BMl5BanBnXkFtZTgwNTczMzg1NjM@._V1_SX300.jpg" },
+                ];
+
+                if (dummyResults.length > 0) {
+                     dummyResults.forEach(result => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<span>${result.Title} (${result.Year})</span> <span class="result-year">${result.imdbID}</span>`;
+                         li.dataset.imdbId = result.imdbID;
+                         li.dataset.title = result.Title;
+                         li.dataset.year = result.Year;
+                         li.dataset.poster = result.Poster;
+                        li.addEventListener('click', function() {
+                            // Remove 'selected' class from others
+                            resultsUl.querySelectorAll('li').forEach(item => item.classList.remove('selected-result'));
+                            // Add 'selected' class to clicked item
+                            this.classList.add('selected-result');
+
+                            // Populate details and main form fields
+                             detailsDiv.querySelector(`#omdb${type}TitleDisplay`).textContent = this.dataset.title;
+                             detailsDiv.querySelector(`#omdb${type}YearDisplay`).textContent = this.dataset.year;
+                             detailsDiv.querySelector(`#omdb${type}IdDisplay`).textContent = this.dataset.imdbId;
+                             const posterImg = detailsDiv.querySelector(`#omdb${type}PosterDisplay`);
+                             if (this.dataset.poster && this.dataset.poster !== 'N/A') {
+                                 posterImg.src = this.dataset.poster;
+                                 posterImg.style.display = 'block';
+                                 hiddenPosterInput.value = this.dataset.poster; // Save poster URL to hidden input
+                             } else {
+                                 posterImg.src = '';
+                                 posterImg.style.display = 'none';
+                                 hiddenPosterInput.value = '';
+                             }
+
+                            detailsDiv.style.display = 'block'; // Show details
+
+                             // Auto-fill the main title and IMDb ID fields
+                             if (type === 'Movie' && movieTitleInput && movieImdbIdInput) {
+                                movieTitleInput.value = this.dataset.title;
+                                movieImdbIdInput.value = this.dataset.imdbId;
+                             } else if (type === 'Series' && seriesTitleInput && seriesImdbIdInput) {
+                                 seriesTitleInput.value = this.dataset.title;
+                                 seriesImdbIdInput.value = this.dataset.imdbId;
+                             }
+
+                        });
+                        resultsUl.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.textContent = 'לא נמצאו תוצאות.';
+                    resultsUl.appendChild(li);
+                }
+            }
+
+
+            if (searchMovieOmdbButton) {
+                 searchMovieOmdbButton.addEventListener('click', function() {
+                     const searchTerm = omdbMovieSearchTermInput.value.trim();
+                     if (searchTerm) {
+                         // In a real app, make an AJAX call to your Flask backend,
+                         // which would then call the OMDb API.
+                         console.log("Dummy search for movie:", searchTerm);
+                         // Simulate getting results
+                         populateDummyResults(omdbMovieResultsUl, selectedOmdbMovieDetailsDiv, hiddenMoviePosterUrl, movieTitleInput, movieImdbIdInput, 'Movie');
+                     }
+                 });
+             }
+
+             if (searchSeriesOmdbButton) {
+                 searchSeriesOmdbButton.addEventListener('click', function() {
+                     const searchTerm = omdbSeriesSearchTermInput.value.trim();
+                     if (searchTerm) {
+                         // In a real app, make an AJAX call to your Flask backend,
+                         // which would then call the OMDb API.
+                         console.log("Dummy search for series:", searchTerm);
+                          // Simulate getting results
+                         populateDummyResults(omdbSeriesResultsUl, selectedOmdbSeriesDetailsDiv, hiddenSeriesPosterUrl, seriesTitleInput, seriesImdbIdInput, 'Series');
+                     }
+                 });
+             }
+
+             // Allow searching by pressing Enter in the input fields
+             if (omdbMovieSearchTermInput) {
+                  omdbMovieSearchTermInput.addEventListener('keypress', function(event) {
+                      if (event.key === 'Enter') {
+                          event.preventDefault(); // Prevent form submission
+                          searchMovieOmdbButton.click();
+                      }
+                  });
+             }
+              if (omdbSeriesSearchTermInput) {
+                  omdbSeriesSearchTermInput.addEventListener('keypress', function(event) {
+                      if (event.key === 'Enter') {
+                           event.preventDefault(); // Prevent form submission
+                          searchSeriesOmdbButton.click();
+                      }
+                  });
+             }
+
+
+        }); // DOMContentLoaded end
     </script>
 </body>
 </html>
