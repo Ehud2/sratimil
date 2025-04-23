@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>שגיאת שרת (500)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { padding: 40px; text-align: center; background-color: #0B0C10; color: #C5C6C7; font-family: 'Assistant', sans-serif; }
+        h1 { color: #FFFFFF; }
+        a { color: #66FCF1; }
+        a:hover { color: #FFFFFF; }
+    </style>
+</head>
+<body>
+    <h1>אופס! שגיאה פנימית בשרת (500)</h1>
+    <p>משהו השתבש בצד שלנו. אנחנו עובדים על זה.</p>
+    <p><a href="{{ url_for('index') }}">חזרה לדף הבית</a></p>
+</body>
+</html>
