@@ -1,8 +1,4 @@
-/* static/css/style.css - V9 - Moved Add Movie Form Styles to CSS */
-
-/* --- Global Styles & Design Tokens --- */
 :root {
-    /* ... (משתנים קיימים ללא שינוי) ... */
     --bg-color: #0B0C10;
     --bg-secondary: #1F2833;
     --card-bg-color: #1A1A1D;
@@ -51,7 +47,6 @@ a { color: var(--primary-accent-color); text-decoration: none; transition: color
 a:hover, a:focus { color: var(--text-heading-color); outline: none; }
 img { max-width: 100%; height: auto; display: block; }
 
-/* --- Header --- */
 .site-header {
     height: var(--header-height);
     background-color: rgba(11, 12, 16, 0.85);
@@ -71,13 +66,12 @@ img { max-width: 100%; height: auto; display: block; }
     gap: 30px;
 }
 
-/* --- Header Sections (for layout) --- */
-.search-container { /* מיקום החיפוש בצד ימין */
-    margin-right: 0; /* Ensure it's on the right in RTL */
+.search-container {
+    margin-right: 0;
     flex-shrink: 0;
 }
 
-.main-nav { /* הניווט באמצע */
+.main-nav {
     display: flex;
     gap: 25px;
     margin-left: auto;
@@ -100,16 +94,14 @@ img { max-width: 100%; height: auto; display: block; }
 .main-nav a:hover, .main-nav a:focus { color: var(--text-heading-color); outline: none; }
 .main-nav a:hover::after, .main-nav a:focus::after { width: 100%; }
 
-.auth-container { /* אזור ההתחברות/פרופיל בצד שמאל */
+.auth-container {
     flex-shrink: 0;
 }
 
-.header-spacer { /* אזור ריק בצד שמאל */
-    /* No longer needed as auth-container is on the left */
+.header-spacer {
     display: none;
 }
 
-/* עיצוב החיפוש */
 .search-container {
     display: flex;
     align-items: center;
@@ -126,15 +118,12 @@ img { max-width: 100%; height: auto; display: block; }
 .search-container button { background-color: transparent; border: none; color: var(--text-muted-color); padding: 0 10px; cursor: pointer; font-size: 1em; height: 36px; display: flex; align-items: center; transition: color var(--transition-fast); }
 .search-container button:hover { color: var(--text-heading-color); }
 
-
-/* --- Main Content --- */
 .main-content {
     padding-top: 40px;
     padding-bottom: 50px;
     flex-grow: 1;
 }
 
-/* --- Page Greeting --- */
 .page-greeting {
     margin-bottom: 45px;
     padding-left: 10px;
@@ -153,7 +142,6 @@ img { max-width: 100%; height: auto; display: block; }
     color: var(--text-color);
 }
 
-/* --- Category Section --- */
 .category-section {
     margin-bottom: 60px;
 }
@@ -166,7 +154,6 @@ img { max-width: 100%; height: auto; display: block; }
     position: relative;
 }
 
-/* --- Item Row (Horizontal Scroll) --- */
 .item-row {
     display: flex; overflow-x: auto; overflow-y: hidden; padding-bottom: 30px;
     margin-bottom: -30px; gap: var(--card-gap); scroll-snap-type: x mandatory; position: relative;
@@ -177,8 +164,6 @@ img { max-width: 100%; height: auto; display: block; }
 .item-row::before { right: 0; background: linear-gradient(to left, var(--bg-color), transparent); }
 .item-row::after { left: 0; background: linear-gradient(to right, var(--bg-color), transparent); }
 
-
-/* --- Item Card (Movie/Series) --- */
 .item-card {
     background-color: var(--card-bg-color); border-radius: var(--border-radius-md); width: var(--card-width); flex-shrink: 0;
     scroll-snap-align: start; position: relative; overflow: hidden; transition: transform var(--transition-medium), box-shadow var(--transition-medium);
@@ -192,7 +177,6 @@ img { max-width: 100%; height: auto; display: block; }
 .card-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-medium); }
 .item-card:hover .card-image-container img, .item-card:focus-within .card-image-container img { transform: scale(1.1); }
 
-/* --- Card Overlay (Appears on Hover) --- */
 .card-overlay {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 10%, rgba(0, 0, 0, 0.6) 50%, transparent 100%);
     opacity: 0; transition: opacity var(--transition-medium); display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; pointer-events: none;
@@ -227,7 +211,6 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .card-actions button:hover { background-color: rgba(60, 60, 60, 0.9); transform: scale(1.1); }
 
-/* --- Rank Number Styling --- */
 .rank-number {
     position: absolute; left: -15px; bottom: 10px; width: 60px; height: 60px;
     display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none;
@@ -241,21 +224,17 @@ img { max-width: 100%; height: auto; display: block; }
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8); line-height: 1; z-index: 1;
 }
 
-
-/* --- Footer --- */
 .site-footer-bottom {
     text-align: center; padding: 25px 0; margin-top: auto; background-color: var(--bg-color);
     border-top: 1px solid rgba(69, 162, 158, 0.1); font-size: 0.9em; color: var(--text-muted-color);
 }
 
-/* --- No Results Message --- */
 #noResultsMessage {
     text-align: center; font-size: 1.2em; color: var(--text-color); margin: 60px auto; padding: 25px;
     background-color: var(--bg-secondary); border-radius: var(--border-radius-md); max-width: 450px;
     border: 1px solid var(--border-color); display: none;
 }
 
-/* --- Flash Messages Styling --- */
 .flash-messages {
     padding: 15px 0;
 }
@@ -290,12 +269,10 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .close-flash:hover { color: #fff; }
 
-
-/* --- Responsive Adjustments --- */
-@media (max-width: 1400px) { /* ... */ }
+@media (max-width: 1400px) { }
 @media (max-width: 1200px) {
     .main-nav {
-        gap: 20px; /* Slightly reduce gap */
+        gap: 20px;
     }
 }
 
@@ -309,10 +286,9 @@ img { max-width: 100%; height: auto; display: block; }
     .header-content {
         gap: 20px;
     }
-    .main-nav { display: none; } /* הניווט מוסתר */
-    /* Search is now on the right */
-    .search-container { margin-right: 0; margin-left: auto; } /* Push search right, other elements left */
-    .header-spacer { display: none; } /* No spacer needed when nav is hidden */
+    .main-nav { display: none; }
+    .search-container { margin-right: 0; margin-left: auto; }
+    .header-spacer { display: none; }
 
     .page-greeting h1 { font-size: 2em; }
     .page-greeting p { font-size: 1em; }
@@ -353,8 +329,8 @@ img { max-width: 100%; height: auto; display: block; }
      #searchInput:focus { width: 130px; }
      .search-container button { font-size: 0.9em; height: 34px; }
      .auth-container {
-        width: 34px; /* Match button size */
-        height: 34px; /* Match button size */
+        width: 34px;
+        height: 34px;
      }
      .profile-button {
          width: 34px;
@@ -375,276 +351,264 @@ img { max-width: 100%; height: auto; display: block; }
      .rank-text { font-size: 1.6em; }
 }
 
+.add-movie-form-container {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 5px 15px var(--shadow-color);
+    direction: rtl;
+}
 
-/* --- Add Movie Page Styles (from addmovie.html <style> tag) --- */
-/* העברה מ-addmovie.html */
-        .add-movie-form-container {
-            max-width: 700px;
-            margin: 40px auto;
-            padding: 30px;
-            background-color: var(--bg-secondary);
-            border-radius: var(--border-radius-md);
-            box-shadow: 0 5px 15px var(--shadow-color);
-            direction: rtl;
-        }
+.add-movie-form-container h1 {
+    font-family: var(--font-heading);
+    color: var(--text-heading-color);
+    text-align: center;
+    margin-bottom: 30px;
+}
 
-        .add-movie-form-container h1 {
-            font-family: var(--font-heading);
-            color: var(--text-heading-color);
-            text-align: center;
-            margin-bottom: 30px;
-        }
+.form-group {
+    margin-bottom: 20px;
+}
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-color);
+    font-weight: 600;
+}
 
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-color);
-            font-weight: 600;
-        }
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    font-size: 1em;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
 
-        .form-group input[type="text"],
-        .form-group input[type="url"],
-        .form-group select {
-            width: 100%;
-            padding: 10px;
-            background-color: var(--card-bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-sm);
-            color: var(--text-color);
-            font-family: var(--font-body);
-            font-size: 1em;
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-        }
+.form-group input[type="text"]:focus,
+.form-group input[type="url"]:focus,
+.form-group select:focus {
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
+    outline: none;
+}
 
-         .form-group input[type="text"]:focus,
-         .form-group input[type="url"]:focus,
-         .form-group select:focus {
-             border-color: var(--primary-accent-color);
-             box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
-             outline: none;
-         }
+.omdb-search-section {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 20px;
+    margin-top: 30px;
+    background-color: rgba(40, 40, 40, 0.5);
+}
 
-        .omdb-search-section {
-             border: 1px solid var(--border-color);
-             border-radius: var(--border-radius-md);
-             padding: 20px;
-             margin-top: 30px;
-             background-color: rgba(40, 40, 40, 0.5);
-        }
+.omdb-search-section h3 {
+    color: var(--text-heading-color);
+    margin-bottom: 15px;
+    font-family: var(--font-heading);
+    font-size: 1.4em;
+}
 
-        .omdb-search-section h3 {
-            color: var(--text-heading-color);
-            margin-bottom: 15px;
-            font-family: var(--font-heading);
-            font-size: 1.4em;
-        }
+.omdb-search-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
 
-        .omdb-search-input {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+.omdb-search-input input {
+    flex-grow: 1;
+     padding: 10px;
+     background-color: var(--card-bg-color);
+     border: 1px solid var(--border-color);
+     border-radius: var(--border-radius-sm);
+     color: var(--text-color);
+     font-family: var(--font-body);
+     font-size: 1em;
+ }
+.omdb-search-input input:focus {
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
+    outline: none;
+}
 
-        .omdb-search-input input {
-            flex-grow: 1;
-             padding: 10px;
-             background-color: var(--card-bg-color);
-             border: 1px solid var(--border-color);
-             border-radius: var(--border-radius-sm);
-             color: var(--text-color);
-             font-family: var(--font-body);
-             font-size: 1em;
-         }
-        .omdb-search-input input:focus {
-            border-color: var(--primary-accent-color);
-            box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
-            outline: none;
-        }
+.omdb-search-input button {
+    padding: 10px 20px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-secondary);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1em;
+    transition: background-color var(--transition-fast);
+}
 
+.omdb-search-input button:hover {
+    background-color: var(--secondary-accent-color);
+}
 
-        .omdb-search-input button {
-            padding: 10px 20px;
-            background-color: var(--primary-accent-color);
-            color: var(--bg-secondary);
-            border: none;
-            border-radius: var(--border-radius-sm);
-            cursor: pointer;
-            font-family: var(--font-heading);
-            font-size: 1em;
-            transition: background-color var(--transition-fast);
-        }
+#omdbResults {
+    list-style: none;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
 
-        .omdb-search-input button:hover {
-            background-color: var(--secondary-accent-color);
-        }
+#omdbResults li {
+    background-color: var(--card-bg-color);
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
+#omdbResults li:hover {
+    background-color: rgba(40, 40, 40, 0.7);
+}
 
-        #omdbResults {
-            list-style: none;
-            padding: 0;
-            max-height: 200px;
-            overflow-y: auto;
-            border-top: 1px solid var(--border-color);
-            padding-top: 10px;
-        }
+#omdbResults li span {
+    color: var(--text-color);
+}
 
-        #omdbResults li {
-            background-color: var(--card-bg-color);
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: var(--border-radius-sm);
-            cursor: pointer;
-            transition: background-color var(--transition-fast);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+#omdbResults li .result-year {
+    font-size: 0.9em;
+    color: var(--text-muted-color);
+}
 
-        #omdbResults li:hover {
-            background-color: rgba(40, 40, 40, 0.7);
-        }
+#omdbResults li.selected-result {
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+}
 
-        #omdbResults li span {
-            color: var(--text-color);
-        }
+#omdbResults li.selected-result span {
+     color: var(--bg-color);
+}
+ #omdbResults li.selected-result .result-year {
+     color: rgba(11, 12, 16, 0.8);
+ }
 
-        #omdbResults li .result-year {
-            font-size: 0.9em;
-            color: var(--text-muted-color);
-        }
+#selectedOmdbDetails {
+     margin-top: 15px;
+     padding: 15px;
+     background-color: rgba(69, 162, 158, 0.2);
+     border: 1px solid var(--primary-accent-color);
+     border-radius: var(--border-radius-sm);
+     color: var(--text-color);
+}
 
-         #omdbResults li.selected-result {
-             background-color: var(--primary-accent-color);
-             color: var(--bg-color);
-         }
+#selectedOmdbDetails p {
+    margin-bottom: 5px;
+}
 
-         #omdbResults li.selected-result span {
-              color: var(--bg-color);
-         }
-          #omdbResults li.selected-result .result-year {
-              color: rgba(11, 12, 16, 0.8);
-          }
+#selectedOmdbDetails strong {
+    color: var(--text-heading-color);
+}
 
+ #selectedOmdbDetails img {
+     margin-top: 10px;
+     max-width: 100px;
+     height: auto;
+     border-radius: var(--border-radius-sm);
+ }
 
-        #selectedOmdbDetails {
-             margin-top: 15px;
-             padding: 15px;
-             background-color: rgba(69, 162, 158, 0.2);
-             border: 1px solid var(--primary-accent-color);
-             border-radius: var(--border-radius-sm);
-             color: var(--text-color);
-             /* display: none; /* יטופל ב-JS או ב-template */
-        }
+.form-submit-button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-top: 30px;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
 
-        #selectedOmdbDetails p {
-            margin-bottom: 5px;
-        }
+.form-submit-button:hover {
+    background-color: var(--secondary-accent-color);
+    transform: translateY(-2px);
+}
 
-        #selectedOmdbDetails strong {
-            color: var(--text-heading-color);
-        }
+.manual-imdb-input {
+     margin-top: 20px;
+     padding-top: 20px;
+     border-top: 1px dashed rgba(102, 252, 241, 0.3);
+}
 
-         #selectedOmdbDetails img {
-             margin-top: 10px;
-             max-width: 100px;
-             height: auto;
-             border-radius: var(--border-radius-sm);
-         }
+.manual-imdb-input label {
+     margin-bottom: 8px;
+}
 
+.error-container {
+    text-align: center;
+    margin-top: 80px;
+    color: var(--text-color);
+}
+.error-container h1 {
+    font-size: 4em;
+    color: var(--primary-accent-color);
+    margin-bottom: 10px;
+    font-family: var(--font-heading);
+}
+.error-container h2 {
+    font-size: 1.8em;
+    color: var(--text-heading-color);
+    margin-bottom: 20px;
+    font-family: var(--font-heading);
+}
+.error-container p {
+    font-size: 1.1em;
+    margin-bottom: 30px;
+}
+.error-container a {
+    font-size: 1em;
+    padding: 10px 20px;
+    background-color: var(--secondary-accent-color);
+    color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    transition: background-color var(--transition-fast);
+}
+.error-container a:hover {
+    background-color: var(--primary-accent-color);
+}
 
-        .form-submit-button {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background-color: var(--primary-accent-color);
-            color: var(--bg-color);
-            border: none;
-            border-radius: var(--border-radius-md);
-            cursor: pointer;
-            font-family: var(--font-heading);
-            font-size: 1.2em;
-            font-weight: 700;
-            margin-top: 30px;
-            transition: background-color var(--transition-fast), transform var(--transition-fast);
-        }
+.profile-button {
+   width: 40px;
+   height: 40px;
+   border-radius: 50%;
+   overflow: hidden;
+   display: block;
+   flex-shrink: 0;
+   border: 2px solid transparent;
+   transition: border-color var(--transition-fast);
+   cursor: pointer;
+   padding: 0;
+   background: none;
+}
 
-        .form-submit-button:hover {
-            background-color: var(--secondary-accent-color);
-            transform: translateY(-2px);
-        }
+.profile-button:hover {
+   border-color: var(--primary-accent-color);
+}
 
-         /* סטיילינג לשדה הקלט הידני של IMDB ID */
-        .manual-imdb-input {
-             margin-top: 20px;
-             padding-top: 20px;
-             border-top: 1px dashed rgba(102, 252, 241, 0.3);
-        }
-
-         .manual-imdb-input label {
-             margin-bottom: 8px;
-         }
-
-         /* סטיילינג לדף 403 ו-500 */
-         .error-container {
-             text-align: center;
-             margin-top: 80px;
-             color: var(--text-color);
-         }
-         .error-container h1 {
-             font-size: 4em;
-             color: var(--primary-accent-color);
-             margin-bottom: 10px;
-             font-family: var(--font-heading);
-         }
-         .error-container h2 {
-             font-size: 1.8em;
-             color: var(--text-heading-color);
-             margin-bottom: 20px;
-             font-family: var(--font-heading);
-         }
-         .error-container p {
-             font-size: 1.1em;
-             margin-bottom: 30px;
-         }
-         .error-container a {
-             font-size: 1em;
-             padding: 10px 20px;
-             background-color: var(--secondary-accent-color);
-             color: var(--bg-secondary);
-             border-radius: var(--border-radius-md);
-             transition: background-color var(--transition-fast);
-         }
-         .error-container a:hover {
-             background-color: var(--primary-accent-color);
-         }
-
-
-
-         .profile-button {
-            width: 40px; /* גודל הכפתור */
-            height: 40px; /* גודל הכפתור */
-            border-radius: 50%; /* הופך אותו למעוגל */
-            overflow: hidden; /* חותך את התמונה לצורת העיגול */
-            display: block; /* או inline-block */
-            flex-shrink: 0; /* מונע מהכפתור להתכווץ בפריסה גמישה */
-            border: 2px solid transparent; /* גבול שקוף לבסיס */
-            transition: border-color var(--transition-fast); /* אנימציה לגבול במעבר עכבר */
-            cursor: pointer; /* מראה שהאלמנט לחיץ */
-            padding: 0; /* ודא שאין padding שמעוות את העיגול אם זה כפתור */
-            background: none; /* ודא שאין רקע דיפולטיבי של כפתור */
-        }
-
-        .profile-button:hover {
-            border-color: var(--primary-accent-color); /* הדגשת הגבול במעבר עכבר */
-        }
-
-        .profile-button img {
-            display: block; /* מבטיח שהתמונה תמלא את המקום */
-            width: 100%; /* התאמה לרוחב המכיל */
-            height: 100%; /* התאמה לגובה המכיל */
-            object-fit: cover; /* מכסה את כל המקום מבלי לעוות את התמונה */
-        }
+.profile-button img {
+   display: block;
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+}
