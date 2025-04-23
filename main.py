@@ -15,8 +15,8 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moviesilsuperdupersecre
 # Load Google credentials from environment variables for security
 # Replace these with your actual Client ID and Client Secret
 # Consider using a .env file for local development if you don't set environment variables directly
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID') # <-- REPLACE with your actual Client ID
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIENT_SECRET') # <-- REPLACE with your actual Client Secret
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '367711020009-o70b96v4cv604acg2hqv60k8c5mjmhtr.apps.googleusercontent.com') # <-- REPLACE with your actual Client ID
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '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') # <-- REPLACE with your actual Client Secret
 app.config['GOOGLE_DISCOVERY_URL'] = (
     'https://accounts.google.com/.well-known/openid-configuration'
 )
