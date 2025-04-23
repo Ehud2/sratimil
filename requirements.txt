@@ -3,3 +3,4 @@ gunicorn
 Authlib
 Flask-Login
 requests
+firebase_admin
