@@ -1,16 +1,23 @@
-/* add.css - Specific styles for the Add Content page */
+/* add.css */
 
-.add-content-form-container {
+/* Import variables from style.css */
+/* This isn't standard CSS import for variables,
+   but including this comment to indicate intention */
+/* @import url('style.css'); */
+/* Or ensure this file is linked AFTER style.css in the HTML */
+
+/* Basic styling for the form container, leveraging style.css variables */
+.add-movie-form-container {
     max-width: 700px;
     margin: 40px auto;
     padding: 30px;
     background-color: var(--bg-secondary);
     border-radius: var(--border-radius-md);
     box-shadow: 0 5px 15px var(--shadow-color);
-    direction: rtl; /* Ensure correct direction for Hebrew form */
+    direction: rtl; /* Explicitly set for consistency */
 }
 
-.add-content-form-container h1 {
+.add-movie-form-container h1 {
     font-family: var(--font-heading);
     color: var(--text-heading-color);
     text-align: center;
@@ -28,8 +35,24 @@
     font-weight: 600;
 }
 
+/* Style for radio button labels */
+.content-type-selector label {
+    display: inline-block; /* Align radio buttons and labels */
+    margin-left: 15px; /* Space between options */
+    font-weight: normal; /* Less bold than standard labels */
+    cursor: pointer;
+}
+
+.content-type-selector input[type="radio"] {
+    margin-left: 5px; /* Space between radio and its label */
+    vertical-align: middle; /* Align radio with text */
+}
+
+
+/* Style for text/url inputs and select dropdown */
 .form-group input[type="text"],
 .form-group input[type="url"],
+.form-group input[type="number"], /* Added number type */
 .form-group select {
     width: 100%;
     padding: 10px;
@@ -40,75 +63,25 @@
     font-family: var(--font-body);
     font-size: 1em;
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box; /* Include padding and border in element's total width */
 }
 
 .form-group input[type="text"]:focus,
 .form-group input[type="url"]:focus,
+.form-group input[type="number"]:focus, /* Added focus for number type */
 .form-group select:focus {
     border-color: var(--primary-accent-color);
     box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
     outline: none;
 }
 
-/* Style for the radio button group */
-.form-group.content-type-selector .radio-group {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap; /* Allow wrapping on small screens */
-    justify-content: center; /* Center the radio buttons */
-}
-
-.form-group.content-type-selector .radio-group input[type="radio"] {
-    display: none; /* Hide the actual radio button */
-}
-
-.form-group.content-type-selector .radio-group label {
-    display: inline-block; /* Make labels clickable blocks */
-    background-color: var(--card-bg-color);
-    padding: 10px 15px;
-    border-radius: var(--border-radius-md);
-    cursor: pointer;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    font-weight: 400; /* Lighter weight for button-like labels */
-}
-
-.form-group.content-type-selector .radio-group input[type="radio"]:checked + label {
-    background-color: var(--primary-accent-color);
-    border-color: var(--primary-accent-color);
-    color: var(--bg-color); /* Dark text on bright background */
-    font-weight: 600; /* Bold text for selected label */
-}
-
-.form-group.content-type-selector .radio-group label:hover {
-    background-color: var(--bg-secondary); /* Darker on hover */
-}
-
-/* Style for the different form sections (controlled by JS) */
-.form-section {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px dashed rgba(102, 252, 241, 0.3);
-}
-
-.form-section h2 {
-     font-family: var(--font-heading);
-     font-size: 1.6em;
-     color: var(--text-heading-color);
-     margin-bottom: 25px;
-     text-align: center;
-}
-
-
-/* OMDB Search Section */
+/* Styles for the OMDB search section */
 .omdb-search-section {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
     padding: 20px;
     margin-top: 30px;
-    margin-bottom: 20px; /* Add space below search section */
-    background-color: rgba(40, 40, 40, 0.5);
+    background-color: rgba(40, 40, 40, 0.5); /* Semi-transparent dark background */
 }
 
 .omdb-search-section h3 {
@@ -133,6 +106,7 @@
      color: var(--text-color);
      font-family: var(--font-body);
      font-size: 1em;
+     box-sizing: border-box;
  }
 .omdb-search-input input:focus {
     border-color: var(--primary-accent-color);
@@ -143,7 +117,7 @@
 .omdb-search-input button {
     padding: 10px 20px;
     background-color: var(--primary-accent-color);
-    color: var(--bg-secondary);
+    color: var(--bg-secondary); /* Dark text on accent background */
     border: none;
     border-radius: var(--border-radius-sm);
     cursor: pointer;
@@ -157,17 +131,20 @@
     background-color: var(--secondary-accent-color);
 }
 
-/* OMDB Results List */
-#omdbSeriesResults, #omdbMovieResults {
+/* Styles for the search results list */
+#omdbMovieResults,
+#omdbSeriesResults {
     list-style: none;
     padding: 0;
-    max-height: 200px;
+    margin-top: 0; /* Adjust margin */
+    max-height: 200px; /* Limit height and add scroll */
     overflow-y: auto;
     border-top: 1px solid var(--border-color);
     padding-top: 10px;
 }
 
-#omdbSeriesResults li, #omdbMovieResults li {
+#omdbMovieResults li,
+#omdbSeriesResults li {
     background-color: var(--card-bg-color);
     padding: 10px;
     margin-bottom: 8px;
@@ -177,70 +154,95 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    word-break: break-word; /* Prevent long titles from overflowing */
 }
 
-#omdbSeriesResults li:hover, #omdbMovieResults li:hover {
+#omdbMovieResults li:hover,
+#omdbSeriesResults li:hover {
     background-color: rgba(40, 40, 40, 0.7);
 }
 
-#omdbSeriesResults li span, #omdbMovieResults li span {
+#omdbMovieResults li span,
+#omdbSeriesResults li span {
     color: var(--text-color);
 }
 
-#omdbSeriesResults li .result-year, #omdbMovieResults li .result-year {
+#omdbMovieResults li .result-year,
+#omdbSeriesResults li .result-year {
     font-size: 0.9em;
     color: var(--text-muted-color);
-    flex-shrink: 0; /* Prevent year from being cut off */
-    margin-left: 10px; /* Space between title and year */
+    flex-shrink: 0; /* Prevent shrinking */
+    margin-right: 10px; /* Space between title and ID */
 }
 
-/* Style for selected item in OMDB results */
-#omdbSeriesResults li.selected-result, #omdbMovieResults li.selected-result {
+/* Style for the selected search result */
+#omdbMovieResults li.selected-result,
+#omdbSeriesResults li.selected-result {
     background-color: var(--primary-accent-color);
-    color: var(--bg-color);
+    color: var(--bg-color); /* Dark text on primary accent */
 }
 
-#omdbSeriesResults li.selected-result span, #omdbMovieResults li.selected-result span {
+#omdbMovieResults li.selected-result span,
+#omdbSeriesResults li.selected-result span {
      color: var(--bg-color);
 }
-#omdbSeriesResults li.selected-result .result-year, #omdbMovieResults li.selected-result .result-year {
-     color: rgba(11, 12, 16, 0.8);
+ #omdbMovieResults li.selected-result .result-year,
+ #omdbSeriesResults li.selected-result .result-year {
+     color: rgba(11, 12, 16, 0.8); /* Slightly transparent dark color */
  }
 
-/* Style for the details block populated by OMDB */
-#selectedOmdbSeriesDetails, #selectedOmdbMovieDetails {
+/* Styles for displaying selected OMDB details */
+#selectedOmdbMovieDetails,
+#selectedOmdbSeriesDetails {
      margin-top: 15px;
      padding: 15px;
-     background-color: rgba(69, 162, 158, 0.2);
+     background-color: rgba(69, 162, 158, 0.2); /* Semi-transparent border color */
      border: 1px solid var(--primary-accent-color);
      border-radius: var(--border-radius-sm);
      color: var(--text-color);
-     word-break: break-word; /* Prevent long words from overflowing */
 }
 
-#selectedOmdbSeriesDetails p, #selectedOmdbMovieDetails p {
+#selectedOmdbMovieDetails h4,
+#selectedOmdbSeriesDetails h4 {
+    color: var(--text-heading-color);
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+#selectedOmdbMovieDetails p,
+#selectedOmdbSeriesDetails p {
     margin-bottom: 5px;
 }
 
-#selectedOmdbSeriesDetails strong, #selectedOmdbMovieDetails strong {
+#selectedOmdbMovieDetails strong,
+#selectedOmdbSeriesDetails strong {
     color: var(--text-heading-color);
 }
 
- #selectedOmdbSeriesDetails img, #selectedOmdbMovieDetails img {
+ #selectedOmdbMovieDetails img,
+ #selectedOmdbSeriesDetails img {
      margin-top: 10px;
      max-width: 100px;
      height: auto;
      border-radius: var(--border-radius-sm);
+     display: block; /* Ensure it takes its own line */
+     margin-left: auto; /* Push image to the left (in RTL) */
+     margin-right: 0;
  }
 
+/* Manual IMDb Input - initially hidden */
+.hidden-manual-series-id {
+    display: none; /* Hidden by default, shown by JS */
+}
 
-/* Submit button */
+
+/* Submit button styling */
 .form-submit-button {
     display: block;
     width: 100%;
     padding: 12px;
     background-color: var(--primary-accent-color);
-    color: var(--bg-color);
+    color: var(--bg-color); /* Dark text on accent color */
     border: none;
     border-radius: var(--border-radius-md);
     cursor: pointer;
@@ -256,53 +258,82 @@
     transform: translateY(-2px);
 }
 
-/* Optional: Manual input alternative if OMDB fails/isn't used */
-.manual-imdb-input {
-     margin-top: 20px;
-     padding-top: 20px;
-     border-top: 1px dashed rgba(102, 252, 241, 0.3);
+/* Class to hide form sections */
+.hidden-form-section {
+    display: none;
 }
 
-.manual-imdb-input label {
-     margin-bottom: 8px;
-}
-
-/* Add responsiveness if needed, similar to style.css */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-     .add-content-form-container {
-         padding: 20px;
-     }
-     .form-section h2 {
-         font-size: 1.4em;
-     }
-     .omdb-search-section {
-         padding: 15px;
-     }
-     .omdb-search-section h3 {
-         font-size: 1.2em;
-     }
-}
-
-@media (max-width: 576px) {
-    .add-content-form-container {
-         padding: 15px;
-     }
-     .form-section h2 {
-         font-size: 1.2em;
-     }
-     .omdb-search-input {
-         flex-direction: column;
-         gap: 15px;
-     }
+    .add-movie-form-container {
+        padding: 20px;
+        margin: 30px auto;
+    }
+    .add-movie-form-container h1 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+    }
+    .omdb-search-section {
+        padding: 15px;
+    }
+    .omdb-search-section h3 {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+    .omdb-search-input {
+        flex-direction: column;
+        gap: 10px;
+    }
      .omdb-search-input button {
          width: 100%;
          text-align: center;
      }
-     .form-group.content-type-selector .radio-group {
-         gap: 10px;
-     }
-     .form-group.content-type-selector .radio-group label {
-         padding: 8px 12px;
+}
+
+@media (max-width: 576px) {
+    .add-movie-form-container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+    .add-movie-form-container h1 {
+        font-size: 1.6em;
+    }
+    .form-group label {
+        font-size: 0.95em;
+    }
+     .form-group input[type="text"],
+     .form-group input[type="url"],
+     .form-group input[type="number"],
+     .form-group select {
+         padding: 8px;
          font-size: 0.9em;
      }
+     .omdb-search-section h3 {
+         font-size: 1.1em;
+     }
+     .omdb-search-input input,
+      .omdb-search-input button {
+         font-size: 0.9em;
+         padding: 8px;
+     }
+     .form-submit-button {
+         font-size: 1.1em;
+         padding: 10px;
+     }
+     #omdbMovieResults li span,
+     #omdbSeriesResults li span {
+         font-size: 0.9em;
+     }
+      #omdbMovieResults li .result-year,
+      #omdbSeriesResults li .result-year {
+          font-size: 0.8em;
+      }
+      #selectedOmdbMovieDetails p,
+      #selectedOmdbSeriesDetails p {
+          font-size: 0.9em;
+      }
+      #selectedOmdbMovieDetails strong,
+       #selectedOmdbSeriesDetails strong {
+           font-size: 0.95em;
+       }
 }
