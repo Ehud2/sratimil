@@ -1,7 +1,8 @@
+# main.py
 import datetime
 import traceback
-from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 import os
+from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
 
 app = Flask(__name__)
@@ -23,6 +24,8 @@ oauth.register(
     client_id=app.config.get('GOOGLE_CLIENT_ID'),
     client_secret=app.config.get('GOOGLE_CLIENT_SECRET'),
     server_metadata_url=app.config.get('GOOGLE_DISCOVERY_URL'),
+    # These scopes 'openid', 'email', 'profile' are already correctly requested here.
+    # The issue is likely in Google Cloud Console OAuth Consent Screen configuration.
     client_kwargs={'scope': 'openid email profile'},
 )
 
@@ -94,6 +97,8 @@ def get_greeting(user=None):
     else:
         greeting_text = "לילה טוב"
 
+    # This check user and user.get('name') is correct, it relies on 'name' being
+    # present in the user dictionary stored in the session.
     if user and user.get('name'):
         return f"{greeting_text} {user['name']}"
     else:
@@ -102,12 +107,18 @@ def get_greeting(user=None):
 
 @app.route('/auth/google')
 def google_login():
+    # This redirects to Google for authorization with the defined scopes
     return oauth.google.authorize_redirect(redirect_uri=url_for('google_callback', _external=True))
 
 @app.route('/auth/google/callback')
 def google_callback():
     try:
+        # This fetches the token and user info based on the scopes.
+        # If Google Cloud Console is configured correctly,
+        # 'name', 'email', 'picture', 'sub' should be in the returned token dictionary.
         token = oauth.google.authorize_access_token()
+
+        # Extracting user info. This is correct assuming the data is returned.
         userinfo = {
             'name': token.get('name'),
             'email': token.get('email'),
@@ -142,6 +153,7 @@ def index():
     categories = categorize_movies(movies_data)
     current_year = datetime.datetime.utcnow().year
 
+    # Passing 'user' to the template allows accessing user.picture
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
@@ -165,5 +177,6 @@ def internal_server_error(e):
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
+    # Use debug=False in production
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
