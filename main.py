@@ -1,12 +1,13 @@
 import datetime
 import traceback
 import os
-import requests # Added requests
-import json # Added json for firebase config
+import requests
+import json
 from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
-import firebase_admin # Added firebase_admin
-from firebase_admin import credentials, db # Added firebase_admin modules
+import firebase_admin
+from firebase_admin import credentials, db
+from firebase_admin.exceptions import FirebaseError # Import FirebaseError for better error handling
 
 app = Flask(__name__)
 
@@ -22,27 +23,31 @@ app.config['GOOGLE_DISCOVERY_URL'] = (
 # --- API Keys and Configs ---
 # It's better to load these from environment variables
 OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # OMDb API Key
-# GOOGLE_CSE_API_KEY = os.environ.get('GOOGLE_CSE_API_KEY', 'AIzaSyABsnQgIoZxu2QNPXif6q8_JVKvbTf-b1Y') # Google CSE Key
-# GOOGLE_CSE_ID = os.environ.get('GOOGLE_CSE_ID', '82d24fb2494934032') # Google CSE ID
 
-# Firebase Configuration - Load from the provided JSON file
-# In a real app, you might load the JSON content from an environment variable
+# Firebase Configuration
 FIREBASE_CONFIG_PATH = 'firebase.json' # Path to your firebase.json file
 FIREBASE_DATABASE_URL = 'https://moviesweb-3015a-default-rtdb.firebaseio.com/' # Your Firebase DB URL
 
 # Initialize Firebase Admin SDK
 try:
     # Check if Firebase app is already initialized
+    # This is important for development environments with hot-reloading
     if not firebase_admin._apps:
+        # Use the path to the service account file directly
         cred = credentials.Certificate(FIREBASE_CONFIG_PATH)
         firebase_admin.initialize_app(cred, {
             'databaseURL': FIREBASE_DATABASE_URL
         })
         print("Firebase Admin SDK initialized successfully.")
+    else:
+         print("Firebase Admin SDK already initialized.")
+
 except FileNotFoundError:
-    print(f"Error: Firebase config file not found at {FIREBASE_CONFIG_PATH}")
+    print(f"Error: Firebase config file not found at {FIREBASE_CONFIG_PATH}. Cannot initialize Firebase.")
 except Exception as e:
     print(f"Error initializing Firebase Admin SDK: {e}")
+    # Depending on deployment, you might want to abort startup here
+    # For now, we print the error and allow the app to run (though Firebase calls will fail)
 
 
 # --- User Whitelist for Admin Features ---
@@ -74,41 +79,66 @@ CATEGORIES = [
 def load_movies_data():
     # Load movies from Firebase - Dummy categories applied in categorize_movies
     try:
+        # Check if Firebase app is initialized before attempting to get reference
+        if not firebase_admin._apps:
+             print("Firebase app not initialized. Cannot load movies.")
+             return {}
+
         ref = db.reference('/Movies')
         movies_data = ref.get()
         if movies_data is None:
             return {} # Return empty if no movies found
-        # Add a dummy category for demonstration purposes
-        # In a real app, the category would be saved with the movie data
+
+        # Add a dummy category for demonstration purposes if not saved
         for movie_id, movie_details in movies_data.items():
-             # Assign a dummy category or load it if it exists
-             # For now, let's just add a placeholder if it's missing
              if 'category' not in movie_details or movie_details['category'] not in CATEGORIES:
-                  # Assign the first category or 'ללא'
-                 movie_details['category'] = CATEGORIES[0] if CATEGORIES else 'ללא'
+                  # Assign a default category if missing or invalid
+                 movie_details['category'] = CATEGORIES[0] if CATEGORIES and CATEGORIES[0] != "ללא" else 'ללא'
         return movies_data
+    except FirebaseError as e:
+        print(f"Firebase error loading movies: {e}")
+        return {} # Return empty data on Firebase error
     except Exception as e:
-        print(f"Error loading movies from Firebase: {e}")
-        return {} # Return empty data on error
+        print(f"Unexpected error loading movies from Firebase: {e}")
+        traceback.print_exc()
+        return {} # Return empty data on other errors
 
 
 def load_series_data():
     # Load series details from Firebase for the dropdown
     try:
+        # Check if Firebase app is initialized
+        if not firebase_admin._apps:
+            print("Firebase app not initialized. Cannot load series list.")
+            # Fallback to dummy data if Firebase not initialized
+            return [
+              {"id": "tt0903747", "title": "שובר שורות (נתוני דמה)"},
+              {"id": "tt0944947", "title": "משחקי הכס (נתוני דמה)"},
+           ]
+
         ref = db.reference('/Series')
         all_series_data = ref.get()
         available_series = []
         if all_series_data:
             for series_id, series_details in all_series_data.items():
+                # Ensure 'Details' exists and has a title
                 if series_details and 'Details' in series_details and series_details['Details'].get('title'):
                     available_series.append({
                         "id": series_id,
                         "title": series_details['Details'].get('title')
                     })
         return available_series
+    except FirebaseError as e:
+        print(f"Firebase error loading series list: {e}")
+        # Fallback to dummy data on Firebase error
+        return [
+           {"id": "tt0903747", "title": "שובר שורות (נתוני דמה)"},
+           {"id": "tt0944947", "title": "משחקי הכס (נתוני דמה)"},
+        ]
     except Exception as e:
-        print(f"Error loading series list from Firebase: {e}")
-        # Fallback to dummy data if Firebase fails or is empty initially
+        print(f"Unexpected error loading series list from Firebase: {e}")
+        traceback.print_exc()
+         # Fallback to dummy data on other errors
         return [
            {"id": "tt0903747", "title": "שובר שורות (נתוני דמה)"},
            {"id": "tt0944947", "title": "משחקי הכס (נתוני דמה)"},
@@ -127,6 +157,7 @@ def categorize_movies(movies_data):
     for imdb_id, movie_details in movies_data.items():
         # Use the saved category if it exists and is valid, otherwise use 'ללא'
         category = movie_details.get('category', 'ללא')
+        # Only add to category lists if the category is valid and not "ללא"
         if category != "ללא" and category in CATEGORIES:
              categorized_movies[category].append({
                 "id": imdb_id,
@@ -135,33 +166,14 @@ def categorize_movies(movies_data):
                 "video_url": movie_details.get('video_url', '#')
              })
         elif category == "ללא":
-            # Movies with 'ללא' category are not added to any category section
+            # Movies with 'ללא' category are not added to any category section on the index page
             pass
         else:
              # Handle cases where a saved category might be invalid/old
-             print(f"Warning: Movie {imdb_id} has invalid category '{category}'. Skipping categorization.")
+             print(f"Warning: Movie {imdb_id} has invalid category '{category}'. Skipping categorization for index display.")
 
 
     return categorized_movies
-
-
-def get_greeting(user=None):
-    now = datetime.datetime.now()
-    current_hour = now.hour
-    greeting_text = ""
-    if 5 <= current_hour < 12:
-        greeting_text = "בוקר טוב"
-    elif 12 <= current_hour < 18:
-        greeting_text = "צהריים טובים"
-    elif 18 <= current_hour < 21:
-        greeting_text = "ערב טוב"
-    else:
-        greeting_text = "לילה טוב"
-
-    if user and user.get('name'):
-        return f"{greeting_text} {user['name']}"
-    else:
-        return f"{greeting_text} אורח"
 
 
 # --- OMDb API Functions ---
@@ -259,13 +271,13 @@ def google_callback():
 
         session['user'] = userinfo
         session.permanent = True
-        flash('התחברת בהצלחה!', 'success')
+        flash('התחברת בהצלחה!', 'success') # Updated flash message
         return redirect(url_for('index'))
 
     except Exception as e:
         print(f"OAuth callback error: {e}")
         traceback.print_exc()
-        flash('התחברות נכשלה. אנא ודא שההרשאות המתאימות אושרו ונסה שוב.', 'error')
+        flash('התחברות נכשלה. אנא ודא שההרשאות המתאימות אושרו ונסה שוב.', 'error') # Updated flash message
         return redirect(url_for('index'))
 
 @app.route('/logout')
@@ -304,50 +316,57 @@ def add_content():
 
     if request.method == 'POST':
         content_type = request.form.get('content_type')
+
+        # Check if Firebase app is initialized before attempting to save
+        if not firebase_admin._apps:
+             flash('שגיאה: מערכת מסד הנתונים אינה זמינה. נסה שוב מאוחר יותר.', 'error')
+             print("Firebase app not initialized. Cannot save content.")
+             return redirect(url_for('add_content'))
+
         ref = db.reference('/') # Root reference
 
         try:
             if content_type == 'movie':
                 # Get data from form (prioritize OMDb selected hidden fields)
-                imdb_id = request.form.get('movie_imdb_id')
-                title = request.form.get('movie_title')
+                # Fallback to manual inputs if OMDb fields are empty
+                imdb_id = request.form.get('selected_movie_imdb_id') or request.form.get('movie_imdb_id')
+                title = request.form.get('selected_movie_title') or request.form.get('movie_title')
+                poster_url = request.form.get('movie_poster_url') # This is populated by JS from OMDb
                 video_url = request.form.get('movie_video_url')
-                # Use the poster URL populated by JS from OMDb details
-                poster_url = request.form.get('movie_poster_url')
-                 # Category is not in the form yet, default to 'ללא' or a placeholder
-                category = request.form.get('movie_category', 'ללא') # Add a hidden input for category later if needed
+                category = request.form.get('movie_category', 'ללא')
+
 
                 # Simple validation
                 if not imdb_id or not title or not video_url:
                     flash('שגיאה: שדות חובה (IMDb ID, כותרת, וידאו) חסרים עבור סרט.', 'error')
                     return redirect(url_for('add_content'))
 
-                # Check IMDb ID format
-                if not imdb_id.startswith('tt') or len(imdb_id) < 9:
+                # Check IMDb ID format (basic)
+                if not imdb_id.startswith('tt') or len(imdb_id) < 7: # IMDB IDs are at least 7 digits after tt
                      flash('שגיאה: פורמט IMDb ID לא תקין.', 'error')
                      return redirect(url_for('add_content'))
 
 
                 movie_data = {
-                    'imdb_id': imdb_id,
-                    'title': title,
+                    'imdb_id': imdb_id, # Use the determined IMDb ID
+                    'title': title,     # Use the determined title
                     'video_url': video_url,
-                    'poster_url': poster_url or 'https://placehold.co/240x360/cccccc/000000?text=No+Poster', # Default poster if none from OMDb
-                    'category': category # Save the category
+                    'poster_url': poster_url or 'https://placehold.co/240x360/cccccc/000000?text=No+Poster', # Use OMDb poster or default
+                    'category': category
                 }
 
                 # Save to Firebase under /Movies/{imdb_id}
                 movies_ref = ref.child('Movies').child(imdb_id)
                 movies_ref.set(movie_data) # Use set to overwrite or create
 
-                flash(f'הסרט "{title}" ({imdb_id}) נוסף בהצלחה!', 'success')
+                flash(f'הסרט "{title}" ({imdb_id}) נוסף/עודכן בהצלחה!', 'success') # Added /עודכן
 
             elif content_type == 'series':
                 # Get data from form (prioritize OMDb selected hidden fields)
-                imdb_id = request.form.get('series_imdb_id')
-                title = request.form.get('series_title')
-                # Use the poster URL populated by JS from OMDb details
-                poster_url = request.form.get('series_poster_url')
+                 # Fallback to manual inputs if OMDb fields are empty
+                imdb_id = request.form.get('selected_series_imdb_id') or request.form.get('series_imdb_id')
+                title = request.form.get('selected_series_title') or request.form.get('series_title')
+                poster_url = request.form.get('series_poster_url') # This is populated by JS from OMDb
                  # Add fields for description, genres, etc. if needed for series details
 
                 # Simple validation
@@ -355,15 +374,15 @@ def add_content():
                     flash('שגיאה: שדות חובה (IMDb ID, כותרת) חסרים עבור סדרה.', 'error')
                     return redirect(url_for('add_content'))
 
-                # Check IMDb ID format
-                if not imdb_id.startswith('tt') or len(imdb_id) < 9:
+                # Check IMDb ID format (basic)
+                if not imdb_id.startswith('tt') or len(imdb_id) < 7:
                      flash('שגיאה: פורמט IMDb ID לא תקין.', 'error')
                      return redirect(url_for('add_content'))
 
                 series_details_data = {
-                    'imdb_id': imdb_id,
-                    'title': title,
-                    'poster_url': poster_url or 'https://placehold.co/240x360/cccccc/000000?text=No+Poster', # Default poster
+                    'imdb_id': imdb_id, # Use the determined IMDb ID
+                    'title': title,     # Use the determined title
+                    'poster_url': poster_url or 'https://placehold.co/240x360/cccccc/000000?text=No+Poster', # Use OMDb poster or default
                     # Add other series details here later
                 }
 
@@ -378,49 +397,68 @@ def add_content():
                  series_imdb_id_select = request.form.get('episode_series_id')
                  manual_series_imdb_id = request.form.get('manual_episode_series_id')
                  episode_title = request.form.get('episode_title')
-                 episode_number = request.form.get('episode_number')
-                 season_number = request.form.get('episode_season')
+                 episode_number_str = request.form.get('episode_number') # Get as string first
+                 season_number_str = request.form.get('episode_season')   # Get as string first
                  video_url = request.form.get('episode_video_url')
 
                  # Determine the series ID
-                 series_imdb_id = manual_series_imdb_id if series_imdb_id_select == 'manual' else series_imdb_id_select
+                 series_imdb_id = manual_series_imdb_id.strip() if series_imdb_id_select == 'manual' else series_imdb_id_select
 
-                 # Simple validation
-                 if not series_imdb_id or not episode_title or not episode_number or not season_number or not video_url:
+                 # Validate numbers and required fields
+                 if not series_imdb_id or not episode_title or not episode_number_str or not season_number_str or not video_url:
                       flash('שגיאה: שדות חובה (סדרה, כותרת פרק, מספר פרק, עונה, וידאו) חסרים עבור פרק.', 'error')
                       return redirect(url_for('add_content'))
 
-                 # Check IMDb ID format (for manual input)
-                 if series_imdb_id_select == 'manual' and (not series_imdb_id.startswith('tt') or len(series_imdb_id) < 9):
-                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין (הזנה ידנית).', 'error')
+                 try:
+                      season_number = int(season_number_str)
+                      episode_number = int(episode_number_str)
+                      if season_number < 1 or episode_number < 1:
+                          raise ValueError("Numbers must be positive")
+                 except ValueError:
+                      flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים.', 'error')
                       return redirect(url_for('add_content'))
 
 
+                 # Check IMDb ID format (for manual input)
+                 if series_imdb_id_select == 'manual' and (not series_imdb_id.startswith('tt') or len(series_imdb_id) < 7):
+                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין (הזנה ידנית).', 'error')
+                      return redirect(url_for('add_content'))
+
+                 # Check if the selected/manual series_imdb_id exists in Firebase (Optional but good practice)
+                 # This would require fetching /Series/{series_imdb_id}/Details first.
+                 # For simplicity, we'll skip this check for now, Firebase will just create the path if it doesn't exist.
+
                  # Create a key for the episode (e.g., S01E01)
-                 episode_key = f"S{int(season_number):02d}E{int(episode_number):02d}" # Ensure season/episode are numbers
+                 episode_key = f"S{season_number:02d}E{episode_number:02d}" # Ensure season/episode are numbers with leading zeros
+
 
                  episode_data = {
                      'title': episode_title,
-                     'series_imdb_id': series_imdb_id, # Redundant if stored under series, but good for querying
-                     'season_number': int(season_number),
-                     'episode_number': int(episode_number),
+                     # 'series_imdb_id': series_imdb_id, # Can add this here if desired, but path already contains it
+                     'season_number': season_number,
+                     'episode_number': episode_number,
                      'video_url': video_url,
                      # Add episode IMDb ID, plot summary etc. if available/needed
+                     'added_at': datetime.datetime.utcnow().isoformat(), # Optional: add timestamp
                  }
 
                  # Save to Firebase under /Series/{series_imdb_id}/Episodes/{episode_key}
                  episodes_ref = ref.child('Series').child(series_imdb_id).child('Episodes').child(episode_key)
                  episodes_ref.set(episode_data) # Use set for specific season/episode, push() would generate random key
 
-                 flash(f'הפרק "{episode_title}" (עונה {season_number} פרק {episode_number}) נוסף בהצלחה לסדרה "{series_imdb_id}"!', 'success')
+                 flash(f'הפרק "{episode_title}" (עונה {season_number} פרק {episode_number}) נוסף/עודכן בהצלחה לסדרה "{series_imdb_id}"!', 'success') # Added /עודכן
 
             else:
                  flash('סוג תוכן לא ידוע.', 'warning')
 
-        except Exception as e:
-            print(f"Error saving to Firebase: {e}")
+        except FirebaseError as e:
+            print(f"Firebase error saving content: {e}")
             traceback.print_exc()
-            flash('שגיאה בעת שמירת התוכן. נסה שוב.', 'error')
+            flash(f'שגיאה במסד הנתונים בעת שמירת התוכן: {e}', 'error') # Provide Firebase error details
+        except Exception as e:
+            print(f"Unexpected error saving content: {e}")
+            traceback.print_exc()
+            flash('שגיאה פנימית בעת שמירת התוכן. נסה שוב.', 'error')
 
 
         return redirect(url_for('add_content')) # Redirect after POST
@@ -454,8 +492,7 @@ def internal_server_error(e):
 
 
 if __name__ == '__main__':
-    # Create a dummy firebase.json if it doesn't exist (for local testing only)
-    # In a real deployment, this file should be present or loaded securely
 
     port = int(os.environ.get('PORT', 5000))
+    # When deploying, debug=False is highly recommended
     app.run(host='0.0.0.0', port=port, debug=True)
