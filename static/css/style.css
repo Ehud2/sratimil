@@ -1,4 +1,4 @@
-/* static/css/style.css - V4 - Layout Adjustments */
+/* static/css/style.css - V5 - Google Sign-In Icon & Layout Adjustment */
 
 /* --- Global Styles & Design Tokens --- */
 :root {
@@ -66,20 +66,39 @@ img { max-width: 100%; height: auto; display: block; }
 
 .header-content {
     display: flex;
-    /* justify-content: space-between; <-- הוסר כדי לאפשר ל-margin-left: auto לעבוד */
-    align-items: center;
+    align-items: center; /* Vertically align items */
     height: 100%;
+    /* justify-content: space-between; <-- הוסר/שונה, נשתמש ב-margin: auto */
 }
 
-/* הלוגו הוסר מה-HTML, אין צורך בכלל הזה יותר */
-/* .logo { ... } */
+/* --- Google Sign-In Icon --- */
+.google-signin-icon {
+    margin-left: 25px; /* רווח משמאל לאייקון (ליד הניווט) */
+    flex-shrink: 0; /* מונע מהאייקון להתכווץ */
+}
+.google-signin-icon a {
+    display: block; /* To apply border-radius correctly */
+}
+.google-signin-icon img {
+    width: 40px; /* גודל האייקון */
+    height: 40px;
+    border-radius: 50%; /* עיגול האייקון */
+    object-fit: cover; /* Ensure image covers the circle */
+    display: block; /* Remove potential bottom space */
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Optional subtle border */
+}
+.google-signin-icon img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+}
 
 .main-nav {
     display: flex;
     gap: 25px;
-    /* הדחיפה לימין נעשית על ידי ה-margin-left: auto כאן */
-    margin-left: auto; /* דוחף את הניווט ואת מה שאחריו (actions) לימין */
-    margin-right: 30px; /* מוסיף רווח בין הניווט לפעולות */
+    /* margin-left: auto; <-- הוסר. המיקום ייקבע ע"י ה-flexbox */
+    margin-right: 30px; /* רווח בין הניווט לפעולות (חיפוש) */
 }
 .main-nav a { /* סגנון קישורי ניווט ללא שינוי */
     font-family: var(--font-heading);
@@ -101,10 +120,10 @@ img { max-width: 100%; height: auto; display: block; }
     display: flex;
     align-items: center;
     gap: 20px;
-    /* ה-margin-left: auto בניווט דוחף את הבלוק הזה לימין */
+    margin-right: auto; /* דוחף את ה-actions (כולל החיפוש) הכי ימינה */
 }
 
-.search-container { /* עיצוב החיפוש ללא שינוי מהותי במיקום כאן */
+.search-container { /* עיצוב החיפוש ללא שינוי מהותי */
     display: flex;
     align-items: center;
     background-color: rgba(31, 40, 51, 0.7);
@@ -120,26 +139,23 @@ img { max-width: 100%; height: auto; display: block; }
 .search-container button { background-color: transparent; border: none; color: var(--text-muted-color); padding: 0 10px; cursor: pointer; font-size: 1em; height: 36px; display: flex; align-items: center; transition: color var(--transition-fast); }
 .search-container button:hover { color: var(--text-heading-color); }
 
-/* הברכה הוסרה מה-Header, אין צורך בכלל הזה */
-/* .greeting { ... } */
-
 /* --- Main Content --- */
 .main-content {
-    padding-top: 40px; /* הקטנת רווח עליון קצת */
+    padding-top: 40px;
     padding-bottom: 50px;
     flex-grow: 1;
 }
 
-/* --- Page Greeting (Moved from header) --- */
+/* --- Page Greeting --- */
 .page-greeting {
-    margin-bottom: 45px; /* רווח מתחת לברכה ולפני הקטגוריות */
-    padding-left: 10px; /* ריווח קל מהקצה */
-    border-right: 4px solid var(--primary-accent-color); /* קו הדגשה בצד ימין */
-    padding-right: 20px; /* רווח מהקו */
+    margin-bottom: 45px;
+    padding-left: 10px;
+    border-right: 4px solid var(--primary-accent-color);
+    padding-right: 20px;
 }
 .page-greeting h1 {
     font-family: var(--font-heading);
-    font-size: 2.4em; /* כותרת גדולה */
+    font-size: 2.4em;
     font-weight: 700;
     color: var(--text-heading-color);
     margin-bottom: 5px;
@@ -160,11 +176,7 @@ img { max-width: 100%; height: auto; display: block; }
     margin-bottom: 30px;
     color: var(--text-heading-color);
     position: relative;
-    /* padding-left הוסר, אין צורך בו יותר */
 }
-/* הקו הדקורטיבי משמאל הוסר */
-/* .category-section h2::before { ... } */
-
 
 /* --- Item Row (Horizontal Scroll) --- */
 .item-row { /* ללא שינוי */
@@ -256,15 +268,14 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 /* --- Responsive Adjustments --- */
-/* התאמות רספונסיביות קיימות ללא שינוי, למעט Header */
 @media (max-width: 1400px) { /* ... */ }
 @media (max-width: 1200px) { /* ... */ }
 
 @media (max-width: 992px) {
-    :root { /* ... (משתנים קיימים) ... */ }
-    .main-nav { display: none; } /* עדיין מוסתר */
-    .header-content { /* אין צורך בשינוי כאן כי הניווט מוסתר */ }
-    .greeting { /* הוסר מה-Header */ }
+    :root { /* ... */ }
+    .main-nav { display: none; } /* הניווט מוסתר */
+    /* .header-content נשאר flex, האייקון והחיפוש יתפסו את המקום */
+    .google-signin-icon { margin-left: 0; /* אין ניווט, אין צורך ברווח */ }
     /* ... (שאר ההתאמות ל-992px) ... */
     .page-greeting h1 { font-size: 2em; }
     .page-greeting p { font-size: 1em; }
@@ -272,34 +283,29 @@ img { max-width: 100%; height: auto; display: block; }
 
 @media (max-width: 768px) {
     :root { /* ... */ }
-    .header-content { padding: 0 15px; /* Adjust padding inside header */ }
-    .logo { /* הוסר */ }
-    .header-actions { /* סידור ברירת המחדל ישים את החיפוש מימין */
-         flex-grow: 1; /* תופס את כל הרוחב הזמין */
-         justify-content: flex-end; /* דוחף את התוכן (חיפוש) ימינה */
-    }
+    .header-content { padding: 0 20px; /* התאמת ריווח פנימי בהדר */ }
+    .header-actions { gap: 15px; /* הקטנת רווח ליד החיפוש */ }
     .search-container {
-        /* order הוסר, flex-grow ו-justify-content למעלה מטפלים בזה */
-        margin-left: 0;
-        flex-grow: 0; /* לא מתרחב יותר ממה שצריך */
-        /* margin-right: 15px; <-- אופציונלי, אם רוצים רווח קטן מהקצה */
+        /* order: 1; <-- הוסר, המיקום נקבע ע"י margin-right: auto על header-actions */
+        margin-left: 0; /* היה בטעות מקודם */
+        flex-grow: 0;
     }
-     #searchInput { width: 180px; /* רוחב קבוע יותר במסך קטן */ }
-     #searchInput:focus { width: 220px; } /* הרחבה קטנה יותר */
+     #searchInput { width: 160px; /* הקטנת רוחב חיפוש */ }
+     #searchInput:focus { width: 200px; }
      /* ... (שאר ההתאמות ל-768px) ... */
     .page-greeting h1 { font-size: 1.8em; }
 }
 
 @media (max-width: 576px) {
     :root { /* ... */ }
-    .logo { /* הוסר */ }
-    .search-container { width: auto; /* מתאים את עצמו לתוכן */ }
-     #searchInput { width: 150px; } /* עוד יותר קטן */
-     #searchInput:focus { width: 180px; }
+    .header-content { padding: 0 15px; }
+    .google-signin-icon img { width: 35px; height: 35px; } /* הקטנת האייקון */
+    .search-container { width: auto; }
+     #searchInput { width: 130px; font-size: 0.9em;}
+     #searchInput:focus { width: 160px; }
+     .search-container button { font-size: 0.9em; height: 34px; }
      /* ... (שאר ההתאמות ל-576px) ... */
     .page-greeting h1 { font-size: 1.6em; }
     .page-greeting p { font-size: 0.9em; }
     .page-greeting { padding-right: 15px; border-right-width: 3px;}
 }
-
-
