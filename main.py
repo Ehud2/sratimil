@@ -135,7 +135,7 @@ def index():
 
 @app.route('/login/google')
 def login_google():
-    redirect_uri = "https://test-web-nph8.onrender.com/authorize/google"
+    redirect_uri = "https://test-web-mc6i.onrender.com/authorize/google"
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/authorize/google')
