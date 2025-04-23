@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>הדף לא נמצא (404)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { padding: 40px; text-align: center; background-color: #0B0C10; color: #C5C6C7; font-family: 'Assistant', sans-serif; }
+        h1 { color: #FFFFFF; }
+        a { color: #66FCF1; }
+        a:hover { color: #FFFFFF; }
+    </style>
+</head>
+<body>
+    <h1>אופס! הדף לא נמצא (404)</h1>
+    <p>לא הצלחנו למצוא את הדף שחיפשת.</p>
+    <p><a href="{{ url_for('index') }}">חזרה לדף הבית</a></p>
+</body>
+</html>
