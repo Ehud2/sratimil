@@ -14,6 +14,8 @@ app.config['GOOGLE_DISCOVERY_URL'] = (
     'https://accounts.google.com/.well-known/openid-configuration'
 )
 
+app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31)
+
 oauth = OAuth(app)
 
 oauth.register(
@@ -106,16 +108,15 @@ def google_login():
 def google_callback():
     try:
         token = oauth.google.authorize_access_token()
-        # The user info (claims from ID token) is usually available directly in the token dictionary
-        # when using authorize_access_token with OpenID Connect scope.
         userinfo = {
             'name': token.get('name'),
             'email': token.get('email'),
             'picture': token.get('picture'),
-            'google_id': token.get('sub') # 'sub' is the unique Google user ID
+            'google_id': token.get('sub')
         }
 
         session['user'] = userinfo
+        session.permanent = True
         flash('התחברת בהצלחה עם גוגל!', 'success')
         return redirect(url_for('index'))
 
