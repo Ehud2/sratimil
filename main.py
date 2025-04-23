@@ -135,12 +135,12 @@ def index():
 
 @app.route('/login/google')
 def login_google():
-    redirect_uri = url_for('authorize_google', _external=True, _scheme='https')
-    print(f"DEBUG: Redirect URI for Google: {redirect_uri}")
+    redirect_uri = "https://test-web-nph8.onrender.com/authorize/google"
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/authorize/google')
 def authorize_google():
+    
     try:
         token = google.authorize_access_token()
         if not token:
