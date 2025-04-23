@@ -80,14 +80,19 @@ def get_greeting():
     else:
         return "לילה טוב"
 
+from flask import Flask, render_template
+import datetime
+
+app = Flask(__name__)
+
 @app.route('/')
 def index():
     """הנתיב הראשי, מרנדר את דף הבית"""
     greeting = get_greeting()
     categories = dummy_content
-    # Calculate current year in the route for clarity and pass it to template
-    current_year = datetime.datetime.utcnow().year
+    # שימוש בשיטה חדשה לקבלת הזמן ב-UTC
+    current_year = datetime.datetime.now(datetime.timezone.utc).year
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
-                           current_year=current_year) # Pass the year explicitly
+                           current_year=current_year)
