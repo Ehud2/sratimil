@@ -3,20 +3,13 @@ import traceback
 from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 import os
 from authlib.integrations.flask_client import OAuth
-import json # Added to potentially view token contents
 
 app = Flask(__name__)
 
-# Load secret key from environment or use a default for local testing
-# For production, ALWAYS load SECRETS from environment variables or a secure store
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moviesilsuperdupersecretkey')
 
-# --- Google OAuth Configuration ---
-# Load Google credentials from environment variables for security
-# Replace these with your actual Client ID and Client Secret
-# Consider using a .env file for local development if you don't set environment variables directly
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '367711020009-o70b96v4cv604acg2hqv60k8c5mjmhtr.apps.googleusercontent.com') # <-- REPLACE with your actual Client ID
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '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') # <-- REPLACE with your actual Client Secret
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '367711020009-o70b96v4cv604acg2hqv60k8c5mjmhtr.apps.googleusercontent.com')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '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')
 app.config['GOOGLE_DISCOVERY_URL'] = (
     'https://accounts.google.com/.well-known/openid-configuration'
 )
@@ -28,13 +21,8 @@ oauth.register(
     client_id=app.config.get('GOOGLE_CLIENT_ID'),
     client_secret=app.config.get('GOOGLE_CLIENT_SECRET'),
     server_metadata_url=app.config.get('GOOGLE_DISCOVERY_URL'),
-    client_kwargs={'scope': 'openid email profile'}, # Request basic profile and email
-    # Ensure redirect_uri is correctly generated or specified if needed,
-    # but authorize_redirect usually handles it correctly based on app context
-    # redirect_uri='https://test-web-mc6i.onrender.com/auth/google/callback' # Can be specified explicitly
+    client_kwargs={'scope': 'openid email profile'},
 )
-# --- End Google OAuth Configuration ---
-
 
 CATEGORIES = [
     "הסרטים הנצפים ביותר השבוע",
@@ -46,23 +34,21 @@ CATEGORIES = [
     "ללא"
 ]
 
-# Replace Firebase data loading with a static placeholder or empty data
-# In a real app, you would load this from a database, file, or API
 def load_movies_data():
     dummy_movies = {
-        "tt0133093": { # The Matrix
+        "tt0133093": {
             "title": "המטריקס",
             "poster_url": "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg",
             "video_url": "#",
             "category": "הסרטים הנצפים ביותר השבוע"
         },
-         "tt0120737": { # The Lord of the Rings: The Fellowship of the Ring
+         "tt0120737": {
             "title": "שר הטבעות: אחוות הטבעת",
             "poster_url": "https://m.media-amazon.com/images/M/MV5BN2EyZjM3NzUtNWUzMi00MTgxLWI0NTctMzY4M2VlOTdjZaeXkEyXkFqcGdeQXVyNDUzOTQ5MjY@._V1_SX300.jpg",
             "video_url": "#",
             "category": "הסרטים הנצפים ביותר השבוע"
         },
-         "tt0848228": { # The Avengers
+         "tt0848228": {
             "title": "הנוקמים",
             "poster_url": "https://m.media-amazon.com/images/M/MV5BNDYxNjQyMjAtNTdlNC00YzM4LTg4OnItMDEzYzE5NzZhZWExXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg",
             "video_url": "#",
@@ -111,54 +97,43 @@ def get_greeting(user=None):
     else:
         return f"{greeting_text} אורח"
 
-# --- Authentication Routes ---
 
 @app.route('/auth/google')
 def google_login():
-    # This initiates the Google OAuth flow
-    # Authlib automatically generates the authorization URL and state parameter
     return oauth.google.authorize_redirect(redirect_uri=url_for('google_callback', _external=True))
 
 @app.route('/auth/google/callback')
 def google_callback():
     try:
-        # Authlib handles the callback:
-        # 1. Validates the state parameter
-        # 2. Exchanges the authorization code for tokens (access_token, id_token)
-        # 3. Fetches user information from the id_token
         token = oauth.google.authorize_access_token()
-        userinfo = oauth.google.parse_id_token(token)
-
-        # Store user info in the session
-        # You can store more info if needed, like google_id = userinfo.get('sub')
-        session['user'] = {
-            'name': userinfo.get('name'),
-            'email': userinfo.get('email'),
-            'picture': userinfo.get('picture')
+        # The user info (claims from ID token) is usually available directly in the token dictionary
+        # when using authorize_access_token with OpenID Connect scope.
+        userinfo = {
+            'name': token.get('name'),
+            'email': token.get('email'),
+            'picture': token.get('picture'),
+            'google_id': token.get('sub') # 'sub' is the unique Google user ID
         }
+
+        session['user'] = userinfo
         flash('התחברת בהצלחה עם גוגל!', 'success')
         return redirect(url_for('index'))
 
     except Exception as e:
-        # Log the error for debugging
         print(f"OAuth callback error: {e}")
         traceback.print_exc()
         flash('התחברות עם גוגל נכשלה. אנא נסה שוב.', 'error')
-        # Redirect to login page or index with error message
-        return redirect(url_for('index')) # Or a dedicated login page
+        return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None) # Remove user from session
+    session.pop('user', None)
     flash('התנתקת בהצלחה.', 'info')
     return redirect(url_for('index'))
-
-# --- End Authentication Routes ---
 
 
 @app.route('/')
 def index():
-    # Get user info from session, if available
     user = session.get('user')
     greeting = get_greeting(user)
 
@@ -170,7 +145,7 @@ def index():
                            greeting=greeting,
                            categories=categories,
                            current_year=current_year,
-                           user=user # Pass user info to the template
+                           user=user
                            )
 
 @app.errorhandler(403)
@@ -189,7 +164,5 @@ def internal_server_error(e):
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
-    # Use environment variables for host and port in production
-    # For local development, debug=True is fine
-    port = int(os.environ.get('PORT', 5000)) # Use PORT environment variable provided by platforms like Render
-    app.run(host='0.0.0.0', port=port, debug=True) # Changed debug to True for development
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
