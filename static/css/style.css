@@ -309,3 +309,125 @@ img { max-width: 100%; height: auto; display: block; }
     .page-greeting p { font-size: 0.9em; }
     .page-greeting { padding-right: 15px; border-right-width: 3px;}
 }
+
+
+.user-profile-picture {
+    margin-left: 25px; /* Same margin as the google icon */
+    flex-shrink: 0;
+}
+
+.user-profile-picture a {
+    display: block; /* To apply border-radius correctly */
+}
+
+.user-profile-picture img {
+    width: 40px;       /* Same dimensions as the google icon */
+    height: 40px;
+    border-radius: 50%; /* Make it round */
+    object-fit: cover; /* Ensure image covers the circle */
+    display: block;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Slightly more prominent border maybe */
+}
+
+.user-profile-picture img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.4); /* Accent color glow */
+}
+
+/* --- Flash Messages Styling (Basic Example) --- */
+.flash-messages {
+    padding: 15px 0; /* Space around flash messages */
+}
+
+.alert {
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-md);
+    position: relative; /* For positioning the close button */
+    color: var(--text-heading-color);
+    font-size: 0.95em;
+}
+
+.alert-success {
+    background-color: #1f4a42; /* Dark green */
+    border-color: #2c6b5d;
+}
+
+.alert-error {
+    background-color: #5c2121; /* Dark red */
+    border-color: #8a3030;
+}
+
+.alert-info {
+    background-color: #1c3d5a; /* Dark blue */
+    border-color: #2a5a84;
+}
+
+.alert-warning {
+    background-color: #664d03; /* Dark yellow/orange */
+    border-color: #997404;
+}
+
+.close-flash {
+    position: absolute;
+    top: 50%;
+    left: 15px; /* Adjust position for RTL if needed */
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.4em;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+}
+.close-flash:hover {
+    color: #fff;
+}
+
+
+/* --- Responsive adjustments for profile picture --- */
+@media (max-width: 992px) {
+    .user-profile-picture {
+        margin-left: 0; /* No nav, no margin needed */
+    }
+}
+
+@media (max-width: 576px) {
+    .user-profile-picture img {
+        width: 35px; /* Slightly smaller on very small screens */
+        height: 35px;
+    }
+}
+
+/* --- Ensure Google Sign-In Icon styles are still present --- */
+.google-signin-icon {
+    margin-left: 25px;
+    flex-shrink: 0;
+}
+.google-signin-icon a {
+    display: block;
+}
+.google-signin-icon img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.google-signin-icon img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+}
+@media (max-width: 992px) {
+    .google-signin-icon { margin-left: 0; }
+}
+@media (max-width: 576px) {
+    .google-signin-icon img { width: 35px; height: 35px; }
+}
