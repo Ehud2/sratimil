@@ -26,7 +26,7 @@ google = oauth.register(
     oidc_claims_options={
         "iss": {
             "essential": True,
-            "values": ["https://accounts.google.com", "accounts.google.com"]
+            "value": "https://accounts.google.com"
         }
     }
 )
