@@ -22,8 +22,8 @@ if app.config['SECRET_KEY'] == 'default-fallback-secret-key-for-dev' and app.env
     raise ValueError("SECRET_KEY must be set in production environment!")
 
 # Load Google OAuth Credentials from environment variables
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID')
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET')
+app.config['GOOGLE_CLIENT_ID'] = "657393464441-iaq7khpbqlr7iksaf8oua7l431noljd1.apps.googleusercontent.com"
+app.config['GOOGLE_CLIENT_SECRET'] = "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"
 
 if not app.config['GOOGLE_CLIENT_ID'] or not app.config['GOOGLE_CLIENT_SECRET']:
     raise ValueError("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set!")
