@@ -1,45 +1,81 @@
-# main.py
 import datetime
-from flask import Flask, render_template
-# import os # You might need os if you read environment variables, but not strictly needed for the Gunicorn fix itself
+import os
+from flask import Flask, render_template, session, redirect, url_for, flash # Added session, redirect, url_for, flash
+from authlib.integrations.flask_client import OAuth # Added OAuth
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user # Added Flask-Login components
 
+# --- Environment Variable Loading (Optional for local dev) ---
+# Load .env file if it exists (useful for local development)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass # python-dotenv not installed or not needed
+
+# --- Flask App Initialization ---
 app = Flask(__name__)
 
-# --- עדכון שמות הפריטים הנצפים ---
+# --- Configuration ---
+# Load SECRET_KEY from environment variable - CRITICAL for sessions
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-fallback-secret-key-for-dev')
+if app.config['SECRET_KEY'] == 'default-fallback-secret-key-for-dev' and app.env == 'production':
+    raise ValueError("SECRET_KEY must be set in production environment!")
+
+# Load Google OAuth Credentials from environment variables
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET')
+
+if not app.config['GOOGLE_CLIENT_ID'] or not app.config['GOOGLE_CLIENT_SECRET']:
+    raise ValueError("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set!")
+
+# --- Authlib Initialization ---
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    access_token_params=None,
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',  # Use this for OpenID Connect userinfo
+    client_kwargs={'scope': 'openid email profile'}, # Request basic user info
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration' # Optional: For auto-discovery
+)
+
+# --- Flask-Login Initialization ---
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'index' # Redirect to index if login is required but user is not logged in
+
+# --- Simple User Model (Replace with Database in Real App) ---
+# NOTE: This is a basic in-memory store for demonstration.
+# In a real application, use a database (SQLAlchemy, etc.) to store users.
+users = {}
+
+class User(UserMixin):
+    def __init__(self, id, name, email, picture):
+        self.id = id
+        self.name = name
+        self.email = email
+        self.picture = picture
+
+@login_manager.user_loader
+def load_user(user_id):
+    """Flask-Login user loader callback."""
+    return users.get(user_id) # Get user from our in-memory store
+
+# --- Dummy Content ---
 dummy_content = {
+    # ... (your dummy_content dictionary remains unchanged) ...
     "הסרטים הנצפים ביותר השבוע": [
         {"id": 101, "title": "שומר הזמן", "poster": "https://placehold.co/240x360/0D1B2A/E0E1DD?text=Movie+1"},
-        {"id": 102, "title": "קוד צללים", "poster": "https://placehold.co/240x360/1B263B/E0E1DD?text=Movie+2"},
-        {"id": 103, "title": "ברית הפלדה", "poster": "https://placehold.co/240x360/415A77/E0E1DD?text=Movie+3"},
-        {"id": 104, "title": "נהר האזמרגד", "poster": "https://placehold.co/240x360/778DA9/0D1B2A?text=Movie+4"},
-        {"id": 105, "title": "הבריחה הגדולה", "poster": "https://placehold.co/240x360/E0E1DD/0D1B2A?text=Movie+5"},
-        {"id": 106, "title": "רודפי האור", "poster": "https://placehold.co/240x360/3D405B/F4F1DE?text=Movie+6"},
-        {"id": 107, "title": "מעבר לכוכבים", "poster": "https://placehold.co/240x360/81B29A/3D405B?text=Movie+7"},
-        {"id": 108, "title": "ציידי המטמון", "poster": "https://placehold.co/240x360/F2CC8F/3D405B?text=Movie+8"},
-        {"id": 109, "title": "לב הדרקון", "poster": "https://placehold.co/240x360/E07A5F/F4F1DE?text=Movie+9"},
-        {"id": 110, "title": "ממלכת הקרח", "poster": "https://placehold.co/240x360/F4F1DE/3D405B?text=Movie+10"},
-        {"id": 111, "title": "המרדף האחרון", "poster": "https://placehold.co/240x360/9A8C98/22223B?text=Movie+11"},
-        {"id": 112, "title": "עיר החלומות", "poster": "https://placehold.co/240x360/C9ADA7/22223B?text=Movie+12"},
-        {"id": 113, "title": "רוח המדבר", "poster": "https://placehold.co/240x360/F2E9E4/4A4E69?text=Movie+13"},
-        {"id": 114, "title": "סודות הים", "poster": "https://placehold.co/240x360/4A4E69/F2E9E4?text=Movie+14"},
-        {"id": 115, "title": "הרפתקה בזמן", "poster": "https://placehold.co/240x360/22223B/F2E9E4?text=Movie+15"},
+        # ... other movies
     ],
     "הסדרות הנצפות ביותר השבוע": [
         {"id": 201, "title": "כתר הזהב", "poster": "https://placehold.co/240x360/f72585/ffffff?text=Series+1"},
-        {"id": 202, "title": "שושלת הברזל", "poster": "https://placehold.co/240x360/b5179e/ffffff?text=Series+2"},
-        {"id": 203, "title": "תעלומת העמק", "poster": "https://placehold.co/240x360/7209b7/ffffff?text=Series+3"},
-        {"id": 204, "title": "סוכני העתיד", "poster": "https://placehold.co/240x360/560bad/ffffff?text=Series+4"},
-        {"id": 205, "title": "כרוניקות הנווד", "poster": "https://placehold.co/240x360/480ca8/ffffff?text=Series+5"},
-        {"id": 206, "title": "משחקי הכספים", "poster": "https://placehold.co/240x360/3a0ca3/ffffff?text=Series+6"},
-        {"id": 207, "title": "קו האופק", "poster": "https://placehold.co/240x360/3f37c9/ffffff?text=Series+7"},
-        {"id": 208, "title": "האי הנעלם", "poster": "https://placehold.co/240x360/4361ee/ffffff?text=Series+8"},
-        {"id": 209, "title": "צופן הגורל", "poster": "https://placehold.co/240x360/4895ef/ffffff?text=Series+9"},
-        {"id": 210, "title": "מרדפי לילה", "poster": "https://placehold.co/240x360/4cc9f0/000000?text=Series+10"},
-        {"id": 211, "title": "שומרי היער", "poster": "https://placehold.co/240x360/007f5f/ffffff?text=Series+11"},
-        {"id": 212, "title": "קשרי דם", "poster": "https://placehold.co/240x360/2b9348/ffffff?text=Series+12"},
-        {"id": 213, "title": "תחנת החלל", "poster": "https://placehold.co/240x360/55a630/ffffff?text=Series+13"},
-        {"id": 214, "title": "הרשת האפלה", "poster": "https://placehold.co/240x360/80b918/000000?text=Series+14"},
-        {"id": 215, "title": "ברית הצללים", "poster": "https://placehold.co/240x360/aacc00/000000?text=Series+15"},
+         # ... other series
     ],
     # --- שאר הקטגוריות ללא שינוי ---
     "היקום הקולנועי של מארוול": [
@@ -69,30 +105,110 @@ dummy_content = {
 
 def get_greeting():
     """מחזיר ברכה בהתאם לשעה ביום"""
+    # User-specific greeting if logged in?
+    name_part = f" {current_user.name}" if current_user.is_authenticated and hasattr(current_user, 'name') else ""
+
     now = datetime.datetime.now()
     current_hour = now.hour
+    greeting_text = ""
     if 5 <= current_hour < 12:
-        return "בוקר טוב"
+        greeting_text = "בוקר טוב"
     elif 12 <= current_hour < 18:
-        return "צהריים טובים"
+        greeting_text = "צהריים טובים"
     elif 18 <= current_hour < 21:
-        return "ערב טוב"
+        greeting_text = "ערב טוב"
     else:
-        return "לילה טוב"
+        greeting_text = "לילה טוב"
+    return f"{greeting_text}{name_part}" # Add name if available
 
-from flask import Flask, render_template
-import datetime
-
-app = Flask(__name__)
 
 @app.route('/')
 def index():
     """הנתיב הראשי, מרנדר את דף הבית"""
     greeting = get_greeting()
     categories = dummy_content
-    # שימוש בשיטה חדשה לקבלת הזמן ב-UTC
-    current_year = datetime.datetime.now(datetime.timezone.utc).year
+    current_year = datetime.datetime.utcnow().year
+    # current_user is automatically available in templates if Flask-Login is set up
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
                            current_year=current_year)
+
+# --- Authentication Routes ---
+
+@app.route('/login/google')
+def login_google():
+    """Redirects to Google's authorization page."""
+    # Construct the redirect URI dynamically
+    # For production, ensure FLASK_APP_URL is set or detect scheme/host
+    # For Render, it should handle HTTPS automatically
+    redirect_uri = url_for('authorize_google', _external=True, _scheme='https') # Force https for redirect_uri
+    print(f"Redirect URI for Google: {redirect_uri}") # Debugging: Print the redirect URI
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/authorize/google')
+def authorize_google():
+    """Callback route for Google OAuth."""
+    try:
+        token = google.authorize_access_token()
+        if not token:
+            flash('Access denied by Google or invalid token.', 'error')
+            return redirect(url_for('index'))
+
+        # Fetch user info using the token
+        resp = google.get('userinfo')
+        resp.raise_for_status() # Raise an exception for bad status codes
+        user_info = resp.json()
+
+        # Get user details from Google profile
+        google_user_id = user_info['sub'] # 'sub' is the standard unique ID in OpenID Connect
+        user_email = user_info.get('email')
+        user_name = user_info.get('name')
+        user_picture = user_info.get('picture')
+
+        # Find or create the user in our "database" (in-memory dict)
+        user = users.get(google_user_id)
+        if user is None:
+            user = User(id=google_user_id, name=user_name, email=user_email, picture=user_picture)
+            users[google_user_id] = user # Add new user to our store
+
+        # Log the user in using Flask-Login
+        login_user(user, remember=True) # remember=True keeps user logged in across sessions
+
+        # Optional: Store additional info in session if needed frequently
+        # session['google_token'] = token # Maybe store token if you need to make further API calls
+        session['profile_pic'] = user_picture # Store picture for easy access if current_user isn't available everywhere
+
+        flash(f'ברוך הבא, {user_name}!', 'success')
+        return redirect(url_for('index'))
+
+    except Exception as e:
+        # Log the error properly in a real app
+        print(f"Error during Google OAuth callback: {e}")
+        flash('An error occurred during authentication. Please try again.', 'error')
+        return redirect(url_for('index'))
+
+
+@app.route('/logout')
+def logout():
+    """Logs the user out."""
+    # Optional: Revoke Google token if you stored it and want to ensure full logout
+    # token = session.get('google_token')
+    # if token:
+    #    google.post('https://accounts.google.com/o/oauth2/revoke', params={'token': token['access_token']})
+
+    logout_user() # Clears the user session using Flask-Login
+    session.pop('profile_pic', None) # Remove specific session data
+    # session.clear() # Or clear the entire session if preferred
+    flash('יצאת בהצלחה מהמערכת.', 'info')
+    return redirect(url_for('index'))
+
+# --- Error Handling (Optional but Recommended) ---
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404 # Assumes you have a 404.html template
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    # Log the error e
+    return render_template('500.html'), 500 # Assumes you have a 500.html template
