@@ -3,5 +3,3 @@ gunicorn
 Authlib
 Flask-Login
 requests
-os
-datetime
