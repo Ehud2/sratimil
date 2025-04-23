@@ -1,0 +1,231 @@
+<!-- add.html -->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הוספת תוכן - סינמה פריים</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/add.css') }}"> {# Link to the new add.css #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-content">
+
+            <div class="search-container">
+               <input type="search" id="searchInput" placeholder="חיפוש...">
+               <button aria-label="Search"><i class="fas fa-search"></i></button>
+            </div>
+
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}">בית</a>
+                <a href="#">סרטים</a>
+                <a href="#">סדרות</a>
+                <a href="#">הרשימה שלי</a>
+                {# This link is only visible if the user is logged in as the admin #}
+                {% if user and user.email == 'ehudverbin@gmail.com' %}
+                <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
+                {% endif %}
+            </nav>
+
+            <div class="auth-container">
+                {% if user %}
+                    <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
+                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
+                    </a>
+                {% else %}
+                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
+                         {# link here #}
+                         <img src="data:image/png;base64,iVBORw0KGgo... (truncated for brevity)" alt="Sign in with Google" loading="lazy">
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="header-spacer"></div>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category|default('info') }}" role="alert">
+                {{ message }}
+                <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="container main-content">
+        <div class="add-content-form-container">
+            <h1>הוספת תוכן חדש</h1>
+
+            <form action="#" method="post"> {# Action and Method will be set later when backend is added #}
+
+                <div class="form-group content-type-selector">
+                    <label>סוג התוכן להוספה:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="addSeries" name="contentType" value="series" checked>
+                        <label for="addSeries">סדרה</label>
+
+                        <input type="radio" id="addEpisode" name="contentType" value="episode">
+                        <label for="addEpisode">פרק</label>
+
+                        <input type="radio" id="addMovie" name="contentType" value="movie">
+                        <label for="addMovie">סרט</label>
+                    </div>
+                </div>
+
+                {# --- Add Series Form Section --- #}
+                <div id="seriesForm" class="form-section">
+                    <h2>הוספת סדרה חדשה</h2>
+                    <div class="form-group">
+                        <label for="seriesTitle">שם הסדרה:</label>
+                        <input type="text" id="seriesTitle" name="seriesTitle" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="seriesImdbId">IMDb ID (אופציונלי):</label>
+                        <input type="text" id="seriesImdbId" name="seriesImdbId">
+                    </div>
+
+                    {# OMDB Search Section for Series - Placeholder for future functionality #}
+                    <div class="omdb-search-section">
+                        <h3>חיפוש פרטי סדרה ב-OMDB</h3>
+                        <div class="omdb-search-input">
+                            <input type="text" id="seriesOmdbSearch" placeholder='חפש לפי שם הסדרה (למשל: "Breaking Bad")'>
+                            <button type="button" id="searchSeriesOmdbButton">חיפוש OMDB</button>
+                        </div>
+                        <ul id="omdbSeriesResults">
+                            {# Results will be populated here by JavaScript #}
+                        </ul>
+                         <div id="selectedOmdbSeriesDetails" style="display: none;">
+                            {# Selected details will be shown here #}
+                        </div>
+                    </div>
+                </div>
+
+                {# --- Add Episode Form Section --- #}
+                <div id="episodeForm" class="form-section" style="display: none;"> {# Initially hidden #}
+                    <h2>הוספת פרק חדש</h2>
+                    <div class="form-group">
+                        <label for="episodeSeries">בחר סדרה:</label>
+                        <select id="episodeSeries" name="episodeSeries" required>
+                            <option value="">-- בחר סדרה קיימת --</option>
+                            {% for series in series_list %}
+                                <option value="{{ series.id }}">{{ series.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="episodeTitle">שם הפרק:</label>
+                        <input type="text" id="episodeTitle" name="episodeTitle" required>
+                    </div>
+
+                     <div class="form-group">
+                        <label for="episodeNumber">מספר הפרק:</label>
+                        <input type="text" id="episodeNumber" name="episodeNumber" placeholder="למשל: S01E01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="episodeVideoUrl">קישור לקובץ וידאו:</label>
+                        <input type="url" id="episodeVideoUrl" name="episodeVideoUrl" required>
+                    </div>
+                </div>
+
+                {# --- Add Movie Form Section --- #}
+                <div id="movieForm" class="form-section" style="display: none;"> {# Initially hidden #}
+                     <h2>הוספת סרט חדש</h2>
+                    <div class="form-group">
+                        <label for="movieTitle">שם הסרט:</label>
+                        <input type="text" id="movieTitle" name="movieTitle" required>
+                    </div>
+
+                     <div class="form-group">
+                        <label for="movieImdbId">IMDb ID (אופציונלי):</label>
+                        <input type="text" id="movieImdbId" name="movieImdbId">
+                    </div>
+
+                    {# OMDB Search Section for Movie - Placeholder for future functionality #}
+                     <div class="omdb-search-section">
+                        <h3>חיפוש פרטי סרט ב-OMDB</h3>
+                        <div class="omdb-search-input">
+                            <input type="text" id="movieOmdbSearch" placeholder='חפש לפי שם הסרט (למשל: "The Matrix")'>
+                            <button type="button" id="searchMovieOmdbButton">חיפוש OMDB</button>
+                        </div>
+                        <ul id="omdbMovieResults">
+                            {# Results will be populated here by JavaScript #}
+                        </ul>
+                        <div id="selectedOmdbMovieDetails" style="display: none;">
+                            {# Selected details will be shown here #}
+                        </div>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="movieVideoUrl">קישור לקובץ וידאו:</label>
+                        <input type="url" id="movieVideoUrl" name="movieVideoUrl" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="movieCategory">בחר קטגוריה:</label>
+                        <select id="movieCategory" name="movieCategory" required>
+                            <option value="">-- בחר קטגוריה --</option>
+                             {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+
+                <button type="submit" class="form-submit-button">הוסף תוכן</button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
+        </div>
+    </footer>
+
+    {# Basic JavaScript to switch between form sections #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const radioButtons = document.querySelectorAll('input[name="contentType"]');
+            const formSections = document.querySelectorAll('.form-section');
+
+            function showSelectedForm() {
+                const selectedValue = document.querySelector('input[name="contentType"]:checked').value;
+                formSections.forEach(section => {
+                    section.style.display = 'none';
+                });
+                document.getElementById(selectedValue + 'Form').style.display = 'block';
+            }
+
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', showSelectedForm);
+            });
+
+            // Show the default selected form on page load
+            showSelectedForm();
+
+             // Basic function to handle placeholder button clicks
+            const searchButtons = document.querySelectorAll('.omdb-search-input button');
+            searchButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    alert('פונקציית חיפוש OMDB טרם ממומשת.');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
