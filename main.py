@@ -29,25 +29,57 @@ OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # OMDb API Key
 FIREBASE_CONFIG_PATH = 'firebase.json' # Path to your firebase.json file
 FIREBASE_DATABASE_URL = 'https://moviesweb-3015a-default-rtdb.firebaseio.com/' # Your Firebase DB URL
 
+# Helper function to load and fix Firebase credentials from file
+def load_firebase_credentials(json_path):
+    try:
+        with open(json_path, 'r') as file:
+            creds_data = json.load(file)
+            
+            # Fix the private key - replace \\n with actual newlines
+            if 'private_key' in creds_data:
+                creds_data['private_key'] = creds_data['private_key'].replace('\\n', '\n')
+                
+            return creds_data
+    except Exception as e:
+        print(f"Error loading Firebase credentials: {e}")
+        return None
+
+# Helper function to get Firebase credentials from environment variable
+def get_firebase_credentials_from_env():
+    firebase_credentials_json = os.environ.get('FIREBASE_CREDENTIALS')
+    if firebase_credentials_json:
+        try:
+            creds_data = json.loads(firebase_credentials_json)
+            if 'private_key' in creds_data:
+                creds_data['private_key'] = creds_data['private_key'].replace('\\n', '\n')
+            return creds_data
+        except Exception as e:
+            print(f"Error parsing Firebase credentials from environment: {e}")
+    return None
+
 # Initialize Firebase Admin SDK
 # Use a global variable to track initialization status or the app instance
 firebase_app = None
 try:
     # Check if Firebase app is already initialized
     if not firebase_admin._apps:
-        cred = credentials.Certificate(FIREBASE_CONFIG_PATH)
-        firebase_app = firebase_admin.initialize_app(cred, {
-            'databaseURL': FIREBASE_DATABASE_URL
-        })
-        print("Firebase Admin SDK initialized successfully.")
+        # Try to get credentials from environment first, then fall back to file
+        creds_dict = get_firebase_credentials_from_env() or load_firebase_credentials(FIREBASE_CONFIG_PATH)
+        
+        if creds_dict:
+            cred = credentials.Certificate(creds_dict)
+            firebase_app = firebase_admin.initialize_app(cred, {
+                'databaseURL': FIREBASE_DATABASE_URL
+            })
+            print("Firebase Admin SDK initialized successfully.")
+        else:
+            print("Failed to load Firebase credentials from environment or file.")
+            firebase_app = None
     else:
         # If already initialized (e.g., during reloads in debug), get the default app
         firebase_app = firebase_admin.get_app()
         print("Firebase Admin SDK already initialized.")
 
-except FileNotFoundError:
-    print(f"Error: Firebase config file not found at {FIREBASE_CONFIG_PATH}")
-    print("Please ensure firebase.json is in the correct directory.")
 except Exception as e:
     print(f"Error initializing Firebase Admin SDK: {e}")
     traceback.print_exc() # Print traceback for init errors too
