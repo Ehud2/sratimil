@@ -1,56 +1,35 @@
 /* movie.css */
 
-/* Ensure this imports the main styles */
+/* Import the main styles first */
 @import url("style.css");
 
 /* Override or add specific styles for the movie page */
 
+/* The main container for the page content, uses container max-width */
 .movie-details-page {
     padding-top: 40px;
     padding-bottom: 50px;
+    /* Remove max-width/margin here, use the .container class inside for limiting width */
+    /* background is handled by body */
 }
 
-.movie-details-page h1 {
-    font-family: var(--font-heading);
-    font-size: 2.8em;
-    font-weight: 700;
-    color: var(--text-heading-color);
-    text-align: center; /* Center the movie title */
-    margin-bottom: 40px; /* More space below the title */
+/* Style for the main video area at the top, spans full width of the main element */
+.main-video-area {
+     width: 100%;
+     max-width: 100%; /* Ensure it doesn't overflow */
+     margin-bottom: 30px; /* Space below video */
+
+     position: relative;
+     padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+     height: 0;
+     overflow: hidden;
+     background-color: #000; /* Black background */
+     /* Optional: Add some border-radius if desired */
+     /* border-radius: var(--border-radius-md); */
+      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
 }
 
-.movie-grid {
-    display: grid;
-    grid-template-columns: 300px 1fr; /* Poster on the left, info on the right */
-    gap: 40px; /* Gap between columns */
-    align-items: start; /* Align items to the top */
-}
-
-.movie-poster img {
-    display: block; /* Ensure image is block */
-    width: 100%; /* Make image fill its container */
-    height: auto;
-    border-radius: var(--border-radius-md);
-    box-shadow: 0 10px 30px var(--shadow-color); /* Add shadow to poster */
-}
-
-.movie-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.movie-video-container {
-    position: relative;
-    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-    height: 0;
-    overflow: hidden;
-    margin-bottom: 30px; /* Space below video */
-    background-color: #000; /* Black background */
-    border-radius: var(--border-radius-md);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-}
-
-.movie-video-container video {
+.main-video-area video {
     position: absolute;
     top: 0;
     left: 0;
@@ -73,6 +52,81 @@
     text-align: center;
 }
 
+/* Style for the title, centered and prominent */
+.movie-details-page .movie-title { /* Target title within the page */
+    font-family: var(--font-heading);
+    font-size: 2.8em;
+    font-weight: 700;
+    color: var(--text-heading-color);
+    text-align: center; /* Center the movie title */
+    margin-bottom: 40px; /* More space below the title */
+}
+
+
+/* Container for poster and text content below the video */
+.details-flex-container {
+    display: flex; /* Use flexbox for layout */
+    gap: 40px; /* Space between poster sidebar and text content */
+    /* Use flex-wrap to stack on smaller screens */
+    flex-wrap: wrap;
+    /* Align items to the start in RTL (right) */
+    align-items: flex-start;
+}
+
+/* Sidebar specifically for the poster */
+.movie-poster-sidebar {
+    flex-shrink: 0; /* Prevent shrinking */
+    width: 300px; /* Fixed width for the poster column on large screens */
+    display: flex;
+    flex-direction: column; /* Stack image and buttons */
+    align-items: center; /* Center content in the sidebar */
+}
+
+.movie-poster-sidebar img {
+    display: block; /* Ensure image is block */
+    width: 100%; /* Make image fill its container */
+    height: auto;
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 10px 30px var(--shadow-color); /* Add shadow to poster */
+}
+
+.movie-actions {
+    margin-top: 20px; /* Space above action button */
+    width: 100%; /* Make buttons take full width of sidebar */
+    text-align: center; /* Center buttons if they don't fill width */
+}
+
+.add-to-list-button {
+    padding: 12px 25px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1.1em;
+    font-weight: 700;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+    width: 100%; /* Make button fill sidebar width */
+    text-align: center;
+}
+
+.add-to-list-button:hover {
+    background-color: var(--secondary-accent-color);
+    transform: translateY(-2px);
+}
+
+.add-to-list-button i {
+    margin-left: 8px; /* Space between icon and text */
+}
+
+
+/* Area for plot and info grid, takes remaining space */
+.text-content-area {
+    flex-grow: 1; /* Allow to grow and take available space */
+    min-width: 300px; /* Ensure it doesn't get too narrow */
+}
+
 
 .movie-plot {
     margin-bottom: 30px; /* Space below plot */
@@ -82,6 +136,7 @@
     text-align: justify; /* Justify text for better look */
 }
 
+/* Info grid for movie details */
 .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Use grid for details */
@@ -124,52 +179,44 @@
      font-style: italic;
 }
 
-.movie-actions {
-    margin-top: 30px;
-    text-align: center;
-}
-
-.add-to-list-button {
-    padding: 12px 25px;
-    background-color: var(--primary-accent-color);
-    color: var(--bg-color);
-    border: none;
-    border-radius: var(--border-radius-md);
-    cursor: pointer;
-    font-family: var(--font-heading);
-    font-size: 1.1em;
-    font-weight: 700;
-    transition: background-color var(--transition-fast), transform var(--transition-fast);
-}
-
-.add-to-list-button:hover {
-    background-color: var(--secondary-accent-color);
-    transform: translateY(-2px);
-}
-
-.add-to-list-button i {
-    margin-left: 8px; /* Space between icon and text */
-}
+/* Error Container styles (reused from index, ensure it's included or imported) */
+/* Assuming error-container styles are in style.css now */
 
 
 /* Responsive Adjustments for movie page */
 @media (max-width: 992px) {
-    .movie-grid {
-        grid-template-columns: 1fr; /* Stack poster and info on smaller screens */
-        gap: 30px;
-    }
-    .movie-poster {
-        max-width: 300px; /* Limit poster width when stacked */
-        margin: 0 auto; /* Center the poster */
-    }
-     .movie-details-page h1 {
+    .movie-details-page .movie-title {
          font-size: 2.4em;
          margin-bottom: 30px;
+     }
+    .details-flex-container {
+        flex-direction: column; /* Stack poster sidebar and text content */
+        gap: 30px;
+        align-items: stretch; /* Stretch items to fill width when stacked */
+    }
+    .movie-poster-sidebar {
+        width: 100%; /* Allow sidebar to take full width when stacked */
+        max-width: 300px; /* Keep a max-width even when stacked for proportionality */
+        margin: 0 auto; /* Center the poster sidebar */
+        align-items: center; /* Re-center contents within the sidebar */
+    }
+     .movie-actions {
+         width: auto; /* Let button size itself based on padding/content when stacked */
+     }
+      .add-to-list-button {
+           width: auto; /* Let button size itself */
+           padding: 12px 30px; /* Add more padding */
+      }
+    .text-content-area {
+         min-width: 0; /* Allow shrinking when stacked */
+    }
+     .info-grid {
+         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Allow details grid to adjust */
      }
 }
 
 @media (max-width: 768px) {
-    .movie-details-page h1 {
+     .movie-details-page .movie-title {
          font-size: 2em;
          margin-bottom: 25px;
      }
@@ -185,6 +232,9 @@
       .detail-line {
           font-size: 0.95em;
       }
+     .movie-poster-sidebar {
+          max-width: 280px; /* Adjust max width */
+     }
 }
 
 @media (max-width: 576px) {
@@ -192,15 +242,18 @@
         padding-top: 20px;
         padding-bottom: 30px;
     }
-     .movie-details-page h1 {
+    .main-video-area {
+         margin-bottom: 20px;
+    }
+     .movie-details-page .movie-title {
          font-size: 1.8em;
          margin-bottom: 20px;
      }
-      .movie-grid {
+      .details-flex-container {
          gap: 20px;
       }
-     .movie-poster {
-         max-width: 250px;
+     .movie-poster-sidebar {
+         max-width: 200px; /* Smaller poster on small phones */
      }
      .movie-plot {
          font-size: 0.95em;
