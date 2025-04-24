@@ -808,6 +808,31 @@ def all_movies():
 
 
 
+
+@app.route('/series') # Define the new route
+def all_series():
+    """Displays all series from Firebase in a grid."""
+    user = session.get('user')
+    current_year = datetime.datetime.utcnow().year
+    admin_email = ADMIN_EMAIL
+
+    # Use the existing function that loads basic series data for display
+    # load_series_data_for_index() already returns {imdbID: basic_details}
+    # with 'type: series' added, which is perfect for the grid.
+    all_series_data = load_series_data_for_index()
+
+    # Log how many series were loaded
+    logging.info(f"Rendering all_series page with {len(all_series_data)} series.")
+
+    # Render the new template, passing the series data
+    return render_template('SeriesTV.html',
+                           series=all_series_data, # Pass series data to the template
+                           user=user,
+                           current_year=current_year,
+                           admin_email=admin_email
+                           )
+
+
 # --- Error Handlers ---
 @app.errorhandler(403)
 def forbidden(e):
