@@ -105,22 +105,41 @@
                         {% endif %}
                     </div>
 
-                    <p class="movie-plot">{{ movie.plot or 'אין תיאור זמין.' }}</p>
-
-                    <div class="info-grid">
-                        <div class="detail-line"><i class="fas fa-calendar-alt"></i> <strong>שנת יציאה:</strong> <span class="{{ 'na-value' if not movie.year or movie.year == 'N/A' }}"> {{ movie.year or 'לא זמין' }}</span></div>
-                        <div class="detail-line"><i class="fas fa-star"></i> <strong>דירוג IMDb:</strong> <span class="{{ 'na-value' if not movie.imdbRating or movie.imdbRating == 'N/A' }}"> {{ movie.imdbRating or 'לא זמין' }}</span></div>
-                        <div class="detail-line"><i class="fas fa-tags"></i> <strong>ז'אנר:</strong> <span class="{{ 'na-value' if not movie.genre or movie.genre == 'N/A' }}"> {{ movie.genre or 'לא זמין' }}</span></div>
-                        <div class="detail-line"><i class="fas fa-clock"></i> <strong>משך זמן:</strong> <span class="{{ 'na-value' if not movie.runtime or movie.runtime == 'N/A' }}"> {{ movie.runtime or 'לא זמין' }}</span></div>
-                        <div class="detail-line"><i class="fas fa-users"></i> <strong>שחקנים:</strong> <span class="{{ 'na-value' if not movie.actors or movie.actors == 'N/A' }}"> {{ movie.actors or 'לא זמינים' }}</span></div>
-                         <div class="detail-line"><i class="fas fa-user-tie"></i> <strong>במאי:</strong> <span class="{{ 'na-value' if not movie.director or movie.director == 'N/A' }}"> {{ movie.director or 'לא זמין' }}</span></div>
-                         <div class="detail-line"><i class="fas fa-trophy"></i> <strong>פרסים:</strong> <span class="{{ 'na-value' if not movie.awards or movie.awards == 'N/A' }}"> {{ movie.awards or 'לא זמינים' }}</span></div>
-                         {# Add more details as needed: Language, Country, Box Office, etc. #}
-                         <div class="detail-line"><i class="fas fa-globe"></i> <strong>שפה:</strong> <span class="{{ 'na-value' if not movie.language or movie.language == 'N/A' }}"> {{ movie.language or 'לא זמינה' }}</span></div>
-                         <div class="detail-line"><i class="fas fa-flag"></i> <strong>מדינה:</strong> <span class="{{ 'na-value' if not movie.country or movie.country == 'N/A' }}"> {{ movie.country or 'לא זמינה' }}</span></div>
-                         <div class="detail-line"><i class="fas fa-money-bill-wave"></i> <strong>קופות:</strong> <span class="{{ 'na-value' if not movie.boxoffice or movie.boxoffice == 'N/A' }}"> {{ movie.boxoffice or 'לא זמין' }}</span></div>
-
+                    <div class="movie-details-list">
+                        <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
+                        <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
+                        <p>
+                            <strong>אורך:</strong>
+                            {% if movie.runtime and movie.runtime != 'N/A' %}
+                                {% set runtime_parts = movie.runtime.split(' ') %}
+                                {% if runtime_parts|length == 2 %}
+                                    {% set hours = runtime_parts[0]|int // 60 %}
+                                    {% set minutes = runtime_parts[0]|int % 60 %}
+                                    {% if hours > 0 %}
+                                        {{ hours }} שעה ו-{{ minutes }} דקות
+                                    {% else %}
+                                        {{ minutes }} דקות
+                                    {% endif %}
+                                {% else %}
+                                    {{ movie.runtime or 'לא זמין' }}
+                                {% endif %}
+                            {% else %}
+                                לא זמין
+                            {% endif %}
+                        </p>
+                        <p>
+                            <strong>תאריך יציאה:</strong>
+                            {% if movie.year and movie.year != 'N/A' %}
+                                {% set year = movie.year|string %}
+                                {{ '12/02/' + year }}
+                            {% else %}
+                                לא זמין
+                            {% endif %}
+                        </p>
+                        <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
+                        <p><strong>דירוג:</strong> {{ movie.imdbRating or 'לא זמין' }}</p>
                     </div>
+
                      {# Optional: Add action buttons here like "Add to List" #}
                      <div class="movie-actions">
                           <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> {# TODO #}
