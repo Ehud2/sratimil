@@ -169,26 +169,52 @@
             const noVideoAvailableMessage = document.getElementById('no-video-available-message');
              const loadingEpisodeMessage = document.getElementById('loading-episode-message');
 
-             // Get season and episode from URL path
+             // Get episode IMDb ID from URL path
              const pathParts = window.location.pathname.split('/').filter(part => part !== ''); // Split path and remove empty parts
-             let initialSeasonFromUrl = null;
-             let initialEpisodeFromUrl = null;
+             let initialEpisodeImdbIdFromUrl = null;
 
-             // Expected path format: /series/<imdb_id>/<season_num>/<episode_num>
-             // Parts: [series, <imdb_id>, <season_num>, <episode_num>]
-             if (pathParts.length >= 4 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
-                 const seasonCandidate = parseInt(pathParts[2], 10);
-                 const episodeCandidate = parseInt(pathParts[3], 10);
-
-                 if (!isNaN(seasonCandidate) && seasonCandidate > 0 && !isNaN(episodeCandidate) && episodeCandidate > 0) {
-                      initialSeasonFromUrl = seasonCandidate;
-                      initialEpisodeFromUrl = episodeCandidate;
-                      console.log(`Found S${initialSeasonFromUrl}E${initialEpisodeFromUrl} in URL.`);
+             // Expected path format: /series/<series_imdb_id>/<episode_imdb_id>
+             // Parts: [series, <series_imdb_id>, <episode_imdb_id>]
+             if (pathParts.length === 3 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
+                 const episodeIdCandidate = pathParts[2];
+                 // Simple check if it looks like an IMDb ID (starts with tt)
+                 if (episodeIdCandidate && episodeIdCandidate.startsWith('tt')) {
+                      initialEpisodeImdbIdFromUrl = episodeIdCandidate;
+                      console.log(`Found episode IMDb ID '${initialEpisodeImdbIdFromUrl}' in URL.`);
                  } else {
-                     console.warn("Invalid season or episode number in URL.");
+                     console.warn("Invalid episode IMDb ID format in URL.");
                  }
-             } else {
-                  console.log("No season/episode found in URL or URL format is unexpected.");
+             } else if (pathParts.length === 2 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
+                  console.log("No episode IMDb ID found in URL. Will load first episode.");
+             }
+             else {
+                  console.warn("URL format is unexpected for a series page with optional episode ID.");
+             }
+
+
+             // Function to find episode data by its IMDb ID
+             function findEpisodeByImdbId(episodeImdbId) {
+                 if (!seriesData || !seriesData.Seasons) return null;
+
+                 const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).sort((a, b) => a - b);
+                 for (const seasonNum of seasonNumbers) {
+                      const seasonData = seriesData.Seasons[seasonNum];
+                      if (seasonData && seasonData.Episodes) {
+                           const episodeNumbers = Object.keys(seasonData.Episodes).map(Number).sort((a, b) => a - b);
+                           for (const episodeNum of episodeNumbers) {
+                                const episode = seasonData.Episodes[episodeNum];
+                                if (episode && episode.episode_imdb_id === episodeImdbId) {
+                                     // Found the episode! Return its season number, episode number, and data
+                                     return {
+                                         season: seasonNum,
+                                         episode: episodeNum,
+                                         data: episode
+                                     };
+                                }
+                           }
+                      }
+                 }
+                 return null; // Episode not found
              }
 
 
@@ -245,9 +271,9 @@
                             if (episode && typeof episode === 'object') {
                                 const li = document.createElement('li');
                                 li.classList.add('episode-item');
-                                li.dataset.season = seasonNumber;
+                                li.dataset.season = seasonNumber; // Still store season/episode number for list item ID
                                 li.dataset.episode = episodeNum;
-                                li.dataset.videoUrl = episode.video_url || ''; // Store video URL
+                                li.dataset.videoUrl = episode.video_url || ''; // Store video URL (assumed to exist in data)
                                  li.dataset.episodeImdbId = episode.episode_imdb_id || ''; // Store episode IMDb ID
 
                                 li.innerHTML = `<span class="episode-number">${episodeNum}.</span> <span class="episode-title">${episode.title || 'פרק ללא כותרת'}</span>`;
@@ -272,7 +298,7 @@
             // Handle episode item click
             function handleEpisodeClick(event) {
                 const clickedItem = event.currentTarget;
-                const videoUrl = clickedItem.dataset.videoUrl;
+                const videoUrl = clickedItem.dataset.videoUrl; // Get video URL from dataset
                 const season = clickedItem.dataset.season;
                 const episode = clickedItem.dataset.episode;
                  const episodeImdbId = clickedItem.dataset.episodeImdbId; // Get episode IMDb ID
@@ -282,17 +308,22 @@
                 // Add 'selected' class to the clicked item
                 clickedItem.classList.add('selected');
 
-                 // --- Update URL with Season and Episode ---
-                 if (seriesImdbId) {
-                     const newUrl = `/series/${seriesImdbId}/${season}/${episode}`;
+                 // --- Update URL with Episode IMDb ID ---
+                 if (seriesImdbId && episodeImdbId) {
+                     const newUrl = `/series/${seriesImdbId}/${episodeImdbId}`;
                      // Use replaceState to change the URL without adding a history entry
                      history.replaceState(null, '', newUrl);
                       console.log(`URL updated to: ${newUrl}`);
+                 } else if (seriesImdbId) {
+                      // If episodeImdbId is missing for this episode, update to base series URL
+                     const newUrl = `/series/${seriesImdbId}`;
+                      history.replaceState(null, '', newUrl);
+                       console.warn(`Episode IMDb ID missing for S${season}E${episode}. URL updated to base series URL: ${newUrl}`);
                  }
 
 
                 if (videoUrl) {
-                     console.log(`Playing S${season}E${episode} (IMDb ID: ${episodeImdbId}) from URL: ${videoUrl}`);
+                     console.log(`Playing S${season}E${episode} (IMDb ID: ${episodeImdbId || 'N/A'}) from URL: ${videoUrl}`);
                      // Hide placeholder messages
                      noEpisodeSelectedMessage.style.display = 'none';
                      noVideoAvailableMessage.style.display = 'none';
@@ -330,13 +361,15 @@
                           episodePlayer.removeEventListener('error', errorHandler);
                       };
                        // Add error listener - remove it before adding a new one to avoid memory leaks/duplicate handlers
-                       episodePlayer.removeEventListener('error', episodePlayer.__currentErrorHandler); // Remove previous if exists
+                       if (episodePlayer.__currentErrorHandler) { // Check if the property exists
+                            episodePlayer.removeEventListener('error', episodePlayer.__currentErrorHandler);
+                       }
                        episodePlayer.addEventListener('error', errorHandler);
                        episodePlayer.__currentErrorHandler = errorHandler; // Store current handler reference
 
 
                 } else {
-                     console.warn(`No video URL found for S${season}E${episode} (IMDb ID: ${episodeImdbId}).`);
+                     console.warn(`No video URL found in data for S${season}E${episode} (IMDb ID: ${episodeImdbId || 'N/A'}). Cannot play.`);
                      episodePlayer.src = ''; // Clear video source
                      episodePlayer.style.display = 'none'; // Hide video player
                      noEpisodeSelectedMessage.style.display = 'none'; // Hide 'select episode' message
@@ -384,7 +417,7 @@
                         episodeListUl.innerHTML = '<li class="placeholder-episode">-- בחר עונה תחילה --</li>';
                          // Messages are already reset above
                     }
-                     // When changing season, reset URL to series base URL
+                     // When changing season or selecting "-- בחר עונה --", reset URL to base series URL
                      if (seriesImdbId) {
                          history.replaceState(null, '', `/series/${seriesImdbId}`);
                           console.log(`URL reset to: /series/${seriesImdbId}`);
@@ -401,34 +434,44 @@
                  const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).sort((a, b) => a - b);
 
                  if (seasonNumbers.length > 0) {
-                     // If season and episode are in URL, try to select them
-                     if (initialSeasonFromUrl !== null && initialEpisodeFromUrl !== null) {
-                         // Check if the season from URL exists in the data
-                         if (seriesData.Seasons[initialSeasonFromUrl] && seriesData.Seasons[initialSeasonFromUrl].Episodes) {
+                     // If episode IMDb ID is in URL, try to find and select it
+                     if (initialEpisodeImdbIdFromUrl !== null) {
+                          console.log(`Attempting to find episode with IMDb ID: ${initialEpisodeImdbIdFromUrl}`);
+                          const episodeInfo = findEpisodeByImdbId(initialEpisodeImdbIdFromUrl);
+
+                         if (episodeInfo) {
+                              console.log(`Found episode with ID ${initialEpisodeImdbIdFromUrl} at S${episodeInfo.season}E${episodeInfo.episode}.`);
                               // Set the season dropdown value
-                              seasonSelect.value = initialSeasonFromUrl;
+                              seasonSelect.value = episodeInfo.season;
                               // Populate episodes for this season
-                              populateEpisodes(initialSeasonFromUrl);
-                              // Wait briefly for episodes to render, then try to find and click the specified episode
+                              populateEpisodes(episodeInfo.season);
+                              // Wait briefly for episodes to render, then try to find and click the specified episode list item
                               setTimeout(() => {
-                                   const targetEpisodeItem = episodeListUl.querySelector(`.episode-item[data-season='${initialSeasonFromUrl}'][data-episode='${initialEpisodeFromUrl}']`);
+                                   // Find the LI element for this specific episode number AND season
+                                   const targetEpisodeItem = episodeListUl.querySelector(`.episode-item[data-season='${episodeInfo.season}'][data-episode='${episodeInfo.episode}']`);
                                    if (targetEpisodeItem) {
-                                        console.log(`Found S${initialSeasonFromUrl}E${initialEpisodeFromUrl} element. Clicking.`);
+                                        console.log(`Found S${episodeInfo.season}E${episodeInfo.episode} element in list. Clicking.`);
                                         targetEpisodeItem.click(); // Simulate click to select and play
                                    } else {
-                                        console.warn(`S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL not found in the episode list.`);
-                                        // Fallback: If specified episode isn't found, maybe select the first?
-                                        // For now, just show the "select episode" message
-                                         episodePlayer.src = '';
-                                         episodePlayer.style.display = 'none';
-                                         loadingEpisodeMessage.style.display = 'none';
-                                          noVideoAvailableMessage.style.display = 'none';
-                                          noEpisodeSelectedMessage.style.display = 'block';
+                                        console.warn(`S${episodeInfo.season}E${episodeInfo.episode} list item not found after populating.`);
+                                        // Fallback to selecting the first episode if the list item isn't found (unlikely)
+                                         console.log("Falling back to selecting the first available episode.");
+                                         const firstEpisodeItem = episodeListUl.querySelector('.episode-item');
+                                         if (firstEpisodeItem) {
+                                              firstEpisodeItem.click();
+                                         } else {
+                                              console.warn("No episodes found to fall back to.");
+                                              episodePlayer.src = '';
+                                              episodePlayer.style.display = 'none';
+                                              loadingEpisodeMessage.style.display = 'none';
+                                              noVideoAvailableMessage.style.display = 'none';
+                                              noEpisodeSelectedMessage.style.display = 'block';
+                                         }
                                    }
                               }, 100); // Short delay
                          } else {
-                              console.warn(`Season ${initialSeasonFromUrl} from URL not found in series data.`);
-                              // Fallback to selecting the first season/episode if URL season is invalid
+                              console.warn(`Episode with IMDb ID '${initialEpisodeImdbIdFromUrl}' not found in series data.`);
+                              // Fallback to selecting the first available season/episode if URL episode ID is invalid or not found
                               console.log("Falling back to selecting the first available season/episode.");
                               const firstSeasonNum = seasonNumbers[0];
                               seasonSelect.value = firstSeasonNum;
@@ -444,8 +487,8 @@
                               }, 50);
                          }
                      } else {
-                         // No season/episode in URL, select the first available season and its first episode
-                         console.log("No season/episode in URL. Selecting the first available.");
+                         // No episode IMDb ID in URL, select the first available season and its first episode
+                         console.log("No episode IMDb ID in URL. Selecting the first available.");
                           const firstSeasonNum = seasonNumbers[0];
                           seasonSelect.value = firstSeasonNum;
                           populateEpisodes(firstSeasonNum);
