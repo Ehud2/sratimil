@@ -62,26 +62,16 @@
 
 /* Style the video container */
 .movie-video-container {
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    margin-bottom: 1rem;
     position: relative;
-    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-    height: 0;
-    overflow: hidden;
-    margin-bottom: 20px;
-    background-color: #000;
-    border-radius: var(--border-radius-md);
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
 }
 
-.movie-video-container {
-    position: relative;
+.movie-video-container video {
     width: 100%;
-    max-width: 900px;
-    margin: 0 auto 30px;
-    aspect-ratio: 16 / 9;
-    background-color: #000;
-    border-radius: var(--border-radius-md);
-    overflow: hidden;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    height: 100%;
+    object-fit: cover;
 }
 
 /* Style for when video is not available */
@@ -240,4 +230,12 @@
     .detail-line {
         font-size: 0.85em;
     }
+}
+
+
+#movie-player {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 12px;
 }
