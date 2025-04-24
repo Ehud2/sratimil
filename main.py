@@ -68,8 +68,9 @@ try:
     else:
         logging.info("Firebase already initialized.")
 except Exception as e:
-    logging.error(f"Error initializing Firebase: {e}")
+    logging.error(f"Error initializing Firebase: {e}", exc_info=True)
     # Handle error - maybe abort app startup or provide a fallback
+
 
 # --- Categories ---
 CATEGORIES = [
@@ -90,9 +91,9 @@ def load_movies_data():
         ref = db.reference('/Movies')
         movies = ref.get()
         logging.info(f"Loaded {len(movies) if movies else 0} movies from Firebase.")
-        return movies if movies is not None else {}
+        return movies if movies is not None else {} # Ensure returns dict even if empty
     except Exception as e:
-        logging.error(f"Error loading movies from Firebase: {e}")
+        logging.error(f"Error loading movies from Firebase: {e}", exc_info=True)
         return {}
 
 def load_series_data():
@@ -112,7 +113,7 @@ def load_series_data():
         logging.info(f"Loaded {len(available_series_list)} series for dropdown from Firebase.")
         return available_series_list
     except Exception as e:
-        logging.error(f"Error loading series list from Firebase: {e}")
+        logging.error(f"Error loading series list from Firebase: {e}", exc_info=True)
         # Return dummy data or empty list on error
         return [
             {"id": "tt0903747", "title": "שובר שורות (שגיאת טעינה)"},
@@ -121,7 +122,7 @@ def load_series_data():
 
 
 def categorize_movies(movies_data):
-    """Categorizes movies loaded from Firebase."""
+    """Categorizes movies loaded from Firebase for index display."""
     categorized_movies = {}
     # Initialize categories excluding "ללא" as it's typically not a display category
     for cat in CATEGORIES:
@@ -129,6 +130,7 @@ def categorize_movies(movies_data):
             categorized_movies[cat] = []
 
     if not movies_data:
+        logging.info("No movies data to categorize.")
         return {cat: [] for cat in CATEGORIES if cat != "ללא"} # Return empty dict for display categories
 
     # Firebase data is {imdb_id: {details}}
@@ -141,10 +143,11 @@ def categorize_movies(movies_data):
         title = movie_details.get('title', 'כותרת לא ידועה')
         # Use 'poster' field from Firebase, which should be from OMDB
         poster = movie_details.get('poster', 'N/A') # Use N/A as default for poster from OMDB
-        video_url = movie_details.get('video_url', '#')
+        video_url = movie_details.get('video_url', '#') # Default to # if video_url is missing
         category = movie_details.get('category', 'ללא') # Default to 'ללא'
 
         # Add to the correct category list if category is valid and not "ללא"
+        # We need id, title, poster, video_url for the item cards in index.html
         if category in CATEGORIES and category != "ללא":
              categorized_movies[category].append({
                 "id": imdb_id,
@@ -157,7 +160,6 @@ def categorize_movies(movies_data):
         else:
              logging.warning(f"Movie {imdb_id} has invalid/unknown category: {category}")
              pass # Skip invalid categories
-
 
     # Optional: If you want to ensure categories with no movies are still shown,
     # you might add checks here. But usually, you only show categories with items.
@@ -210,7 +212,7 @@ def search_omdb_api(search_term, content_type):
              logging.info(f"OMDB search found no results for '{search_term}' type '{content_type}': {data.get('Error', 'Unknown error')}")
              return []
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error calling OMDB search API: {e}")
+        logging.error(f"Error calling OMDB search API: {e}", exc_info=True)
         return []
 
 def get_omdb_details_api(imdb_id):
@@ -234,7 +236,7 @@ def get_omdb_details_api(imdb_id):
              logging.info(f"OMDB details not found for ID '{imdb_id}': {data.get('Error', 'Unknown error')}")
              return None
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error calling OMDB details API for ID {imdb_id}: {e}")
+        logging.error(f"Error calling OMDB details API for ID {imdb_id}: {e}", exc_info=True)
         return None
 
 # --- API Routes for Frontend OMDB Search ---
@@ -328,8 +330,9 @@ def index():
     greeting = get_greeting(user)
 
     # Load data from Firebase
-    movies_data = load_movies_data()
-    # Categorize for display rows (uses title, poster, video_url, category)
+    movies_data = load_movies_data() # This loads the full dictionary {imdb_id: movie_details}
+
+    # Categorize for display rows (this function selects/formats data for the cards)
     categories = categorize_movies(movies_data)
 
     current_year = datetime.datetime.utcnow().year
@@ -337,13 +340,16 @@ def index():
 
     # Pass both the categorized data for rendering rows AND the raw movie data for the modal JS lookup
     # Using json.dumps with ensure_ascii=False for Hebrew characters
+    # Pass an empty dictionary if movies_data is None for safety, although load_movies_data should handle this
+    movies_data_to_json = movies_data if movies_data is not None else {}
+
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
                            current_year=current_year,
                            user=user,
                            admin_email=admin_email,
-                           movies_data_json=json.dumps(movies_data, ensure_ascii=False) # Pass full data as JSON string, handle Hebrew
+                           movies_data_json=json.dumps(movies_data_to_json, ensure_ascii=False) # Pass full data as JSON string, handle Hebrew
                            )
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -380,11 +386,10 @@ def add_content():
                 # Fetch full details from OMDB server-side using the IMDb ID
                 omdb_details = get_omdb_details_api(imdb_id)
 
-                if not omdb_details:
-                     flash(f'שגיאה: לא נמצאו פרטים עבור IMDb ID "{imdb_id}" ב-OMDB.', 'error')
-                     # Optionally, you could still save with minimal data here
-                     # return redirect(url_for('add_content')) # Stay on add page if OMDB fails
-                     # Or continue and save minimal data? Let's require OMDB for now.
+                # Check if OMDB details were found and if the type is actually a movie
+                if not omdb_details or omdb_details.get('Type') != 'movie':
+                     flash(f'שגיאה: לא נמצאו פרטי סרט תקינים עבור IMDb ID "{imdb_id}" ב-OMDB.', 'error')
+                     logging.warning(f"OMDB details not found or type is not 'movie' for ID {imdb_id}. OMDB Response: {omdb_details}")
                      return redirect(url_for('add_content'))
 
                 # Construct movie data from OMDB details and form data
@@ -443,6 +448,7 @@ def add_content():
                 # Also explicitly check the type from OMDB response
                 if not omdb_details or omdb_details.get('Type') != 'series':
                      flash(f'שגיאה: לא נמצאו פרטים לסדרה או שה-ID אינו של סדרה עבור "{imdb_id}" ב-OMDB.', 'error')
+                     logging.warning(f"OMDB details not found or type is not 'series' for ID {imdb_id}. OMDB Response: {omdb_details}")
                      return redirect(url_for('add_content'))
 
                  # Construct series data from OMDB details and form data
@@ -532,8 +538,8 @@ def add_content():
 
                  # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season}/Episodes/{episode}
                  ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}')
-                 # Use update to avoid overwriting other episodes/seasons if path already exists
-                 ref.set(episode_data) # Use set for the specific episode node
+                 # Use set for the specific episode node
+                 ref.set(episode_data)
                  logging.info(f"Episode S{season_number}E{episode_number} ('{episode_title}') added to series {series_imdb_id}.")
                  flash(f'פרק "{episode_title}" (עונה {season_number}, פרק {episode_number}) נוסף בהצלחה לסדרה!', 'success')
 
@@ -578,7 +584,7 @@ def page_not_found(e):
 @app.errorhandler(500)
 def internal_server_error(e):
     tb_str = traceback.format_exc()
-    logging.error(f"Internal Server Error: {request.path} - {e}\n{tb_str}")
+    logging.error(f"Internal Server Error: {request.path} - {e}\n{tb_str}", exc_info=True)
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
     return render_template('500.html', user=user, current_year=current_year), 500
