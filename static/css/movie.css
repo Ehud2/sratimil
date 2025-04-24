@@ -5,15 +5,16 @@
 
 /* Override or add specific styles for the movie page */
 
-/* The main container for the page content, uses container max-width */
+/* The main container for the page content, adds padding */
 .movie-details-page {
     padding-top: 40px;
     padding-bottom: 50px;
-    /* Remove max-width/margin here, use the .container class inside for limiting width */
-    /* background is handled by body */
+    flex-grow: 1; /* Allow it to grow */
+    /* Remove background color here, use body for background */
 }
 
 /* Style for the main video area at the top, spans full width of the main element */
+/* This area will have no max-width, giving the dark background effect on the sides */
 .main-video-area {
      width: 100%;
      max-width: 100%; /* Ensure it doesn't overflow */
@@ -23,7 +24,7 @@
      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
      height: 0;
      overflow: hidden;
-     background-color: #000; /* Black background */
+     background-color: #000; /* Black background for video area */
      /* Optional: Add some border-radius if desired */
      /* border-radius: var(--border-radius-md); */
       box-shadow: 0 5px 20px rgba(0,0,0,0.5);
@@ -52,23 +53,26 @@
     text-align: center;
 }
 
-/* Style for the title, centered and prominent */
-.movie-details-page .movie-title { /* Target title within the page */
+/* Style for the title, centered and prominent within the *container* */
+/* Added .container to the content area in movie.html, so this is targeted correctly */
+.content-area .movie-title {
     font-family: var(--font-heading);
     font-size: 2.8em;
     font-weight: 700;
     color: var(--text-heading-color);
     text-align: center; /* Center the movie title */
     margin-bottom: 40px; /* More space below the title */
+    /* Ensure it breaks long words if needed */
+    word-break: break-word;
 }
 
 
-/* Container for poster and text content below the video */
-.details-flex-container {
+/* Container for poster sidebar and text content (plot + info grid) */
+/* This uses the .container class for max-width and centering */
+.content-area .details-flex-container {
     display: flex; /* Use flexbox for layout */
     gap: 40px; /* Space between poster sidebar and text content */
-    /* Use flex-wrap to stack on smaller screens */
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
     /* Align items to the start in RTL (right) */
     align-items: flex-start;
 }
@@ -124,7 +128,9 @@
 /* Area for plot and info grid, takes remaining space */
 .text-content-area {
     flex-grow: 1; /* Allow to grow and take available space */
-    min-width: 300px; /* Ensure it doesn't get too narrow */
+    min-width: 300px; /* Ensure it doesn't get too narrow before wrapping */
+    /* Align text content to the right */
+    text-align: right;
 }
 
 
@@ -139,23 +145,37 @@
 /* Info grid for movie details */
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Use grid for details */
+    /* Auto-fit columns, min size 200px, take 1fr max */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px 30px; /* Row gap, column gap */
     margin-top: 20px; /* Space above details */
     padding-top: 20px;
     border-top: 1px solid rgba(69, 162, 158, 0.2); /* Separator */
+    /* Align grid items to the right */
+    /* justify-items: end; /* This aligns the content within grid items to the end (right) */
+    /* Removed justify-items: end to let detail lines align their content internally */
 }
 
 .detail-line {
     display: flex;
-    align-items: start; /* Align items to the start (top) */
+    /* Align items to the start (top) */
+    align-items: start;
     color: var(--text-color);
     font-size: 1em;
+    /* Use flex direction row-reverse to put icon on the right for RTL, text on left */
+    flex-direction: row-reverse;
+    /* Ensure the line takes full width in its grid cell */
+    width: 100%;
+    /* Content should be aligned to the right */
+    justify-content: flex-end;
+    text-align: right; /* Ensure text aligns right */
 }
 
 .detail-line i {
     color: var(--primary-accent-color);
-    margin-left: 12px; /* Space between icon and text */
+    /* Adjusted margin for row-reverse */
+    margin-right: 12px;
+    margin-left: 0;
     width: 25px; /* Fixed width for icon alignment */
     text-align: center; /* Center icon */
     flex-shrink: 0; /* Prevent icon from shrinking */
@@ -164,13 +184,18 @@
 }
 
 .detail-line strong {
-    margin-left: 8px; /* Space between label and value */
+    /* Adjusted margin for row-reverse */
+    margin-right: 8px;
+    margin-left: 0;
     color: var(--text-heading-color);
     flex-shrink: 0;
 }
 
 .detail-line span {
      word-break: break-word; /* Allow long text to wrap */
+     /* Ensure span takes available space */
+     flex-grow: 1;
+     text-align: right; /* Ensure text aligns right within the span */
 }
 
 /* Style for N/A values (optional) */
@@ -179,17 +204,14 @@
      font-style: italic;
 }
 
-/* Error Container styles (reused from index, ensure it's included or imported) */
-/* Assuming error-container styles are in style.css now */
-
 
 /* Responsive Adjustments for movie page */
 @media (max-width: 992px) {
-    .movie-details-page .movie-title {
+    .content-area .movie-title {
          font-size: 2.4em;
          margin-bottom: 30px;
      }
-    .details-flex-container {
+    .content-area .details-flex-container {
         flex-direction: column; /* Stack poster sidebar and text content */
         gap: 30px;
         align-items: stretch; /* Stretch items to fill width when stacked */
@@ -209,14 +231,32 @@
       }
     .text-content-area {
          min-width: 0; /* Allow shrinking when stacked */
+         text-align: justify; /* Revert text alignment if needed when stacked */
     }
      .info-grid {
          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Allow details grid to adjust */
+         /* Revert grid item alignment */
+         /* justify-items: start; /* Or initial */
      }
+     .detail-line {
+          flex-direction: row; /* Revert to normal direction when stacked */
+          justify-content: flex-start;
+     }
+      .detail-line i {
+          margin-right: 0;
+          margin-left: 12px; /* Revert margin */
+      }
+       .detail-line strong {
+           margin-right: 0;
+           margin-left: 8px; /* Revert margin */
+       }
+       .detail-line span {
+            text-align: right; /* Keep span text alignment as right for RTL */
+       }
 }
 
 @media (max-width: 768px) {
-     .movie-details-page .movie-title {
+     .content-area .movie-title {
          font-size: 2em;
          margin-bottom: 25px;
      }
@@ -228,6 +268,7 @@
          gap: 15px;
          padding-top: 15px;
          margin-top: 15px;
+         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjust grid columns */
      }
       .detail-line {
           font-size: 0.95em;
@@ -245,15 +286,15 @@
     .main-video-area {
          margin-bottom: 20px;
     }
-     .movie-details-page .movie-title {
+     .content-area .movie-title {
          font-size: 1.8em;
          margin-bottom: 20px;
      }
-      .details-flex-container {
+      .content-area .details-flex-container {
          gap: 20px;
       }
      .movie-poster-sidebar {
-         max-width: 200px; /* Smaller poster on small phones */
+         max-width: 180px; /* Smaller poster on small phones */
      }
      .movie-plot {
          font-size: 0.95em;
@@ -263,15 +304,26 @@
          gap: 10px;
          padding-top: 10px;
          margin-top: 10px;
+         grid-template-columns: 1fr; /* Stack all details on very small screens */
      }
      .detail-line {
          font-size: 0.9em;
+          flex-direction: row; /* Always row on mobile */
+          justify-content: flex-start;
      }
      .detail-line i {
          margin-left: 10px;
+         margin-right: 0;
          width: 20px;
          font-size: 1em;
      }
+      .detail-line strong {
+          margin-left: 8px;
+          margin-right: 0;
+      }
+      .detail-line span {
+         text-align: right; /* Keep span text alignment as right for RTL */
+      }
       .add-to-list-button {
           padding: 10px 20px;
           font-size: 1em;
