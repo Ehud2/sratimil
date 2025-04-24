@@ -13,9 +13,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
 
-    {# --- Plyr CSS --- #}
-    {# Load the CSS for Plyr #}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.6.4/dist/plyr.css" />
+    {# --- Include Plyr Assets --- #}
+    <!-- Load Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css" />
+    {# --- End Plyr Assets --- #}
 
     {# Include loading spinner styles IF you want a spinner on this page too #}
     {# <style> /* Paste loading spinner CSS from style.css here if needed */ </style> #}
@@ -98,30 +99,29 @@
                 </div>
 
                 <div class="movie-info">
+                    {# --- Plyr Video Player Container --- #}
                     <div class="movie-video-container">
-                        {# --- Plyr Video Player --- #}
-                        {# Check if video URL exists and is valid #}
                         {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
-                             {# Use the video tag with Plyr specific attributes #}
-                             <video id="player" controls playsinline> {# Added playsinline as recommended by Plyr docs #}
+                             {# The video tag for Plyr #}
+                             <video id="player" controls playsinline data-poster="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}">
                                 <source src="{{ movie.video_url }}" type="video/mp4"> {# Assuming MP4, change type if needed #}
-                                <!-- You can add default track elements here if you have pre-defined captions -->
-                                <!-- Example: <track kind="captions" label="English" srclang="en" src="/path/to/default-captions.vtt" default> -->
                                 Your browser does not support the video tag.
+                                {# Subtitle tracks will be added here by the JavaScript #}
                             </video>
+
+                            {# Subtitle upload button #}
+                             <div class="subtitle-upload-section" style="margin-top: 10px; text-align: center;">
+                                <label for="subtitleUpload" class="upload-button">
+                                     <i class="fas fa-closed-captioning"></i> העלה קובץ כתוביות (.srt, .vtt)
+                                 </label>
+                                 <input type="file" id="subtitleUpload" accept=".srt,.vtt" style="display: none;"> {# Hide default file input #}
+                            </div>
+
                         {% else %}
                             <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
                         {% endif %}
                     </div>
-
-                    {# --- Subtitle Upload Section --- #}
-                    {# Only show if a video is available #}
-                    {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
-                         <div class="subtitle-upload-container" style="margin-top: 15px; margin-bottom: 15px;"> {# Added margin for spacing #}
-                             <label for="subtitleUpload" class="subtitle-upload-label">העלאת קובץ כתוביות (.srt, .vtt):</label>
-                             <input type="file" id="subtitleUpload" accept=".srt,.vtt">
-                         </div>
-                    {% endif %}
+                     {# --- End Plyr Video Player Container --- #}
 
 
                     <p class="movie-plot">{{ movie.plot or 'אין תיאור זמין.' }}</p>
@@ -165,326 +165,216 @@
         </div>
     </footer>
 
-    {# --- Optional: Loading Spinner JS --- #}
-    {# If you added a spinner HTML block above, paste the JS below #}
-    {# <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const spinner = document.getElementById('loading-spinner');
-            if (spinner) {
-                 setTimeout(() => { spinner.classList.add('hidden'); }, 300);
-                 spinner.addEventListener('transitionend', function handler(event) {
-                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
-                          spinner.style.display = 'none';
-                          spinner.removeEventListener('transitionend', handler);
-                      }
-                 });
-                 setTimeout(() => { // Fallback
-                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+     {# --- Optional: Loading Spinner JS --- #}
+     {# If you added a spinner HTML block above, paste the JS below #}
+     {# <script>
+         document.addEventListener('DOMContentLoaded', function() {
+             const spinner = document.getElementById('loading-spinner');
+             if (spinner) {
+                  setTimeout(() => { spinner.classList.add('hidden'); }, 300);
+                  spinner.addEventListener('transitionend', function handler(event) {
+                       if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                            spinner.style.display = 'none';
-                      }
-                  }, 300 + 100);
-            }
-        });
-    </script> #}
+                           spinner.removeEventListener('transitionend', handler);
+                       }
+                  });
+                  setTimeout(() => { // Fallback
+                       if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+                            spinner.style.display = 'none';
+                       }
+                   }, 300 + 100);
+             }
+         });
+     </script> #}
 
-    {# --- Search JS (Optional on this page) --- #}
-    {# If you want the search bar to work on this page, paste the index page search JS here #}
-    {# It might need modification to search ALL movies, or just navigate back to index with search term #}
-    {# <script>
-       const searchInput = document.getElementById('searchInput');
-       if (searchInput) {
-          searchInput.addEventListener('keypress', function(event) {
-              if (event.key === 'Enter') {
-                  event.preventDefault();
-                  const searchTerm = this.value.trim();
-                  if (searchTerm) {
-                      // Option 1: Navigate back to index with search term
-                      window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(searchTerm)}`;
-                      // Option 2: Implement search logic here (more complex)
-                  }
-              }
-          });
-          // Optional: Implement button click for search
-          // const searchButton = document.querySelector('.search-container button');
-          // if(searchButton) { searchButton.addEventListener('click', function() { ... }); }
-       }
-    </script> #}
+     {# --- Search JS (Optional on this page) --- #}
+     {# If you want the search bar to work on this page, paste the index page search JS here #}
+     {# It might need modification to search ALL movies, or just navigate back to index with search term #}
+     {# <script>
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+           searchInput.addEventListener('keypress', function(event) {
+               if (event.key === 'Enter') {
+                   event.preventDefault();
+                   const searchTerm = this.value.trim();
+                   if (searchTerm) {
+                       // Option 1: Navigate back to index with search term
+                       window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(searchTerm)}`;
+                       // Option 2: Implement search logic here (more complex)
+                   }
+               }
+           });
+           // Optional: Implement button click for search
+           // const searchButton = document.querySelector('.search-container button');
+           // if(searchButton) { searchButton.addEventListener('click', function() { ... }); }
+        }
+     </script> #}
 
-
-    {# --- Plyr JavaScript --- #}
-    {# Load the JS for Plyr #}
-    <script src="https://cdn.jsdelivr.net/npm/plyr@3.6.4/dist/plyr.js"></script>
-
+    {# --- Include Plyr JS and Initialization Script --- #}
+    <!-- Load Plyr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.js"></script>
     <script>
-        // This script runs after the DOM is loaded because it's at the end of the body.
-
-        // Check if the video element exists before initializing Plyr
-        const playerElement = document.getElementById('player');
-        if (playerElement) {
-            // הפעלת הנגן עם Plyr
-            const player = new Plyr('#player');
-
-            // הפונקציה שתטפל בהעלאת קובץ הכתוביות
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoElement = document.getElementById('player');
             const subtitleUpload = document.getElementById('subtitleUpload');
 
-            if (subtitleUpload) { // Check if the upload input exists (it only shows if video is available)
-                subtitleUpload.addEventListener('change', function(event) {
-                    const file = event.target.files[0];
-                    if (file) {
-                        const fileReader = new FileReader();
-                        fileReader.onload = function(e) {
-                            const subtitleData = e.target.result;
-                            let vttData = null;
-                            const fileName = file.name.toLowerCase();
+            // Check if the video element exists (i.e., movie_url is available)
+            if (videoElement) {
+                // Initialize Plyr
+                const player = new Plyr(videoElement);
 
-                            // Remove existing dynamically added tracks to avoid duplicates
-                            // Check if player.elements.media exists
-                            if (player.elements && player.elements.media) {
-                                const existingTracks = player.elements.media.querySelectorAll('track[data-uploaded="true"]');
-                                existingTracks.forEach(track => track.remove());
-                            }
+                // הפונקציה שתטפל בהעלאת קובץ הכתוביות
+                if (subtitleUpload) { // Check if the upload button exists
+                    subtitleUpload.addEventListener('change', function(event) {
+                        const file = event.target.files[0];
+                        if (file) {
+                            const fileReader = new FileReader();
+                            fileReader.onload = function(e) {
+                                const subtitleData = e.target.result;
+                                let vttData = '';
+                                let fileName = file.name;
+                                let trackLabel = fileName.replace(/\.[^/.]+$/, ""); // Use filename as label
 
-
-                            // Convert SRT to VTT or use VTT directly
-                            if (fileName.endsWith('.srt')) {
-                                try {
-                                    vttData = convertSRTtoVTT(subtitleData);
-                                } catch (error) {
-                                     console.error("Error converting SRT to VTT:", error);
-                                     alert("שגיאה בהמרת קובץ ה-SRT ל-VTT."); // Error message
-                                     return; // Stop process on error
+                                // אם קובץ כתוביות VTT, השתמש בו ישירות
+                                if (fileName.endsWith('.vtt')) {
+                                    vttData = subtitleData;
                                 }
-                            } else if (fileName.endsWith('.vtt')) {
-                                vttData = subtitleData; // Use VTT data directly
-                            } else {
-                                 alert("פורמט קובץ כתוביות לא נתמך. אנא העלה קובץ .srt או .vtt."); // Unsupported format
-                                 return; // Stop process
-                            }
-
-                            if (vttData && player.elements && player.elements.media) {
-                                const track = document.createElement('track');
-                                track.kind = 'subtitles';
-                                track.label = file.name || 'כתוביות שהועלו'; // Use file name as label
-                                track.srclang = 'auto';  // שפה אוטומטית - let browser handle it
-                                track.src = URL.createObjectURL(new Blob([vttData], {type: 'text/vtt'}));
-                                track.setAttribute('data-uploaded', 'true'); // Mark track as uploaded
-
-                                // Append track to the media element
-                                player.elements.media.appendChild(track);
-
-                                // Force Plyr to refresh and pick up the new track
-                                player.refresh();
-
-                                // Optional: Automatically activate the uploaded track
-                                // Find the index of the newly added track
-                                let trackIndex = -1;
-                                for(let i = 0; i < player.media.textTracks.length; i++) {
-                                    if (player.media.textTracks[i].label === (file.name || 'כתוביות שהועלו')) {
-                                        trackIndex = i;
-                                        break;
+                                // אם קובץ כתוביות SRT, המרה ל-VTT
+                                else if (fileName.endsWith('.srt')) {
+                                    try {
+                                         vttData = convertSRTtoVTT(subtitleData);
+                                         console.log("SRT converted to VTT successfully.");
+                                    } catch (error) {
+                                         console.error("Error converting SRT to VTT:", error);
+                                         alert('שגיאה בהמרת קובץ הכתוביות. ודא שהקובץ בפורמט SRT תקין.');
+                                         return; // Stop processing on error
                                     }
-                                }
-                                if (trackIndex !== -1) {
-                                     // Find the Plyr Track object corresponding to the native track index
-                                     const plyrTrack = player.currentTrack === -1 ? null : player.context.tracks[player.currentTrack];
-
-                                     // Only set default if no other track is already active
-                                     // Or if you want the uploaded one to always be default: player.currentTrack = trackIndex;
-                                     if (!plyrTrack || plyrTrack.language !== 'auto') { // Check if current track is not the 'auto' uploaded one
-                                        player.currentTrack = trackIndex; // Activate the uploaded track
-                                     }
-
-                                    // Small delay sometimes helps ensuring the track is fully registered
-                                     setTimeout(() => {
-                                          player.currentTrack = trackIndex; // Re-apply activation
-                                          player.toggleCaptions(true); // Ensure captions are toggled ON
-                                     }, 100);
-
-
+                                } else {
+                                    alert('פורמט קובץ כתוביות לא נתמך. אנא העלה קובץ .srt או .vtt.');
+                                    return; // Stop processing if format is wrong
                                 }
 
+                                if (vttData) {
+                                     // הסרת כתוביות קודמות שנוספו באופן דינמי
+                                     // חשוב לנקות רק את ה-trackים שנוספו על ידי המשתמש
+                                     const existingDynamicTracks = videoElement.querySelectorAll('track[data-dynamic="true"]');
+                                     existingDynamicTracks.forEach(track => track.remove());
 
-                                console.log(`Subtitle file '${file.name}' processed and added to player.`);
-                            } else {
-                                 console.error("Failed to add subtitle track to player.");
-                            }
-                        };
-                        fileReader.readAsText(file);
-                    }
-                });
-            }
 
-            // פונקציה להמיר SRT ל-VTT (מבוסס על הקוד שסיפקת)
-            function convertSRTtoVTT(srtData) {
-                // Basic check for empty data
-                if (!srtData || srtData.trim() === '') {
-                    return "WEBVTT\n\n";
+                                    // יצירת אלמנט Track והוספתו לווידאו
+                                    const track = document.createElement('track');
+                                    track.kind = 'subtitles';
+                                    track.label = trackLabel; // Use filename as label
+                                    track.srclang = 'auto';  // שפה אוטומטית - Plyr ינהל את זה
+                                    track.src = URL.createObjectURL(new Blob([vttData], {type: 'text/vtt'}));
+                                     track.setAttribute('data-dynamic', 'true'); // Mark as dynamically added
+
+                                    // הוספת ה-track לאלמנט הוידאו
+                                    videoElement.appendChild(track);
+
+                                    // רענון Plyr כדי שיזהה את ה-track החדש
+                                    player.refresh();
+
+                                    console.log(`Added subtitle track: ${fileName}`);
+                                     // אופציונלי: אפשר להציג הודעת הצלחה למשתמש
+                                    // flashMessage('קובץ כתוביות הועלה בהצלחה!', 'success'); // تحتاج إلى تنفيذ هذه الدالة
+
+                                     // אופציונלי: בחר את הכתוביות החדשות באופן אוטומטי
+                                     // מצא את ה-track שזה עתה הוסף וקבע אותו כפעיל
+                                     const newTrack = Array.from(player.media.textTracks).find(t => t.label === trackLabel && t.kind === 'subtitles');
+                                      if (newTrack) {
+                                          // Set mode to 'showing' to make it active
+                                         newTrack.mode = 'showing';
+                                          console.log(`Automatically selected subtitle track: ${trackLabel}`);
+                                      } else {
+                                           console.warn(`Could not find the newly added track with label "${trackLabel}" to auto-select.`);
+                                      }
+                                }
+                            };
+                            fileReader.readAsText(file);
+                        }
+                    });
                 }
 
-                let vttData = "WEBVTT\n\n";
-                // Split data by line breaks, handling different line ending types (\r\n, \n, \r)
-                const lines = srtData.split(/\r\n|\n|\r/);
-                let currentCue = [];
-                let isTimestampLine = false; // Flag to identify lines that should be timestamps
-
-                for (let line of lines) {
-                    line = line.trim(); // Trim whitespace from each line
-
-                    if (line === '') {
-                        // Empty line signals the end of a cue
-                        if (currentCue.length > 0) {
-                            // Join the cue lines and add to vttData, ensuring timestamp is first if present
-                            if (isTimestampLine && currentCue.length > 1) {
-                                vttData += currentCue[0].replace(',', '.') + '\n'; // Add timestamp, replacing comma with dot
-                                vttData += currentCue.slice(1).join('\n') + '\n\n'; // Add text lines
-                            } else {
-                                // Handle cases where timestamp might be missing or cue is just text
-                                // Or if it was just a sequence number line followed by empty line
-                                // We'll skip empty cues or just number lines
-                            }
-                            currentCue = []; // Reset for next cue
-                            isTimestampLine = false; // Reset flag
+                // פונקציה להמיר SRT ל-VTT
+                function convertSRTtoVTT(srtData) {
+                    // WEBVTT header is required
+                    let vttData = "WEBVTT\n\n";
+                    // Replace Windows line endings
+                    srtData = srtData.replace(/\r\n/g, '\n');
+                    const lines = srtData.split('\n');
+                    let i = 0;
+                    while (i < lines.length) {
+                        // Skip empty lines or sequence numbers
+                        if (lines[i].trim() === '' || lines[i].match(/^\d+$/)) {
+                            i++;
+                            continue;
                         }
-                    } else if (line.match(/^\d+$/)) {
-                        // Line containing only digits - sequence number, ignore for VTT cue structure
-                        // If we have accumulated lines *before* this number, they might belong to the previous cue.
-                        // But based on typical SRT format, number is usually first. Let's clear current cue just in case.
-                         if (currentCue.length > 0) {
-                             // This indicates a potential formatting issue in the SRT,
-                             // or an unexpected sequence number. For simplicity, clear the current cue.
-                             console.warn("Skipping unexpected content before sequence number in SRT.");
-                             currentCue = [];
-                             isTimestampLine = false;
-                         }
-                        // Don't add sequence number to VTT data
-                    } else if (line.match(/^(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})(.*)$/)) {
-                        // Timestamp line (HH:MM:SS,ms --> HH:MM:SS,ms format)
-                        currentCue.push(line); // Add timestamp line to current cue
-                        isTimestampLine = true; // Mark that we found a timestamp
-                    } else {
-                        // All other lines are part of the subtitle text
-                        // Only add if we've already seen a timestamp line for the current cue
-                        if (isTimestampLine) {
-                             currentCue.push(line);
-                        } else {
-                             // This might be text before a timestamp or malformed SRT.
-                             // For robust conversion, you might want to handle this, but for basic
-                             // conversion, we'll assume text follows timestamp (after the sequence number).
-                             // Or it could be the first line of text right after the sequence number
-                             // if the timestamp is on the *next* line, which is also a common format.
-                             // Let's refine the logic to handle sequence -> timestamp -> text structure better.
-                             // A more reliable SRT parser would build the cue object sequence, timestamp, text.
-                             // For this simple line-by-line approach, we'll add lines as text *if* we expect a timestamp soon
-                             // or if the previous line was a timestamp.
-                             // Let's re-think: SRT structure is [seq]\n[time]\n[text]\n[text]...
-                             // A blank line separates cues.
-                             // We process line by line.
-                             // If line is blank, end current cue.
-                             // If line is number, ignore (it starts a new cue block).
-                             // If line is timestamp, it's the time for the *next* text lines.
-                             // If line is text, it's part of the current cue's text.
 
-                             // Let's revise the loop logic based on this structure.
-                             // We'll build a cue and add it when a blank line is hit.
+                        // Timestamp line (e.g., 00:00:01,123 --> 00:00:02,456)
+                        if (lines[i].match(/^\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/)) {
+                            // Convert comma to dot for milliseconds
+                            let timestampLine = lines[i].replace(',', '.').replace('-->', '-->');
+                            vttData += timestampLine + '\n';
+                            i++;
 
-                             // Re-implementing cue parsing logic:
-                             // The loop above processed line-by-line but didn't correctly group sequence/time/text.
-                             // Let's use a simple state machine or just check patterns more strictly.
-                             // Given the simple loop structure, the original logic of accumulating lines and
-                             // flushing on empty line, using the 'isTimestampLine' flag to know when to start
-                             // adding text, was partially correct for basic cases. Let's stick to that but
-                             // ensure we only push text lines *after* the timestamp has been added to the cue,
-                             // and handle the flushing correctly.
-
-                             // Let's restart the conversion function logic for clarity based on the standard SRT block structure:
-                             /*
-                             1
-                             00:00:01,000 --> 00:00:04,000
-                             This is the first subtitle.
-
-                             2
-                             00:00:05,000 --> 00:00:08,000
-                             This is the second subtitle.
-                             And this is the second line of the second subtitle.
-                             */
-
-                             // A better approach is to accumulate lines until a blank line, then process the block.
-                             // But the current loop iterates line by line. Let's try to improve the current loop's logic.
-
-                             // If it's not a blank line, not a sequence number, and not a timestamp, it must be text.
-                             // Add it to the *current* cue's text lines only if we've already captured the timestamp.
-                             // If we haven't captured a timestamp yet for this block, this text is unexpected
-                             // (might be text before the timestamp line, which is non-standard SRT).
-                             // Let's assume standard SRT: sequence -> time -> text(s).
-                             // We only add text lines *after* we have processed the timestamp line for the current cue.
-
-                              // Re-evaluating the loop with standard SRT in mind:
-                              // We need to detect the timestamp line first in a block of non-empty lines.
-                              // Let's use a temporary variable for text lines within a block.
-
-                              // Simpler approach within this line-by-line loop:
-                              // If the line is a timestamp, append it to vttData (replacing comma), set a flag.
-                              // If the line is text AND the flag is set (meaning we just saw a timestamp), append the text.
-                              // If line is blank or sequence number, reset flag and text accumulation.
-
-                              let currentTextLines = []; // Temporarily hold text lines for the current cue block
-                              let foundTimestampInBlock = false; // Flag for the current block
-
-                              // Re-writing the loop logic more clearly for SRT block processing
-                              // (This structure is slightly different from the user's original but aims for better SRT parsing)
-                              const srtCues = srtData.trim().split(/\r\n\r\n|\n\n|\r\r/); // Split into blocks by double line break
-
-                              for (const srtCueBlock of srtCues) {
-                                  const blockLines = srtCueBlock.trim().split(/\r\n|\n|\r/);
-                                  let timestampLine = null;
-                                  const textLines = [];
-
-                                  for (const line of blockLines) {
-                                      if (line.match(/^\d+$/) && blockLines.indexOf(line) === 0) {
-                                           // This is the sequence number, usually the very first line of a block. Ignore it.
-                                           continue;
-                                      } else if (line.match(/^(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})(.*)$/)) {
-                                           // This is the timestamp line
-                                           timestampLine = line.replace(',', '.'); // Replace comma with dot for VTT
-                                      } else if (timestampLine !== null) {
-                                           // If we've already found the timestamp for this block, this is text
-                                           textLines.push(line);
-                                      }
-                                      // Lines before timestamp in a block are unexpected in standard SRT and ignored here.
-                                  }
-
-                                  // If we found a timestamp and text, format the VTT cue
-                                  if (timestampLine && textLines.length > 0) {
-                                      vttData += timestampLine + '\n';
-                                      vttData += textLines.join('\n') + '\n\n'; // Join text lines, add two newlines for next cue
-                                  }
-                                  // Cues without timestamps or text are ignored.
-                              }
-
-
-                            // Final check on vttData format after processing all blocks
-                            // Ensure there's a WEBVTT header
-                            if (!vttData.startsWith("WEBVTT\n")) {
-                                vttData = "WEBVTT\n\n" + vttData;
-                            } else if (!vttData.startsWith("WEBVTT\n\n")) {
-                                // If header is present but not followed by double newline
-                                const headerEnd = "WEBVTT\n".length;
-                                if (vttData.length > headerEnd && vttData[headerEnd] !== '\n') {
-                                     vttData = "WEBVTT\n\n" + vttData.substring(headerEnd);
-                                }
+                            // Subtitle text lines
+                            let text = '';
+                            while (i < lines.length && lines[i].trim() !== '' && !lines[i].match(/^\d+$/) && !lines[i].match(/^\d{2}:\d{2}:\d{2},\d{3}/)) {
+                                text += lines[i].trim() + '\n';
+                                i++;
                             }
+                            vttData += text.trim() + '\n\n'; // Add text and two newlines for VTT cue separation
 
-                            // Remove trailing newlines if any
-                            vttData = vttData.trim();
-
-                            return vttData;
+                        } else {
+                            // Handle unexpected lines (e.g., comments, formatting) - skip or log
+                             console.warn("Skipping unexpected SRT line:", lines[i]);
+                             i++;
                         }
                     }
-                });
+                    return vttData;
+                }
             }
-        } else {
-             console.warn("Plyr player element #player not found.");
-        }
+        });
+
+        // Optional: Helper function to display flash messages if needed for JS actions
+        // function flashMessage(message, category) {
+        //     const container = document.querySelector('.flash-messages');
+        //     if (container) {
+        //         const alertDiv = document.createElement('div');
+        //         alertDiv.classList.add('alert', `alert-${category}`);
+        //         alertDiv.setAttribute('role', 'alert');
+        //         alertDiv.innerHTML = `${message} <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>`;
+        //         container.appendChild(alertDiv);
+        //     } else {
+        //         console.warn("Flash message container not found.");
+        //         alert(`${category.toUpperCase()}: ${message}`);
+        //     }
+        // }
+
     </script>
+     {# --- End Plyr JS --- #}
+
+     {# --- Optional: Add custom styles for the upload button if you hid the default input --- #}
+     <style>
+         .upload-button {
+             display: inline-block;
+             background-color: #f03c15; /* Example background, match your theme */
+             color: white;
+             padding: 8px 15px;
+             border-radius: 4px;
+             cursor: pointer;
+             font-size: 0.9em;
+             transition: background-color 0.3s ease;
+         }
+         .upload-button:hover {
+             background-color: #d53313; /* Darker shade on hover */
+         }
+         .subtitle-upload-section {
+              margin-top: 15px;
+              text-align: center;
+         }
+     </style>
+
 </body>
 </html>
