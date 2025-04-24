@@ -772,6 +772,34 @@ def add_content():
                            current_year=datetime.datetime.utcnow().year
                            )
 
+
+
+@app.route('/movies')
+def all_movies():
+    """Displays all movies from Firebase in a grid."""
+    user = session.get('user')
+    current_year = datetime.datetime.utcnow().year
+    admin_email = ADMIN_EMAIL
+
+    # Load ALL movies from Firebase
+    # load_movies_data() already returns a dictionary {imdbID: details}
+    # with 'type: movie' added, which is what we need.
+    all_movies_data = load_movies_data()
+
+    # No categorization needed for this page, just pass the dictionary
+    # The template will iterate through this dictionary.
+
+    logging.info(f"Rendering all_movies page with {len(all_movies_data)} movies.")
+
+    return render_template('movies.html',
+                           movies=all_movies_data, # Pass all movies
+                           user=user,
+                           current_year=current_year,
+                           admin_email=admin_email
+                           )
+
+
+
 # --- Error Handlers ---
 @app.errorhandler(403)
 def forbidden(e):
