@@ -17,7 +17,7 @@
 </head>
 <body>
     {# --- Loading Spinner (Optional on this page) --- #}
-    {# If you want a spinner while the movie details page itself loads: #}
+    {# If you added a spinner HTML block above, paste the JS below #}
     {# <div id="loading-spinner">
         <div class="spinner">
             {% if user and user.picture %}
@@ -35,7 +35,7 @@
 
             <div class="search-container">
                {# Search on movie page might link back to index or implement local search #}
-               <input type="search" id="searchInput" placeholder="חיפוש...">
+                <input type="search" id="searchInput" placeholder="חיפוש...">
                <button aria-label="Search"><i class="fas fa-search"></i></button>
             </div>
 
@@ -78,56 +78,94 @@
         {% endif %}
     {% endwith %}
 
-    <main class="container movie-details-page">
+    {# The movie-details-page container will handle centering and max-width #}
+    <main class="movie-details-page">
         {# Use movie variable passed from Flask route #}
         {% if movie %}
-            <h1>{{ movie.title or 'כותרת לא ידועה' }}</h1>
+            {# Video player at the top #}
+            <div class="main-video-area">
+                 {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
+                     <video id="movie-player" controls preload="metadata">
+                        <source src="{{ movie.video_url }}" type="video/mp4"> {# Assuming MP4, change type if needed #}
+                        Your browser does not support the video tag.
+                    </video>
+                 {% else %}
+                     <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
+                 {% endif %}
+            </div>
 
-            <div class="movie-grid">
-                <div class="movie-poster">
-                     {# Use movie.poster, fall back to default if N/A or empty #}
-                    <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר' }}" loading="lazy">
-                </div>
+            {# Content area below the video - Poster, Title, Plot, Info Grid #}
+            <div class="container content-area"> {# Use container class for centering and max-width #}
 
-                <div class="movie-info">
-                    <div class="movie-video-container">
-                        {# Use movie.video_url #}
-                        {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
-                             <video id="movie-player" controls preload="metadata">
-                                <source src="{{ movie.video_url }}" type="video/mp4"> {# Assuming MP4, change type if needed #}
-                                Your browser does not support the video tag.
-                            </video>
-                        {% else %}
-                            <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
-                        {% endif %}
+                 <h1 class="movie-title">{{ movie.title or 'כותרת לא ידועה' }}</h1>
+
+                <div class="details-flex-container"> {# Container for poster and text content #}
+                    <div class="movie-poster-sidebar"> {# Sidebar for poster #}
+                         {# Use movie.poster, fall back to default if N/A or empty #}
+                        <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר' }}" loading="lazy">
+                         {# Optional: Add action buttons below poster #}
+                         <div class="movie-actions">
+                             <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> {# TODO #}
+                         </div>
                     </div>
 
-                    <p class="movie-plot">{{ movie.plot or 'אין תיאור זמין.' }}</p>
+                    <div class="text-content-area"> {# Area for plot and info grid #}
+                         <p class="movie-plot">{{ movie.plot or 'אין תיאור זמין.' }}</p>
 
-                    <div class="info-grid">
-                        <div class="detail-line"><i class="fas fa-calendar-alt"></i> <strong>שנת יציאה:</strong> <span class="{{ 'na-value' if not movie.year or movie.year == 'N/A' }}"> {{ movie.year or 'לא זמין' }}</span></div>
-                        <div class="detail-line"><i class="fas fa-star"></i> <strong>דירוג IMDb:</strong> <span class="{{ 'na-value' if not movie.imdbRating or movie.imdbRating == 'N/A' }}"> {{ movie.imdbRating or 'לא זמין' }}</span></div>
-                        <div class="detail-line"><i class="fas fa-tags"></i> <strong>ז'אנר:</strong> <span class="{{ 'na-value' if not movie.genre or movie.genre == 'N/A' }}"> {{ movie.genre or 'לא זמין' }}</span></div>
-                        <div class="detail-line"><i class="fas fa-clock"></i> <strong>משך זמן:</strong> <span class="{{ 'na-value' if not movie.runtime or movie.runtime == 'N/A' }}"> {{ movie.runtime or 'לא זמין' }}</span></div>
-                        <div class="detail-line"><i class="fas fa-users"></i> <strong>שחקנים:</strong> <span class="{{ 'na-value' if not movie.actors or movie.actors == 'N/A' }}"> {{ movie.actors or 'לא זמינים' }}</span></div>
-                         <div class="detail-line"><i class="fas fa-user-tie"></i> <strong>במאי:</strong> <span class="{{ 'na-value' if not movie.director or movie.director == 'N/A' }}"> {{ movie.director or 'לא זמין' }}</span></div>
-                         <div class="detail-line"><i class="fas fa-trophy"></i> <strong>פרסים:</strong> <span class="{{ 'na-value' if not movie.awards or movie.awards == 'N/A' }}"> {{ movie.awards or 'לא זמינים' }}</span></div>
-                         {# Add more details as needed: Language, Country, Box Office, etc. #}
-                         <div class="detail-line"><i class="fas fa-globe"></i> <strong>שפה:</strong> <span class="{{ 'na-value' if not movie.language or movie.language == 'N/A' }}"> {{ movie.language or 'לא זמינה' }}</span></div>
-                         <div class="detail-line"><i class="fas fa-flag"></i> <strong>מדינה:</strong> <span class="{{ 'na-value' if not movie.country or movie.country == 'N/A' }}"> {{ movie.country or 'לא זמינה' }}</span></div>
-                         <div class="detail-line"><i class="fas fa-money-bill-wave"></i> <strong>קופות:</strong> <span class="{{ 'na-value' if not movie.boxoffice or movie.boxoffice == 'N/A' }}"> {{ movie.boxoffice or 'לא זמין' }}</span></div>
+                        <div class="info-grid">
+                             {# Release Year #}
+                            <div class="detail-line"><i class="fas fa-calendar-alt"></i> <strong>שנת יציאה:</strong> <span class="{{ 'na-value' if not movie.year or movie.year == 'N/A' }}"> {{ movie.year or 'לא זמין' }}</span></div>
 
+                            {# Runtime - Format hours and minutes #}
+                            {% set runtime_str = movie.runtime or 'N/A' %}
+                            {% set total_minutes = 0 %}
+                            {% if runtime_str != 'N/A' and ' min' in runtime_str %}
+                                {% set total_minutes = runtime_str.split(' ')[0] | int(default=0) %}
+                            {% endif %}
+                            {% set hours = total_minutes // 60 %}
+                            {% set minutes = total_minutes % 60 %}
+
+                            <div class="detail-line">
+                                <i class="fas fa-clock"></i> <strong>משך זמן:</strong>
+                                <span class="{{ 'na-value' if total_minutes == 0 }}">
+                                    {% if total_minutes > 0 %}
+                                        {% if hours > 0 %}{{ 'שעות: ' + hours + ', ' }}{% endif %}דקות: {{ minutes }}
+                                    {% else %}
+                                        לא זמין
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            {# Genre #}
+                            <div class="detail-line"><i class="fas fa-tags"></i> <strong>ז'אנר:</strong> <span class="{{ 'na-value' if not movie.genre or movie.genre == 'N/A' }}"> {{ movie.genre or 'לא זמין' }}</span></div>
+
+                            {# IMDb Rating #}
+                            <div class="detail-line"><i class="fas fa-star"></i> <strong>דירוג IMDb:</strong> <span class="{{ 'na-value' if not movie.imdbRating or movie.imdbRating == 'N/A' }}"> {{ movie.imdbRating or 'לא זמין' }}</span></div>
+
+                            {# Actors #}
+                            <div class="detail-line"><i class="fas fa-users"></i> <strong>שחקנים:</strong> <span class="{{ 'na-value' if not movie.actors or movie.actors == 'N/A' }}"> {{ movie.actors or 'לא זמינים' }}</span></div>
+
+                             {# Director #}
+                             <div class="detail-line"><i class="fas fa-user-tie"></i> <strong>במאי:</strong> <span class="{{ 'na-value' if not movie.director or movie.director == 'N/A' }}"> {{ movie.director or 'לא זמין' }}</span></div>
+
+                             {# Awards #}
+                             <div class="detail-line"><i class="fas fa-trophy"></i> <strong>פרסים:</strong> <span class="{{ 'na-value' if not movie.awards or movie.awards == 'N/A' }}"> {{ movie.awards or 'לא זמינים' }}</span></div>
+
+                             {# Add more details as needed: Language, Country, Box Office, etc. #}
+                             <div class="detail-line"><i class="fas fa-globe"></i> <strong>שפה:</strong> <span class="{{ 'na-value' if not movie.language or movie.language == 'N/A' }}"> {{ movie.language or 'לא זמינה' }}</span></div>
+                             <div class="detail-line"><i class="fas fa-flag"></i> <strong>מדינה:</strong> <span class="{{ 'na-value' if not movie.country or movie.country == 'N/A' }}"> {{ movie.country or 'לא זמינה' }}</span></div>
+                             <div class="detail-line"><i class="fas fa-money-bill-wave"></i> <strong>קופות:</strong> <span class="{{ 'na-value' if not movie.boxoffice or movie.boxoffice == 'N/A' }}"> {{ movie.boxoffice or 'לא זמין' }}</span></div>
+
+                        </div>
                     </div>
-                     {# Optional: Add action buttons here like "Add to List" #}
-                     <div class="movie-actions">
-                          <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> {# TODO #}
-                     </div>
                 </div>
+
+
             </div>
 
         {% else %}
             {# This part should ideally not be reached if 404 is handled in Flask #}
-            <div class="error-container">
+            <div class="container error-container"> {# Use container for error page #}
                 <h1>שגיאה</h1>
                 <h2>הסרט לא נמצא</h2>
                 <p>מצטערים, הסרט שחיפשת לא נמצא במסד הנתונים.</p>
@@ -167,24 +205,31 @@
      {# --- Search JS (Optional on this page) --- #}
      {# If you want the search bar to work on this page, paste the index page search JS here #}
      {# It might need modification to search ALL movies, or just navigate back to index with search term #}
-     {# <script>
+     <script>
+        // Simple search that redirects to index with query. Modify if you want different behavior.
         const searchInput = document.getElementById('searchInput');
+        const searchButton = document.querySelector('.search-container button');
+
+        function performSearch() {
+            const searchTerm = searchInput.value.trim();
+            if (searchTerm) {
+                // Redirect to index page with search term as query parameter
+                window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(searchTerm)}`;
+            }
+        }
+
         if (searchInput) {
            searchInput.addEventListener('keypress', function(event) {
                if (event.key === 'Enter') {
-                   event.preventDefault();
-                   const searchTerm = this.value.trim();
-                   if (searchTerm) {
-                       // Option 1: Navigate back to index with search term
-                       window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(searchTerm)}`;
-                       // Option 2: Implement search logic here (more complex)
-                   }
+                   event.preventDefault(); // Prevent form submission
+                   performSearch();
                }
            });
-           // Optional: Implement button click for search
-           // const searchButton = document.querySelector('.search-container button');
-           // if(searchButton) { searchButton.addEventListener('click', function() { ... }); }
         }
-     </script> #}
+
+        if (searchButton) {
+             searchButton.addEventListener('click', performSearch);
+        }
+     </script>
 </body>
 </html>
