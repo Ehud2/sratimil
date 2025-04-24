@@ -43,9 +43,8 @@
                 {# UPDATED LINK #}
                 <a href="{{ url_for('all_movies') }}">סרטים</a>
                 <a href="{{ url_for('all_series') }}">סדרות</a>
-                <a href="#">הרשימה שלי</a> {# TODO: Link to watchlist page #}
-                {% if user and user.email == admin_email %}
-                <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
+                {% if user and user.email in admin_emails %} {# Changed condition to check if user.email is IN the list admin_emails #}
+                    <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
                 {% endif %}
             </nav>
 
