@@ -11,37 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     {# Included loading spinner styles directly in style.css #}
-
-    <style>
-        /* Basic styling for Continue Watching progress bar */
-        .item-card .progress-bar-container {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 5px; /* Height of the progress bar */
-            background-color: rgba(0, 0, 0, 0.5); /* Background for the bar */
-            z-index: 2; /* Above the image, below the overlay */
-        }
-
-        .item-card .progress-bar {
-            height: 100%;
-            background-color: #e50914; /* Netflix red */
-            width: 0%; /* Will be set by JS */
-            transition: width 0.5s ease-in-out; /* Smooth transition */
-        }
-
-        /* Ensure padding doesn't hide progress bar */
-        .item-card-link {
-            padding-bottom: 5px; /* Or adjust card container padding */
-            display: block; /* Important for hiding with display: none */
-        }
-
-         /* Hide Continue Watching section by default, JS will show it if populated */
-        #continueWatchingSection {
-            display: none;
-        }
-    </style>
 </head>
 <body>
     <!-- Loading Spinner -->
@@ -70,7 +39,7 @@
                 <a href="{{ url_for('index') }}">בית</a>
                 <a href="#">סרטים</a> {# TODO: Link to movies page #}
                 <a href="#">סדרות</a> {# TODO: Link to series page #}
-                <a href="#">הרשימה שלי</a> {# TODO: Implement add to list and this page #}
+                <a href="#">הרשימה שלי</a> {# TODO: Link to watchlist page #}
                 {% if user and user.email == admin_email %} {# Using admin_email variable passed from route #}
                 <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
                 {% endif %}
@@ -83,8 +52,9 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Replace the placeholder with a valid image URL or base64 data #}
-                         <img src="{{ url_for('static', filename='images/google_signin_default.png') }}" alt="Sign in with Google" loading="lazy">
+                         {# As requested, replacing the base64 image data with placeholder text #}
+                         {# NOTE: This will break the image display. Replace with a valid image URL or base64 data for production. #}
+                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -112,12 +82,12 @@
             <p>מה נראה היום?</p>
         </div>
 
-        {# --- NEW: Continue Watching Section (Populated by JavaScript) --- #}
-        <section id="continueWatchingSection" class="category-section">
-             <h2>המשך צפייה</h2>
-             <div id="continueWatchingItems" class="item-row">
-                  {# Item cards will be inserted here by JavaScript #}
-             </div>
+        {# --- NEW: Continue Watching Section (Conditional Display handled by JS) --- #}
+        <section id="continueWatchingSection" class="category-section" style="display: none;">
+            <h2>המשך צפייה</h2>
+            <div id="continueWatchingRow" class="item-row">
+                {# Item cards for continue watching will be inserted here by JavaScript #}
+            </div>
         </section>
         {# --- END NEW SECTION --- #}
 
@@ -130,8 +100,8 @@
                         {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie page #}
-                            <a href="{{ url_for('movie_details', imdb_id=item.id) }}" class="item-card-link">
-                                <div class="item-card" data-title="{{ item.title.lower() }}" data-id="{{ item.id }}" tabindex="0">
+                            <a href="{{ url_for('movie_details', imdb_id=item.id) }}" class="item-card-link" data-id="{{ item.id }}" data-title="{{ item.title.lower() }}"> {# Add data-id and data-title here for search #}
+                                <div class="item-card" tabindex="0">
                                     <div class="card-image-container">
                                         {# Use item.poster, fall back to default if N/A or empty #}
                                         <img src="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.title }}" loading="lazy">
@@ -141,7 +111,6 @@
                                                 <span class="rank-text">{{ loop.index }}</span>
                                             </span>
                                         {% endif %}
-                                        {# No progress bar here, only for Continue Watching #}
                                         <div class="card-overlay">
                                              {# The play button now also links to the movie page #}
                                             <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
@@ -172,11 +141,6 @@
     {# --- No modal HTML needed anymore --- #}
 
     <script>
-        // Pass user data from Flask to JavaScript safely
-        const currentUser = {{ user | tojson }};
-        const googleId = currentUser && currentUser.google_id ? currentUser.google_id : null;
-        const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
-
         // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOMContentLoaded fired."); // Debug log
@@ -211,86 +175,88 @@
                 console.warn("Spinner element #loading-spinner not found."); // Debug log
             }
 
-            // --- Populate Continue Watching Section ---
+            // --- Continue Watching Logic (Client-Side using localStorage) ---
+            const user = {{ user | tojson }}; // Pass Flask user object as JSON
             const continueWatchingSection = document.getElementById('continueWatchingSection');
-            const continueWatchingItemsContainer = document.getElementById('continueWatchingItems');
+            const continueWatchingRow = document.getElementById('continueWatchingRow');
 
-            if (googleId && continueWatchingSection && continueWatchingItemsContainer) {
-                 console.log("User logged in. Attempting to load continue watching data.");
-                 try {
-                     const storedData = localStorage.getItem('continueWatching');
-                     let continueWatchingData = storedData ? JSON.parse(storedData) : {};
+            if (user && user.email) { // Check if a user is logged in
+                try {
+                    const storedData = localStorage.getItem('continueWatching');
+                    const continueWatchingData = storedData ? JSON.parse(storedData) : {};
 
-                     const userItems = continueWatchingData[googleId];
+                    // Get all movies loaded from Flask (provided in the 'categories' variable)
+                    // We need to iterate through all items in all categories to find the movies
+                    // that match the IDs stored in localStorage.
+                    // Create a map of all available movies by ID for quick lookup
+                    const allMoviesMap = {};
+                    {% for category_name, items_in_category in categories.items() %}
+                        {% for item in items_in_category %}
+                            allMoviesMap["{{ item.id }}"] = {
+                                id: "{{ item.id }}",
+                                title: "{{ item.title | js_string }}", // Escape title for JS
+                                poster: "{{ item.poster }}"
+                            };
+                        {% endfor %}
+                    {% endfor %}
 
-                     if (userItems && Object.keys(userItems).length > 0) {
-                          console.log(`Found ${Object.keys(userItems).length} continue watching items for user ${googleId}.`);
-                         // Display the section
-                         continueWatchingSection.style.display = 'block';
+                    let addedContinueWatchingCount = 0;
 
-                         // Sort items by last watched timestamp (most recent first)
-                         const sortedItems = Object.values(userItems).sort((a, b) => b.timestamp - a.timestamp);
+                    // Iterate through the IDs in localStorage
+                    for (const imdbId in continueWatchingData) {
+                        if (continueWatchingData.hasOwnProperty(imdbId)) {
+                            // Check if this movie ID exists in the data loaded from the server
+                            const movieDetails = allMoviesMap[imdbId];
 
-                         // Populate the section with item cards
-                         sortedItems.forEach(item => {
-                             // Create the item card HTML dynamically
-                             const itemCardHtml = `
-                                 <a href="{{ url_for('movie_details', imdb_id='') }}${item.id}" class="item-card-link">
-                                     <div class="item-card" data-title="${item.title.toLowerCase()}" data-id="${item.id}" data-timestamp="${item.timestamp}" data-duration="${item.duration || 0}" tabindex="0">
-                                         <div class="card-image-container">
-                                             <img src="${item.poster && item.poster !== 'N/A' ? item.poster : defaultPosterUrl}" alt="${item.title}" loading="lazy">
-                                             <div class="progress-bar-container">
-                                                 <div class="progress-bar" style="width: ${(item.duration > 0 ? (item.timestamp / item.duration * 100) : 0)}%;"></div>
-                                             </div>
-                                             <div class="card-overlay">
-                                                 <button class="play-button" aria-label="Play ${item.title}"><i class="fas fa-play"></i></button>
-                                                 <h3 class="card-title">${item.title}</h3>
-                                                 <div class="card-actions">
-                                                     <button aria-label="Remove from continue watching" class="remove-continue-watching" data-id="${item.id}" onclick="event.preventDefault(); event.stopPropagation(); removeContinueWatchingItem('${item.id}');"><i class="fas fa-times-circle"></i></button>
-                                                     {# The info button might also link to the movie page #}
-                                                     <button class="info-button" aria-label="More info"><i class="fas fa-info-circle"></i></button> {# This button will also follow the card link #}
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
-                                 </a>
-                             `;
-                             continueWatchingItemsContainer.innerHTML += itemCardHtml; // Append the generated HTML
-                         });
+                            // Add the movie card to the "Continue Watching" section if found
+                            if (movieDetails) {
+                                // Create the HTML structure for the item card link
+                                const itemHtml = `
+                                    <a href="{{ url_for('movie_details', imdb_id='') }}${imdbId}" class="item-card-link" data-id="${imdbId}" data-title="${movieDetails.title.toLowerCase()}">
+                                        <div class="item-card" tabindex="0">
+                                            <div class="card-image-container">
+                                                <img src="${movieDetails.poster && movieDetails.poster !== 'N/A' ? movieDetails.poster : '{{ url_for('static', filename='images/no_poster.png') }}'}" alt="${movieDetails.title}" loading="lazy">
+                                                <div class="card-overlay">
+                                                    <button class="play-button" aria-label="Play ${movieDetails.title}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = '{{ url_for('movie_details', imdb_id='') }}${imdbId}';"><i class="fas fa-play"></i></button>
+                                                    <h3 class="card-title">${movieDetails.title}</h3>
+                                                    <div class="card-actions">
+                                                        <button aria-label="Add to list" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
+                                                        <button class="info-button" aria-label="More info" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = '{{ url_for('movie_details', imdb_id='') }}${imdbId}';"><i class="fas fa-info-circle"></i></button> {# Link to movie page #}
+                                                    </div>
+                                                    {# Add a progress bar if desired (requires movie.html to provide total duration) #}
+                                                    {# <div class="progress-bar"><div class="progress" style="width: ${continueWatchingData[imdbId].progress || 0}%;"></div></div> #}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                `;
+                                continueWatchingRow.insertAdjacentHTML('beforeend', itemHtml);
+                                addedContinueWatchingCount++;
+                            } else {
+                                console.warn(`Continue watching item found in localStorage for ID ${imdbId}, but movie details not found in server data.`);
+                                // Optional: remove orphaned data from localStorage here
+                                // delete continueWatchingData[imdbId];
+                                // localStorage.setItem('continueWatching', JSON.stringify(continueWatchingData));
+                            }
+                        }
+                    }
 
-                         // Add event listeners to the new remove buttons
-                          continueWatchingItemsContainer.querySelectorAll('.remove-continue-watching').forEach(button => {
-                              button.addEventListener('click', function() {
-                                   const itemIdToRemove = this.dataset.id;
-                                   removeContinueWatchingItem(itemIdToRemove);
-                                   // Also remove the item card from the display
-                                   const itemLink = this.closest('.item-card-link');
-                                   if(itemLink) itemLink.remove();
+                    // Show the section only if items were added
+                    if (addedContinueWatchingCount > 0) {
+                        continueWatchingSection.style.display = 'block';
+                    } else {
+                        continueWatchingSection.style.display = 'none';
+                    }
 
-                                   // Check if the section should be hidden if no items are left
-                                   if (continueWatchingItemsContainer.children.length === 0) {
-                                       continueWatchingSection.style.display = 'none';
-                                   }
-                              });
-                          });
+                     console.log(`Loaded ${addedContinueWatchingCount} items for continue watching.`);
 
-
-                     } else {
-                          console.log("No continue watching items found for this user.");
-                         // Keep the section hidden if no items
-                         continueWatchingSection.style.display = 'none';
-                     }
-
-                 } catch (e) {
-                     console.error("Error loading/parsing continue watching data from localStorage:", e);
-                     continueWatchingSection.style.display = 'none'; // Hide section on error
-                 }
+                } catch (e) {
+                    console.error("Error loading or processing continue watching data from localStorage:", e);
+                    continueWatchingSection.style.display = 'none'; // Hide section on error
+                }
             } else {
-                 console.log("User not logged in or required elements not found. Continue watching section will not be shown.");
-                 // Ensure section is hidden if user is not logged in
-                 if (continueWatchingSection) {
-                      continueWatchingSection.style.display = 'none';
-                 }
+                 console.log("User not logged in, continue watching section hidden.");
+                 continueWatchingSection.style.display = 'none'; // Hide section if user is not logged in
             }
 
 
@@ -299,22 +265,19 @@
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
-                    // Select ALL item card links, including those dynamically added
+                    // Select all item card links, including those in the new section
                     const itemCardLinks = document.querySelectorAll('.item-card-link');
                     let anyVisible = false;
                     itemCardLinks.forEach(link => {
-                         // Get the data-title from the .item-card *inside* the link
-                        const card = link.querySelector('.item-card');
-                        if (card) {
-                             const title = card.dataset.title || ''; // Use data-title attribute
+                         // Use the data-title attribute on the link itself
+                         const title = link.dataset.title || '';
 
-                             if (title.includes(searchTerm)) {
-                                 link.style.display = ''; // Show the link (and thus the card)
-                                 anyVisible = true;
-                             } else {
-                                 link.style.display = 'none'; // Hide the link (and thus the card)
-                             }
-                        }
+                         if (title.includes(searchTerm)) {
+                             link.style.display = ''; // Show the link (and thus the card)
+                             anyVisible = true;
+                         } else {
+                             link.style.display = 'none'; // Hide the link (and thus the card)
+                         }
                     });
                      const noResultsMessage = document.getElementById('noResultsMessage');
                      if (noResultsMessage) {
@@ -324,34 +287,7 @@
             } else {
                  console.warn("Search input #searchInput not found.");
             }
-
-
         }); // End DOMContentLoaded
-
-        // Function to remove an item from continue watching
-        function removeContinueWatchingItem(itemId) {
-             if (!googleId) {
-                  console.warn("Cannot remove continue watching item: user not logged in.");
-                  return;
-             }
-             try {
-                  const storedData = localStorage.getItem('continueWatching');
-                  let continueWatchingData = storedData ? JSON.parse(storedData) : {};
-
-                  if (continueWatchingData[googleId] && continueWatchingData[googleId][itemId]) {
-                       delete continueWatchingData[googleId][itemId]; // Remove the item
-                       localStorage.setItem('continueWatching', JSON.stringify(continueWatchingData));
-                       console.log(`Removed item ${itemId} from continue watching for user ${googleId}.`);
-                       // No need to update UI here, the click handler does it
-                  }
-             } catch (e) {
-                  console.error("Error removing continue watching data from localStorage:", e);
-             }
-        }
-
-
-        {# If you have a separate static/js/script.js, link it here AFTER this script block #}
-        {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
     </script>
 </body>
 </html>
