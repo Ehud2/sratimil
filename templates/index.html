@@ -1,46 +1,50 @@
-<!-- index.html -->
+<!-- movie.html -->
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movies</title>
+    <title>{{ movie.title or 'סרט לא ידוע' }} - סינמה פריים</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {# Link the new movie-specific CSS file #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    {# Included loading spinner styles directly in style.css #}
+     {# Include loading spinner styles IF you want a spinner on this page too #}
+     {# <style> /* Paste loading spinner CSS from style.css here if needed */ </style> #}
 </head>
 <body>
-    <!-- Loading Spinner -->
-    <div id="loading-spinner">
+    {# --- Loading Spinner (Optional on this page) --- #}
+    {# If you added a spinner HTML block above, paste the JS below #}
+    {# <div id="loading-spinner">
         <div class="spinner">
             {% if user and user.picture %}
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
-                {# Fallback to default profile image if user or picture is missing #}
                 <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture">
             {% endif %}
         </div>
-        <p>טוען סינמה פריים...</p>
-    </div>
+        <p>טוען פרטי סרט...</p>
+    </div> #}
 
 
     <header class="site-header">
         <div class="container header-content">
 
             <div class="search-container">
-               <input type="search" id="searchInput" placeholder="חיפוש...">
+               {# Search on movie page might link back to index or implement local search #}
+                <input type="search" id="searchInput" placeholder="חיפוש...">
                <button aria-label="Search"><i class="fas fa-search"></i></button>
             </div>
 
             <nav class="main-nav">
                 <a href="{{ url_for('index') }}">בית</a>
-                <a href="#">סרטים</a> {# TODO: Link to movies page #}
-                <a href="#">סדרות</a> {# TODO: Link to series page #}
-                <a href="#">הרשימה שלי</a> {# TODO: Link to watchlist page #}
-                {% if user and user.email == admin_email %} {# Using admin_email variable passed from route #}
+                <a href="#">סרטים</a> {# TODO #}
+                <a href="#">סדרות</a> {# TODO #}
+                <a href="#">הרשימה שלי</a> {# TODO #}
+                {% if user and user.email == admin_email %} {# Assuming admin_email is passed to this template too #}
                 <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
                 {% endif %}
             </nav>
@@ -52,9 +56,7 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# As requested, replacing the base64 image data with placeholder text #}
-                         {# NOTE: This will break the image display. Replace with a valid image URL or base64 data for production. #}
-                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
+                         <img src="image url here" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -63,7 +65,7 @@
         </div>
     </header>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
+     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="container flash-messages">
             {% for category, message in messages %}
@@ -76,50 +78,100 @@
         {% endif %}
     {% endwith %}
 
-    <main class="container main-content">
-        <div class="page-greeting">
-            <h1>{{ greeting }}!</h1>
-            <p>מה נראה היום?</p>
-        </div>
+    {# The movie-details-page container will handle centering and max-width #}
+    <main class="movie-details-page">
+        {# Use movie variable passed from Flask route #}
+        {% if movie %}
+            {# Video player at the top #}
+            <div class="main-video-area">
+                 {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
+                     <video id="movie-player" controls preload="metadata">
+                        <source src="{{ movie.video_url }}" type="video/mp4"> {# Assuming MP4, change type if needed #}
+                        Your browser does not support the video tag.
+                    </video>
+                 {% else %}
+                     <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
+                 {% endif %}
+            </div>
 
-        {% for category_name, items_in_category in categories.items() %}
-            {% if items_in_category %}
-                <section class="category-section">
-                    <h2>{{ category_name }}</h2>
-                    <div class="item-row">
-                        {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
-                        {% for item in items_in_category %}
-                             {# Wrap the item card in an anchor tag to navigate to the movie page #}
-                            <a href="{{ url_for('movie_details', imdb_id=item.id) }}" class="item-card-link">
-                                <div class="item-card" data-title="{{ item.title.lower() }}" data-id="{{ item.id }}" tabindex="0">
-                                    <div class="card-image-container">
-                                        {# Use item.poster, fall back to default if N/A or empty #}
-                                        <img src="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.title }}" loading="lazy">
-                                        {% if is_ranked_category and loop.index <= 15 %}
-                                            <span class="rank-number">
-                                                <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
-                                                <span class="rank-text">{{ loop.index }}</span>
-                                            </span>
-                                        {% endif %}
-                                        <div class="card-overlay">
-                                             {# The play button now also links to the movie page #}
-                                            <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
-                                            <h3 class="card-title">{{ item.title }}</h3>
-                                            <div class="card-actions">
-                                                <button aria-label="Add to list" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
-                                                 {# The info button might also link to the movie page #}
-                                                <button class="info-button" aria-label="More info"><i class="fas fa-info-circle"></i></button> {# This button will also follow the card link #}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a> {# End of anchor tag wrapper #}
-                        {% endfor %}
+            {# Content area below the video - Poster, Title, Plot, Info Grid #}
+            <div class="container content-area"> {# Use container class for centering and max-width #}
+
+                 <h1 class="movie-title">{{ movie.title or 'כותרת לא ידועה' }}</h1>
+
+                <div class="details-flex-container"> {# Container for poster and text content #}
+                    <div class="movie-poster-sidebar"> {# Sidebar for poster #}
+                         {# Use movie.poster, fall back to default if N/A or empty #}
+                        <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר' }}" loading="lazy">
+                         {# Optional: Add action buttons below poster #}
+                         <div class="movie-actions">
+                             <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> {# TODO #}
+                         </div>
                     </div>
-                </section>
-            {% endif %}
-        {% endfor %}
-        <div id="noResultsMessage" style="display: none;">לא נמצאו תוצאות התואמות את החיפוש שלך.</div>
+
+                    <div class="text-content-area"> {# Area for plot and info grid #}
+                         <p class="movie-plot">{{ movie.plot or 'אין תיאור זמין.' }}</p>
+
+                        <div class="info-grid">
+                             {# Release Year #}
+                            <div class="detail-line"><i class="fas fa-calendar-alt"></i> <strong>שנת יציאה:</strong> <span class="{{ 'na-value' if not movie.year or movie.year == 'N/A' }}"> {{ movie.year or 'לא זמין' }}</span></div>
+
+                            {# Runtime - Format hours and minutes #}
+                            {% set runtime_str = movie.runtime or 'N/A' %}
+                            {% set total_minutes = 0 %}
+                            {% if runtime_str != 'N/A' and ' min' in runtime_str %}
+                                {% set total_minutes = runtime_str.split(' ')[0] | int(default=0) %}
+                            {% endif %}
+                            {% set hours = total_minutes // 60 %}
+                            {% set minutes = total_minutes % 60 %}
+
+                            <div class="detail-line">
+                                <i class="fas fa-clock"></i> <strong>משך זמן:</strong>
+                                <span class="{{ 'na-value' if total_minutes == 0 }}">
+                                    {% if total_minutes > 0 %}
+                                        {% if hours > 0 %}{{ 'שעות: ' + hours + ', ' }}{% endif %}דקות: {{ minutes }}
+                                    {% else %}
+                                        לא זמין
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            {# Genre #}
+                            <div class="detail-line"><i class="fas fa-tags"></i> <strong>ז'אנר:</strong> <span class="{{ 'na-value' if not movie.genre or movie.genre == 'N/A' }}"> {{ movie.genre or 'לא זמין' }}</span></div>
+
+                            {# IMDb Rating #}
+                            <div class="detail-line"><i class="fas fa-star"></i> <strong>דירוג IMDb:</strong> <span class="{{ 'na-value' if not movie.imdbRating or movie.imdbRating == 'N/A' }}"> {{ movie.imdbRating or 'לא זמין' }}</span></div>
+
+                            {# Actors #}
+                            <div class="detail-line"><i class="fas fa-users"></i> <strong>שחקנים:</strong> <span class="{{ 'na-value' if not movie.actors or movie.actors == 'N/A' }}"> {{ movie.actors or 'לא זמינים' }}</span></div>
+
+                             {# Director #}
+                             <div class="detail-line"><i class="fas fa-user-tie"></i> <strong>במאי:</strong> <span class="{{ 'na-value' if not movie.director or movie.director == 'N/A' }}"> {{ movie.director or 'לא זמין' }}</span></div>
+
+                             {# Awards #}
+                             <div class="detail-line"><i class="fas fa-trophy"></i> <strong>פרסים:</strong> <span class="{{ 'na-value' if not movie.awards or movie.awards == 'N/A' }}"> {{ movie.awards or 'לא זמינים' }}</span></div>
+
+                             {# Add more details as needed: Language, Country, Box Office, etc. #}
+                             <div class="detail-line"><i class="fas fa-globe"></i> <strong>שפה:</strong> <span class="{{ 'na-value' if not movie.language or movie.language == 'N/A' }}"> {{ movie.language or 'לא זמינה' }}</span></div>
+                             <div class="detail-line"><i class="fas fa-flag"></i> <strong>מדינה:</strong> <span class="{{ 'na-value' if not movie.country or movie.country == 'N/A' }}"> {{ movie.country or 'לא זמינה' }}</span></div>
+                             <div class="detail-line"><i class="fas fa-money-bill-wave"></i> <strong>קופות:</strong> <span class="{{ 'na-value' if not movie.boxoffice or movie.boxoffice == 'N/A' }}"> {{ movie.boxoffice or 'לא זמין' }}</span></div>
+
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
+        {% else %}
+            {# This part should ideally not be reached if 404 is handled in Flask #}
+            <div class="container error-container"> {# Use container for error page #}
+                <h1>שגיאה</h1>
+                <h2>הסרט לא נמצא</h2>
+                <p>מצטערים, הסרט שחיפשת לא נמצא במסד הנתונים.</p>
+                <a href="{{ url_for('index') }}">חזור לדף הבית</a>
+            </div>
+        {% endif %}
     </main>
 
     <footer class="site-footer-bottom">
@@ -128,81 +180,56 @@
         </div>
     </footer>
 
-    {# --- No modal HTML needed anymore --- #}
+     {# --- Optional: Loading Spinner JS --- #}
+     {# If you added a spinner HTML block above, paste the JS below #}
+     {# <script>
+         document.addEventListener('DOMContentLoaded', function() {
+             const spinner = document.getElementById('loading-spinner');
+             if (spinner) {
+                  setTimeout(() => { spinner.classList.add('hidden'); }, 300);
+                  spinner.addEventListener('transitionend', function handler(event) {
+                       if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
+                           spinner.style.display = 'none';
+                           spinner.removeEventListener('transitionend', handler);
+                       }
+                  });
+                  setTimeout(() => { // Fallback
+                       if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+                            spinner.style.display = 'none';
+                       }
+                   }, 300 + 100);
+             }
+         });
+     </script> #}
 
-    <script>
-        // JavaScript to hide the loading spinner once the page is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded fired."); // Debug log
-            const spinner = document.getElementById('loading-spinner');
-            // Delay before making spinner invisible (matches CSS transition duration)
-            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+     {# --- Search JS (Optional on this page) --- #}
+     {# If you want the search bar to work on this page, paste the index page search JS here #}
+     {# It might need modification to search ALL movies, or just navigate back to index with search term #}
+     <script>
+        // Simple search that redirects to index with query. Modify if you want different behavior.
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.querySelector('.search-container button');
 
-            if (spinner) {
-                 console.log("Spinner element found, attempting to hide."); // Debug log
-                 // Step 1: Start the visual hiding transition (opacity/visibility)
-                 spinner.classList.add('hidden');
-
-                // Use transitionend for reliable removal from layout after animation
-                spinner.addEventListener('transitionend', function handler(event) {
-                     // Ensure this handler only runs once for opacity transition
-                     if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
-                         spinner.style.display = 'none';
-                         console.log("Spinner hidden via transitionend.");
-                         // Remove this listener to prevent it from firing on future transitions
-                         spinner.removeEventListener('transitionend', handler);
-                     }
-                });
-
-                 // Fallback timeout in case transitionend doesn't fire for some reason
-                 setTimeout(() => {
-                     if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
-                          spinner.style.display = 'none';
-                          console.log("Spinner hidden via timeout fallback."); // Debug log
-                     }
-                 }, visualHideDelay + 100); // Wait a bit longer than the transition
-            } else {
-                console.warn("Spinner element #loading-spinner not found."); // Debug log
+        function performSearch() {
+            const searchTerm = searchInput.value.trim();
+            if (searchTerm) {
+                // Redirect to index page with search term as query parameter
+                window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(searchTerm)}`;
             }
+        }
 
+        if (searchInput) {
+           searchInput.addEventListener('keypress', function(event) {
+               if (event.key === 'Enter') {
+                   event.preventDefault(); // Prevent form submission
+                   performSearch();
+               }
+           });
+        }
 
-            // --- Search Filter Functionality ---
-            // Example search filter (assuming this was in your script.js and moved here):
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-                    // Select the anchor tag wrappers now
-                    const itemCardLinks = document.querySelectorAll('.item-card-link');
-                    let anyVisible = false;
-                    itemCardLinks.forEach(link => {
-                         // Get the data-title from the .item-card *inside* the link
-                        const card = link.querySelector('.item-card');
-                        if (card) {
-                             const title = card.dataset.title || ''; // Use data-title attribute
-
-                             if (title.includes(searchTerm)) {
-                                 link.style.display = ''; // Show the link (and thus the card)
-                                 anyVisible = true;
-                             } else {
-                                 link.style.display = 'none'; // Hide the link (and thus the card)
-                             }
-                        }
-                    });
-                     const noResultsMessage = document.getElementById('noResultsMessage');
-                     if (noResultsMessage) {
-                          noResultsMessage.style.display = anyVisible ? 'none' : 'block';
-                     }
-                });
-            } else {
-                 console.warn("Search input #searchInput not found.");
-            }
-
-
-        }); // End DOMContentLoaded
-
-        {# If you have a separate static/js/script.js, link it here AFTER this script block #}
-        {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
-    </script>
+        if (searchButton) {
+             searchButton.addEventListener('click', performSearch);
+        }
+     </script>
 </body>
 </html>
