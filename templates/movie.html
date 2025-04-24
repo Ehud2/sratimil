@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ movie.title or 'סרט לא ידוע' }} - סינמה פריים</title>
+    <title>צפייה בסרט - סינמה פריים</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +15,7 @@
         .vidsrc-embed-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            padding-top: 56.25%;
             margin-bottom: 20px;
         }
         .vidsrc-embed-container iframe {
@@ -25,6 +25,12 @@
             width: 100%;
             height: 100%;
             border: none;
+        }
+        .no-video-message {
+            color: #ff4c4c;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -61,75 +67,32 @@
 </header>
 
 <main class="container movie-details-page">
-    {% if movie %}
-        <h1>{{ movie.title or 'כותרת לא ידועה' }}</h1>
+    <h1 id="movie-title">צפייה בסרט</h1>
 
-        <div class="movie-grid">
-            <div class="movie-poster">
-                <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר' }}" loading="lazy">
+    <div class="movie-grid">
+        <div class="movie-poster">
+            <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="פוסטר הסרט" loading="lazy">
+        </div>
+
+        <div class="movie-info">
+            <div class="vidsrc-embed-container" id="embed-container">
+                <!-- יוזן על ידי JS -->
             </div>
 
-            <div class="movie-info">
-                <div class="vidsrc-embed-container">
-                    {% if movie.imdb_id %}
-                        <iframe
-                            src="https://vidsrc.xyz/embed/movie/{{ movie.imdb_id }}"
-                            allowfullscreen
-                            loading="lazy">
-                        </iframe>
-                    {% else %}
-                        <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
-                    {% endif %}
-                </div>
+            <div class="movie-details-list">
+                <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
+                <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
+                <p><strong>אורך:</strong> {{ movie.runtime or 'לא זמין' }}</p>
+                <p><strong>תאריך יציאה:</strong> {{ movie.year or 'לא זמין' }}</p>
+                <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
+                <p><strong>דירוג:</strong> {{ movie.imdbRating or 'לא זמין' }}</p>
+            </div>
 
-                <div class="movie-details-list">
-                    <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
-                    <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
-                    <p>
-                        <strong>אורך:</strong>
-                        {% if movie.runtime and movie.runtime != 'N/A' %}
-                            {% set runtime_parts = movie.runtime.split(' ') %}
-                            {% if runtime_parts|length == 2 %}
-                                {% set hours = runtime_parts[0]|int // 60 %}
-                                {% set minutes = runtime_parts[0]|int % 60 %}
-                                {% if hours > 0 %}
-                                    {{ hours }} שעה ו-{{ minutes }} דקות
-                                {% else %}
-                                    {{ minutes }} דקות
-                                {% endif %}
-                            {% else %}
-                                {{ movie.runtime or 'לא זמין' }}
-                            {% endif %}
-                        {% else %}
-                            לא זמין
-                        {% endif %}
-                    </p>
-                    <p>
-                        <strong>תאריך יציאה:</strong>
-                        {% if movie.year and movie.year != 'N/A' %}
-                            {% set year = movie.year|string %}
-                            {{ '12/02/' + year }}
-                        {% else %}
-                            לא זמין
-                        {% endif %}
-                    </p>
-                    <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
-                    <p><strong>דירוג:</strong> {{ movie.imdbRating or 'לא זמין' }}</p>
-                </div>
-
-                <div class="movie-actions">
-                    <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button>
-                </div>
+            <div class="movie-actions">
+                <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button>
             </div>
         </div>
-    {% else %}
-        <div class="error-container">
-            <h1>שגיאה</h1>
-            <h2>הסרט לא נמצא</h2>
-            <p>מצטערים, הסרט שחיפשת לא נמצא במסד הנתונים.</p>
-            <a href="{{ url_for('index') }}">חזור לדף הבית</a>
-        </div>
-    {% endif %}
+    </div>
 </main>
 
 <footer class="site-footer-bottom">
@@ -139,6 +102,7 @@
 </footer>
 
 <script>
+    // חיפוש
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keypress', function(event) {
@@ -149,6 +113,25 @@
                 }
             }
         });
+    }
+
+    // הטמעת הסרט מ vidsrc לפי imdb_id מה-URL
+    const pathParts = window.location.pathname.split('/');
+    const imdbId = pathParts[pathParts.length - 1];
+
+    const embedContainer = document.getElementById('embed-container');
+
+    if (/^tt\d{7,8}$/.test(imdbId)) {
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
+        iframe.allowFullscreen = true;
+        iframe.setAttribute("allow", "autoplay");
+        embedContainer.appendChild(iframe);
+    } else {
+        const message = document.createElement('div');
+        message.className = 'no-video-message';
+        message.textContent = 'וידאו אינו זמין עבור תוכן זה.';
+        embedContainer.appendChild(message);
     }
 </script>
 
