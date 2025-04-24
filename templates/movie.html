@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {# Link the new movie-specific CSS file #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}">
+    {# Include Plyr CSS #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.6.4/dist/plyr.css" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
@@ -58,7 +61,8 @@
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
                          {# As requested, replacing the base64 image data with placeholder text #}
                          {# NOTE: This will break the image display. Replace with a valid image URL or base64 data for production. #}
-                         <img src="image url here" alt="Sign in with Google" loading="lazy">
+                         {# You should probably replace 'image url here' with a proper default icon #}
+                         <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -96,10 +100,20 @@
                     <div class="movie-video-container">
                         {# Use movie.video_url #}
                         {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
-                             <video id="movie-player" controls preload="metadata">
+                             {# Use Plyr video player #}
+                             <video id="player" controls>
                                 <source src="{{ movie.video_url }}" type="video/mp4"> {# Assuming MP4, change type if needed #}
-                                Your browser does not support the video tag.
-                            </video>
+                                {# Subtitle track will be added by JS after upload #}
+                             </video>
+                             {# Button to upload subtitles #}
+                             <div class="subtitle-upload-container">
+                                 <label for="subtitleUpload" class="subtitle-upload-button">
+                                     <i class="fas fa-closed-captioning"></i> העלה כתוביות (.srt, .vtt)
+                                 </label>
+                                 <input type="file" id="subtitleUpload" accept=".srt,.vtt">
+                                 <span id="uploaded-subtitle-name" class="uploaded-subtitle-name"></span> {# Optional: show uploaded file name #}
+                             </div>
+
                         {% else %}
                             <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
                         {% endif %}
@@ -145,6 +159,146 @@
             <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
         </div>
     </footer>
+
+    {# --- Plyr JS --- #}
+    {# Include Plyr JS file #}
+    <script src="https://cdn.jsdelivr.net/npm/plyr@3.6.4/dist/plyr.js"></script>
+
+    {# --- Custom Script for Plyr Initialization and Subtitle Upload --- #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoElement = document.getElementById('player');
+            const subtitleUpload = document.getElementById('subtitleUpload');
+            const uploadedSubtitleName = document.getElementById('uploaded-subtitle-name'); // Get the span
+
+            // Only initialize Plyr and subtitle logic if the video element exists
+            if (videoElement) {
+                // Initialize the player with Plyr
+                const player = new Plyr(videoElement);
+
+                // Function to convert SRT to VTT
+                function convertSRTtoVTT(srtData) {
+                    let vttData = "WEBVTT\n\n";
+                    // Ensure consistent line endings for splitting
+                    const lines = srtData.replace(/\r\n/g, '\n').split('\n');
+                    let timestamp = '';
+                    let text = '';
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim(); // Trim whitespace
+                        if (line === '') { // Empty line separates cues
+                            if (timestamp && text) { // If we have a complete cue
+                                vttData += timestamp + '\n';
+                                vttData += text + '\n\n'; // Add cue text and extra newline
+                            }
+                            timestamp = '';
+                            text = '';
+                        } else if (line.match(/^\d+$/) && timestamp === '' && text === '') {
+                            // This is a sequence number, ignore for VTT structure but helps identify blocks
+                            continue;
+                        } else if (line.match(/^\d{2}:\d{2}:\d{2}/)) {
+                            // This is a timestamp line (e.g., 00:00:05,000 --> 00:00:10,000)
+                            // Replace comma with dot and add " --> " if missing (though standard SRT has it)
+                            timestamp = line.replace(',', '.');
+                        } else if (timestamp !== '') {
+                            // This is part of the subtitle text for the current timestamp
+                            text += line + '\n'; // Accumulate text lines
+                        }
+                    }
+                    // Add the last cue if loop ends without a final empty line
+                     if (timestamp && text) {
+                         vttData += timestamp + '\n';
+                         vttData += text + '\n\n';
+                     }
+
+
+                    // Basic cleanup: remove potential trailing newlines
+                    vttData = vttData.trim();
+
+                    return vttData;
+                }
+
+
+                // Event listener for subtitle upload
+                subtitleUpload.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const fileReader = new FileReader();
+                        fileReader.onload = function(e) {
+                            const subtitleData = e.target.result;
+                            let vttData = null;
+
+                            // Determine file type and convert if necessary
+                            if (file.name.toLowerCase().endsWith('.vtt')) {
+                                vttData = subtitleData;
+                            } else if (file.name.toLowerCase().endsWith('.srt')) {
+                                try {
+                                     vttData = convertSRTtoVTT(subtitleData);
+                                } catch (error) {
+                                     console.error("Error converting SRT to VTT:", error);
+                                     alert('שגיאה בהמרת קובץ הכתוביות.'); // Hebrew alert
+                                     return; // Stop processing
+                                }
+                            } else {
+                                alert('פורמט קובץ לא נתמך. אנא העלה קובץ .srt או .vtt.'); // Hebrew alert
+                                return; // Stop processing
+                            }
+
+                            if (vttData) {
+                                // Create a Blob and a URL for the VTT data
+                                const vttBlob = new Blob([vttData], {type: 'text/vtt'});
+                                const vttUrl = URL.createObjectURL(vttBlob);
+
+                                // Remove any previously added dynamic tracks
+                                const existingTracks = videoElement.querySelectorAll('track[data-dynamic]');
+                                existingTracks.forEach(track => track.remove());
+
+                                // Create a new track element
+                                const track = document.createElement('track');
+                                track.kind = 'subtitles';
+                                track.label = file.name; // Use file name as label
+                                track.srclang = 'auto'; // Let browser/Plyr handle language
+                                track.src = vttUrl;
+                                track.setAttribute('data-dynamic', 'true'); // Mark as dynamically added
+
+                                // Append the track to the video element
+                                videoElement.appendChild(track);
+
+                                // Refresh Plyr to pick up the new track
+                                player.refresh();
+
+                                // Optional: Set the new track as active if possible/desired
+                                // Plyr usually adds controls to select tracks
+
+                                // Show the name of the uploaded file
+                                if(uploadedSubtitleName) {
+                                    uploadedSubtitleName.textContent = `הועלה: ${file.name}`;
+                                }
+
+                                console.log(`Subtitle file "${file.name}" loaded and added.`);
+                            }
+                        };
+                        fileReader.readAsText(file); // Read file content as text
+                    }
+                });
+
+                // Reset the file input value when the track changes (e.g., user selects a different track or none)
+                // This allows re-uploading the same file if needed
+                player.on('languagechange', () => {
+                     if (subtitleUpload) subtitleUpload.value = '';
+                     if (uploadedSubtitleName) uploadedSubtitleName.textContent = '';
+                });
+                 player.on('load', () => {
+                     // Also reset on player load/source change if implemented
+                     if (subtitleUpload) subtitleUpload.value = '';
+                     if (uploadedSubtitleName) uploadedSubtitleName.textContent = '';
+                 });
+
+
+            } // End if videoElement exists check
+        });
+    </script>
+
 
      {# --- Optional: Loading Spinner JS --- #}
      {# If you added a spinner HTML block above, paste the JS below #}
