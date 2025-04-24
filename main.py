@@ -480,8 +480,10 @@ def movie_details(imdb_id):
 
     # Render the movie details page
     # NOTE: The video player and timestamp logic is expected in movie.html's JS.
+    # The video URL is assumed to be stored as movie['video_url'] in Firebase,
+    # even though the add form no longer accepts input for it.
     return render_template('movie.html',
-                           movie=movie,
+                           movie=movie, # movie object should contain video_url if needed for playback
                            user=user,
                            current_year=current_year,
                            admin_email=admin_email # Pass admin email for nav link
@@ -489,7 +491,8 @@ def movie_details(imdb_id):
 
 # --- Route for Single Series Page (NEW) ---
 @app.route('/series/<imdb_id>')
-def series_details(imdb_id):
+@app.route('/series/<imdb_id>/<int:season_num>/<int:episode_num>')
+def series_details(imdb_id, season_num=None, episode_num=None):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
     admin_email = ADMIN_EMAIL
@@ -508,12 +511,18 @@ def series_details(imdb_id):
         logging.warning(f"Series details not found or is not of type 'series' for ID: {imdb_id}")
         abort(404)
 
-    # Pass the full series object (which includes Seasons/Episodes) to the template
+    # The season_num and episode_num are passed to the template,
+    # but the JavaScript handles using them to select and play the episode.
+    # We don't need to load episode data here, as the full series object
+    # passed to the template already contains it.
+
     return render_template('series.html',
                            series=series, # Pass the full series data
                            user=user,
                            current_year=current_year,
-                           admin_email=admin_email
+                           admin_email=admin_email,
+                           # season_num=season_num, # Not strictly needed in template HTML, JS reads URL
+                           # episode_num=episode_num # Not strictly needed in template HTML, JS reads URL
                            )
 
 
@@ -536,12 +545,13 @@ def add_content():
             if content_type == 'movie':
                 # Get form data for movie
                 imdb_id = request.form.get('movie_imdb_id', '').strip()
-                video_url = request.form.get('movie_video_url', '').strip()
+                # REMOVED: video_url = request.form.get('movie_video_url', '').strip()
                 category = request.form.get('movie_category', 'ללא') # Get category from form
 
                 # Validate required fields for movie
-                if not imdb_id or not video_url:
-                    flash('שגיאה: שדות חובה (IMDb ID, וידאו) חסרים עבור סרט.', 'error')
+                # video_url is no longer required from form
+                if not imdb_id:
+                    flash('שגיאה: שדה חובה (IMDb ID) חסר עבור סרט.', 'error')
                     return redirect(url_for('add_content'))
 
                 if not imdb_id.startswith('tt') or len(imdb_id) < 7:
@@ -583,14 +593,16 @@ def add_content():
                     'boxoffice': omdb_details.get('BoxOffice', 'N/A'),
                     'production': omdb_details.get('Production', 'N/A'),
                     'website': omdb_details.get('Website', 'N/A'),
-                    'video_url': video_url, # From form
+                    # REMOVED: 'video_url': video_url, # From form (input removed)
                     'category': category # From form
                 }
 
                 # Save movie data to Firebase under /Movies/{imdb_id}
+                # This assumes the video URL will be added by a different mechanism
+                # or is not needed in this specific data structure.
                 ref = db.reference(f'/Movies/{imdb_id}')
                 ref.set(movie_data)
-                logging.info(f"Movie '{movie_data['title']}' ({imdb_id}) added to Firebase.")
+                logging.info(f"Movie '{movie_data['title']}' ({imdb_id}) added to Firebase (without video URL from form).")
                 flash(f'סרט "{movie_data["title"]}" נוסף בהצלחה!', 'success')
 
             elif content_type == 'series':
@@ -644,9 +656,9 @@ def add_content():
 
 
                 # Save series data to Firebase under /Series/{imdb_id}
-                # Set operation will overwrite existing series details but won't affect existing Seasons/Episodes
+                # Use update instead of set to preserve existing Seasons/Episodes
                 ref = db.reference(f'/Series/{imdb_id}')
-                ref.update(series_data) # Use update instead of set to preserve existing Seasons/Episodes
+                ref.update(series_data)
                 logging.info(f"Series '{series_data['title']}' ({imdb_id}) added/updated in Firebase.")
                 flash(f'סדרה "{series_data["title"]}" נוספה/עודכנה בהצלחה!', 'success')
 
@@ -655,25 +667,26 @@ def add_content():
                  # Get form data for episode
                  series_imdb_id_select = request.form.get('episode_series_id')
                  manual_series_imdb_id = request.form.get('manual_episode_series_id', '').strip()
+                 episode_imdb_id = request.form.get('episode_imdb_id', '').strip() # Get the added episode IMDb ID
                  episode_title = request.form.get('episode_title', '').strip()
                  season_number_str = request.form.get('episode_season', '').strip()
                  episode_number_str = request.form.get('episode_number', '').strip()
-                 video_url = request.form.get('episode_video_url', '').strip()
+                 video_url = request.form.get('episode_video_url', '').strip() # Keep video URL from form
 
                  # Determine the series IMDb ID
                  series_imdb_id = manual_series_imdb_id if series_imdb_id_select == 'manual' else series_imdb_id_select
 
                  # Validate required fields for episode
-                 if not series_imdb_id or not episode_title or not season_number_str or not episode_number_str or not video_url:
-                      flash('שגיאה: שדות חובה (סדרה, כותרת פרק, מספר עונה, מספר פרק, וידאו) חסרים עבור פרק.', 'error')
-                      # Check specific missing fields for more helpful error
+                 if not series_imdb_id or not episode_imdb_id or not episode_title or not season_number_str or not episode_number_str or not video_url:
+                      # This check is also done client-side, but good to have server-side too
                       missing = []
                       if not series_imdb_id: missing.append('סדרה')
+                      if not episode_imdb_id: missing.append('IMDb ID של הפרק')
                       if not episode_title: missing.append('כותרת פרק')
                       if not season_number_str: missing.append('מספר עונה')
                       if not episode_number_str: missing.append('מספר פרק')
                       if not video_url: missing.append('קישור וידאו')
-                      flash(f'שגיאה: שדות חובה חסרים: {", ".join(missing)}', 'error')
+                      flash(f'שגיאה: שדות חובה חסרים: {", ".join(missing)}.', 'error')
                       return redirect(url_for('add_content'))
 
                  # Validate season and episode numbers
@@ -686,34 +699,42 @@ def add_content():
                      flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים.', 'error')
                      return redirect(url_for('add_content'))
 
-                 # Validate series IMDb ID format if manually entered
-                 if series_imdb_id_select == 'manual' and (not series_imdb_id.startswith('tt') or len(series_imdb_id) < 7):
-                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין (הזנה ידנית). ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
+                 # Validate IMDb ID formats
+                 imdb_id_pattern = re.compile(r'^tt\d{7,}$') # Use regex for pattern validation
+                 if not imdb_id_pattern.match(series_imdb_id):
+                     flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
+                     return redirect(url_for('add_content'))
+                 if not imdb_id_pattern.match(episode_imdb_id):
+                      flash('שגיאה: פורמט IMDb ID של הפרק לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                       return redirect(url_for('add_content'))
 
-                 # Check if the parent series exists (Optional but good practice)
-                 series_ref = db.reference(f'/Series/{series_imdb_id}')
-                 series_exists = series_ref.get() is not None
 
-                 if not series_exists:
-                      # Don't block adding episode, just warn the user
-                      logging.warning(f'Parent series with IMDb ID "{series_imdb_id}" not found for episode. Episode will be added anyway.')
-                      flash(f'אזהרה: הסדרה עם IMDb ID "{series_imdb_id}" אינה קיימת במסד הנתונים. הפרק יתווסף, אך ייתכן שתצטרך להוסיף את פרטי הסדרה בנפרד.', 'warning')
+                 # Check if the parent series exists (Optional but good practice)
+                 # series_ref = db.reference(f'/Series/{series_imdb_id}')
+                 # series_exists = series_ref.get() is not None
+                 # if not series_exists:
+                 #      logging.warning(f'Parent series with IMDb ID "{series_imdb_id}" not found for episode. Episode will be added anyway.')
+                 #      flash(f'אזהרה: הסדרה עם IMDb ID "{series_imdb_id}" אינה קיימת במסד הנתונים. הפרק יתווסף, אך ייתכן שתצטרך להוסיף את פרטי הסדרה בנפרד.', 'warning')
 
 
                  # Construct episode data
                  episode_data = {
+                     'episode_imdb_id': episode_imdb_id, # Store the episode IMDb ID
                      'title': episode_title,
-                     'video_url': video_url,
+                     'video_url': video_url, # Store the video URL from the form
+                     'episode_number': episode_number # Store episode number explicitly
                      # Duration is complex to extract from URL, omitting for now
                      # 'duration': 'N/A'
                  }
 
-                 # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season}/Episodes/{episode}
+                 # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season}/Episodes/{episode_number}
+                 # We use episode_number as the key within the Episodes node for the season,
+                 # as it fits the common structure for episode lists (1, 2, 3...).
+                 # The episode_imdb_id is stored *within* the episode's data.
                  ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}')
                  # Use set for the specific episode node
                  ref.set(episode_data)
-                 logging.info(f"Episode S{season_number}E{episode_number} ('{episode_title}') added to series {series_imdb_id}.")
+                 logging.info(f"Episode S{season_number}E{episode_number} (IMDb ID: {episode_imdb_id}, Title: '{episode_title}') added to series {series_imdb_id}.")
                  flash(f'פרק "{episode_title}" (עונה {season_number}, פרק {episode_number}) נוסף בהצלחה לסדרה!', 'success')
 
 
@@ -761,6 +782,9 @@ def internal_server_error(e):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
     return render_template('500.html', user=user, current_year=current_year), 500
+
+# Import re for regex validation
+import re
 
 if __name__ == '__main__':
     # Ensure Firebase is initialized before running the app
