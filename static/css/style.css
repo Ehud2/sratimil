@@ -308,13 +308,14 @@ img { max-width: 100%; height: auto; display: block; }
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.8); /* Dark overlay */
-    display: flex;
+    display: flex; /* Ensure it's a flex container initially */
     justify-content: center;
     align-items: center;
     z-index: 1000; /* Ensure it's on top, below modal */
     flex-direction: column;
     color: white;
     font-size: 1.2em;
+    /* Add transition for opacity and visibility */
     transition: opacity var(--transition-fast), visibility var(--transition-fast);
 }
 
@@ -349,7 +350,7 @@ img { max-width: 100%; height: auto; display: block; }
 #loading-spinner.hidden {
     opacity: 0;
     visibility: hidden;
-    pointer-events: none; /* Don't block clicks when hidden */
+    /* display: none will be added by JS after transition */
 }
 
 /* --- Modal Styles --- */
@@ -367,11 +368,14 @@ img { max-width: 100%; height: auto; display: block; }
     opacity: 0;
     visibility: hidden;
     transition: opacity var(--transition-fast), visibility var(--transition-fast);
+    /* Initially hidden via display: none */
+    display: none;
 }
 
 .modal-overlay.visible {
     opacity: 1;
     visibility: visible;
+    display: flex; /* Show with flex when visible */
 }
 
 .modal-content {
@@ -404,6 +408,7 @@ img { max-width: 100%; height: auto; display: block; }
     cursor: pointer;
     padding: 5px; /* Add padding for easier clicking */
     transition: color var(--transition-fast);
+    z-index: 10; /* Ensure close button is clickable */
 }
 
 .modal-close:hover {
@@ -440,6 +445,7 @@ img { max-width: 100%; height: auto; display: block; }
     color: var(--text-color);
     font-size: 1em;
     line-height: 1.7;
+    text-align: justify; /* Improve readability of plot */
 }
 
 .modal-info-grid {
@@ -727,10 +733,15 @@ img { max-width: 100%; height: auto; display: block; }
     color: var(--text-color);
 }
 
-#omdbMovieResults li .result-id, #omdbSeriesResults li .result-id {
+#omdbMovieResults li .result-id { /* Specific for movie search results */
     font-size: 0.9em; /* Adjusted font size for ID */
     color: var(--text-muted-color);
 }
+#omdbSeriesResults li .result-id { /* Specific for series search results */
+     font-size: 0.9em; /* Adjusted font size for ID */
+     color: var(--text-muted-color);
+}
+
 
 #omdbMovieResults li.selected-result, #omdbSeriesResults li.selected-result {
     background-color: var(--primary-accent-color);
