@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    {# Included loading spinner and modal styles directly in style.css #}
+    {# Included loading spinner styles directly in style.css #}
 </head>
 <body>
     <!-- Loading Spinner -->
@@ -54,7 +54,7 @@
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
                          {# As requested, replacing the base64 image data with placeholder text #}
                          {# NOTE: This will break the image display. Replace with a valid image URL or base64 data for production. #}
-                         <img src="image url here" alt="Sign in with Google" loading="lazy">
+                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -89,29 +89,31 @@
                     <div class="item-row">
                         {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
-                             {# data-video-url attribute will be used by JS #}
-                            <div class="item-card" data-title="{{ item.title.lower() }}" data-id="{{ item.id }}" data-video-url="{{ item.video_url }}" tabindex="0">
-                                <div class="card-image-container">
-                                    {# Use item.poster, fall back to default if N/A or empty #}
-                                    <img src="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.title }}" loading="lazy">
-                                    {% if is_ranked_category and loop.index <= 15 %}
-                                        <span class="rank-number">
-                                            <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
-                                            <span class="rank-text">{{ loop.index }}</span>
-                                        </span>
-                                    {% endif %}
-                                    <div class="card-overlay">
-                                         {# This button now opens the modal, doesn't link directly #}
-                                        <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
-                                        <h3 class="card-title">{{ item.title }}</h3>
-                                        <div class="card-actions">
-                                            <button aria-label="Add to list"><i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
-                                             {# This button might also open the modal, or a different info modal #}
-                                            <button class="info-button" aria-label="More info"><i class="fas fa-info-circle"></i></button> {# TODO: Implement info modal/page #}
+                             {# Wrap the item card in an anchor tag to navigate to the movie page #}
+                            <a href="{{ url_for('movie_details', imdb_id=item.id) }}" class="item-card-link">
+                                <div class="item-card" data-title="{{ item.title.lower() }}" data-id="{{ item.id }}" tabindex="0">
+                                    <div class="card-image-container">
+                                        {# Use item.poster, fall back to default if N/A or empty #}
+                                        <img src="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.title }}" loading="lazy">
+                                        {% if is_ranked_category and loop.index <= 15 %}
+                                            <span class="rank-number">
+                                                <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
+                                                <span class="rank-text">{{ loop.index }}</span>
+                                            </span>
+                                        {% endif %}
+                                        <div class="card-overlay">
+                                             {# The play button now also links to the movie page #}
+                                            <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
+                                            <h3 class="card-title">{{ item.title }}</h3>
+                                            <div class="card-actions">
+                                                <button aria-label="Add to list" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
+                                                 {# The info button might also link to the movie page #}
+                                                <button class="info-button" aria-label="More info"><i class="fas fa-info-circle"></i></button> {# This button will also follow the card link #}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </a> {# End of anchor tag wrapper #}
                         {% endfor %}
                     </div>
                 </section>
@@ -126,353 +128,81 @@
         </div>
     </footer>
 
-    {# --- Movie Details Modal --- #}
-    <div id="movie-details-modal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="modal-close" aria-label="Close modal"><i class="fas fa-times"></i></button>
-
-            <div class="modal-video-container">
-                 {# Video will be loaded here by JavaScript #}
-                 <video id="modal-video-player" controls preload="metadata">
-                     Your browser does not support the video tag.
-                 </video>
-            </div>
-
-            <div class="modal-details">
-                <h2 id="modal-movie-title"></h2>
-                <p class="modal-plot" id="modal-movie-plot"></p>
-
-                <div class="modal-info-grid">
-                    <div class="detail-line"><i class="fas fa-calendar-alt"></i> <strong>שנת יציאה:</strong> <span id="modal-movie-year"></span></div>
-                    <div class="detail-line"><i class="fas fa-star"></i> <strong>דירוג IMDb:</strong> <span id="modal-movie-rating"></span></div>
-                    <div class="detail-line"><i class="fas fa-tags"></i> <strong>ז'אנר:</strong> <span id="modal-movie-genre"></span></div>
-                    <div class="detail-line"><i class="fas fa-clock"></i> <strong>משך זמן:</strong> <span id="modal-movie-runtime"></span></div>
-                    <div class="detail-line"><i class="fas fa-users"></i> <strong>שחקנים:</strong> <span id="modal-movie-actors"></span></div>
-                     {# Add more details if needed, e.g., Director, Awards, etc. #}
-                     <div class="detail-line"><i class="fas fa-user-tie"></i> <strong>במאי:</strong> <span id="modal-movie-director"></span></div>
-                     <div class="detail-line"><i class="fas fa-trophy"></i> <strong>פרסים:</strong> <span id="modal-movie-awards"></span></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    {# --- No modal HTML needed anymore --- #}
 
     <script>
-        // Data loaded from Firebase on page load is available here
-        // This assumes movies_data_json was passed from the Flask route
-        // Using try/catch in case movies_data_json is not defined or malformed
-        let allMoviesData = {};
-        try {
-             const rawData = '{{ movies_data_json | tojson | safe }}';
-             console.log("Raw JSON data from Flask:", rawData); // Debug log: Raw data
-             // Check if rawData is not just an empty string or "{}", parse only if seems valid
-             if (rawData && rawData !== '{}') {
-                 allMoviesData = JSON.parse(rawData);
-             }
-        } catch (e) {
-             console.error("Error parsing movies_data_json:", e);
-             // allMoviesData remains empty object
-        }
-        console.log("Parsed allMoviesData object:", allMoviesData); // Debug log: Parsed object
-
-
         // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOMContentLoaded fired."); // Debug log
             const spinner = document.getElementById('loading-spinner');
             // Delay before making spinner invisible (matches CSS transition duration)
             const visualHideDelay = 200; // Corresponds to var(--transition-fast)
-            // Total delay before removing spinner from layout
-            const totalHideDelay = visualHideDelay + 100; // Add a little buffer
 
             if (spinner) {
                  console.log("Spinner element found, attempting to hide."); // Debug log
                  // Step 1: Start the visual hiding transition (opacity/visibility)
                  spinner.classList.add('hidden');
 
-                 // Step 2: After the transition finishes, fully remove from layout using display: none
-                 setTimeout(() => {
-                    spinner.style.display = 'none';
-                    console.log("Spinner display set to none. Should be fully gone."); // Debug log
-                 }, totalHideDelay); // Wait for visual transition + buffer
-
-                // Optional: Add an event listener to the spinner for transition end
-                // This is a more robust way to know when the CSS transition is done
-                spinner.addEventListener('transitionend', function(event) {
-                     // Check if the opacity transition ended and the element is now hidden
+                // Use transitionend for reliable removal from layout after animation
+                spinner.addEventListener('transitionend', function handler(event) {
+                     // Ensure this handler only runs once for opacity transition
                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                          spinner.style.display = 'none';
                          console.log("Spinner hidden via transitionend.");
+                         // Remove this listener to prevent it from firing on future transitions
+                         spinner.removeEventListener('transitionend', handler);
                      }
                 });
 
+                 // Fallback timeout in case transitionend doesn't fire for some reason
+                 setTimeout(() => {
+                     if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+                          spinner.style.display = 'none';
+                          console.log("Spinner hidden via timeout fallback."); // Debug log
+                     }
+                 }, visualHideDelay + 100); // Wait a bit longer than the transition
             } else {
                 console.warn("Spinner element #loading-spinner not found."); // Debug log
             }
 
 
-            // --- Modal Functionality ---
-            const modalOverlay = document.getElementById('movie-details-modal');
-            const modalContent = modalOverlay ? modalOverlay.querySelector('.modal-content') : null;
-            const closeModalButton = modalOverlay ? modalOverlay.querySelector('.modal-close') : null;
-            const modalVideoPlayer = modalOverlay ? modalOverlay.querySelector('#modal-video-player') : null;
-            const modalTitle = modalOverlay ? modalOverlay.querySelector('#modal-movie-title') : null;
-            const modalPlot = modalOverlay ? modalOverlay.querySelector('#modal-movie-plot') : null;
-            const modalYear = modalOverlay ? modalOverlay.querySelector('#modal-movie-year') : null;
-            const modalRating = modalOverlay ? modalOverlay.querySelector('#modal-movie-rating') : null;
-            const modalGenre = modalOverlay ? modalOverlay.querySelector('#modal-movie-genre') : null;
-            const modalRuntime = modalOverlay ? modalOverlay.querySelector('#modal-movie-runtime') : null;
-            const modalActors = modalOverlay ? modalOverlay.querySelector('#modal-movie-actors') : null;
-            const modalDirector = modalOverlay ? modalOverlay.querySelector('#modal-movie-director') : null; // Added director
-            const modalAwards = modalOverlay ? modalOverlay.querySelector('#modal-movie-awards') : null;   // Added awards
+            // --- Search Filter Functionality ---
+            // Example search filter (assuming this was in your script.js and moved here):
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    // Select the anchor tag wrappers now
+                    const itemCardLinks = document.querySelectorAll('.item-card-link');
+                    let anyVisible = false;
+                    itemCardLinks.forEach(link => {
+                         // Get the data-title from the .item-card *inside* the link
+                        const card = link.querySelector('.item-card');
+                        if (card) {
+                             const title = card.dataset.title || ''; // Use data-title attribute
 
-
-            function populateModal(movie) {
-                console.log("Populating modal with movie data:", movie); // Debug log
-                if (!movie) {
-                    console.error("No movie data provided for modal population.");
-                    // Optionally display an error message in the modal elements
-                    if(modalTitle) modalTitle.textContent = 'שגיאה בטעינת נתונים';
-                    if(modalPlot) modalPlot.textContent = 'לא ניתן לטעון פרטי סרט.';
-                     if(modalYear) modalYear.textContent = 'לא זמין';
-                     if(modalRating) modalRating.textContent = 'לא זמין';
-                     if(modalGenre) modalGenre.textContent = 'לא זמין';
-                     if(modalRuntime) modalRuntime.textContent = 'לא זמין';
-                     if(modalActors) modalActors.textContent = 'לא זמינים';
-                     if(modalDirector) modalDirector.textContent = 'לא זמין';
-                     if(modalAwards) modalAwards.textContent = 'לא זמינים';
-                     if(modalVideoPlayer) {
-                          modalVideoPlayer.src = '';
-                          modalVideoPlayer.style.display = 'none';
+                             if (title.includes(searchTerm)) {
+                                 link.style.display = ''; // Show the link (and thus the card)
+                                 anyVisible = true;
+                             } else {
+                                 link.style.display = 'none'; // Hide the link (and thus the card)
+                             }
+                        }
+                    });
+                     const noResultsMessage = document.getElementById('noResultsMessage');
+                     if (noResultsMessage) {
+                          noResultsMessage.style.display = anyVisible ? 'none' : 'block';
                      }
-                     return;
-                }
-
-                // Populate text content, handling null/undefined/N/A gracefully
-                if(modalTitle) modalTitle.textContent = movie.title || 'כותרת לא ידועה';
-                if(modalPlot) modalPlot.textContent = movie.plot || 'אין תיאור זמין.';
-                if(modalYear) modalYear.textContent = movie.year && movie.year !== 'N/A' ? movie.year : 'לא זמין';
-                if(modalRating) modalRating.textContent = movie.imdbRating && movie.imdbRating !== 'N/A' ? movie.imdbRating : 'לא זמין';
-                if(modalGenre) modalGenre.textContent = movie.genre && movie.genre !== 'N/A' ? movie.genre : 'לא זמין';
-                if(modalRuntime) modalRuntime.textContent = movie.runtime && movie.runtime !== 'N/A' ? movie.runtime : 'לא זמין';
-                if(modalActors) modalActors.textContent = movie.actors && movie.actors !== 'N/A' ? movie.actors : 'לא זמינים';
-                if(modalDirector) modalDirector.textContent = movie.director && movie.director !== 'N/A' ? movie.director : 'לא זמין'; // Populate director
-                if(modalAwards) modalAwards.textContent = movie.awards && movie.awards !== 'N/A' ? movie.awards : 'לא זמינים'; // Populate awards
-
-
-                // Handle video source
-                if (modalVideoPlayer) {
-                     if (movie.video_url && movie.video_url !== '#' && movie.video_url !== 'N/A') {
-                         modalVideoPlayer.src = movie.video_url;
-                         modalVideoPlayer.style.display = 'block'; // Ensure video player is visible
-                         modalVideoPlayer.load(); // Load the new video source
-                         modalVideoPlayer.currentTime = 0; // Start from the beginning
-                         // modalVideoPlayer.play().catch(error => console.log("Autoplay prevented:", error)); // Autoplay attempt
-                     } else {
-                          modalVideoPlayer.src = ''; // Clear src
-                          modalVideoPlayer.style.display = 'none'; // Hide video player
-                          // Optional: Display a "Video not available" message in the video area
-                      }
-                }
-
-
-                // Update N/A display styling
-                if(modalYear) modalYear.classList.toggle('na-value', modalYear.textContent === 'לא זמין');
-                if(modalRating) modalRating.classList.toggle('na-value', modalRating.textContent === 'לא זמין');
-                if(modalGenre) modalGenre.classList.toggle('na-value', modalGenre.textContent === 'לא זמין');
-                if(modalRuntime) modalRuntime.classList.toggle('na-value', modalRuntime.textContent === 'לא זמין');
-                if(modalActors) modalActors.classList.toggle('na-value', modalActors.textContent === 'לא זמינים');
-                if(modalDirector) modalDirector.classList.toggle('na-value', modalDirector.textContent === 'לא זמין');
-                if(modalAwards) modalAwards.classList.toggle('na-value', modalAwards.textContent === 'לא זמינים');
-
-                 // Scroll modal content to top if it's scrollable
-                 if (modalContent) {
-                    modalContent.scrollTop = 0;
-                 }
-            }
-
-
-            function openModal(movie) {
-                 // Check if modal overlay exists and is currently hidden
-                 if (!modalOverlay || modalOverlay.classList.contains('visible')) {
-                     console.warn("Modal overlay not found or already visible.");
-                     return; // Don't try to open if not ready or already open
-                 }
-                 console.log("Attempting to open modal."); // Debug log
-                 populateModal(movie);
-                 modalOverlay.style.display = 'flex'; // Set display to flex BEFORE adding 'visible'
-                 // Use a tiny timeout to allow display change to render before transition
-                 setTimeout(() => {
-                    modalOverlay.classList.add('visible');
-                    document.body.classList.add('modal-open'); // Prevent body scrolling
-                    console.log("Modal opened."); // Debug log
-                 }, 10); // Small delay to trigger transition
-             }
-
-             function closeModal() {
-                 // Check if modal overlay exists and is currently visible
-                 if (!modalOverlay || !modalOverlay.classList.contains('visible')) {
-                      console.warn("Modal overlay not found or already hidden.");
-                     return; // Don't try to close if not ready or already hidden
-                 }
-                 console.log("Attempting to close modal."); // Debug log
-                 modalOverlay.classList.remove('visible'); // Start transition out
-                 document.body.classList.remove('modal-open'); // Re-enable body scrolling
-
-                 // Pause and clear video when closing
-                 if (modalVideoPlayer) {
-                     modalVideoPlayer.pause();
-                     modalVideoPlayer.currentTime = 0;
-                     modalVideoPlayer.src = ''; // Clear source to fully stop playback
-                 }
-
-                 // After transition, remove from layout
-                 // Using transitionend is more reliable than a fixed timeout
-                 modalOverlay.addEventListener('transitionend', function handler(event) {
-                      // Ensure this handler only runs once for opacity transition
-                      if (event.propertyName === 'opacity') {
-                         modalOverlay.style.display = 'none';
-                         console.log("Modal display set to none via transitionend. Fully closed."); // Debug log
-                         // Remove this listener to prevent it from firing on future transitions
-                         modalOverlay.removeEventListener('transitionend', handler);
-
-                         // Clear modal content after it's hidden
-                         if(modalTitle) modalTitle.textContent = '';
-                         if(modalPlot) modalPlot.textContent = '';
-                         if(modalYear) modalYear.textContent = '';
-                         if(modalRating) modalRating.textContent = '';
-                         if(modalGenre) modalGenre.textContent = '';
-                         if(modalRuntime) modalRuntime.textContent = '';
-                         if(modalActors) modalActors.textContent = '';
-                         if(modalDirector) modalDirector.textContent = '';
-                         if(modalAwards) modalAwards.textContent = '';
-
-                          // Reset N/A classes
-                         if(modalYear) modalYear.classList.remove('na-value');
-                         if(modalRating) modalRating.classList.remove('na-value');
-                         if(modalGenre) modalGenre.classList.remove('na-value');
-                         if(modalRuntime) modalRuntime.classList.remove('na-value');
-                         if(modalActors) modalActors.classList.remove('na-value');
-                         if(modalDirector) modalDirector.classList.remove('na-value');
-                         if(modalAwards) modalAwards.classList.remove('na-value');
-                      }
-                 });
-
-                 // Fallback in case transitionend doesn't fire (less common but safer)
-                 setTimeout(() => {
-                     if (modalOverlay.classList.contains('visible')) return; // If transitionend already ran
-                      modalOverlay.style.display = 'none';
-                       console.log("Modal display set to none via timeout fallback."); // Debug log
-                        // Content clear is handled by transitionend listener or will just be cleared on next open
-                 }, visualHideDelay + 100); // Match totalHideDelay approximately
-
-
-            }
-
-
-            // Event listeners for opening the modal
-            // Use event delegation on a parent container for efficiency
-            const mainContent = document.querySelector('.main-content');
-            if (mainContent) {
-                 mainContent.addEventListener('click', function(event) {
-                    const card = event.target.closest('.item-card');
-                    // Check if the click was on a card AND not specifically on the card actions buttons (like + or info)
-                    const isActionButtonClick = event.target.closest('.card-actions button');
-
-                    if (card && !isActionButtonClick) {
-                        const imdbId = card.dataset.id;
-                         console.log(`Card clicked. Extracted ID: "${imdbId}"`); // Debug log: Show extracted ID
-                         // Retrieve movie data from the loaded JSON
-                        const movie = allMoviesData ? allMoviesData[imdbId] : undefined;
-                        console.log(`Lookup result for ID "${imdbId}" in allMoviesData:`, movie); // Debug log: Show lookup result
-
-                        if (movie && movie.type === 'movie') { // Explicitly check if it's a movie
-                            console.log("Identified as a movie. Opening modal."); // Debug log
-                            openModal(movie);
-                        } else if (card) { // Handle clicks on non-movie cards (series, episodes, if present)
-                             console.log(`Clicked item ${imdbId} is not a movie or data is missing for this ID. Type: ${movie ? movie.type : 'unknown'}`);
-                             // TODO: Implement different behavior for series/episode cards
-                              // For now, just prevent modal from opening for non-movies
-                              // Optionally add a flash message here indicating it's not a movie type for modal
-                         } else {
-                             console.log("Click did not target an item-card."); // Debug log
-                         }
-                    } else if (isActionButtonClick) {
-                         console.log("Clicked on a card action button."); // Debug log
-                         // Action button logic (add to list, etc.) would go here
-                     } else {
-                         console.log("Click outside of item-cards."); // Debug log
-                     }
-                 });
-            } else {
-                console.error("Main content area '.main-content' not found!"); // Critical error
-            }
-
-
-            // Event listener for closing the modal using the close button
-            if (closeModalButton) {
-                closeModalButton.addEventListener('click', closeModal);
-            }
-
-            // Event listener for closing the modal by clicking the overlay background
-            if (modalOverlay) {
-                modalOverlay.addEventListener('click', function(event) {
-                    // Close only if the click is directly on the overlay, not the modal content
-                    if (event.target === modalOverlay) {
-                        closeModal();
-                    }
                 });
+            } else {
+                 console.warn("Search input #searchInput not found.");
             }
-
-            // Optional: Close modal with Escape key
-            document.addEventListener('keydown', function(event) {
-                // Check if modal is visible before attempting to close with Escape
-                if (event.key === 'Escape' && modalOverlay && modalOverlay.classList.contains('visible')) {
-                    closeModal();
-                }
-            });
-
-
-            // Your existing search functionality script (if any, from script.js)
-            // Paste it here or ensure script.js is linked after this block.
-            // Make sure the search JS filters the item-cards correctly and interacts
-            // well with the new click handling for the modal.
 
 
         }); // End DOMContentLoaded
 
-        // Ensure any script.js logic (like search filtering) is compatible
-        // with the new modal click handler. The search filter logic needs to
-        // target the .item-card elements.
-        // Example search filter (assuming this was in your script.js and moved here):
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const itemCards = document.querySelectorAll('.item-card');
-                let anyVisible = false;
-                itemCards.forEach(card => {
-                    const title = card.dataset.title || ''; // Use data-title attribute
-                    // Also check IMDb ID? card.dataset.id
-                    if (title.includes(searchTerm) /* || card.dataset.id.includes(searchTerm) */) {
-                        card.style.display = ''; // Show card
-                        anyVisible = true;
-                    } else {
-                        card.style.display = 'none'; // Hide card
-                    }
-                });
-                 const noResultsMessage = document.getElementById('noResultsMessage');
-                 if (noResultsMessage) {
-                      noResultsMessage.style.display = anyVisible ? 'none' : 'block';
-                 }
-            });
-        } else {
-             console.warn("Search input #searchInput not found.");
-        }
-
-
+        {# If you have a separate static/js/script.js, link it here AFTER this script block #}
+        {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
     </script>
-    {# If you have a separate static/js/script.js, link it here AFTER this script block #}
-    {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
 </body>
 </html>
