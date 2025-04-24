@@ -1,0 +1,197 @@
+<!-- SeriesTV.html -->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כל הסדרות</title> {# Changed Title #}
+    {# Link the main style sheet first for shared styles like header, footer, etc. #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {# Link the specific movie page style sheet after the main one (grid styles are useful) #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movies.css') }}"> {# Reusing movies.css for grid layout #}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    {# Included loading spinner styles directly in style.css #}
+</head>
+<body>
+    <!-- Loading Spinner - Copy from movies.html -->
+    <div id="loading-spinner">
+        <div class="spinner">
+            {% if user and user.picture %}
+                <img src="{{ user.picture }}" alt="User profile picture">
+            {% else %}
+                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture">
+            {% endif %}
+        </div>
+        <p>טוען סינמה פריים...</p>
+    </div>
+
+    <!-- Header - Copy from movies.html -->
+    <header class="site-header">
+        <div class="container header-content">
+
+            <div class="search-container">
+               <input type="search" id="searchInput" placeholder="חיפוש...">
+               <button aria-label="Search"><i class="fas fa-search"></i></button>
+            </div>
+
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}">בית</a>
+                {# Keep movie link #}
+                <a href="{{ url_for('all_movies') }}">סרטים</a>
+                 {# NEW Series Link #}
+                <a href="{{ url_for('all_series') }}">סדרות</a> {# Assuming a route named 'all_series' #}
+                <a href="#">הרשימה שלי</a> {# TODO: Link to watchlist page #}
+                {% if user and user.email == admin_email %}
+                <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
+                {% endif %}
+            </nav>
+
+            <div class="auth-container">
+                {% if user %}
+                    <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
+                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
+                         <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy">
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="header-spacer"></div>
+        </div>
+    </header>
+
+    <!-- Flash Messages - Copy from movies.html -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category|default('info') }}" role="alert">
+                {{ message }}
+                <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    {# Reusing the main content structure and grid class #}
+    <main class="container main-content movies-page-content"> {# Use same margin class #}
+        <div class="page-heading"> {# Use same heading class #}
+            <h1>כל הסדרות</h1> {# Changed Heading #}
+            <p>צפה בכל הסדרות הזמינות באתר.</p> {# Changed description #}
+        </div>
+
+        {# Container for the series grid - Reusing the movies grid class #}
+        <div class="all-movies-grid"> {# Reusing the same grid layout class #}
+            {# Iterate through the 'series' dictionary passed from main.py #}
+            {# Changed variable name from 'movies' to 'series' #}
+            {% for imdb_id, item in series.items() %}
+                 {# Ensure item has basic properties needed for display and linking #}
+                 {% if item and item.get('imdbID') and item.get('title') %}
+                     {# Wrap card in an anchor tag linking to the series details page #}
+                     {# Updated url_for to a hypothetical 'series_details' route #}
+                    <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link">
+                        {# Use the same item-card structure as index.html/movies.html #}
+                        {# Add data attributes for client-side search #}
+                        {# Updated data-type to 'series' #}
+                        <div class="item-card" data-title="{{ item.title.lower() }}" data-id="{{ item.imdbID }}" data-type="series" tabindex="0"> {# Changed data-type #}
+                            <div class="card-image-container">
+                                {# Use item.poster, fall back to default if N/A or empty #}
+                                <img src="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.title }}" loading="lazy">
+                                {# No rank number on this page #}
+                                <div class="card-overlay">
+                                     {# The play button now links to the series details page #}
+                                    <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
+                                    <h3 class="card-title">{{ item.title }}</h3>
+                                    <div class="card-actions">
+                                        {# TODO: Implement add to list - ensure it handles type='series' #}
+                                        <button aria-label="Add to list" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button>
+                                         {# The info button also links to the series details page #}
+                                        <button class="info-button" aria-label="More info"><i class="fas fa-info-circle"></i></button> {# This button will also follow the card link #}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a> {# End of anchor tag wrapper #}
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div id="noResultsMessage" style="display: none;">לא נמצאו תוצאות התואמות את החיפוש שלך.</div>
+    </main>
+
+    <!-- Footer - Copy from movies.html -->
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript to hide the loading spinner once the page is loaded - Copy from movies.html
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOMContentLoaded fired on series page."); // Debug log
+            const spinner = document.getElementById('loading-spinner');
+            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+
+            if (spinner) {
+                 console.log("Spinner element found, attempting to hide.");
+                 spinner.classList.add('hidden');
+                 spinner.addEventListener('transitionend', function handler(event) {
+                     if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
+                         spinner.style.display = 'none';
+                         console.log("Spinner hidden via transitionend on series page.");
+                         spinner.removeEventListener('transitionend', handler);
+                     }
+                });
+                 setTimeout(() => {
+                     if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+                          spinner.style.display = 'none';
+                          console.log("Spinner hidden via timeout fallback on series page.");
+                     }
+                 }, visualHideDelay + 100);
+            } else {
+                console.warn("Spinner element #loading-spinner not found on series page.");
+            }
+
+            // --- Search Filter Functionality - Adapted for series page ---
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    // Select the anchor tag wrappers for the series cards
+                    const itemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link'); // Target only cards within the grid
+                    let anyVisible = false;
+                    itemCardLinks.forEach(link => {
+                        // Get the data-title from the .item-card *inside* the link
+                        const card = link.querySelector('.item-card');
+                        if (card) {
+                            const title = card.dataset.title || '';
+
+                            if (title.includes(searchTerm)) {
+                                link.style.display = ''; // Show the link (and thus the card)
+                                anyVisible = true;
+                            } else {
+                                link.style.display = 'none'; // Hide the link (and thus the card)
+                            }
+                        }
+                    });
+                    const noResultsMessage = document.getElementById('noResultsMessage');
+                    if (noResultsMessage) {
+                         noResultsMessage.style.display = anyVisible ? 'none' : 'block';
+                    }
+                });
+            } else {
+                 console.warn("Search input #searchInput not found on series page.");
+            }
+
+        }); // End DOMContentLoaded
+    </script>
+</body>
+</html>
