@@ -31,10 +31,8 @@ app.config['GOOGLE_DISCOVERY_URL'] = (
 # Replace with your actual OMDB API key from environment variables
 OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # THIS IS A SECRET! MUST BE IN ENV VAR!
 
-# Replace with the actual admin emails from environment variables or default list
-# Environment variable 'ADMIN_EMAILS' should be a comma-separated string (e.g., "email1,email2")
-ADMIN_EMAILS_STR = os.environ.get('ADMIN_EMAILS', 'ehudverbin@gmail.com,guykresco@gmail.com') # <-- CHANGED LINE
-ADMIN_EMAILS = [email.strip() for email in ADMIN_EMAILS_STR.split(',') if email.strip()] # Convert comma-separated string to list # <-- CHANGED LINE
+# List of admin emails # <-- CHANGED LINE
+ADMIN_EMAILS = ['ehudverbin@gmail.com', 'guykresco@gmail.com'] # <-- CHANGED LINE
 
 
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31)
@@ -451,7 +449,6 @@ def index():
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
-    # admin_email = ADMIN_EMAIL # Ensure this is passed # <-- REMOVED
     # Pass the list of admin emails to the template if needed (though index.html might not use it)
     # If admin status is only checked server-side, passing the list isn't strictly necessary here.
     # However, keeping it consistent with previous logic of passing *something* related to admin.
@@ -463,7 +460,7 @@ def index():
                            categories=categories, # All categoried content for display and JS lookup
                            current_year=current_year,
                            user=user,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
 # --- Route for Single Movie Page ---
@@ -497,7 +494,7 @@ def movie_details(imdb_id):
                            movie=movie, # movie object should contain video_url if needed for playback
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
 # --- Route for Single Series Page (NEW) ---
@@ -546,7 +543,7 @@ def series_details(imdb_id, season_number=None, episode_number=None): # <-- Keep
                            series=series, # Pass the full series data
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
 
@@ -809,7 +806,7 @@ def all_movies():
                            movies=all_movies_data, # Pass all movies
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
 
@@ -835,7 +832,7 @@ def all_series():
                            series=all_series_data, # Pass series data to the template
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
 
