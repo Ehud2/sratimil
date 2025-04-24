@@ -1,0 +1,80 @@
+/* movies.css */
+
+/* Styles specific to the All Movies page */
+
+/* Ensure main content padding and margin on the movies page */
+.movies-page-content {
+    padding-top: 40px; /* Same as index */
+    padding-bottom: 50px; /* Same as index */
+    flex-grow: 1; /* Same as index */
+}
+
+/* Style for the page heading */
+.page-heading {
+    margin-bottom: 45px; /* Same as index greeting */
+    padding-left: 10px;
+    border-right: 4px solid var(--primary-accent-color); /* Same as index greeting */
+    padding-right: 20px;
+}
+
+.page-heading h1 {
+    font-family: var(--font-heading);
+    font-size: 2.4em; /* Slightly smaller than index main heading, or keep same */
+    font-weight: 700;
+    color: var(--text-heading-color);
+    margin-bottom: 5px;
+}
+
+.page-heading p {
+    font-size: 1.1em;
+    color: var(--text-color);
+}
+
+
+/* Styles for the movie grid container */
+.all-movies-grid {
+    display: grid;
+    /* Use grid-template-columns for responsive layout */
+    /* minmax(180px, 1fr) allows items to be at least 180px wide, growing up to 1fr (equal fraction of available space) */
+    /* auto-fill fills the available space with as many columns as possible */
+    /* auto-fit would also collapse columns if there are too few items, but auto-fill maintains minimum size */
+    grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
+    gap: var(--card-gap); /* Use the same gap defined in style.css */
+    justify-content: center; /* Center items horizontally if they don't fill the grid */
+    padding-bottom: 30px; /* Add padding similar to item-row */
+    margin-bottom: -30px; /* Counteract the padding */
+}
+
+/* The item-card-link wraps the item-card */
+/* Ensure it doesn't add extra layout properties */
+.all-movies-grid .item-card-link {
+    display: block; /* Important for the card to take grid space */
+    text-decoration: none; /* Remove underline from the link */
+    color: inherit; /* Inherit text color */
+}
+
+/* Reuse the item-card styles from style.css */
+/* No need to redefine .item-card, .card-image-container, etc. */
+/* They are defined in style.css and the movies.css grid layout applies to their container */
+
+
+/* You might want to adjust card size specifically for the grid if needed, e.g.: */
+/* .all-movies-grid .item-card { width: 100%; height: auto; } */
+/* This makes cards fill their grid cell width. The height will be determined by the image/content. */
+/* Keep the object-fit cover on the image. */
+
+/* If you make cards full width of grid item, you might need to adjust card-image-container height */
+/* .all-movies-grid .card-image-container { height: var(--card-height); } */
+/* Or let the aspect ratio define height: */
+/* .all-movies-grid .card-image-container { aspect-ratio: 2/3; height: auto; } */
+/* The original index.html style.css has fixed width/height for the card, which works fine with grid too. */
+/* Let's keep the fixed width/height for consistency with the card design unless a change is desired. */
+/* The 'minmax(var(--card-width), 1fr)' in grid-template-columns handles width responsively. */
+
+/* Style for the "No results found" message specific to this page if needed */
+/* #noResultsMessage { ... } */
+/* (The style is already in style.css and applies globally, which is fine) */
+
+
+/* You can add media queries here for different screen sizes if the default grid settings aren't perfect */
+/* @media (max-width: 768px) { ... } */
