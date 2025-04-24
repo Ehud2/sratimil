@@ -1,0 +1,226 @@
+/* movie.css */
+
+/* Ensure this imports the main styles */
+@import url("style.css");
+
+/* Override or add specific styles for the movie page */
+
+.movie-details-page {
+    padding-top: 40px;
+    padding-bottom: 50px;
+}
+
+.movie-details-page h1 {
+    font-family: var(--font-heading);
+    font-size: 2.8em;
+    font-weight: 700;
+    color: var(--text-heading-color);
+    text-align: center; /* Center the movie title */
+    margin-bottom: 40px; /* More space below the title */
+}
+
+.movie-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr; /* Poster on the left, info on the right */
+    gap: 40px; /* Gap between columns */
+    align-items: start; /* Align items to the top */
+}
+
+.movie-poster img {
+    display: block; /* Ensure image is block */
+    width: 100%; /* Make image fill its container */
+    height: auto;
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 10px 30px var(--shadow-color); /* Add shadow to poster */
+}
+
+.movie-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.movie-video-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+    margin-bottom: 30px; /* Space below video */
+    background-color: #000; /* Black background */
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+}
+
+.movie-video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.no-video-message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(31, 40, 51, 0.9); /* Dark background */
+    color: var(--text-muted-color);
+    font-size: 1.2em;
+    text-align: center;
+}
+
+
+.movie-plot {
+    margin-bottom: 30px; /* Space below plot */
+    color: var(--text-color);
+    font-size: 1.1em;
+    line-height: 1.8;
+    text-align: justify; /* Justify text for better look */
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Use grid for details */
+    gap: 15px 30px; /* Row gap, column gap */
+    margin-top: 20px; /* Space above details */
+    padding-top: 20px;
+    border-top: 1px solid rgba(69, 162, 158, 0.2); /* Separator */
+}
+
+.detail-line {
+    display: flex;
+    align-items: start; /* Align items to the start (top) */
+    color: var(--text-color);
+    font-size: 1em;
+}
+
+.detail-line i {
+    color: var(--primary-accent-color);
+    margin-left: 12px; /* Space between icon and text */
+    width: 25px; /* Fixed width for icon alignment */
+    text-align: center; /* Center icon */
+    flex-shrink: 0; /* Prevent icon from shrinking */
+    font-size: 1.2em; /* Slightly larger icons */
+    margin-top: 3px; /* Adjust vertical alignment with text */
+}
+
+.detail-line strong {
+    margin-left: 8px; /* Space between label and value */
+    color: var(--text-heading-color);
+    flex-shrink: 0;
+}
+
+.detail-line span {
+     word-break: break-word; /* Allow long text to wrap */
+}
+
+/* Style for N/A values (optional) */
+.detail-line span.na-value {
+     color: #888; /* Muted color for N/A */
+     font-style: italic;
+}
+
+.movie-actions {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.add-to-list-button {
+    padding: 12px 25px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1.1em;
+    font-weight: 700;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.add-to-list-button:hover {
+    background-color: var(--secondary-accent-color);
+    transform: translateY(-2px);
+}
+
+.add-to-list-button i {
+    margin-left: 8px; /* Space between icon and text */
+}
+
+
+/* Responsive Adjustments for movie page */
+@media (max-width: 992px) {
+    .movie-grid {
+        grid-template-columns: 1fr; /* Stack poster and info on smaller screens */
+        gap: 30px;
+    }
+    .movie-poster {
+        max-width: 300px; /* Limit poster width when stacked */
+        margin: 0 auto; /* Center the poster */
+    }
+     .movie-details-page h1 {
+         font-size: 2.4em;
+         margin-bottom: 30px;
+     }
+}
+
+@media (max-width: 768px) {
+    .movie-details-page h1 {
+         font-size: 2em;
+         margin-bottom: 25px;
+     }
+     .movie-plot {
+         font-size: 1em;
+         margin-bottom: 25px;
+     }
+     .info-grid {
+         gap: 15px;
+         padding-top: 15px;
+         margin-top: 15px;
+     }
+      .detail-line {
+          font-size: 0.95em;
+      }
+}
+
+@media (max-width: 576px) {
+    .movie-details-page {
+        padding-top: 20px;
+        padding-bottom: 30px;
+    }
+     .movie-details-page h1 {
+         font-size: 1.8em;
+         margin-bottom: 20px;
+     }
+      .movie-grid {
+         gap: 20px;
+      }
+     .movie-poster {
+         max-width: 250px;
+     }
+     .movie-plot {
+         font-size: 0.95em;
+         margin-bottom: 20px;
+     }
+     .info-grid {
+         gap: 10px;
+         padding-top: 10px;
+         margin-top: 10px;
+     }
+     .detail-line {
+         font-size: 0.9em;
+     }
+     .detail-line i {
+         margin-left: 10px;
+         width: 20px;
+         font-size: 1em;
+     }
+      .add-to-list-button {
+          padding: 10px 20px;
+          font-size: 1em;
+      }
+}
