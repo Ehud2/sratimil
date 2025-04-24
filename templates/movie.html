@@ -101,7 +101,7 @@
                 </div>
 
                 <div class="movie-info">
-                    <div class="movie-video-container">
+                    <div class="movie-video-container {% if not movie.video_url or movie.video_url == '#' or movie.video_url == 'N/A' %}no-video-container{% endif %}">
                         {# Use movie.video_url #}
                         {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
                             <video id="movie-player" controls playsinline data-poster="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}">
