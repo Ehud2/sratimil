@@ -1,0 +1,311 @@
+@import url("style.css");
+
+/* Override or add specific styles for the series page */
+
+/* General page adjustments */
+.series-details-page {
+    padding-top: 40px;
+    padding-bottom: 50px;
+    background-color: var(--bg-color); /* Default background color */
+    color: var(--text-color);
+}
+
+/* Container for the entire content area to control max width */
+/* Removed .series-details-container as it wasn't in series.html. Apply styles directly or add the container div.
+   Applying relevant styles to main.container for now. */
+main.container.series-details-page {
+     max-width: 1200px; /* Adjust as needed */
+    margin: 0 auto; /* Center the content */
+    padding: 20px;
+    background-color: #1e293b; /* A slightly lighter background for content area */
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+}
+
+
+/* Styling for the series title */
+.series-details-page h1 {
+    font-family: var(--font-heading);
+    font-size: 3em;
+    font-weight: 700;
+    color: var(--text-heading-color);
+    text-align: center;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+/* Restructure the grid */
+.series-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr; /* Poster on left, Info/Video on right */
+    gap: 30px;
+    align-items: start; /* Align items to the top */
+}
+
+/* Style the series poster */
+.series-poster {
+    max-width: 300px;
+    /* margin: 0 auto; */ /* Removed auto margin due to grid layout */
+    width: 100%; /* Ensure it takes full grid column width */
+}
+
+.series-poster img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 10px 30px var(--shadow-color);
+    transition: transform var(--transition-fast);
+}
+
+.series-poster img:hover {
+    transform: scale(1.05);
+}
+
+/* Style the video container */
+.series-video-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-color: #000;
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+}
+
+.series-video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* Hidden by default until an episode is selected */
+}
+
+/* Style for when video is not available */
+.series-video-container .no-video-message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(31, 40, 51, 0.9);
+    color: var(--text-muted-color);
+    font-size: 1.2em;
+    text-align: center;
+    /* Ensure this message is visible by default or when needed */
+    /* Initial display handled by JS based on state */
+}
+
+/* Style the series information container */
+.series-info {
+    display: flex;
+    flex-direction: column;
+    /* gap: 20px; */ /* Added gap for spacing between sections */
+}
+
+
+/* Episode selection controls */
+.episode-selection {
+    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: var(--border-radius-md);
+    background-color: rgba(255, 255, 255, 0.05);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Arrange selectors side-by-side on larger screens */
+    gap: 20px; /* Gap between selectors and episode list */
+}
+
+.episode-selection .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.episode-selection label {
+     font-weight: bold;
+     color: var(--text-heading-color);
+     margin-bottom: 8px;
+     font-size: 1em;
+}
+
+.episode-selection select {
+    padding: 8px;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid #ccc;
+    background-color: #fff; /* Or a dark background if preferred */
+    color: #333; /* Or white for dark background */
+    font-size: 1em;
+    cursor: pointer;
+}
+/* Style select for dark theme */
+main.container.series-details-page select {
+     background-color: rgba(255, 255, 255, 0.1);
+     color: var(--text-color);
+     border: 1px solid rgba(255, 255, 255, 0.2);
+}
+main.container.series-details-page select option {
+     background-color: var(--bg-color-dark); /* Dark background for options */
+     color: var(--text-color); /* Light text for options */
+}
+
+
+/* Episode list styling */
+.episode-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 250px; /* Limit height and add scroll */
+    overflow-y: auto;
+    border-radius: var(--border-radius-md);
+    background-color: rgba(255, 255, 255, 0.05); /* Same as episode selection background */
+    /* grid-column: 1 / -1; */ /* Make episode list span across columns if it's separate */
+}
+
+.episode-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    color: var(--text-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.episode-item:last-child {
+    border-bottom: none;
+}
+
+.episode-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.episode-item.selected {
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+    font-weight: bold;
+}
+
+.episode-item .episode-number {
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.episode-item .episode-title {
+    flex-grow: 1;
+}
+
+.placeholder-episode {
+    padding: 12px 15px;
+    color: var(--text-muted-color);
+    text-align: center;
+    font-style: italic;
+}
+
+
+/* Style the series details list (text info) */
+.series-details-list {
+    margin-top: 20px; /* Space above details list */
+    padding: 20px;
+    border-radius: var(--border-radius-md);
+    background-color: rgba(255, 255, 255, 0.05); /* Slightly transparent background */
+}
+
+.series-details-list p {
+    margin-bottom: 0.75em;
+    color: var(--text-color);
+    font-size: 1.1em;
+}
+
+.series-details-list strong {
+    font-weight: bold;
+    color: var(--text-heading-color);
+    margin-left: 0.5em;
+}
+
+
+/* Style the actions section */
+.series-actions {
+    margin-top: 30px;
+    text-align: center;
+}
+
+/* Style the add to list button */
+.add-to-list-button {
+    padding: 12px 25px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1.1em;
+    font-weight: 700;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.add-to-list-button:hover {
+    background-color: var(--secondary-accent-color);
+    transform: translateY(-2px);
+}
+
+.add-to-list-button i {
+    margin-left: 8px;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .series-grid {
+        grid-template-columns: 1fr; /* Stack columns on smaller screens */
+        gap: 20px;
+    }
+     .series-poster {
+        max-width: 250px; /* Adjust max width when stacked */
+        margin: 0 auto; /* Center poster when stacked */
+     }
+    .episode-selection {
+         grid-template-columns: 1fr; /* Stack selectors and list */
+         gap: 15px;
+     }
+    .episode-list {
+        max-height: 200px; /* Adjust list height */
+    }
+
+}
+
+@media (max-width: 768px) {
+    .series-details-page h1 {
+        font-size: 2.5em;
+    }
+    .series-details-list p {
+        font-size: 1em;
+    }
+    .episode-item {
+         font-size: 0.95em;
+     }
+}
+
+@media (max-width: 576px) {
+    .series-details-page h1 {
+        font-size: 2em;
+    }
+     .series-poster {
+        max-width: 180px; /* Further reduce poster size */
+     }
+    .series-details-list p {
+        font-size: 0.9em;
+    }
+     .episode-item {
+         font-size: 0.9em;
+     }
+     .add-to-list-button {
+         font-size: 1em;
+         padding: 10px 20px;
+     }
+}
