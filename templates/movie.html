@@ -45,6 +45,7 @@
         <nav class="main-nav">
             <a href="{{ url_for('index') }}">בית</a>
             <a href="{{ url_for('all_movies') }}">סרטים</a>
+            <a href="{{ url_for('all_series') }}">סדרות</a>
             {% if user and user.email == admin_email %}
             <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
             {% endif %}
