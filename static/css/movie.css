@@ -88,8 +88,8 @@
 
 /* Style the movie information */
 .movie-info {
-    display: flex;
-    flex-direction: column;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 /* Style the movie description */
