@@ -4,7 +4,7 @@ import traceback
 import os
 import requests
 import json
-from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify, send_from_directory
+from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
 import firebase_admin
 from firebase_admin import credentials, db
@@ -151,26 +151,30 @@ def categorize_movies(movies_data):
             logging.warning(f"Skipping non-dict entry in /Movies: {imdb_id}")
             continue
 
-        # Ensure required fields exist, provide defaults for the card display
+        # Ensure required fields exist, provide defaults
         title = movie_details.get('title', 'כותרת לא ידועה')
         # Use 'poster' field from Firebase, which should be from OMDB
         poster = movie_details.get('poster', 'N/A') # Use N/A as default for poster from OMDB
-        # video_url is NOT needed on the index card anymore, as we navigate to movie page
+        video_url = movie_details.get('video_url', '#') # Default to # if video_url is missing
         category = movie_details.get('category', 'ללא') # Default to 'ללא'
 
         # Add to the correct category list if category is valid and not "ללא"
-        # We need id, title, poster for the item cards in index.html
+        # We need id, title, poster, video_url for the item cards in index.html
+        # For the item card, we only need basic display info and the ID for the link
         if category in CATEGORIES and category != "ללא":
              categorized_movies[category].append({
-                "id": imdb_id, # The ID is needed to build the link URL
+                "id": imdb_id,
                 "title": title,
                 "poster": poster,
+                # video_url is NOT needed on the index card anymore, as we navigate to movie page
+                # "video_url": video_url
              })
         elif category == "ללא":
             pass # Don't display 'ללא' category on index
         else:
              logging.warning(f"Movie {imdb_id} has invalid/unknown category: {category}")
              pass # Skip invalid categories
+
 
     # Optional: If you want to ensure categories with no movies are still shown,
     # you might add checks here. But usually, you only show categories with items.
@@ -199,7 +203,7 @@ def get_greeting(user=None):
     else:
         return f"{greeting_text} אורח"
 
-# --- OMDB API Functions (Used by add.html) ---
+# --- OMDB API Functions ---
 OMDB_BASE_URL = 'http://www.omdbapi.com/'
 
 def search_omdb_api(search_term, content_type):
@@ -331,22 +335,6 @@ def logout():
     flash('התנתקת בהצלחה.', 'info')
     return redirect(url_for('index'))
 
-
-# --- Favicon Route ---
-@app.route('/favicon.ico')
-def favicon():
-    # Assuming your favicon is named favicon.ico and is in the static folder
-    # If you don't have one, you can remove this route or serve a default/empty response
-    try:
-        return send_from_directory(os.path.join(app.root_path, 'static'),
-                                   'favicon.ico', mimetype='image/vnd.microsoft.icon')
-    except FileNotFoundError:
-        logging.warning("favicon.ico not found in static folder.")
-        # Return a 204 No Content response if favicon is not found
-        from flask import Response
-        return Response(status=204)
-
-
 # --- Main Routes ---
 @app.route('/')
 def index():
@@ -383,19 +371,16 @@ def movie_details(imdb_id):
     # Load movie details from Firebase
     movie = load_movie_details(imdb_id)
 
-    # Important: Check if movie exists AND is actually of type 'movie'
     if not movie or movie.get('type') != 'movie':
         logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}")
         # If not found or not a movie type, show 404 or specific error page
         abort(404)
 
     # Render the movie details page
-    # Ensure admin_email is passed if you want the admin link on this page
     return render_template('movie.html',
                            movie=movie,
                            user=user,
-                           current_year=current_year,
-                           admin_email=ADMIN_EMAIL # Pass admin email for nav link
+                           current_year=current_year
                            )
 
 
@@ -446,7 +431,7 @@ def add_content():
                     'year': omdb_details.get('Year', 'N/A'),
                     'rated': omdb_details.get('Rated', 'N/A'),
                     'released': omdb_details.get('Released', 'N/A'),
-                    'runtime': omdb_details.get('Runtime', 'N/A'), # e.g., "120 min"
+                    'runtime': omdb_details.get('Runtime', 'N/A'),
                     'genre': omdb_details.get('Genre', 'N/A'),
                     'director': omdb_details.get('Director', 'N/A'),
                     'writer': omdb_details.get('Writer', 'N/A'),
@@ -619,16 +604,14 @@ def forbidden(e):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
     logging.warning(f"403 Forbidden: {request.path} - {e}")
-    # Pass admin_email to error pages if they use the nav bar
-    return render_template('403.html', user=user, current_year=current_year, admin_email=ADMIN_EMAIL), 403
+    return render_template('403.html', user=user, current_year=current_year), 403
 
 @app.errorhandler(404)
 def page_not_found(e):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
     logging.warning(f"404 Not Found: {request.path} - {e}")
-     # Pass admin_email to error pages if they use the nav bar
-    return render_template('404.html', user=user, current_year=current_year, admin_email=ADMIN_EMAIL), 404
+    return render_template('404.html', user=user, current_year=current_year), 404
 
 @app.errorhandler(500)
 def internal_server_error(e):
@@ -636,8 +619,7 @@ def internal_server_error(e):
     logging.error(f"Internal Server Error: {request.path} - {e}\n{tb_str}", exc_info=True)
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-     # Pass admin_email to error pages if they use the nav bar
-    return render_template('500.html', user=user, current_year=current_year, admin_email=ADMIN_EMAIL), 500
+    return render_template('500.html', user=user, current_year=current_year), 500
 
 if __name__ == '__main__':
     # Ensure Firebase is initialized before running the app
