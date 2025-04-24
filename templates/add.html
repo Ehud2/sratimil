@@ -82,7 +82,9 @@
                 <a href="{{ url_for('index') }}">בית</a>
                 <a href="{{ url_for('all_movies') }}">סרטים</a>
                 <a href="{{ url_for('all_series') }}">סדרות</a>
-                <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
+                 {% if user and user.email in admin_emails %} {# Changed condition to check if user.email is IN the list admin_emails #}
+                    <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
+                {% endif %}
             </nav>
 
             <div class="auth-container">
