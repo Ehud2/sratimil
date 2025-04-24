@@ -31,8 +31,11 @@ app.config['GOOGLE_DISCOVERY_URL'] = (
 # Replace with your actual OMDB API key from environment variables
 OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # THIS IS A SECRET! MUST BE IN ENV VAR!
 
-# Replace with the actual admin email from environment variables
-ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'ehudverbin@gmail.com') # Consider a more secure admin check than just email
+# Replace with the actual admin emails from environment variables or default list
+# Environment variable 'ADMIN_EMAILS' should be a comma-separated string (e.g., "email1,email2")
+ADMIN_EMAILS_STR = os.environ.get('ADMIN_EMAILS', 'ehudverbin@gmail.com,guykresco@gmail.com') # <-- CHANGED LINE
+ADMIN_EMAILS = [email.strip() for email in ADMIN_EMAILS_STR.split(',') if email.strip()] # Convert comma-separated string to list # <-- CHANGED LINE
+
 
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31)
 
@@ -182,7 +185,7 @@ def load_full_series_details(imdb_id):
              logging.info(f"No full details found for series ID {imdb_id} in Firebase.")
         return series_details
     except Exception as e:
-        logging.error(f"Error loading full series details for ID {imdb_id} from Firebase: {e}", exc_info=True)
+        logging.error(f"Error loading full series details for ID {imdb_id}: {e}", exc_info=True)
         return None
 
 
@@ -197,7 +200,7 @@ def load_movie_details(imdb_id):
              logging.info(f"No details found for movie ID {imdb_id} in Firebase.")
         return movie_details
     except Exception as e:
-        logging.error(f"Error loading movie details for ID {imdb_id} from Firebase: {e}", exc_info=True)
+        logging.error(f"Error loading movie details for ID {imdb_id}: {e}", exc_info=True)
         return None
 
 
@@ -448,7 +451,10 @@ def index():
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
-    admin_email = ADMIN_EMAIL # Ensure this is passed
+    # admin_email = ADMIN_EMAIL # Ensure this is passed # <-- REMOVED
+    # Pass the list of admin emails to the template if needed (though index.html might not use it)
+    # If admin status is only checked server-side, passing the list isn't strictly necessary here.
+    # However, keeping it consistent with previous logic of passing *something* related to admin.
 
     # Pass the user object and categorized data to the template.
     # The 'continue watching' logic is handled client-side using localStorage.
@@ -457,7 +463,7 @@ def index():
                            categories=categories, # All categoried content for display and JS lookup
                            current_year=current_year,
                            user=user,
-                           admin_email=admin_email # Pass the admin email
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
                            )
 
 # --- Route for Single Movie Page ---
@@ -465,7 +471,7 @@ def index():
 def movie_details(imdb_id):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    admin_email = ADMIN_EMAIL # Pass admin email to movie page for nav link
+    # admin_email = ADMIN_EMAIL # Pass admin email to movie page for nav link # <-- REMOVED
 
     # Validate IMDb ID format before querying
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
@@ -491,7 +497,7 @@ def movie_details(imdb_id):
                            movie=movie, # movie object should contain video_url if needed for playback
                            user=user,
                            current_year=current_year,
-                           admin_email=admin_email # Pass admin email for nav link
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
                            )
 
 # --- Route for Single Series Page (NEW) ---
@@ -502,7 +508,7 @@ def movie_details(imdb_id):
 def series_details(imdb_id, season_number=None, episode_number=None): # <-- Keep parameters with defaults
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    admin_email = ADMIN_EMAIL
+    # admin_email = ADMIN_EMAIL # <-- REMOVED
 
     # Validate Series IMDb ID format
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
@@ -540,15 +546,15 @@ def series_details(imdb_id, season_number=None, episode_number=None): # <-- Keep
                            series=series, # Pass the full series data
                            user=user,
                            current_year=current_year,
-                           admin_email=admin_email
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
                            )
 
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_content():
     user = session.get('user')
-    # Basic admin check (consider a more robust method for production)
-    if not user or user.get('email') != ADMIN_EMAIL:
+    # Basic admin check: Check if the user's email is in the list of ADMIN_EMAILS
+    if not user or user.get('email') not in ADMIN_EMAILS: # <-- CHANGED LINE
         logging.warning(f"Unauthorized access attempt to /add by {user.get('email') if user else 'anonymous'}")
         abort(403)
 
@@ -787,7 +793,7 @@ def all_movies():
     """Displays all movies from Firebase in a grid."""
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    admin_email = ADMIN_EMAIL
+    # admin_email = ADMIN_EMAIL # <-- REMOVED
 
     # Load ALL movies from Firebase
     # load_movies_data() already returns a dictionary {imdbID: details}
@@ -803,7 +809,7 @@ def all_movies():
                            movies=all_movies_data, # Pass all movies
                            user=user,
                            current_year=current_year,
-                           admin_email=admin_email
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
                            )
 
 
@@ -814,7 +820,7 @@ def all_series():
     """Displays all series from Firebase in a grid."""
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    admin_email = ADMIN_EMAIL
+    # admin_email = ADMIN_EMAIL # <-- REMOVED
 
     # Use the existing function that loads basic series data for display
     # load_series_data_for_index() already returns {imdbID: basic_details}
@@ -829,7 +835,7 @@ def all_series():
                            series=all_series_data, # Pass series data to the template
                            user=user,
                            current_year=current_year,
-                           admin_email=admin_email
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails # <-- CHANGED LINE
                            )
 
 
