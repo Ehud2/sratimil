@@ -42,10 +42,6 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    /* Added to prevent scrolling when modal is open */
-    &.modal-open {
-        overflow-y: hidden;
-    }
 }
 .container { width: 95%; max-width: 1700px; margin: 0 auto; padding: 0 var(--container-padding); }
 a { color: var(--primary-accent-color); text-decoration: none; transition: color var(--transition-fast); }
@@ -193,8 +189,9 @@ img { max-width: 100%; height: auto; display: block; }
     border: 2px solid var(--text-heading-color); color: var(--text-heading-color); width: 60px; height: 60px; border-radius: 50%;
     display: flex; justify-content: center; align-items: center; font-size: 1.5em; cursor: pointer; opacity: 0;
     transition: transform var(--transition-fast), opacity var(--transition-fast), background-color var(--transition-fast); z-index: 3;
+    /* play button on index page now navigates */
+    pointer-events: auto; /* Make clickable */
 }
-/* Keep play button visible on hover, but it will trigger modal now */
 .item-card:hover .play-button, .item-card:focus-within .play-button { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .play-button:hover { background-color: rgba(255, 255, 255, 0.4); transform: translate(-50%, -50%) scale(1.1); }
 .play-button i { margin-left: 3px; }
@@ -214,6 +211,7 @@ img { max-width: 100%; height: auto; display: block; }
     background-color: rgba(40, 40, 40, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); color: var(--text-heading-color);
     width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
     font-size: 0.8em; cursor: pointer; transition: background-color var(--transition-fast), transform var(--transition-fast);
+    pointer-events: auto; /* Make clickable */
 }
 .card-actions button:hover { background-color: rgba(60, 60, 60, 0.9); transform: scale(1.1); }
 
@@ -353,250 +351,7 @@ img { max-width: 100%; height: auto; display: block; }
     /* display: none will be added by JS after transition */
 }
 
-/* --- Modal Styles --- */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.95); /* Darker overlay for modal */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000; /* On top of everything */
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--transition-fast), visibility var(--transition-fast);
-    /* Initially hidden via display: none */
-    display: none;
-}
-
-.modal-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-    display: flex; /* Show with flex when visible */
-}
-
-.modal-content {
-    background-color: var(--bg-secondary);
-    padding: 30px; /* Adjust padding */
-    border-radius: var(--border-radius-md);
-    max-width: 800px; /* Medium size */
-    width: 90%; /* Responsive width */
-    max-height: 95vh; /* Limit height */
-    overflow-y: auto; /* Add scroll if content overflows */
-    position: relative;
-    box-shadow: 0 15px 40px var(--shadow-color);
-    transform: scale(0.95); /* Slightly smaller initially */
-    transition: transform var(--transition-fast);
-    direction: rtl; /* Ensure content is RTL */
-}
-
-.modal-overlay.visible .modal-content {
-    transform: scale(1); /* Scale up when visible */
-}
-
-.modal-close {
-    position: absolute;
-    top: 15px; /* Adjust position */
-    left: 15px; /* Position on the left for RTL */
-    background: none;
-    border: none;
-    color: var(--text-color);
-    font-size: 1.8em; /* Larger close button */
-    cursor: pointer;
-    padding: 5px; /* Add padding for easier clicking */
-    transition: color var(--transition-fast);
-    z-index: 10; /* Ensure close button is clickable */
-}
-
-.modal-close:hover {
-    color: var(--text-heading-color);
-}
-
-.modal-video-container {
-    position: relative;
-    padding-bottom: 56.25%; /* 16:9 aspect ratio */
-    height: 0;
-    overflow: hidden;
-    margin-bottom: 20px;
-    background-color: #000; /* Black background for video area */
-}
-
-.modal-video-container video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.modal-details h2 {
-    font-family: var(--font-heading);
-    color: var(--text-heading-color);
-    font-size: 2em;
-    margin-bottom: 15px;
-    text-align: center; /* Center title */
-}
-
-.modal-plot {
-    margin-bottom: 20px;
-    color: var(--text-color);
-    font-size: 1em;
-    line-height: 1.7;
-    text-align: justify; /* Improve readability of plot */
-}
-
-.modal-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Use grid for details */
-    gap: 15px; /* Gap between grid items */
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(69, 162, 158, 0.2); /* Separator line */
-}
-
-.detail-line {
-    display: flex;
-    align-items: center;
-    color: var(--text-color);
-    font-size: 1em;
-}
-
-.detail-line i {
-    color: var(--primary-accent-color);
-    margin-left: 10px; /* Space between icon and text */
-    width: 20px; /* Fixed width for icon alignment */
-    text-align: center; /* Center icon */
-    flex-shrink: 0; /* Prevent icon from shrinking */
-}
-
-.detail-line strong {
-    margin-left: 5px; /* Space between label and value */
-    color: var(--text-heading-color);
-}
-
-/* Optional: Style for N/A values */
-.detail-line span {
-    color: var(--text-color);
-}
-.detail-line span.na-value {
-     color: #888; /* Muted color for N/A */
-     font-style: italic;
-}
-
-
-/* --- Responsive Adjustments --- */
-@media (max-width: 1400px) { }
-@media (max-width: 1200px) {
-    .main-nav {
-        gap: 20px;
-    }
-    .modal-content {
-         max-width: 700px;
-    }
-}
-
-@media (max-width: 992px) {
-    :root {
-         --card-width: 200px;
-         --card-height: 300px;
-         --card-gap: 20px;
-         --container-padding: 25px;
-    }
-    .header-content {
-        gap: 20px;
-    }
-    .main-nav { display: none; }
-    .search-container { margin-right: 0; margin-left: auto; }
-    .header-spacer { display: none; }
-
-    .page-greeting h1 { font-size: 2em; }
-    .page-greeting p { font-size: 1em; }
-
-    .modal-content {
-         max-width: 600px;
-         padding: 25px;
-    }
-    .modal-details h2 { font-size: 1.8em; }
-    .modal-info-grid { grid-template-columns: 1fr; /* Stack details on smaller screens */ }
-}
-
-@media (max-width: 768px) {
-    :root {
-         --card-width: 180px;
-         --card-height: 270px;
-         --card-gap: 15px;
-         --container-padding: 20px;
-    }
-    .header-content { padding: 0 20px;
-       gap: 15px;
-    }
-     #searchInput { width: 160px; }
-     #searchInput:focus { width: 200px; }
-
-    .page-greeting h1 { font-size: 1.8em; }
-    .page-greeting p { font-size: 1em; }
-
-    .modal-content {
-         width: 95%; /* Allow wider modal on very small screens */
-         max-width: none; /* Remove max-width constraint */
-         padding: 20px;
-    }
-     .modal-details h2 { font-size: 1.6em; }
-}
-
-@media (max-width: 576px) {
-    :root {
-        --header-height: 60px;
-        --card-width: 150px;
-        --card-height: 225px;
-        --card-gap: 10px;
-        --container-padding: 15px;
-    }
-    .site-header { height: var(--header-height); }
-    .header-content { padding: 0 15px;
-        gap: 10px;
-    }
-
-    .search-container { width: auto; }
-     #searchInput { width: 100px; font-size: 0.9em;}
-     #searchInput:focus { width: 130px; }
-     .search-container button { font-size: 0.9em; height: 34px; }
-     .auth-container {
-        width: 34px;
-        height: 34px;
-     }
-     .profile-button {
-         width: 34px;
-         height: 34px;
-     }
-
-    .page-greeting h1 { font-size: 1.6em; }
-    .page-greeting p { font-size: 0.9em; }
-    .page-greeting { padding-right: 15px; border-right-width: 3px;}
-
-    .rank-number {
-        width: 50px;
-        height: 50px;
-        left: -10px;
-        bottom: 5px;
-    }
-     .rank-circle-bg path { stroke-width: 3; }
-     .rank-text { font-size: 1.6em; }
-
-     .modal-content {
-          padding: 15px;
-     }
-     .modal-details h2 { font-size: 1.4em; margin-bottom: 10px; }
-     .modal-plot { font-size: 0.9em; margin-bottom: 15px;}
-     .modal-info-grid { gap: 10px; margin-top: 15px; padding-top: 15px; }
-     .detail-line { font-size: 0.9em; }
-     .detail-line i { margin-left: 8px; width: 18px; }
-}
-
-/* Styles for add.html - included in style.css for simplicity in this example */
+/* --- Styles for add.html - included in style.css for simplicity --- */
 /* Ideally these would be in static/css/add.css */
 .add-movie-form-container {
     max-width: 700px;
