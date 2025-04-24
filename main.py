@@ -336,13 +336,16 @@ def logout():
 @app.route('/favicon.ico')
 def favicon():
     # Assuming your favicon is named favicon.ico and is in the static folder
-    # If not, replace 'favicon.ico' with your filename or None if you don't have one
+    # If you don't have one, you can remove this route or serve a default/empty response
     try:
         return send_from_directory(os.path.join(app.root_path, 'static'),
                                    'favicon.ico', mimetype='image/vnd.microsoft.icon')
     except FileNotFoundError:
-        # If favicon.ico doesn't exist, return a 404 or 204 No Content
-        abort(404) # Or return Response(status=204)
+        logging.warning("favicon.ico not found in static folder.")
+        # Return a 204 No Content response if favicon is not found
+        from flask import Response
+        return Response(status=204)
+
 
 # --- Main Routes ---
 @app.route('/')
@@ -443,7 +446,7 @@ def add_content():
                     'year': omdb_details.get('Year', 'N/A'),
                     'rated': omdb_details.get('Rated', 'N/A'),
                     'released': omdb_details.get('Released', 'N/A'),
-                    'runtime': omdb_details.get('Runtime', 'N/A'),
+                    'runtime': omdb_details.get('Runtime', 'N/A'), # e.g., "120 min"
                     'genre': omdb_details.get('Genre', 'N/A'),
                     'director': omdb_details.get('Director', 'N/A'),
                     'writer': omdb_details.get('Writer', 'N/A'),
