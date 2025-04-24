@@ -155,19 +155,17 @@ def categorize_movies(movies_data):
         title = movie_details.get('title', 'כותרת לא ידועה')
         # Use 'poster' field from Firebase, which should be from OMDB
         poster = movie_details.get('poster', 'N/A') # Use N/A as default for poster from OMDB
-        video_url = movie_details.get('video_url', '#') # Default to # if video_url is missing
+        # video_url is NOT needed on the index card anymore, as we navigate to movie page
+        # video_url = movie_details.get('video_url', '#')
         category = movie_details.get('category', 'ללא') # Default to 'ללא'
 
         # Add to the correct category list if category is valid and not "ללא"
-        # We need id, title, poster, video_url for the item cards in index.html
-        # For the item card, we only need basic display info and the ID for the link
+        # We need id, title, poster for the item cards in index.html
         if category in CATEGORIES and category != "ללא":
              categorized_movies[category].append({
                 "id": imdb_id,
                 "title": title,
                 "poster": poster,
-                # video_url is NOT needed on the index card anymore, as we navigate to movie page
-                # "video_url": video_url
              })
         elif category == "ללא":
             pass # Don't display 'ללא' category on index
@@ -300,8 +298,8 @@ def google_callback():
     try:
         logging.info("Handling Google login callback.")
         token = oauth.google.authorize_access_token()
-        userinfo_response = oauth.google.userinfo(token=token)
-        userinfo = userinfo_response.json()
+        # FIX: Access user info directly from the response object, don't call .json()
+        userinfo = oauth.google.userinfo(token=token)
         logging.info(f"Received user info from Google: {userinfo.get('email')}")
 
         user_data = {
@@ -371,10 +369,12 @@ def movie_details(imdb_id):
     # Load movie details from Firebase
     movie = load_movie_details(imdb_id)
 
+    # Also ensure that if data is found, it's actually intended to be a movie page
+    # based on the 'type' field saved from OMDB.
     if not movie or movie.get('type') != 'movie':
-        logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}")
+        logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}. Data: {movie}")
         # If not found or not a movie type, show 404 or specific error page
-        abort(404)
+        abort(404) # Using 404 as it's a "not found" scenario for a movie page
 
     # Render the movie details page
     return render_template('movie.html',
