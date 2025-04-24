@@ -427,7 +427,7 @@
 
                     const iframe = document.createElement('iframe');
                     // Vidsrc URL for TV shows usually needs the episode IMDb ID
-                    iframe.src = `https://vidsrc.xyz/embed/tv?imdb=${episodeImdbId}`;
+                    iframe.src = `https://vidsrc.to/embed/tv/${episodeImdbId}`;
                     iframe.allowFullscreen = true;
                     iframe.setAttribute("allow", "autoplay"); // Request autoplay permission
 
