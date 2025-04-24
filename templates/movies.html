@@ -1,1 +1,191 @@
+<!-- movies.html -->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כל הסרטים</title>
+    {# Link the main style sheet first for shared styles like header, footer, etc. #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {# Link the specific movie page style sheet after the main one #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movies.css') }}">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    {# Included loading spinner styles directly in style.css #}
+</head>
+<body>
+    <!-- Loading Spinner - Copy from index.html -->
+    <div id="loading-spinner">
+        <div class="spinner">
+            {% if user and user.picture %}
+                <img src="{{ user.picture }}" alt="User profile picture">
+            {% else %}
+                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture">
+            {% endif %}
+        </div>
+        <p>טוען סינמה פריים...</p>
+    </div>
+
+    <!-- Header - Copy from index.html -->
+    <header class="site-header">
+        <div class="container header-content">
+
+            <div class="search-container">
+               <input type="search" id="searchInput" placeholder="חיפוש...">
+               <button aria-label="Search"><i class="fas fa-search"></i></button>
+            </div>
+
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}">בית</a>
+                {# UPDATED LINK #}
+                <a href="{{ url_for('all_movies') }}">סרטים</a>
+                <a href="#">סדרות</a> {# TODO: Link to series page #}
+                <a href="#">הרשימה שלי</a> {# TODO: Link to watchlist page #}
+                {% if user and user.email == admin_email %}
+                <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
+                {% endif %}
+            </nav>
+
+            <div class="auth-container">
+                {% if user %}
+                    <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
+                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
+                         <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy">
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="header-spacer"></div>
+        </div>
+    </header>
+
+    <!-- Flash Messages - Copy from index.html -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category|default('info') }}" role="alert">
+                {{ message }}
+                <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="container main-content movies-page-content"> {# Added class for page-specific margin #}
+        <div class="page-heading"> {# Use a slightly different class for heading #}
+            <h1>כל הסרטים</h1>
+            <p>צפה בכל הסרטים הזמינים באתר.</p>
+        </div>
+
+        {# Container for the movie grid #}
+        <div class="all-movies-grid">
+            {# Iterate through the 'movies' dictionary passed from main.py #}
+            {% for imdb_id, movie in movies.items() %}
+                 {# Ensure item has basic properties needed for display and linking #}
+                 {% if movie and movie.get('imdbID') and movie.get('title') %}
+                     {# Wrap card in an anchor tag linking to the movie details page #}
+                    <a href="{{ url_for('movie_details', imdb_id=movie.imdbID) }}" class="item-card-link">
+                        {# Use the same item-card structure as index.html for consistent look, but movies.css will handle grid layout #}
+                        {# Add data attributes for client-side search #}
+                        <div class="item-card" data-title="{{ movie.title.lower() }}" data-id="{{ movie.imdbID }}" data-type="movie" tabindex="0">
+                            <div class="card-image-container">
+                                {# Use movie.poster, fall back to default if N/A or empty #}
+                                <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title }}" loading="lazy">
+                                {# No rank number on this page #}
+                                <div class="card-overlay">
+                                     {# The play button now links to the movie details page #}
+                                    <button class="play-button" aria-label="Play {{ movie.title }}"><i class="fas fa-play"></i></button>
+                                    <h3 class="card-title">{{ movie.title }}</h3>
+                                    <div class="card-actions">
+                                        <button aria-label="Add to list" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
+                                         {# The info button also links to the movie details page #}
+                                        <button class="info-button" aria-label="More info"><i class="fas fa-info-circle"></i></button> {# This button will also follow the card link #}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a> {# End of anchor tag wrapper #}
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div id="noResultsMessage" style="display: none;">לא נמצאו תוצאות התואמות את החיפוש שלך.</div>
+    </main>
+
+    <!-- Footer - Copy from index.html -->
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript to hide the loading spinner once the page is loaded - Copy from index.html
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOMContentLoaded fired on movies page."); // Debug log
+            const spinner = document.getElementById('loading-spinner');
+            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+
+            if (spinner) {
+                 console.log("Spinner element found, attempting to hide.");
+                 spinner.classList.add('hidden');
+                 spinner.addEventListener('transitionend', function handler(event) {
+                     if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
+                         spinner.style.display = 'none';
+                         console.log("Spinner hidden via transitionend on movies page.");
+                         spinner.removeEventListener('transitionend', handler);
+                     }
+                });
+                 setTimeout(() => {
+                     if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+                          spinner.style.display = 'none';
+                          console.log("Spinner hidden via timeout fallback on movies page.");
+                     }
+                 }, visualHideDelay + 100);
+            } else {
+                console.warn("Spinner element #loading-spinner not found on movies page.");
+            }
+
+            // --- Search Filter Functionality - Adapted for movies page ---
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    // Select the anchor tag wrappers for the movie cards
+                    const itemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link'); // Target only cards within the grid
+                    let anyVisible = false;
+                    itemCardLinks.forEach(link => {
+                        // Get the data-title from the .item-card *inside* the link
+                        const card = link.querySelector('.item-card');
+                        if (card) {
+                            const title = card.dataset.title || '';
+
+                            if (title.includes(searchTerm)) {
+                                link.style.display = ''; // Show the link (and thus the card)
+                                anyVisible = true;
+                            } else {
+                                link.style.display = 'none'; // Hide the link (and thus the card)
+                            }
+                        }
+                    });
+                    const noResultsMessage = document.getElementById('noResultsMessage');
+                    if (noResultsMessage) {
+                         noResultsMessage.style.display = anyVisible ? 'none' : 'block';
+                    }
+                });
+            } else {
+                 console.warn("Search input #searchInput not found on movies page.");
+            }
+
+        }); // End DOMContentLoaded
+    </script>
+</body>
+</html>
