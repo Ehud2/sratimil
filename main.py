@@ -11,7 +11,7 @@ from firebase_admin import credentials, db
 import logging # Import logging for better error handling
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 
@@ -58,11 +58,15 @@ FIREBASE_DATABASE_URL = os.environ.get('FIREBASE_DATABASE_URL', 'https://superno
 
 # Initialize Firebase Admin SDK
 try:
-    cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
-    firebase_admin.initialize_app(cred, {
-        'databaseURL': FIREBASE_DATABASE_URL
-    })
-    logging.info("Firebase initialized successfully.")
+    # Check if app is already initialized (prevents errors in debug/reloader mode)
+    if not firebase_admin._apps:
+        cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
+        firebase_admin.initialize_app(cred, {
+            'databaseURL': FIREBASE_DATABASE_URL
+        })
+        logging.info("Firebase initialized successfully.")
+    else:
+        logging.info("Firebase already initialized.")
 except Exception as e:
     logging.error(f"Error initializing Firebase: {e}")
     # Handle error - maybe abort app startup or provide a fallback
@@ -85,6 +89,7 @@ def load_movies_data():
     try:
         ref = db.reference('/Movies')
         movies = ref.get()
+        logging.info(f"Loaded {len(movies) if movies else 0} movies from Firebase.")
         return movies if movies is not None else {}
     except Exception as e:
         logging.error(f"Error loading movies from Firebase: {e}")
@@ -104,6 +109,7 @@ def load_series_data():
                         "id": imdb_id,
                         "title": details.get('title', 'Untitled Series')
                      })
+        logging.info(f"Loaded {len(available_series_list)} series for dropdown from Firebase.")
         return available_series_list
     except Exception as e:
         logging.error(f"Error loading series list from Firebase: {e}")
@@ -117,12 +123,13 @@ def load_series_data():
 def categorize_movies(movies_data):
     """Categorizes movies loaded from Firebase."""
     categorized_movies = {}
-    # Initialize categories including "ללא" temporarily to catch uncategorized
+    # Initialize categories excluding "ללא" as it's typically not a display category
     for cat in CATEGORIES:
-         categorized_movies[cat] = []
+        if cat != "ללא":
+            categorized_movies[cat] = []
 
     if not movies_data:
-        return {cat: [] for cat in CATEGORIES if cat != "ללא"} # Return empty dict for non-"ללא" categories
+        return {cat: [] for cat in CATEGORIES if cat != "ללא"} # Return empty dict for display categories
 
     # Firebase data is {imdb_id: {details}}
     for imdb_id, movie_details in movies_data.items():
@@ -132,26 +139,29 @@ def categorize_movies(movies_data):
 
         # Ensure required fields exist, provide defaults
         title = movie_details.get('title', 'כותרת לא ידועה')
-        poster = movie_details.get('poster', 'https://placehold.co/240x360/cccccc/000000?text=No+Poster')
+        # Use 'poster' field from Firebase, which should be from OMDB
+        poster = movie_details.get('poster', 'N/A') # Use N/A as default for poster from OMDB
         video_url = movie_details.get('video_url', '#')
         category = movie_details.get('category', 'ללא') # Default to 'ללא'
 
-        # Add to the correct category list if category is valid
-        if category in CATEGORIES:
+        # Add to the correct category list if category is valid and not "ללא"
+        if category in CATEGORIES and category != "ללא":
              categorized_movies[category].append({
                 "id": imdb_id,
                 "title": title,
                 "poster": poster,
-                "video_url": video_url
+                "video_url": video_url # video_url is needed on the card for modal JS
              })
+        elif category == "ללא":
+            pass # Don't display 'ללא' category on index
         else:
-            # Optionally add to a default/uncategorized list or log
-            logging.warning(f"Movie {imdb_id} has invalid category: {category}")
-            # Add to a default category or 'ללא' if you want them shown
-            # categorized_movies['ללא'].append({...}) # If you want 'ללא' displayed
+             logging.warning(f"Movie {imdb_id} has invalid/unknown category: {category}")
+             pass # Skip invalid categories
 
-    # Remove the 'ללא' category if it's not intended for display on the index
-    categorized_movies.pop('ללא', None)
+
+    # Optional: If you want to ensure categories with no movies are still shown,
+    # you might add checks here. But usually, you only show categories with items.
+    # return {cat: items for cat, items in categorized_movies.items() if items} # Only return categories with items
 
     return categorized_movies
 
@@ -194,6 +204,7 @@ def search_omdb_api(search_term, content_type):
         response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
         data = response.json()
         if data.get('Response') == 'True':
+            logging.info(f"OMDB search for '{search_term}' type '{content_type}' found {len(data.get('Search', []))} results.")
             return data.get('Search', [])
         else:
              logging.info(f"OMDB search found no results for '{search_term}' type '{content_type}': {data.get('Error', 'Unknown error')}")
@@ -217,6 +228,7 @@ def get_omdb_details_api(imdb_id):
         response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
         data = response.json()
         if data.get('Response') == 'True':
+            logging.info(f"Successfully fetched OMDB details for ID '{imdb_id}'.")
             return data
         else:
              logging.info(f"OMDB details not found for ID '{imdb_id}': {data.get('Error', 'Unknown error')}")
@@ -231,8 +243,10 @@ def api_search_omdb():
     search_term = request.args.get('s')
     content_type = request.args.get('type') # 'movie' or 'series'
     if not search_term or not content_type:
+        logging.warning("API search called with missing search term or type.")
         return jsonify({"Error": "Missing search term or type"}), 400
     if content_type not in ['movie', 'series']:
+         logging.warning(f"API search called with invalid type: {content_type}")
          return jsonify({"Error": "Invalid type specified"}), 400
 
     results = search_omdb_api(search_term, content_type)
@@ -244,6 +258,7 @@ def api_search_omdb():
 def api_get_omdb_details():
     imdb_id = request.args.get('i')
     if not imdb_id:
+        logging.warning("API get details called with missing IMDb ID.")
         return jsonify({"Error": "Missing IMDb ID"}), 400
 
     details = get_omdb_details_api(imdb_id)
@@ -258,19 +273,22 @@ def api_get_omdb_details():
 def google_login():
     redirect_uri = url_for('google_callback', _external=True)
     try:
+        logging.info(f"Initiating Google login redirect to {redirect_uri}")
         return oauth.google.authorize_redirect(redirect_uri=redirect_uri)
     except Exception as e:
-        traceback.print_exc()
+        logging.error("Error during Google login authorization:", exc_info=True)
         flash('שגיאה בתהליך ההתחברות עם גוגל.', 'error')
         return redirect(url_for('index'))
 
 @app.route('/auth/google/callback')
 def google_callback():
     try:
+        logging.info("Handling Google login callback.")
         token = oauth.google.authorize_access_token()
         # Use the token to get user info
         userinfo_response = oauth.google.userinfo(token=token)
         userinfo = userinfo_response.json() # Get the JSON data
+        logging.info(f"Received user info from Google: {userinfo.get('email')}")
 
         user_data = {
             'name': userinfo.get('name'),
@@ -280,22 +298,26 @@ def google_callback():
         }
 
         if not user_data.get('google_id'):
+            logging.warning("Google login callback failed: No google_id received.")
             flash('התחברות עם גוגל נכשלה: לא הושגו פרטי משתמש.', 'error')
             return redirect(url_for('index'))
 
         session['user'] = user_data
         session.permanent = True
+        logging.info(f"User {user_data.get('email')} logged in successfully.")
         flash('התחברת בהצלחה!', 'success')
         return redirect(url_for('index'))
 
     except Exception as e:
-        traceback.print_exc()
+        logging.error("Error during Google login callback:", exc_info=True)
         flash('התחברות נכשלה. אנא ודא שההרשאות המתאימות אושרו ונסה שוב.', 'error')
         return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
+    user_email = session.get('user', {}).get('email', 'anonymous')
     session.pop('user', None)
+    logging.info(f"User {user_email} logged out.")
     flash('התנתקת בהצלחה.', 'info')
     return redirect(url_for('index'))
 
@@ -305,7 +327,7 @@ def index():
     user = session.get('user')
     greeting = get_greeting(user)
 
-    # Load data from Firebase - this now loads full movie objects
+    # Load data from Firebase
     movies_data = load_movies_data()
     # Categorize for display rows (uses title, poster, video_url, category)
     categories = categorize_movies(movies_data)
@@ -314,13 +336,14 @@ def index():
     admin_email = ADMIN_EMAIL # Ensure this is passed
 
     # Pass both the categorized data for rendering rows AND the raw movie data for the modal JS lookup
+    # Using json.dumps with ensure_ascii=False for Hebrew characters
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
                            current_year=current_year,
                            user=user,
                            admin_email=admin_email,
-                           movies_data_json=json.dumps(movies_data) # Pass full data as JSON string
+                           movies_data_json=json.dumps(movies_data, ensure_ascii=False) # Pass full data as JSON string, handle Hebrew
                            )
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -331,7 +354,8 @@ def add_content():
         logging.warning(f"Unauthorized access attempt to /add by {user.get('email') if user else 'anonymous'}")
         abort(403)
 
-    available_series = load_series_data() # Load series from Firebase for episode form
+    # Load series from Firebase for episode form dropdown on GET request
+    available_series = load_series_data()
 
     if request.method == 'POST':
         content_type = request.form.get('content_type')
@@ -359,6 +383,8 @@ def add_content():
                 if not omdb_details:
                      flash(f'שגיאה: לא נמצאו פרטים עבור IMDb ID "{imdb_id}" ב-OMDB.', 'error')
                      # Optionally, you could still save with minimal data here
+                     # return redirect(url_for('add_content')) # Stay on add page if OMDB fails
+                     # Or continue and save minimal data? Let's require OMDB for now.
                      return redirect(url_for('add_content'))
 
                 # Construct movie data from OMDB details and form data
@@ -414,6 +440,7 @@ def add_content():
                 # Fetch full details from OMDB server-side using the IMDb ID
                 omdb_details = get_omdb_details_api(imdb_id)
 
+                # Also explicitly check the type from OMDB response
                 if not omdb_details or omdb_details.get('Type') != 'series':
                      flash(f'שגיאה: לא נמצאו פרטים לסדרה או שה-ID אינו של סדרה עבור "{imdb_id}" ב-OMDB.', 'error')
                      return redirect(url_for('add_content'))
@@ -490,8 +517,10 @@ def add_content():
                  series_exists = series_ref.get() is not None
 
                  if not series_exists:
+                      # Don't block adding episode, just warn the user
+                      logging.warning(f'Parent series with IMDb ID "{series_imdb_id}" not found for episode. Episode will be added anyway.')
                       flash(f'אזהרה: הסדרה עם IMDb ID "{series_imdb_id}" אינה קיימת במסד הנתונים. הפרק יתווסף, אך ייתכן שתצטרך להוסיף את פרטי הסדרה בנפרד.', 'warning')
-                      # Firebase will create the path anyway, so we can proceed.
+
 
                  # Construct episode data
                  episode_data = {
@@ -503,23 +532,26 @@ def add_content():
 
                  # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season}/Episodes/{episode}
                  ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}')
-                 ref.set(episode_data)
+                 # Use update to avoid overwriting other episodes/seasons if path already exists
+                 ref.set(episode_data) # Use set for the specific episode node
                  logging.info(f"Episode S{season_number}E{episode_number} ('{episode_title}') added to series {series_imdb_id}.")
                  flash(f'פרק "{episode_title}" (עונה {season_number}, פרק {episode_number}) נוסף בהצלחה לסדרה!', 'success')
 
 
             else:
                  flash('סוג תוכן לא ידוע.', 'warning')
+                 logging.warning(f"Received unknown content type: {content_type}")
+
 
         except Exception as e:
-             logging.error(f"Error adding content to Firebase: {e}")
-             traceback.print_exc()
+             logging.error(f"Error processing add content POST: {e}", exc_info=True)
              flash('אירעה שגיאה בעת שמירת התוכן.', 'error')
 
         return redirect(url_for('add_content')) # Redirect back to the add page after POST
 
     # GET request: Render the add content form
-    available_series = load_series_data() # Ensure this is re-loaded for the GET request template
+    # Load series from Firebase for episode form dropdown on GET request
+    available_series = load_series_data()
 
     return render_template('add.html',
                            user=user,
@@ -533,30 +565,27 @@ def add_content():
 def forbidden(e):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
+    logging.warning(f"403 Forbidden: {request.path} - {e}")
     return render_template('403.html', user=user, current_year=current_year), 403
 
 @app.errorhandler(404)
 def page_not_found(e):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
+    logging.warning(f"404 Not Found: {request.path} - {e}")
     return render_template('404.html', user=user, current_year=current_year), 404
 
 @app.errorhandler(500)
 def internal_server_error(e):
     tb_str = traceback.format_exc()
-    logging.error(f"Internal Server Error: {tb_str}")
+    logging.error(f"Internal Server Error: {request.path} - {e}\n{tb_str}")
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
     return render_template('500.html', user=user, current_year=current_year), 500
 
 if __name__ == '__main__':
     # Ensure Firebase is initialized before running the app
-    # Check if default_app is set, indicating successful initialization
-    # This check isn't strictly necessary as initialize_app raises an exception on failure,
-    # but can be useful if initialization is conditional.
-    # if firebase_admin._apps:
-        port = int(os.environ.get('PORT', 5000))
-        # debug=True should only be used in development
-        app.run(host='0.0.0.0', port=port, debug=True)
-    # else:
-        # print("Firebase initialization failed. App will not run.")
+    # The try/except block with _apps check handles reloader
+    port = int(os.environ.get('PORT', 5000))
+    # debug=True should only be used in development
+    app.run(host='0.0.0.0', port=port, debug=True)
