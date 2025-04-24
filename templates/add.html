@@ -80,9 +80,7 @@
 
             <nav class="main-nav">
                 <a href="{{ url_for('index') }}">בית</a>
-                <a href="#">סרטים</a> {# TODO #}
-                <a href="#">סדרות</a> {# TODO #}
-                <a href="#">הרשימה שלי</a> {# TODO #}
+                <a href="{{ url_for('all_movies') }}">סרטים</a>
                 <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
             </nav>
 
