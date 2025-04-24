@@ -165,24 +165,37 @@ img { max-width: 100%; height: auto; display: block; }
 .item-row::before { right: 0; background: linear-gradient(to left, var(--bg-color), transparent); }
 .item-row::after { left: 0; background: linear-gradient(to right, var(--bg-color), transparent); }
 
+/* Style the anchor tag wrapper */
+.item-card-link {
+    text-decoration: none; /* Remove underline from the link */
+    color: inherit; /* Inherit text color */
+    display: block; /* Make the link a block element */
+    /* Inherit card transition and interaction styles if needed, or apply directly */
+}
+
 .item-card {
     background-color: var(--card-bg-color); border-radius: var(--border-radius-md); width: var(--card-width); flex-shrink: 0;
     scroll-snap-align: start; position: relative; overflow: hidden; transition: transform var(--transition-medium), box-shadow var(--transition-medium);
     box-shadow: 0 8px 20px var(--shadow-color); cursor: pointer;
 }
-.item-card:hover, .item-card:focus-within { transform: scale(1.05) translateY(-8px); box-shadow: 0 15px 35px var(--shadow-color); z-index: 10; outline: none; }
+.item-card-link:hover .item-card, .item-card-link:focus-within .item-card {
+     transform: scale(1.05) translateY(-8px); box-shadow: 0 15px 35px var(--shadow-color); z-index: 10; outline: none;
+}
+/* Ensure outline is on the link for accessibility */
+.item-card-link:focus-within { outline: none; }
+
 
 .card-image-container {
     width: 100%; height: var(--card-height); position: relative; overflow: hidden; border-radius: var(--border-radius-md);
 }
 .card-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-medium); }
-.item-card:hover .card-image-container img, .item-card:focus-within .card-image-container img { transform: scale(1.1); }
+.item-card-link:hover .card-image-container img, .item-card-link:focus-within .card-image-container img { transform: scale(1.1); }
 
 .card-overlay {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 10%, rgba(0, 0, 0, 0.6) 50%, transparent 100%);
     opacity: 0; transition: opacity var(--transition-medium); display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; pointer-events: none;
 }
-.item-card:hover .card-overlay, .item-card:focus-within .card-overlay { opacity: 1; pointer-events: auto; }
+.item-card-link:hover .card-overlay, .item-card-link:focus-within .card-overlay { opacity: 1; pointer-events: auto; }
 
 .play-button {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background-color: rgba(255, 255, 255, 0.2);
@@ -192,7 +205,7 @@ img { max-width: 100%; height: auto; display: block; }
     /* play button on index page now navigates */
     pointer-events: auto; /* Make clickable */
 }
-.item-card:hover .play-button, .item-card:focus-within .play-button { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.item-card-link:hover .play-button, .item-card-link:focus-within .play-button { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .play-button:hover { background-color: rgba(255, 255, 255, 0.4); transform: translate(-50%, -50%) scale(1.1); }
 .play-button i { margin-left: 3px; }
 
@@ -201,12 +214,12 @@ img { max-width: 100%; height: auto; display: block; }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
     transform: translateY(10px); opacity: 0; transition: transform 0.3s 0.1s ease, opacity 0.3s 0.1s ease;
 }
-.item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; }
+.item-card-link:hover .card-title, .item-card-link:focus-within .card-title { transform: translateY(0); opacity: 1; }
 
 .card-actions {
     display: flex; gap: 10px; opacity: 0; transition: opacity 0.3s 0.2s ease;
 }
-.item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
+.item-card-link:hover .card-actions, .item-card-link:focus-within .card-actions { opacity: 1; }
 .card-actions button {
     background-color: rgba(40, 40, 40, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); color: var(--text-heading-color);
     width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
@@ -598,4 +611,87 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .error-container a:hover {
     background-color: var(--primary-accent-color);
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 1400px) { }
+@media (max-width: 1200px) {
+    .main-nav {
+        gap: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    :root {
+         --card-width: 200px;
+         --card-height: 300px;
+         --card-gap: 20px;
+         --container-padding: 25px;
+    }
+    .header-content {
+        gap: 20px;
+    }
+    .main-nav { display: none; }
+    .search-container { margin-right: 0; margin-left: auto; }
+    .header-spacer { display: none; }
+
+    .page-greeting h1 { font-size: 2em; }
+    .page-greeting p { font-size: 1em; }
+}
+
+@media (max-width: 768px) {
+    :root {
+         --card-width: 180px;
+         --card-height: 270px;
+         --card-gap: 15px;
+         --container-padding: 20px;
+    }
+    .header-content { padding: 0 20px;
+       gap: 15px;
+    }
+     #searchInput { width: 160px; }
+     #searchInput:focus { width: 200px; }
+
+    .page-greeting h1 { font-size: 1.8em; }
+    .page-greeting p { font-size: 1em; }
+}
+
+@media (max-width: 576px) {
+    :root {
+        --header-height: 60px;
+        --card-width: 150px;
+        --card-height: 225px;
+        --card-gap: 10px;
+        --container-padding: 15px;
+    }
+    .site-header { height: var(--header-height); }
+    .header-content { padding: 0 15px;
+        gap: 10px;
+    }
+
+    .search-container { width: auto; }
+     #searchInput { width: 100px; font-size: 0.9em;}
+     #searchInput:focus { width: 130px; }
+     .search-container button { font-size: 0.9em; height: 34px; }
+     .auth-container {
+        width: 34px;
+        height: 34px;
+     }
+     .profile-button {
+         width: 34px;
+         height: 34px;
+     }
+
+    .page-greeting h1 { font-size: 1.6em; }
+    .page-greeting p { font-size: 0.9em; }
+    .page-greeting { padding-right: 15px; border-right-width: 3px;}
+
+    .rank-number {
+        width: 50px;
+        height: 50px;
+        left: -10px;
+        bottom: 5px;
+    }
+     .rank-circle-bg path { stroke-width: 3; }
+     .rank-text { font-size: 1.6em; }
 }
