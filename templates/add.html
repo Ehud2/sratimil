@@ -154,10 +154,11 @@
                               <option value="ללא">ללא</option>
                          </select>
                     </div>
-                     <div class="form-group">
+                    {# REMOVED: Video URL input for movies #}
+                    {# <div class="form-group">
                         <label for="movie_video_url">קישור לקובץ וידאו:</label>
                         <input type="url" id="movie_video_url" name="movie_video_url" required>
-                    </div>
+                    </div> #}
                      <div class="omdb-search-section">
                         <h3>חיפוש אוטומטי ב-OMDb (סרטים):</h3>
                         <div class="omdb-search-input">
@@ -240,6 +241,12 @@
                          <input type="text" id="manual_episode_series_id" name="manual_episode_series_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
 
+                     {# ADDED: Episode IMDb ID input #}
+                     <div class="form-group">
+                         <label for="episode_imdb_id">IMDb ID של הפרק (לדוגמה tt1234567):</label>
+                         <input type="text" id="episode_imdb_id" name="episode_imdb_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר" required>
+                     </div>
+
                     <div class="form-group">
                         <label for="episode_title">שם הפרק:</label>
                         <input type="text" id="episode_title" name="episode_title" required>
@@ -290,8 +297,11 @@
             const movieImdbIdInput = document.getElementById('movie_imdb_id');
              const seriesTitleInput = document.getElementById('series_title');
              const seriesImdbIdInput = document.getElementById('series_imdb_id');
-             const movieVideoUrlInput = document.getElementById('movie_video_url');
-             const episodeVideoUrlInput = document.getElementById('episode_video_url');
+
+             // const movieVideoUrlInput = document.getElementById('movie_video_url'); // REMOVED INPUT
+
+             const episodeVideoUrlInput = document.getElementById('episode_video_url'); // KEPT INPUT
+             const episodeImdbIdInput = document.getElementById('episode_imdb_id'); // ADDED INPUT
              const episodeTitleInput = document.getElementById('episode_title');
              const episodeSeasonInput = document.getElementById('episode_season');
              const episodeNumberInput = document.getElementById('episode_number');
@@ -309,18 +319,21 @@
 
 
                 // Clear main form inputs that might be populated by OMDB or user
-                // Note: This clears ALL inputs, might be too aggressive if user partially filled
-                // A better approach might be to only clear inputs associated with the specific form being hidden.
-                // For simplicity here, we clear the main target inputs.
+                // A more refined approach could clear only the relevant inputs for the form being hidden.
+                // For simplicity, clearing known inputs here.
                 if(movieTitleInput) movieTitleInput.value = '';
                 if(movieImdbIdInput) movieImdbIdInput.value = '';
-                if(movieVideoUrlInput) movieVideoUrlInput.value = '';
+                // if(movieVideoUrlInput) movieVideoUrlInput.value = ''; // REMOVED CLEAR FOR REMOVED INPUT
+
                 if(seriesTitleInput) seriesTitleInput.value = '';
                 if(seriesImdbIdInput) seriesImdbIdInput.value = '';
+
                  if(episodeTitleInput) episodeTitleInput.value = '';
                  if(episodeSeasonInput) episodeSeasonInput.value = '';
                  if(episodeNumberInput) episodeNumberInput.value = '';
-                 if(episodeVideoUrlInput) episodeVideoUrlInput.value = '';
+                 if(episodeVideoUrlInput) episodeVideoUrlInput.value = ''; // KEPT CLEAR FOR KEPT INPUT
+                 if(episodeImdbIdInput) episodeImdbIdInput.value = ''; // ADDED CLEAR FOR ADDED INPUT
+
                  if(episodeSeriesSelect) episodeSeriesSelect.value = '';
                  if(manualSeriesIdGroup) manualSeriesIdGroup.style.display = 'none';
                  if(manualEpisodeSeriesIdInput) manualEpisodeSeriesIdInput.value = '';
@@ -341,6 +354,7 @@
                  if (activeSection) {
                       activeSection.querySelectorAll('input:not([type="button"]), select').forEach(input => {
                           // Add specific exclusions here if certain fields within the form shouldn't be required
+                          // episode_series_id and manual_episode_series_id required state is handled by updateEpisodeSeriesRequiredState
                           if (input.id !== 'omdb_movie_search_term' && input.id !== 'omdb_series_search_term' && input.id !== 'manual_episode_series_id' && input.id !== 'episode_series_id') {
                               input.required = true;
                           }
@@ -371,22 +385,17 @@
                  if (!seriesSelect || !manualIdGroup || !manualInput) return;
 
                  const isManualSelected = seriesSelect.value === 'manual';
-                 // const isDropdownSelected = seriesSelect.value !== '' && !isManualSelected; // Not strictly needed for required logic
 
                  manualIdGroup.style.display = isManualSelected ? 'block' : 'none';
 
-                 // Require the manual input ONLY if "manual" is selected in the dropdown
-                 manualInput.required = isManualSelected;
+                 // These will be checked by the form submit listener for combined validation
+                 manualInput.required = false;
+                 seriesSelect.required = false;
 
-                 // Require the dropdown ONLY if "manual" is NOT selected AND nothing is selected
-                 // The form's submit listener will provide a more user-friendly error for this.
-                 // Let's rely on the form listener for the combined "select OR manual" requirement.
-                 // Set both to false here and handle combined requirement in submit listener
-                 seriesSelect.required = false; // Not required by itself
-                 manualInput.required = false; // Not required by itself UNLESS manual option is chosen
-
-                 // Instead, we will check in the form submit handler if *either* select has a value
-                 // *or* manual input has a value when 'manual' is selected.
+                 // Ensure the required state is updated visually if needed (e.g. asterisk)
+                 // CSS might handle this based on [required] attribute, but since we set it to false
+                 // here and rely on JS validation, you might need custom CSS classes if visual required
+                 // indicators are important.
             }
 
             if (episodeSeriesSelect) {
@@ -467,6 +476,7 @@
                                      if (type === 'Movie' && movieImdbIdInput && movieTitleInput) {
                                          movieImdbIdInput.value = this.dataset.imdbId;
                                          movieTitleInput.value = this.dataset.title; // Populate title as well
+                                         // movieVideoUrlInput.value = ''; // Optionally clear video URL field on new OMDB selection for movie
                                      } else if (type === 'Series' && seriesImdbIdInput && seriesTitleInput) {
                                           seriesImdbIdInput.value = this.dataset.imdbId;
                                           seriesTitleInput.value = this.dataset.title; // Populate title
@@ -485,7 +495,7 @@
                      })
                      .catch(error => {
                          // Error message already set in the fetch block, just prevent further action
-                         console.error('OMDb Search Error:', error);
+                         console.error('OMDB Search Error:', error);
                      });
             }
 
@@ -623,15 +633,23 @@
                                 return; // Stop further validation for episode form
                           }
 
-                          // Validate other required fields for episode if series ID is provided
-                          // These inputs have 'required' attribute, but this adds a custom message
+                          // Validate other required fields for episode
+                          // These inputs have 'required' attribute, but this adds a custom message and extra checks
+                           const episodeImdbId = episodeImdbIdInput.value.trim(); // Get the added episode IMDb ID
                            const episodeTitle = episodeTitleInput.value.trim();
                            const seasonNumber = episodeSeasonInput.value.trim();
                            const episodeNumber = episodeNumberInput.value.trim();
-                           const videoUrl = episodeVideoUrlInput.value.trim();
+                           const videoUrl = episodeVideoUrlInput.value.trim(); // Get the episode video URL
 
-                           if (!episodeTitle || !seasonNumber || !episodeNumber || !videoUrl) {
-                                flash('שגיאה: אנא מלא את כל שדות הפרק (כותרת, עונה, פרק, וידאו).', 'error');
+                           if (!episodeImdbId || !episodeTitle || !seasonNumber || !episodeNumber || !videoUrl) {
+                                // Build a list of missing fields for a clearer message
+                                const missingFields = [];
+                                if (!episodeImdbId) missingFields.push('IMDb ID של הפרק');
+                                if (!episodeTitle) missingFields.push('שם הפרק');
+                                if (!seasonNumber) missingFields.push('מספר עונה');
+                                if (!episodeNumber) missingFields.push('מספר פרק');
+                                if (!videoUrl) missingFields.push('קישור וידאו של הפרק');
+                                flash(`שגיאה: אנא מלא את כל שדות החובה לפרק: ${missingFields.join(', ')}.`, 'error');
                                 event.preventDefault(); // Stop submission
                                 return;
                            }
@@ -648,8 +666,19 @@
                                  event.preventDefault();
                                  return;
                             }
-                     }
-                 });
+
+                             // Validate episode IMDb ID format
+                            const imdbIdPattern = /^tt\d{7,}$/;
+                            if (!imdbIdPattern.test(episodeImdbId)) {
+                                flash('שגיאה: פורמט IMDb ID של הפרק לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error');
+                                event.preventDefault();
+                                episodeImdbIdInput.focus();
+                                return;
+                            }
+
+
+                     } // End if contentType === 'episode'
+                 }); // End form submit listener
             }
 
 
@@ -667,6 +696,24 @@
 
 
         }); // End DOMContentLoaded
+    </script>
+    {# Add a simple flash message display function if you're not using a Flask-specific one #}
+    <script>
+        // Dummy flash function if needed for client-side validation messages
+        function flash(message, category) {
+            console.log(`FLASH (${category}): ${message}`);
+             // You might want to actually display this in a visible part of the page
+             // For now, it just logs to console.
+             // A real implementation would add a div to the .flash-messages container
+             const flashMessagesDiv = document.querySelector('.flash-messages');
+             if (flashMessagesDiv) {
+                 const alertDiv = document.createElement('div');
+                 alertDiv.classList.add('alert', `alert-${category || 'info'}`);
+                 alertDiv.setAttribute('role', 'alert');
+                 alertDiv.innerHTML = `${message} <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>`;
+                 flashMessagesDiv.appendChild(alertDiv);
+             }
+        }
     </script>
 </body>
 </html>
