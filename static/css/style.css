@@ -42,6 +42,10 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    /* Added to prevent scrolling when modal is open */
+    &.modal-open {
+        overflow-y: hidden;
+    }
 }
 .container { width: 95%; max-width: 1700px; margin: 0 auto; padding: 0 var(--container-padding); }
 a { color: var(--primary-accent-color); text-decoration: none; transition: color var(--transition-fast); }
@@ -184,15 +188,13 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .item-card:hover .card-overlay, .item-card:focus-within .card-overlay { opacity: 1; pointer-events: auto; }
 
-/* The play button on the card overlay might now just open the modal,
-   or we can remove it and make the whole card clickable to open the modal.
-   Let's keep it for now but its function will be handled by the JS click on the card. */
 .play-button {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background-color: rgba(255, 255, 255, 0.2);
     border: 2px solid var(--text-heading-color); color: var(--text-heading-color); width: 60px; height: 60px; border-radius: 50%;
     display: flex; justify-content: center; align-items: center; font-size: 1.5em; cursor: pointer; opacity: 0;
     transition: transform var(--transition-fast), opacity var(--transition-fast), background-color var(--transition-fast); z-index: 3;
 }
+/* Keep play button visible on hover, but it will trigger modal now */
 .item-card:hover .play-button, .item-card:focus-within .play-button { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .play-button:hover { background-color: rgba(255, 255, 255, 0.4); transform: translate(-50%, -50%) scale(1.1); }
 .play-button i { margin-left: 3px; }
@@ -261,7 +263,7 @@ img { max-width: 100%; height: auto; display: block; }
 .close-flash {
     position: absolute;
     top: 50%;
-    left: 15px; /* Adjusted for RTL */
+    left: 15px;
     transform: translateY(-50%);
     background: none;
     border: none;
@@ -270,14 +272,223 @@ img { max-width: 100%; height: auto; display: block; }
     cursor: pointer;
     padding: 0 5px;
     line-height: 1;
-    right: auto; /* Ensure left is used */
 }
 .close-flash:hover { color: #fff; }
 
+.profile-button {
+   width: 40px;
+   height: 40px;
+   border-radius: 50%;
+   overflow: hidden;
+   display: block;
+   flex-shrink: 0;
+   border: 2px solid transparent;
+   transition: border-color var(--transition-fast);
+   cursor: pointer;
+   padding: 0;
+   background: none;
+}
+
+.profile-button:hover {
+   border-color: var(--primary-accent-color);
+}
+
+.profile-button img {
+   display: block;
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+}
+
+/* --- Loading Spinner Styles --- */
+#loading-spinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* Dark overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's on top, below modal */
+    flex-direction: column;
+    color: white;
+    font-size: 1.2em;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+}
+
+.spinner {
+    border: 8px solid #f3f3f3; /* Light grey */
+    border-top: 8px solid var(--primary-accent-color); /* Blue */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1.5s linear infinite; /* Slightly faster spin */
+    margin-bottom: 20px;
+    position: relative; /* Needed for centering image */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loading-spinner img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; /* Adjust size as needed */
+    height: 40px; /* Adjust size as needed */
+    border-radius: 50%; /* Make it circular */
+    object-fit: cover; /* Ensure image covers the circle */
+}
+
+/* Hide spinner */
+#loading-spinner.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* Don't block clicks when hidden */
+}
+
+/* --- Modal Styles --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95); /* Darker overlay for modal */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* On top of everything */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+}
+
+.modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: var(--bg-secondary);
+    padding: 30px; /* Adjust padding */
+    border-radius: var(--border-radius-md);
+    max-width: 800px; /* Medium size */
+    width: 90%; /* Responsive width */
+    max-height: 95vh; /* Limit height */
+    overflow-y: auto; /* Add scroll if content overflows */
+    position: relative;
+    box-shadow: 0 15px 40px var(--shadow-color);
+    transform: scale(0.95); /* Slightly smaller initially */
+    transition: transform var(--transition-fast);
+    direction: rtl; /* Ensure content is RTL */
+}
+
+.modal-overlay.visible .modal-content {
+    transform: scale(1); /* Scale up when visible */
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px; /* Adjust position */
+    left: 15px; /* Position on the left for RTL */
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.8em; /* Larger close button */
+    cursor: pointer;
+    padding: 5px; /* Add padding for easier clicking */
+    transition: color var(--transition-fast);
+}
+
+.modal-close:hover {
+    color: var(--text-heading-color);
+}
+
+.modal-video-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-color: #000; /* Black background for video area */
+}
+
+.modal-video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.modal-details h2 {
+    font-family: var(--font-heading);
+    color: var(--text-heading-color);
+    font-size: 2em;
+    margin-bottom: 15px;
+    text-align: center; /* Center title */
+}
+
+.modal-plot {
+    margin-bottom: 20px;
+    color: var(--text-color);
+    font-size: 1em;
+    line-height: 1.7;
+}
+
+.modal-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Use grid for details */
+    gap: 15px; /* Gap between grid items */
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(69, 162, 158, 0.2); /* Separator line */
+}
+
+.detail-line {
+    display: flex;
+    align-items: center;
+    color: var(--text-color);
+    font-size: 1em;
+}
+
+.detail-line i {
+    color: var(--primary-accent-color);
+    margin-left: 10px; /* Space between icon and text */
+    width: 20px; /* Fixed width for icon alignment */
+    text-align: center; /* Center icon */
+    flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.detail-line strong {
+    margin-left: 5px; /* Space between label and value */
+    color: var(--text-heading-color);
+}
+
+/* Optional: Style for N/A values */
+.detail-line span {
+    color: var(--text-color);
+}
+.detail-line span.na-value {
+     color: #888; /* Muted color for N/A */
+     font-style: italic;
+}
+
+
+/* --- Responsive Adjustments --- */
 @media (max-width: 1400px) { }
 @media (max-width: 1200px) {
     .main-nav {
         gap: 20px;
+    }
+    .modal-content {
+         max-width: 700px;
     }
 }
 
@@ -297,6 +508,13 @@ img { max-width: 100%; height: auto; display: block; }
 
     .page-greeting h1 { font-size: 2em; }
     .page-greeting p { font-size: 1em; }
+
+    .modal-content {
+         max-width: 600px;
+         padding: 25px;
+    }
+    .modal-details h2 { font-size: 1.8em; }
+    .modal-info-grid { grid-template-columns: 1fr; /* Stack details on smaller screens */ }
 }
 
 @media (max-width: 768px) {
@@ -314,6 +532,13 @@ img { max-width: 100%; height: auto; display: block; }
 
     .page-greeting h1 { font-size: 1.8em; }
     .page-greeting p { font-size: 1em; }
+
+    .modal-content {
+         width: 95%; /* Allow wider modal on very small screens */
+         max-width: none; /* Remove max-width constraint */
+         padding: 20px;
+    }
+     .modal-details h2 { font-size: 1.6em; }
 }
 
 @media (max-width: 576px) {
@@ -354,215 +579,257 @@ img { max-width: 100%; height: auto; display: block; }
     }
      .rank-circle-bg path { stroke-width: 3; }
      .rank-text { font-size: 1.6em; }
+
+     .modal-content {
+          padding: 15px;
+     }
+     .modal-details h2 { font-size: 1.4em; margin-bottom: 10px; }
+     .modal-plot { font-size: 0.9em; margin-bottom: 15px;}
+     .modal-info-grid { gap: 10px; margin-top: 15px; padding-top: 15px; }
+     .detail-line { font-size: 0.9em; }
+     .detail-line i { margin-left: 8px; width: 18px; }
 }
 
-/* Add content form styles - Keeping for context, but belongs in add.css */
-/* .add-movie-form-container { ... } */
-
-
-.profile-button {
-   width: 40px;
-   height: 40px;
-   border-radius: 50%;
-   overflow: hidden;
-   display: block;
-   flex-shrink: 0;
-   border: 2px solid transparent;
-   transition: border-color var(--transition-fast);
-   cursor: pointer;
-   padding: 0;
-   background: none;
-}
-
-.profile-button:hover {
-   border-color: var(--primary-accent-color);
-}
-
-.profile-button img {
-   display: block;
-   width: 100%;
-   height: 100%;
-   object-fit: cover;
-}
-
-
-/* --- Modal Styles --- */
-
-#movie-details-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.85); /* Semi-transparent dark background */
-    backdrop-filter: blur(8px); /* Optional: Blur the background */
-    z-index: 2000; /* High z-index to be on top */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 1; /* Default visible state */
-    transition: opacity var(--transition-fast);
-}
-
-#movie-details-modal-overlay.hidden {
-    opacity: 0;
-    pointer-events: none; /* Disable interactions when hidden */
-}
-
-
-#movie-details-modal-container {
-    position: relative; /* For close button positioning */
+/* Styles for add.html - included in style.css for simplicity in this example */
+/* Ideally these would be in static/css/add.css */
+.add-movie-form-container {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 30px;
     background-color: var(--bg-secondary);
     border-radius: var(--border-radius-md);
-    box-shadow: 0 10px 30px var(--shadow-color);
-    width: 95%; /* Responsive width */
-    max-width: 800px; /* Max width for larger screens */
-    max-height: 90vh; /* Max height, allow scrolling */
-    overflow: hidden; /* Hide content that overflows the container */
-    display: flex; /* Use flex for video/details layout */
-    flex-direction: column;
-    z-index: 2001; /* Higher than overlay */
-    transform: scale(1); /* Default visible state */
-    transition: transform var(--transition-fast);
+    box-shadow: 0 5px 15px var(--shadow-color);
+    direction: rtl;
 }
 
-#movie-details-modal-overlay.hidden #movie-details-modal-container {
-     transform: scale(0.95); /* Slight shrink animation */
-}
-
-
-#modal-close-button {
-    position: absolute;
-    top: 15px;
-    left: 15px; /* Position on left for RTL */
-    background: none;
-    border: none;
-    font-size: 1.8em;
-    color: var(--text-color);
-    cursor: pointer;
-    z-index: 2002; /* On top of modal content */
-    transition: color var(--transition-fast);
-}
-#modal-close-button:hover {
-    color: var(--text-heading-color);
-}
-
-#modal-video-container {
-    width: 100%;
-    /* Use aspect ratio trick for responsive video */
-    position: relative;
-    padding-bottom: 56.25%; /* 16:9 aspect ratio (9 / 16 * 100) */
-    height: 0;
-    overflow: hidden;
-    background-color: #000; /* Black background for video area */
-}
-
-#modal-video-container iframe,
-#modal-video-container video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: none; /* Remove iframe border */
-}
-
-#modal-details-content {
-    padding: 20px;
-    overflow-y: auto; /* Add scrollbar if details are long */
-    flex-grow: 1; /* Allow details section to take available height */
-    scrollbar-width: thin; /* For Firefox */
-    scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
-}
-
-#modal-details-content::-webkit-scrollbar {
-    width: 8px; /* For Chrome, Safari, Edge */
-}
-
-#modal-details-content::-webkit-scrollbar-track {
-    background: var(--scrollbar-track-color);
-    border-radius: var(--border-radius-md);
-}
-
-#modal-details-content::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-thumb-color);
-    border-radius: var(--border-radius-md);
-    border: 2px solid var(--scrollbar-track-color);
-}
-
-
-#modal-title {
+.add-movie-form-container h1 {
     font-family: var(--font-heading);
-    font-size: 1.8em;
-    font-weight: 700;
+    color: var(--text-heading-color);
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group input[type="number"], /* Added for episode numbers */
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    font-size: 1em;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="url"]:focus,
+.form-group input[type="number"]:focus,
+.form-group select:focus {
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
+    outline: none;
+}
+
+.omdb-search-section {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 20px;
+    margin-top: 30px;
+    background-color: rgba(40, 40, 40, 0.5);
+}
+
+.omdb-search-section h3 {
     color: var(--text-heading-color);
     margin-bottom: 15px;
-    text-align: center; /* Center the title */
+    font-family: var(--font-heading);
+    font-size: 1.4em;
 }
 
-.modal-detail-line {
+.omdb-search-input {
     display: flex;
-    align-items: flex-start; /* Align items to the top */
-    margin-bottom: 10px;
-    color: var(--text-color);
-    line-height: 1.5;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
-.modal-detail-line i {
-    color: var(--primary-accent-color);
-    margin-left: 10px; /* Space after icon for RTL */
-    margin-top: 3px; /* Align icon slightly better with text */
-    flex-shrink: 0; /* Prevent icon from shrinking */
-    font-size: 1.1em;
-}
-
-.modal-detail-line strong {
-     color: var(--text-heading-color); /* Make labels stand out */
-     margin-left: 5px; /* Space after strong label */
-}
-
-/* Specific styles for Plot (Description) */
-.modal-detail-plot {
-    display: flex;
-    margin-bottom: 15px;
-    color: var(--text-color);
-    line-height: 1.6;
-}
-.modal-detail-plot i {
-    color: var(--primary-accent-color);
-    margin-left: 10px;
-    margin-top: 3px;
-    flex-shrink: 0;
-    font-size: 1.1em;
-}
-.modal-detail-plot .detail-text {
+.omdb-search-input input {
     flex-grow: 1;
+     padding: 10px;
+     background-color: var(--card-bg-color);
+     border: 1px solid var(--border-color);
+     border-radius: var(--border-radius-sm);
+     color: var(--text-color);
+     font-family: var(--font-body);
+     font-size: 1em;
+ }
+.omdb-search-input input:focus {
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
+    outline: none;
 }
 
+.omdb-search-input button {
+    padding: 10px 20px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-secondary);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1em;
+    transition: background-color var(--transition-fast);
+}
 
-/* Media query for smaller screens */
-@media (max-width: 768px) {
-    #movie-details-modal-container {
-        max-width: 90%; /* Adjust max width */
-        max-height: 95vh; /* Adjust max height */
-    }
-    #modal-details-content {
-        padding: 15px;
-    }
-     #modal-title {
-         font-size: 1.5em;
-         margin-bottom: 10px;
-     }
-     .modal-detail-line, .modal-detail-plot {
-         font-size: 0.95em;
-     }
-     .modal-detail-line i, .modal-detail-plot i {
-         font-size: 1em;
-         margin-left: 8px;
-     }
-      #modal-close-button {
-          font-size: 1.5em;
-          top: 10px;
-          left: 10px;
-      }
+.omdb-search-input button:hover {
+    background-color: var(--secondary-accent-color);
+}
+
+/* Renamed from #omdbResults for clarity */
+#omdbMovieResults, #omdbSeriesResults {
+    list-style: none;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+#omdbMovieResults li, #omdbSeriesResults li {
+    background-color: var(--card-bg-color);
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#omdbMovieResults li:hover, #omdbSeriesResults li:hover {
+    background-color: rgba(40, 40, 40, 0.7);
+}
+
+#omdbMovieResults li span, #omdbSeriesResults li span {
+    color: var(--text-color);
+}
+
+#omdbMovieResults li .result-id, #omdbSeriesResults li .result-id {
+    font-size: 0.9em; /* Adjusted font size for ID */
+    color: var(--text-muted-color);
+}
+
+#omdbMovieResults li.selected-result, #omdbSeriesResults li.selected-result {
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+}
+
+#omdbMovieResults li.selected-result span, #omdbSeriesResults li.selected-result span {
+     color: var(--bg-color);
+}
+ #omdbMovieResults li.selected-result .result-id, #omdbSeriesResults li.selected-result .result-id {
+     color: rgba(11, 12, 16, 0.8);
+ }
+
+
+/* Renamed from #selectedOmdbDetails */
+#selectedOmdbMovieDetails, #selectedOmdbSeriesDetails {
+     margin-top: 15px;
+     padding: 15px;
+     background-color: rgba(69, 162, 158, 0.2);
+     border: 1px solid var(--primary-accent-color);
+     border-radius: var(--border-radius-sm);
+     color: var(--text-color);
+}
+
+#selectedOmdbMovieDetails p, #selectedOmdbSeriesDetails p {
+    margin-bottom: 5px;
+}
+
+#selectedOmdbMovieDetails strong, #selectedOmdbSeriesDetails strong {
+    color: var(--text-heading-color);
+}
+
+ #selectedOmdbMovieDetails img, #selectedOmdbSeriesDetails img {
+     margin-top: 10px;
+     max-width: 100px;
+     height: auto;
+     border-radius: var(--border-radius-sm);
+ }
+
+.form-submit-button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-top: 30px;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.form-submit-button:hover {
+    background-color: var(--secondary-accent-color);
+    transform: translateY(-2px);
+}
+
+.manual-imdb-input { /* Used for manual episode series ID */
+     margin-top: 20px;
+     padding-top: 20px;
+     border-top: 1px dashed rgba(102, 252, 241, 0.3);
+}
+
+.manual-imdb-input label {
+     margin-bottom: 8px;
+}
+
+.error-container {
+    text-align: center;
+    margin-top: 80px;
+    color: var(--text-color);
+}
+.error-container h1 {
+    font-size: 4em;
+    color: var(--primary-accent-color);
+    margin-bottom: 10px;
+    font-family: var(--font-heading);
+}
+.error-container h2 {
+    font-size: 1.8em;
+    color: var(--text-heading-color);
+    margin-bottom: 20px;
+    font-family: var(--font-heading);
+}
+.error-container p {
+    font-size: 1.1em;
+    margin-bottom: 30px;
+}
+.error-container a {
+    font-size: 1em;
+    padding: 10px 20px;
+    background-color: var(--secondary-accent-color);
+    color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    transition: background-color var(--transition-fast);
+}
+.error-container a:hover {
+    background-color: var(--primary-accent-color);
 }
