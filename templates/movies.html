@@ -42,7 +42,6 @@
                 <a href="{{ url_for('index') }}">בית</a>
                 {# UPDATED LINK #}
                 <a href="{{ url_for('all_movies') }}">סרטים</a>
-                <a href="#">סדרות</a> {# TODO: Link to series page #}
                 <a href="#">הרשימה שלי</a> {# TODO: Link to watchlist page #}
                 {% if user and user.email == admin_email %}
                 <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
