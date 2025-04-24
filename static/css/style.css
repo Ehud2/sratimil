@@ -184,6 +184,9 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .item-card:hover .card-overlay, .item-card:focus-within .card-overlay { opacity: 1; pointer-events: auto; }
 
+/* The play button on the card overlay might now just open the modal,
+   or we can remove it and make the whole card clickable to open the modal.
+   Let's keep it for now but its function will be handled by the JS click on the card. */
 .play-button {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background-color: rgba(255, 255, 255, 0.2);
     border: 2px solid var(--text-heading-color); color: var(--text-heading-color); width: 60px; height: 60px; border-radius: 50%;
@@ -258,7 +261,7 @@ img { max-width: 100%; height: auto; display: block; }
 .close-flash {
     position: absolute;
     top: 50%;
-    left: 15px;
+    left: 15px; /* Adjusted for RTL */
     transform: translateY(-50%);
     background: none;
     border: none;
@@ -267,6 +270,7 @@ img { max-width: 100%; height: auto; display: block; }
     cursor: pointer;
     padding: 0 5px;
     line-height: 1;
+    right: auto; /* Ensure left is used */
 }
 .close-flash:hover { color: #fff; }
 
@@ -352,242 +356,9 @@ img { max-width: 100%; height: auto; display: block; }
      .rank-text { font-size: 1.6em; }
 }
 
-.add-movie-form-container {
-    max-width: 700px;
-    margin: 40px auto;
-    padding: 30px;
-    background-color: var(--bg-secondary);
-    border-radius: var(--border-radius-md);
-    box-shadow: 0 5px 15px var(--shadow-color);
-    direction: rtl;
-}
+/* Add content form styles - Keeping for context, but belongs in add.css */
+/* .add-movie-form-container { ... } */
 
-.add-movie-form-container h1 {
-    font-family: var(--font-heading);
-    color: var(--text-heading-color);
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--text-color);
-    font-weight: 600;
-}
-
-.form-group input[type="text"],
-.form-group input[type="url"],
-.form-group select {
-    width: 100%;
-    padding: 10px;
-    background-color: var(--card-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
-    color: var(--text-color);
-    font-family: var(--font-body);
-    font-size: 1em;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.form-group input[type="text"]:focus,
-.form-group input[type="url"]:focus,
-.form-group select:focus {
-    border-color: var(--primary-accent-color);
-    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
-    outline: none;
-}
-
-.omdb-search-section {
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    padding: 20px;
-    margin-top: 30px;
-    background-color: rgba(40, 40, 40, 0.5);
-}
-
-.omdb-search-section h3 {
-    color: var(--text-heading-color);
-    margin-bottom: 15px;
-    font-family: var(--font-heading);
-    font-size: 1.4em;
-}
-
-.omdb-search-input {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.omdb-search-input input {
-    flex-grow: 1;
-     padding: 10px;
-     background-color: var(--card-bg-color);
-     border: 1px solid var(--border-color);
-     border-radius: var(--border-radius-sm);
-     color: var(--text-color);
-     font-family: var(--font-body);
-     font-size: 1em;
- }
-.omdb-search-input input:focus {
-    border-color: var(--primary-accent-color);
-    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
-    outline: none;
-}
-
-.omdb-search-input button {
-    padding: 10px 20px;
-    background-color: var(--primary-accent-color);
-    color: var(--bg-secondary);
-    border: none;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    font-family: var(--font-heading);
-    font-size: 1em;
-    transition: background-color var(--transition-fast);
-}
-
-.omdb-search-input button:hover {
-    background-color: var(--secondary-accent-color);
-}
-
-#omdbResults {
-    list-style: none;
-    padding: 0;
-    max-height: 200px;
-    overflow-y: auto;
-    border-top: 1px solid var(--border-color);
-    padding-top: 10px;
-}
-
-#omdbResults li {
-    background-color: var(--card-bg-color);
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-#omdbResults li:hover {
-    background-color: rgba(40, 40, 40, 0.7);
-}
-
-#omdbResults li span {
-    color: var(--text-color);
-}
-
-#omdbResults li .result-year {
-    font-size: 0.9em;
-    color: var(--text-muted-color);
-}
-
-#omdbResults li.selected-result {
-    background-color: var(--primary-accent-color);
-    color: var(--bg-color);
-}
-
-#omdbResults li.selected-result span {
-     color: var(--bg-color);
-}
- #omdbResults li.selected-result .result-year {
-     color: rgba(11, 12, 16, 0.8);
- }
-
-#selectedOmdbDetails {
-     margin-top: 15px;
-     padding: 15px;
-     background-color: rgba(69, 162, 158, 0.2);
-     border: 1px solid var(--primary-accent-color);
-     border-radius: var(--border-radius-sm);
-     color: var(--text-color);
-}
-
-#selectedOmdbDetails p {
-    margin-bottom: 5px;
-}
-
-#selectedOmdbDetails strong {
-    color: var(--text-heading-color);
-}
-
- #selectedOmdbDetails img {
-     margin-top: 10px;
-     max-width: 100px;
-     height: auto;
-     border-radius: var(--border-radius-sm);
- }
-
-.form-submit-button {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    background-color: var(--primary-accent-color);
-    color: var(--bg-color);
-    border: none;
-    border-radius: var(--border-radius-md);
-    cursor: pointer;
-    font-family: var(--font-heading);
-    font-size: 1.2em;
-    font-weight: 700;
-    margin-top: 30px;
-    transition: background-color var(--transition-fast), transform var(--transition-fast);
-}
-
-.form-submit-button:hover {
-    background-color: var(--secondary-accent-color);
-    transform: translateY(-2px);
-}
-
-.manual-imdb-input {
-     margin-top: 20px;
-     padding-top: 20px;
-     border-top: 1px dashed rgba(102, 252, 241, 0.3);
-}
-
-.manual-imdb-input label {
-     margin-bottom: 8px;
-}
-
-.error-container {
-    text-align: center;
-    margin-top: 80px;
-    color: var(--text-color);
-}
-.error-container h1 {
-    font-size: 4em;
-    color: var(--primary-accent-color);
-    margin-bottom: 10px;
-    font-family: var(--font-heading);
-}
-.error-container h2 {
-    font-size: 1.8em;
-    color: var(--text-heading-color);
-    margin-bottom: 20px;
-    font-family: var(--font-heading);
-}
-.error-container p {
-    font-size: 1.1em;
-    margin-bottom: 30px;
-}
-.error-container a {
-    font-size: 1em;
-    padding: 10px 20px;
-    background-color: var(--secondary-accent-color);
-    color: var(--bg-secondary);
-    border-radius: var(--border-radius-md);
-    transition: background-color var(--transition-fast);
-}
-.error-container a:hover {
-    background-color: var(--primary-accent-color);
-}
 
 .profile-button {
    width: 40px;
@@ -612,4 +383,186 @@ img { max-width: 100%; height: auto; display: block; }
    width: 100%;
    height: 100%;
    object-fit: cover;
+}
+
+
+/* --- Modal Styles --- */
+
+#movie-details-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Semi-transparent dark background */
+    backdrop-filter: blur(8px); /* Optional: Blur the background */
+    z-index: 2000; /* High z-index to be on top */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1; /* Default visible state */
+    transition: opacity var(--transition-fast);
+}
+
+#movie-details-modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none; /* Disable interactions when hidden */
+}
+
+
+#movie-details-modal-container {
+    position: relative; /* For close button positioning */
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 10px 30px var(--shadow-color);
+    width: 95%; /* Responsive width */
+    max-width: 800px; /* Max width for larger screens */
+    max-height: 90vh; /* Max height, allow scrolling */
+    overflow: hidden; /* Hide content that overflows the container */
+    display: flex; /* Use flex for video/details layout */
+    flex-direction: column;
+    z-index: 2001; /* Higher than overlay */
+    transform: scale(1); /* Default visible state */
+    transition: transform var(--transition-fast);
+}
+
+#movie-details-modal-overlay.hidden #movie-details-modal-container {
+     transform: scale(0.95); /* Slight shrink animation */
+}
+
+
+#modal-close-button {
+    position: absolute;
+    top: 15px;
+    left: 15px; /* Position on left for RTL */
+    background: none;
+    border: none;
+    font-size: 1.8em;
+    color: var(--text-color);
+    cursor: pointer;
+    z-index: 2002; /* On top of modal content */
+    transition: color var(--transition-fast);
+}
+#modal-close-button:hover {
+    color: var(--text-heading-color);
+}
+
+#modal-video-container {
+    width: 100%;
+    /* Use aspect ratio trick for responsive video */
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio (9 / 16 * 100) */
+    height: 0;
+    overflow: hidden;
+    background-color: #000; /* Black background for video area */
+}
+
+#modal-video-container iframe,
+#modal-video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none; /* Remove iframe border */
+}
+
+#modal-details-content {
+    padding: 20px;
+    overflow-y: auto; /* Add scrollbar if details are long */
+    flex-grow: 1; /* Allow details section to take available height */
+    scrollbar-width: thin; /* For Firefox */
+    scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+}
+
+#modal-details-content::-webkit-scrollbar {
+    width: 8px; /* For Chrome, Safari, Edge */
+}
+
+#modal-details-content::-webkit-scrollbar-track {
+    background: var(--scrollbar-track-color);
+    border-radius: var(--border-radius-md);
+}
+
+#modal-details-content::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb-color);
+    border-radius: var(--border-radius-md);
+    border: 2px solid var(--scrollbar-track-color);
+}
+
+
+#modal-title {
+    font-family: var(--font-heading);
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--text-heading-color);
+    margin-bottom: 15px;
+    text-align: center; /* Center the title */
+}
+
+.modal-detail-line {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
+    margin-bottom: 10px;
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+.modal-detail-line i {
+    color: var(--primary-accent-color);
+    margin-left: 10px; /* Space after icon for RTL */
+    margin-top: 3px; /* Align icon slightly better with text */
+    flex-shrink: 0; /* Prevent icon from shrinking */
+    font-size: 1.1em;
+}
+
+.modal-detail-line strong {
+     color: var(--text-heading-color); /* Make labels stand out */
+     margin-left: 5px; /* Space after strong label */
+}
+
+/* Specific styles for Plot (Description) */
+.modal-detail-plot {
+    display: flex;
+    margin-bottom: 15px;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+.modal-detail-plot i {
+    color: var(--primary-accent-color);
+    margin-left: 10px;
+    margin-top: 3px;
+    flex-shrink: 0;
+    font-size: 1.1em;
+}
+.modal-detail-plot .detail-text {
+    flex-grow: 1;
+}
+
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+    #movie-details-modal-container {
+        max-width: 90%; /* Adjust max width */
+        max-height: 95vh; /* Adjust max height */
+    }
+    #modal-details-content {
+        padding: 15px;
+    }
+     #modal-title {
+         font-size: 1.5em;
+         margin-bottom: 10px;
+     }
+     .modal-detail-line, .modal-detail-plot {
+         font-size: 0.95em;
+     }
+     .modal-detail-line i, .modal-detail-plot i {
+         font-size: 1em;
+         margin-left: 8px;
+     }
+      #modal-close-button {
+          font-size: 1.5em;
+          top: 10px;
+          left: 10px;
+      }
 }
