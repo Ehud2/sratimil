@@ -267,7 +267,7 @@
                  const seasonData = seriesData.Seasons[seasonNum];
                  if (seasonData && seasonData.Episodes && typeof seasonData.Episodes === 'object') {
                       const episode = seasonData.Episodes[episodeNum];
-                      if (episode && typeof episode === 'object' && episode.episode_imdb_id) {
+                      if (episode && typeof episode === 'object' && episode.episode_imdb_id) { // Ensure episode_imdb_id exists
                            // Found the episode! Return its data including IMDb ID
                            return {
                                season: seasonNum,
@@ -381,7 +381,7 @@
             // Handle episode item click - This is where the iframe is created/updated
             function handleEpisodeClick(event) {
                 const clickedItem = event.currentTarget;
-                const episodeImdbId = clickedItem.dataset.episodeImdbId; // Get episode IMDb ID
+                // const episodeImdbId = clickedItem.dataset.episodeImdbId; // Get episode IMDb ID (not needed for Vidsrc embed in new format)
                 const season = clickedItem.dataset.season; // Get season number
                 const episode = clickedItem.dataset.episode; // Get episode number
 
@@ -406,22 +406,24 @@
                 episodeEmbedContainer.innerHTML = '';
                 hideEmbedMessage();
 
-                // Validate episodeImdbId and create iframe
-                if (episodeImdbId && episodeImdbId.startsWith('tt')) { // Basic check for IMDb ID format
-                     console.log(`Attempting to embed S${season}E${episode} (IMDb ID: ${episodeImdbId}) using vidsrc.`);
+                // Validate seriesImdbId, season, and episode numbers before creating iframe
+                if (seriesImdbId && season && episode && seriesImdbId.startsWith('tt')) { // Basic check for series IMDb ID format and number existence
+                     console.log(`Attempting to embed S${season}E${episode} for series ${seriesImdbId} using vidsrc with S/E format.`);
 
                     const iframe = document.createElement('iframe');
-                    // Vidsrc URL for TV shows uses the episode IMDb ID
-                    iframe.src = `https://vidsrc.to/embed/tv/${episodeImdbId}`; // Use episodeImdbId here
+                    // --- MODIFIED LINE ---
+                    // Vidsrc URL for TV shows using series ID, season, and episode numbers
+                    iframe.src = `https://vidsrc.to/embed/tv/${seriesImdbId}/${season}/${episode}`;
+                    // --- END MODIFIED LINE ---
                     iframe.allowFullscreen = true;
                     iframe.setAttribute("allow", "autoplay"); // Request autoplay permission
 
                     episodeEmbedContainer.appendChild(iframe);
 
                 } else {
-                     console.warn(`No valid episode IMDb ID found in data for S${season}E${episode}. Cannot embed.`);
+                     console.warn(`Missing series IMDb ID (${seriesImdbId}), season (${season}), or episode (${episode}) or invalid format. Cannot embed.`);
                      // Show "No video available" message
-                     showEmbedMessage('וידאו אינו זמין עבור פרק זה (חסר IMDb ID של הפרק).');
+                     showEmbedMessage('וידאו אינו זמין עבור פרק זה (חסרים נתוני ID או עונה/פרק).');
                 }
             }
 
@@ -473,98 +475,6 @@
             // Initial setup on page load
             populateSeasons();
 
-            // --- Auto-selection logic based on URL or first available ---
-            // This needs to run *after* seasons and episodes are populated.
-            if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
-                 const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).sort((a, b) => a - b);
-
-                 if (seasonNumbers.length > 0) {
-                     let targetEpisodeInfo = null;
-
-                     // 1. Check if season/episode numbers are in URL and find its data
-                     if (initialSeasonFromUrl !== null && initialEpisodeFromUrl !== null) {
-                          console.log(`Attempting to find episode at S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL.`);
-                          const foundEpisodeInfo = findEpisodeByNumbers(initialSeasonFromUrl, initialEpisodeFromUrl);
-                          if (foundEpisodeInfo) {
-                              console.log(`Found episode at S${initialSeasonFromUrl}E${initialEpisodeFromUrl}.`);
-                              targetEpisodeInfo = foundEpisodeInfo;
-                          } else {
-                              console.warn(`Episode at S${initialSeasonFromUrl}E${initialEpisodeFromUrl} not found in series data.`);
-                          }
-                     }
-
-                     // 2. If no URL numbers found or episode not found by numbers, fall back to the first episode of the first season
-                     if (!targetEpisodeInfo) {
-                          console.log("Falling back to selecting the first available season/episode.");
-                          const firstSeasonNum = seasonNumbers[0];
-                          const firstSeasonData = seriesData.Seasons[firstSeasonNum];
-
-                          if (firstSeasonData && firstSeasonData.Episodes && typeof firstSeasonData.Episodes === 'object') {
-                               const firstEpisodeNum = Object.keys(firstSeasonData.Episodes).map(Number).sort((a, b) => a - b)[0];
-                                // Use findEpisodeByNumbers to retrieve the episode data including its IMDb ID
-                                targetEpisodeInfo = findEpisodeByNumbers(firstSeasonNum, firstEpisodeNum);
-                               if (!targetEpisodeInfo) {
-                                    console.warn(`First episode at S${firstSeasonNum}E${firstEpisodeNum} found, but its data or IMDb ID is missing.`);
-                               } else {
-                                    // Update URL to the first episode's numbers if we are defaulting AND if series ID exists
-                                     if (seriesImdbId) { // Don't update URL if seriesImdbId is missing (shouldn't happen if we reached here)
-                                         const newUrl = `/series/${seriesImdbId}/${targetEpisodeInfo.season}/${targetEpisodeInfo.episode}`;
-                                         history.replaceState(null, '', newUrl);
-                                          console.log(`Defaulting to first episode, URL updated to: ${newUrl}`);
-                                     }
-                               }
-                          } else {
-                               console.warn("No episode data found for the first season.");
-                          }
-                     }
-
-                     // 3. If a target episode was determined, select it in the UI and trigger playback
-                     if (targetEpisodeInfo) {
-                          // Set the season dropdown value to trigger population of episodes for that season
-                          // This will then be followed by finding and clicking the specific episode item.
-                           console.log(`Setting season select to ${targetEpisodeInfo.season}`);
-                           seasonSelect.value = targetEpisodeInfo.season;
-
-                           // Trigger the change event handler to populate episodes and auto-select the target episode
-                           // We use a small delay here to ensure the options are rendered after populateEpisodes
-                           seasonSelect.dispatchEvent(new Event('change')); // Trigger change event
-
-                            // Note: The auto-selection of the specific episode item within the list
-                            // is now handled *inside* the seasonSelect change listener's timeout,
-                            // using targetEpisodeInfo determined here. This is a cleaner flow.
-                            // However, we need to make targetEpisodeInfo available to the change handler.
-                            // Let's refine this. The initial selection logic should happen *after*
-                            // seasons are populated but *before* the seasonSelect change listener is attached
-                            // or called explicitly, UNLESS the URL specifically has S/E numbers.
-
-                            // Alternative flow:
-                            // a. Populate seasons dropdown.
-                            // b. Determine target episode (from URL or first).
-                            // c. If target episode found:
-                            //    i. Set season dropdown to target episode's season.
-                            //    ii. Call populateEpisodes for that season.
-                            //    iii. AFTER episodes are rendered (use setTimeout or await in a real async context),
-                            //        find the target episode item by its dataset (season/episode numbers) and click it.
-                            // d. Attach seasonSelect change listener (which will auto-select the *first* episode of the *new* season when user changes).
-
-                            // Let's adjust to this alternative flow:
-
-                     } else {
-                          // No playable episode found for auto-selection (no seasons, or first episode missing ID etc.)
-                          console.warn("No playable episode found for auto-selection.");
-                           // Message is already set by populateSeasons or remains "select episode"
-                     }
-
-                 } else {
-                      console.warn("No seasons found in series data for auto-selection.");
-                       // Message is already set by populateSeasons
-                 }
-            }
-
-
-            // Adjusted Initial setup on page load
-            populateSeasons(); // Populate the season dropdown first
-
             // Delay the rest of the auto-selection logic to allow season dropdown to render
              setTimeout(() => {
                  if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
@@ -598,11 +508,12 @@
                                           console.warn(`First episode data at S${firstSeasonNum}E${firstEpisodeNum} is invalid or missing IMDb ID.`);
                                      } else {
                                          // Update URL to the first episode's numbers if we are defaulting AND if series ID exists
-                                          if (seriesImdbId) { // Don't update URL if seriesImdbId is missing
-                                              const newUrl = `/series/${seriesImdbId}/${targetEpisodeInfo.season}/${targetEpisodeInfo.episode}`;
-                                              history.replaceState(null, '', newUrl);
-                                               console.log(`Defaulting to first episode, URL updated to: ${newUrl}`);
-                                          }
+                                          // The URL format should match the route: /series/series_id/season/episode
+                                           if (seriesImdbId) { // Don't update URL if seriesImdbId is missing
+                                               const newUrl = `/series/${seriesImdbId}/${targetEpisodeInfo.season}/${targetEpisodeInfo.episode}`;
+                                               history.replaceState(null, '', newUrl);
+                                                console.log(`Defaulting to first episode, URL updated to: ${newUrl}`);
+                                           }
                                      }
                                } else {
                                     console.warn("No episodes found in the first available season.");
@@ -621,6 +532,7 @@
                                 // Wait briefly for episodes to render, then try to find and click the specified episode list item
                                 setTimeout(() => {
                                      // Find the LI element for this specific episode number AND season
+                                     // Note: We are selecting based on season and episode number, not episode IMDb ID
                                      const targetEpisodeItem = episodeListUl.querySelector(`.episode-item[data-season='${targetEpisodeInfo.season}'][data-episode='${targetEpisodeInfo.episode}']`);
                                      if (targetEpisodeItem) {
                                           console.log(`Found S${targetEpisodeInfo.season}E${targetEpisodeInfo.episode} element in list. Clicking.`);
