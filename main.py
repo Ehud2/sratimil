@@ -305,16 +305,18 @@ def index():
     user = session.get('user')
     greeting = get_greeting(user)
 
-    # Load data from Firebase
     movies_data = load_movies_data()
     categories = categorize_movies(movies_data)
     current_year = datetime.datetime.utcnow().year
+    # Pass ADMIN_EMAIL to the template
+    admin_email = ADMIN_EMAIL
 
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
                            current_year=current_year,
-                           user=user
+                           user=user,
+                           admin_email=admin_email # Pass the admin email
                            )
 
 @app.route('/add', methods=['GET', 'POST'])
