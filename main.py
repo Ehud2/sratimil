@@ -384,9 +384,8 @@ def movie_details(imdb_id):
     movie = load_movie_details(imdb_id)
 
     # Check if found and if it's a movie type (assuming /Movies only contains movies)
-    # Also ensure the movie object is not None before accessing its type
-    if not movie or not isinstance(movie, dict) or movie.get('type') != 'movie':
-        logging.warning(f"Movie details not found, is not a dictionary, or is not of type 'movie' for ID: {imdb_id}. Found: {movie}")
+    if not movie or movie.get('type') != 'movie':
+        logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}")
         # If not found or not a movie type, show 404 or specific error page
         abort(404)
 
