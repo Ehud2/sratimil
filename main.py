@@ -96,6 +96,21 @@ def load_movies_data():
         logging.error(f"Error loading movies from Firebase: {e}", exc_info=True)
         return {}
 
+def load_movie_details(imdb_id):
+    """Loads details for a single movie from Firebase."""
+    try:
+        ref = db.reference(f'/Movies/{imdb_id}')
+        movie_details = ref.get()
+        if movie_details:
+             logging.info(f"Loaded details for movie ID {imdb_id} from Firebase.")
+        else:
+             logging.info(f"No details found for movie ID {imdb_id} in Firebase.")
+        return movie_details
+    except Exception as e:
+        logging.error(f"Error loading movie details for ID {imdb_id} from Firebase: {e}", exc_info=True)
+        return None
+
+
 def load_series_data():
     """Loads all series from Firebase."""
     try:
@@ -115,10 +130,7 @@ def load_series_data():
     except Exception as e:
         logging.error(f"Error loading series list from Firebase: {e}", exc_info=True)
         # Return dummy data or empty list on error
-        return [
-            {"id": "tt0903747", "title": "שובר שורות (שגיאת טעינה)"},
-            {"id": "tt0944947", "title": "משחקי הכס (שגיאת טעינה)"},
-        ]
+        return []
 
 
 def categorize_movies(movies_data):
@@ -148,18 +160,21 @@ def categorize_movies(movies_data):
 
         # Add to the correct category list if category is valid and not "ללא"
         # We need id, title, poster, video_url for the item cards in index.html
+        # For the item card, we only need basic display info and the ID for the link
         if category in CATEGORIES and category != "ללא":
              categorized_movies[category].append({
                 "id": imdb_id,
                 "title": title,
                 "poster": poster,
-                "video_url": video_url # video_url is needed on the card for modal JS
+                # video_url is NOT needed on the index card anymore, as we navigate to movie page
+                # "video_url": video_url
              })
         elif category == "ללא":
             pass # Don't display 'ללא' category on index
         else:
              logging.warning(f"Movie {imdb_id} has invalid/unknown category: {category}")
              pass # Skip invalid categories
+
 
     # Optional: If you want to ensure categories with no movies are still shown,
     # you might add checks here. But usually, you only show categories with items.
@@ -239,7 +254,7 @@ def get_omdb_details_api(imdb_id):
         logging.error(f"Error calling OMDB details API for ID {imdb_id}: {e}", exc_info=True)
         return None
 
-# --- API Routes for Frontend OMDB Search ---
+# --- API Routes for Frontend OMDB Search (Used by add.html) ---
 @app.route('/api/search_omdb')
 def api_search_omdb():
     search_term = request.args.get('s')
@@ -252,8 +267,6 @@ def api_search_omdb():
          return jsonify({"Error": "Invalid type specified"}), 400
 
     results = search_omdb_api(search_term, content_type)
-    # The OMDB API search results are already close to what the frontend needs
-    # We can return them directly
     return jsonify(results)
 
 @app.route('/api/get_omdb_details')
@@ -287,9 +300,8 @@ def google_callback():
     try:
         logging.info("Handling Google login callback.")
         token = oauth.google.authorize_access_token()
-        # Use the token to get user info
         userinfo_response = oauth.google.userinfo(token=token)
-        userinfo = userinfo_response.json() # Get the JSON data
+        userinfo = userinfo_response.json()
         logging.info(f"Received user info from Google: {userinfo.get('email')}")
 
         user_data = {
@@ -329,28 +341,48 @@ def index():
     user = session.get('user')
     greeting = get_greeting(user)
 
-    # Load data from Firebase
-    movies_data = load_movies_data() # This loads the full dictionary {imdb_id: movie_details}
-
-    # Categorize for display rows (this function selects/formats data for the cards)
-    categories = categorize_movies(movies_data)
+    # Load only the necessary data for index cards
+    movies_data = load_movies_data() # Still load all movies to categorize them
+    categories = categorize_movies(movies_data) # This returns the list structure for index display
 
     current_year = datetime.datetime.utcnow().year
     admin_email = ADMIN_EMAIL # Ensure this is passed
 
-    # Pass both the categorized data for rendering rows AND the raw movie data for the modal JS lookup
-    # Using json.dumps with ensure_ascii=False for Hebrew characters
-    # Pass an empty dictionary if movies_data is None for safety, although load_movies_data should handle this
-    movies_data_to_json = movies_data if movies_data is not None else {}
-
+    # Pass only the categorized data needed for rendering the index page
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
                            current_year=current_year,
                            user=user,
-                           admin_email=admin_email,
-                           movies_data_json=json.dumps(movies_data_to_json, ensure_ascii=False) # Pass full data as JSON string, handle Hebrew
+                           admin_email=admin_email # Pass the admin email
                            )
+
+# --- New Route for Single Movie Page ---
+@app.route('/movie/<imdb_id>')
+def movie_details(imdb_id):
+    user = session.get('user')
+    current_year = datetime.datetime.utcnow().year
+
+    # Validate IMDb ID format before querying
+    if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
+         logging.warning(f"Attempted to access movie page with invalid IMDb ID format: {imdb_id}")
+         abort(404) # Or redirect to error page
+
+    # Load movie details from Firebase
+    movie = load_movie_details(imdb_id)
+
+    if not movie or movie.get('type') != 'movie':
+        logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}")
+        # If not found or not a movie type, show 404 or specific error page
+        abort(404)
+
+    # Render the movie details page
+    return render_template('movie.html',
+                           movie=movie,
+                           user=user,
+                           current_year=current_year
+                           )
+
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_content():
