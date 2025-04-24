@@ -54,7 +54,7 @@
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
                          {# As requested, replacing the base64 image data with placeholder text #}
                          {# NOTE: This will break the image display. Replace with a valid image URL or base64 data for production. #}
-                         <img src="image url here" alt="Sign in with Google" loading="lazy">
+                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -160,18 +160,39 @@
     <script>
         // Data loaded from Firebase on page load is available here
         // This assumes movies_data_json was passed from the Flask route
-        const allMoviesData = JSON.parse('{{ movies_data_json | tojson | safe }}');
+        // Using try/catch in case movies_data_json is not defined or malformed
+        let allMoviesData = {};
+        try {
+             allMoviesData = JSON.parse('{{ movies_data_json | tojson | safe }}');
+        } catch (e) {
+             console.error("Error parsing movies_data_json:", e);
+             // allMoviesData remains empty object
+        }
         console.log("Loaded Movies Data:", allMoviesData); // Log data for debugging
 
         // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOMContentLoaded fired."); // Debug log
             const spinner = document.getElementById('loading-spinner');
+            // Delay before making spinner invisible (matches CSS transition duration)
+            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+            // Total delay before removing spinner from layout
+            const totalHideDelay = visualHideDelay + 100; // Add a little buffer
+
             if (spinner) {
-                 // Use setTimeout to ensure content is visually ready before hiding spinner
+                 console.log("Spinner element found, attempting to hide."); // Debug log
+                 // Step 1: Start the visual hiding transition (opacity/visibility)
+                 spinner.classList.add('hidden');
+
+                 // Step 2: After the transition finishes, fully remove from layout using display: none
                  setTimeout(() => {
-                    spinner.classList.add('hidden');
-                 }, 300); // Small delay
+                    spinner.style.display = 'none';
+                    console.log("Spinner display set to none. Should be fully gone."); // Debug log
+                 }, totalHideDelay); // Wait for visual transition + buffer
+            } else {
+                console.warn("Spinner element #loading-spinner not found."); // Debug log
             }
+
 
             // --- Modal Functionality ---
             const modalOverlay = document.getElementById('movie-details-modal');
@@ -190,10 +211,22 @@
 
 
             function populateModal(movie) {
+                console.log("Populating modal with movie:", movie); // Debug log
                 if (!movie) {
                     console.error("No movie data provided for modal.");
                     // Optionally display an error message in the modal
-                    return;
+                    modalTitle.textContent = 'שגיאה בטעינת נתונים';
+                    modalPlot.textContent = 'לא ניתן לטעון פרטי סרט.';
+                     modalYear.textContent = 'לא זמין';
+                     modalRating.textContent = 'לא זמין';
+                     modalGenre.textContent = 'לא זמין';
+                     modalRuntime.textContent = 'לא זמין';
+                     modalActors.textContent = 'לא זמינים';
+                     modalDirector.textContent = 'לא זמין';
+                     modalAwards.textContent = 'לא זמינים';
+                     modalVideoPlayer.src = '';
+                     modalVideoPlayer.style.display = 'none';
+                     return;
                 }
 
                 modalTitle.textContent = movie.title || 'כותרת לא ידועה';
@@ -203,110 +236,136 @@
                 modalGenre.textContent = movie.genre && movie.genre !== 'N/A' ? movie.genre : 'לא זמין';
                 modalRuntime.textContent = movie.runtime && movie.runtime !== 'N/A' ? movie.runtime : 'לא זמין';
                 modalActors.textContent = movie.actors && movie.actors !== 'N/A' ? movie.actors : 'לא זמינים';
-                 modalDirector.textContent = movie.director && movie.director !== 'N/A' ? movie.director : 'לא זמין'; // Populate director
-                 modalAwards.textContent = movie.awards && movie.awards !== 'N/A' ? movie.awards : 'לא זמינים'; // Populate awards
+                modalDirector.textContent = movie.director && movie.director !== 'N/A' ? movie.director : 'לא זמין'; // Populate director
+                modalAwards.textContent = movie.awards && movie.awards !== 'N/A' ? movie.awards : 'לא זמינים'; // Populate awards
+
 
                 // Handle video source
                 if (movie.video_url && movie.video_url !== '#' && movie.video_url !== 'N/A') {
                     modalVideoPlayer.src = movie.video_url;
                     modalVideoPlayer.style.display = 'block'; // Ensure video player is visible
+                    // Reset video state (optional)
+                    modalVideoPlayer.load(); // Load the new video source
+                    modalVideoPlayer.currentTime = 0; // Start from the beginning
                     // Autoplay might be blocked by browsers, but can be attempted:
                     // modalVideoPlayer.play().catch(error => console.log("Autoplay prevented:", error));
                 } else {
                      modalVideoPlayer.src = ''; // Clear src
                      modalVideoPlayer.style.display = 'none'; // Hide video player
-                     // Optionally display a message like "Video not available"
+                     // Optionally display a message like "Video not available" within the video container area
                  }
 
-                // Optional: Handle poster display if needed in modal (currently not in structure)
-                // const modalPoster = modalOverlay.querySelector('#modal-movie-poster');
-                // if (modalPoster && movie.poster && movie.poster !== 'N/A') {
-                //     modalPoster.src = movie.poster;
-                //     modalPoster.style.display = 'block';
-                // } else if (modalPoster) {
-                //     modalPoster.style.display = 'none';
-                // }
-
-                 // Update N/A display styling
+                // Update N/A display styling
                 modalYear.classList.toggle('na-value', modalYear.textContent === 'לא זמין');
                 modalRating.classList.toggle('na-value', modalRating.textContent === 'לא זמין');
                 modalGenre.classList.toggle('na-value', modalGenre.textContent === 'לא זמין');
                 modalRuntime.classList.toggle('na-value', modalRuntime.textContent === 'לא זמין');
                 modalActors.classList.toggle('na-value', modalActors.textContent === 'לא זמינים');
-                 modalDirector.classList.toggle('na-value', modalDirector.textContent === 'לא זמין');
-                 modalAwards.classList.toggle('na-value', modalAwards.textContent === 'לא זמינים');
+                modalDirector.classList.toggle('na-value', modalDirector.textContent === 'לא זמין');
+                modalAwards.classList.toggle('na-value', modalAwards.textContent === 'לא זמינים');
+
+                 // Scroll modal content to top if it's scrollable
+                 if (modalContent) {
+                    modalContent.scrollTop = 0;
+                 }
             }
 
 
             function openModal(movie) {
+                 // Check if modal overlay exists and is currently hidden
+                 if (!modalOverlay || modalOverlay.classList.contains('visible')) {
+                     console.warn("Modal overlay not found or already visible.");
+                     return; // Don't try to open if not ready or already open
+                 }
+                 console.log("Attempting to open modal."); // Debug log
                  populateModal(movie);
-                 modalOverlay.classList.add('visible');
-                 document.body.classList.add('modal-open'); // Prevent body scrolling
+                 modalOverlay.style.display = 'flex'; // Set display to flex BEFORE adding 'visible'
+                 // Use a tiny timeout to allow display change to render before transition
+                 setTimeout(() => {
+                    modalOverlay.classList.add('visible');
+                    document.body.classList.add('modal-open'); // Prevent body scrolling
+                    console.log("Modal opened."); // Debug log
+                 }, 10); // Small delay to trigger transition
              }
 
              function closeModal() {
-                 modalOverlay.classList.remove('visible');
+                 // Check if modal overlay exists and is currently visible
+                 if (!modalOverlay || !modalOverlay.classList.contains('visible')) {
+                      console.warn("Modal overlay not found or already hidden.");
+                     return; // Don't try to close if not ready or already hidden
+                 }
+                 console.log("Attempting to close modal."); // Debug log
+                 modalOverlay.classList.remove('visible'); // Start transition out
                  document.body.classList.remove('modal-open'); // Re-enable body scrolling
+
                  // Pause and clear video when closing
                  if (modalVideoPlayer) {
                      modalVideoPlayer.pause();
                      modalVideoPlayer.currentTime = 0;
-                     modalVideoPlayer.src = ''; // Clear source to fully stop
+                     modalVideoPlayer.src = ''; // Clear source to fully stop playback
                  }
-                 // Clear modal content for the next open
-                 modalTitle.textContent = '';
-                 modalPlot.textContent = '';
-                 modalYear.textContent = '';
-                 modalRating.textContent = '';
-                 modalGenre.textContent = '';
-                 modalRuntime.textContent = '';
-                 modalActors.textContent = '';
-                 modalDirector.textContent = '';
-                 modalAwards.textContent = '';
 
-                  // Reset N/A classes
-                 modalYear.classList.remove('na-value');
-                 modalRating.classList.remove('na-value');
-                 modalGenre.classList.remove('na-value');
-                 modalRuntime.classList.remove('na-value');
-                 modalActors.classList.remove('na-value');
-                 modalDirector.classList.remove('na-value');
-                 modalAwards.classList.remove('na-value');
+                 // After transition, remove from layout
+                 setTimeout(() => {
+                     modalOverlay.style.display = 'none';
+                     console.log("Modal display set to none. Fully closed."); // Debug log
+                     // Clear modal content after it's hidden
+                     modalTitle.textContent = '';
+                     modalPlot.textContent = '';
+                     modalYear.textContent = '';
+                     modalRating.textContent = '';
+                     modalGenre.textContent = '';
+                     modalRuntime.textContent = '';
+                     modalActors.textContent = '';
+                     modalDirector.textContent = '';
+                     modalAwards.textContent = '';
+
+                      // Reset N/A classes
+                     modalYear.classList.remove('na-value');
+                     modalRating.classList.remove('na-value');
+                     modalGenre.classList.remove('na-value');
+                     modalRuntime.classList.remove('na-value');
+                     modalActors.classList.remove('na-value');
+                     modalDirector.classList.remove('na-value');
+                     modalAwards.classList.remove('na-value');
+
+                 }, visualHideDelay + 50); // Wait for visual transition + buffer
             }
 
             // Event listeners for opening the modal
             // Use event delegation on a parent container for efficiency
-            document.querySelector('.main-content').addEventListener('click', function(event) {
-                const card = event.target.closest('.item-card');
-                // Check if the click was on a card AND not specifically on the card actions buttons (like + or info)
-                // event.target.closest('.card-actions button') ensures we don't open modal when clicking + or info
-                if (card && !event.target.closest('.card-actions button')) {
-                    const imdbId = card.dataset.id;
-                    const movie = allMoviesData[imdbId]; // Get movie data from client-side storage
-                    if (movie) {
-                         // For movies from OMDB, the full details (plot, genre, etc.) should be in allMoviesData
-                         // as they were saved to Firebase upon adding the movie.
-                         // We specifically fetch only movies currently.
-                         // If we were to show modal for series or episodes, we'd need different data structures/fetching.
-                         // For now, assume item-cards only represent movies with full stored data.
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                 mainContent.addEventListener('click', function(event) {
+                    const card = event.target.closest('.item-card');
+                    // Check if the click was on a card AND not specifically on the card actions buttons (like + or info)
+                    const isActionButtonClick = event.target.closest('.card-actions button');
 
-                         // Check if it's actually a movie item card (based on data availability)
-                         // A more robust check would be needed if series/episodes were in item-row too
-                         if (movie.type === 'movie') {
-                             openModal(movie);
+                    if (card && !isActionButtonClick) {
+                        const imdbId = card.dataset.id;
+                         // Retrieve movie data from the loaded JSON
+                        const movie = allMoviesData ? allMoviesData[imdbId] : undefined;
+                        console.log(`Card clicked for ID: ${imdbId}`, movie); // Debug log
+
+                        if (movie && movie.type === 'movie') { // Explicitly check if it's a movie
+                            openModal(movie);
+                        } else if (card) { // Handle clicks on non-movie cards (series, episodes, if present)
+                             console.log(`Clicked item ${imdbId} is not a movie or data is missing. Type: ${movie ? movie.type : 'unknown'}`);
+                             // TODO: Implement different behavior for series/episode cards
+                              // For now, just prevent modal from opening for non-movies
                          } else {
-                             // Handle clicks on series/episode cards differently later
-                              console.log(`Clicked item ${imdbId} is not a movie.`);
-                             // For series, maybe navigate to series page or show series details modal?
-                             // For episodes, maybe navigate to a dedicated episode playback page?
+                             console.log("Click did not target an item-card."); // Debug log
                          }
-
-                    } else {
-                        console.error("Movie data not found for ID:", imdbId);
-                        // Optionally show a user-friendly error message
-                    }
-                }
-            });
+                    } else if (isActionButtonClick) {
+                         console.log("Clicked on a card action button."); // Debug log
+                         // Action button logic (add to list, etc.) would go here
+                     } else {
+                         console.log("Click outside of item-cards."); // Debug log
+                     }
+                 });
+            } else {
+                console.error("Main content area '.main-content' not found!"); // Critical error
+            }
 
 
             // Event listener for closing the modal using the close button
@@ -326,7 +385,8 @@
 
             // Optional: Close modal with Escape key
             document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape' && modalOverlay.classList.contains('visible')) {
+                // Check if modal is visible before attempting to close with Escape
+                if (event.key === 'Escape' && modalOverlay && modalOverlay.classList.contains('visible')) {
                     closeModal();
                 }
             });
@@ -340,32 +400,37 @@
 
         }); // End DOMContentLoaded
 
-        // Placeholder for potential site-wide script.js
         // Ensure any script.js logic (like search filtering) is compatible
         // with the new modal click handler. The search filter logic needs to
         // target the .item-card elements.
-        // Example search filter (assuming this was in your script.js):
-        // document.getElementById('searchInput').addEventListener('input', function() {
-        //     const searchTerm = this.value.toLowerCase();
-        //     document.querySelectorAll('.item-card').forEach(card => {
-        //         const title = card.dataset.title || '';
-        //         if (title.includes(searchTerm)) {
-        //             card.style.display = ''; // Show card
-        //         } else {
-        //             card.style.display = 'none'; // Hide card
-        //         }
-        //     });
-        //     // Check if any cards are visible
-        //      const visibleCards = document.querySelectorAll('.item-card:not([style*="display: none"])');
-        //      const noResultsMessage = document.getElementById('noResultsMessage');
-        //      if (noResultsMessage) {
-        //           noResultsMessage.style.display = visibleCards.length === 0 ? 'block' : 'none';
-        //      }
-        // });
+        // Example search filter (assuming this was in your script.js and moved here):
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const itemCards = document.querySelectorAll('.item-card');
+                let anyVisible = false;
+                itemCards.forEach(card => {
+                    const title = card.dataset.title || ''; // Use data-title attribute
+                    if (title.includes(searchTerm)) {
+                        card.style.display = ''; // Show card
+                        anyVisible = true;
+                    } else {
+                        card.style.display = 'none'; // Hide card
+                    }
+                });
+                 const noResultsMessage = document.getElementById('noResultsMessage');
+                 if (noResultsMessage) {
+                      noResultsMessage.style.display = anyVisible ? 'none' : 'block';
+                 }
+            });
+        } else {
+             console.warn("Search input #searchInput not found.");
+        }
+
 
     </script>
-    {# If you have a separate static/js/script.js for search/filtering on the index page, link it here #}
-    {# Make sure it runs after the modal script or is included in the same block #}
+    {# If you have a separate static/js/script.js, link it here AFTER this script block #}
     {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
 </body>
 </html>
