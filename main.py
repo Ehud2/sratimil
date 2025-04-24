@@ -60,11 +60,22 @@ FIREBASE_DATABASE_URL = os.environ.get('FIREBASE_DATABASE_URL', 'https://superno
 try:
     # Check if app is already initialized (prevents errors in debug/reloader mode)
     if not firebase_admin._apps:
-        cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': FIREBASE_DATABASE_URL
-        })
-        logging.info("Firebase initialized successfully.")
+        # Check if the service account file exists
+        if not os.path.exists(FIREBASE_SERVICE_ACCOUNT_KEY_PATH):
+            logging.error(f"Firebase service account key file not found at {FIREBASE_SERVICE_ACCOUNT_KEY_PATH}")
+            # You might want to exit or raise an exception here in production
+            # For now, just log and continue (will likely fail Firebase ops later)
+            cred = None # Set cred to None so initialization fails
+        else:
+            cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
+
+        if cred:
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': FIREBASE_DATABASE_URL
+            })
+            logging.info("Firebase initialized successfully.")
+        else:
+             logging.error("Firebase initialization failed due to missing credential file.")
     else:
         logging.info("Firebase already initialized.")
 except Exception as e:
@@ -86,33 +97,56 @@ CATEGORIES = [
 # --- Data Loading Functions (from Firebase) ---
 
 def load_movies_data():
-    """Loads all movies from Firebase."""
+    """Loads all movies from Firebase, adding 'type: movie'."""
     try:
         ref = db.reference('/Movies')
         movies = ref.get()
-        logging.info(f"Loaded {len(movies) if movies else 0} movies from Firebase.")
-        return movies if movies is not None else {} # Ensure returns dict even if empty
+        movies_with_type = {}
+        if movies:
+            for imdb_id, details in movies.items():
+                if isinstance(details, dict):
+                    details['type'] = 'movie' # Add type identifier
+                    movies_with_type[imdb_id] = details
+                else:
+                    logging.warning(f"Skipping non-dict movie entry: {imdb_id}")
+
+        logging.info(f"Loaded {len(movies_with_type)} movies from Firebase.")
+        return movies_with_type if movies_with_type is not None else {} # Ensure returns dict even if empty
     except Exception as e:
         logging.error(f"Error loading movies from Firebase: {e}", exc_info=True)
         return {}
 
-def load_movie_details(imdb_id):
-    """Loads details for a single movie from Firebase."""
+def load_series_data_for_index():
+    """Loads series data for index display from Firebase, adding 'type: series'."""
     try:
-        ref = db.reference(f'/Movies/{imdb_id}')
-        movie_details = ref.get()
-        if movie_details:
-             logging.info(f"Loaded details for movie ID {imdb_id} from Firebase.")
-        else:
-             logging.info(f"No details found for movie ID {imdb_id} in Firebase.")
-        return movie_details
+        # We only need top-level series info for the index card
+        ref = db.reference('/Series')
+        series_dict = ref.get()
+        series_for_index = {}
+        if series_dict:
+            for imdb_id, details in series_dict.items():
+                 # Only include basic details for the index card
+                 # Avoid fetching nested Seasons/Episodes here for performance
+                if isinstance(details, dict):
+                    series_for_index[imdb_id] = {
+                        'imdbID': imdb_id,
+                        'title': details.get('title', 'כותרת לא ידועה'),
+                        'poster': details.get('poster', 'N/A'),
+                        'category': details.get('category', 'ללא'),
+                        'type': 'series' # Add type identifier
+                    }
+                else:
+                    logging.warning(f"Skipping non-dict series entry: {imdb_id}")
+
+        logging.info(f"Loaded {len(series_for_index)} series for index from Firebase.")
+        return series_for_index if series_for_index is not None else {}
     except Exception as e:
-        logging.error(f"Error loading movie details for ID {imdb_id} from Firebase: {e}", exc_info=True)
-        return None
+        logging.error(f"Error loading series for index from Firebase: {e}", exc_info=True)
+        return {}
 
 
-def load_series_data():
-    """Loads all series from Firebase."""
+def load_series_list_for_add_page():
+    """Loads basic series info for the add page dropdown."""
     try:
         ref = db.reference('/Series')
         series_dict = ref.get() # Gets dictionary {imdb_id: series_details}
@@ -133,51 +167,88 @@ def load_series_data():
         return []
 
 
-def categorize_movies(movies_data):
-    """Categorizes movies loaded from Firebase for index display."""
-    categorized_movies = {}
+def load_full_series_details(imdb_id):
+    """Loads all details for a single series, including seasons and episodes."""
+    try:
+        ref = db.reference(f'/Series/{imdb_id}')
+        series_details = ref.get()
+        if series_details:
+             logging.info(f"Loaded full series details for ID {imdb_id} from Firebase.")
+        else:
+             logging.info(f"No full details found for series ID {imdb_id} in Firebase.")
+        return series_details
+    except Exception as e:
+        logging.error(f"Error loading full series details for ID {imdb_id} from Firebase: {e}", exc_info=True)
+        return None
+
+
+def load_movie_details(imdb_id):
+    """Loads details for a single movie from Firebase."""
+    try:
+        ref = db.reference(f'/Movies/{imdb_id}')
+        movie_details = ref.get()
+        if movie_details:
+             logging.info(f"Loaded details for movie ID {imdb_id} from Firebase.")
+        else:
+             logging.info(f"No details found for movie ID {imdb_id} in Firebase.")
+        return movie_details
+    except Exception as e:
+        logging.error(f"Error loading movie details for ID {imdb_id} from Firebase: {e}", exc_info=True)
+        return None
+
+
+def categorize_content(movies_data, series_data):
+    """Categorizes movies and series loaded from Firebase for index display."""
+    categorized_items = {}
     # Initialize categories excluding "ללא" as it's typically not a display category
     for cat in CATEGORIES:
         if cat != "ללא":
-            categorized_movies[cat] = []
+            categorized_items[cat] = []
 
-    if not movies_data:
-        logging.info("No movies data to categorize.")
-        return {cat: [] for cat in CATEGORIES if cat != "ללא"} # Return empty dict for display categories
+    all_items = {}
+    if movies_data:
+        all_items.update(movies_data)
+    if series_data:
+        all_items.update(series_data)
 
-    # Firebase data is {imdb_id: {details}}
-    for imdb_id, movie_details in movies_data.items():
-        if not isinstance(movie_details, dict):
-            logging.warning(f"Skipping non-dict entry in /Movies: {imdb_id}")
+    if not all_items:
+        logging.info("No movies or series data to categorize.")
+        # Ensure all display categories exist, even if empty
+        return {cat: [] for cat in CATEGORIES if cat != "ללא"}
+
+
+    # all_items now contains {imdb_id: {details_including_type}}
+    for imdb_id, item_details in all_items.items():
+        if not isinstance(item_details, dict):
+            logging.warning(f"Skipping non-dict entry in all_items: {imdb_id}")
             continue
 
         # Ensure required fields exist, provide defaults
-        title = movie_details.get('title', 'כותרת לא ידועה')
-        # Use 'poster' field from Firebase, which should be from OMDB
-        poster = movie_details.get('poster', 'N/A') # Use N/A as default for poster from OMDB
-        # video_url is NOT needed on the index card anymore, as we navigate to movie page
-        # video_url = movie_details.get('video_url', '#')
-        category = movie_details.get('category', 'ללא') # Default to 'ללא'
+        title = item_details.get('title', 'כותרת לא ידועה')
+        poster = item_details.get('poster', 'N/A')
+        category = item_details.get('category', 'ללא') # Default to 'ללא'
+        item_type = item_details.get('type') # Get the type ('movie' or 'series')
 
         # Add to the correct category list if category is valid and not "ללא"
-        # We need id, title, poster for the item cards on index.html
-        if category in CATEGORIES and category != "ללא":
-             categorized_movies[category].append({
+        # We need id, title, poster, and type for the item cards on index.html
+        if category in CATEGORIES and category != "ללא" and item_type in ['movie', 'series']:
+             categorized_items[category].append({
                 "id": imdb_id,
                 "title": title,
                 "poster": poster,
+                "type": item_type # Include type here
              })
         elif category == "ללא":
             pass # Don't display 'ללא' category on index
         else:
-             logging.warning(f"Movie {imdb_id} has invalid/unknown category: {category}")
-             pass # Skip invalid categories
+             logging.warning(f"Item {imdb_id} ('{title}') has invalid/unknown category '{category}' or type '{item_type}'. Skipping index display.")
+             pass # Skip invalid categories or types
 
-    # Optional: If you want to ensure categories with no movies are still shown,
+    # Optional: If you want to ensure categories with no items are still shown,
     # you might add checks here. But usually, you only show categories with items.
-    # return {cat: items for cat, items in categorized_movies.items() if items} # Only return categories with items
+    # return {cat: items for cat, items in categorized_items.items() if items} # Only return categories with items
 
-    return categorized_movies
+    return categorized_items
 
 
 def get_greeting(user=None):
@@ -219,7 +290,10 @@ def search_omdb_api(search_term, content_type):
         data = response.json()
         if data.get('Response') == 'True':
             logging.info(f"OMDB search for '{search_term}' type '{content_type}' found {len(data.get('Search', []))} results.")
-            return data.get('Search', [])
+            # OMDB search results list includes Title, Year, imdbID, Type, Poster
+            # Filter out anything that isn't the requested type just in case (OMDB search can be fuzzy)
+            filtered_results = [item for item in data.get('Search', []) if item.get('Type', '').lower() == content_type]
+            return filtered_results
         else:
              logging.info(f"OMDB search found no results for '{search_term}' type '{content_type}': {data.get('Error', 'Unknown error')}")
              return []
@@ -264,7 +338,18 @@ def api_search_omdb():
          return jsonify({"Error": "Invalid type specified"}), 400
 
     results = search_omdb_api(search_term, content_type)
-    return jsonify(results)
+    # OMDB search results contain Title, Year, imdbID, Type, Poster. We need to return these.
+    formatted_results = []
+    for res in results:
+         formatted_results.append({
+             'Title': res.get('Title'),
+             'Year': res.get('Year'),
+             'imdbID': res.get('imdbID'),
+             'Type': res.get('Type'),
+             'Poster': res.get('Poster') # Include poster for display in results list if desired
+         })
+
+    return jsonify(formatted_results)
 
 @app.route('/api/get_omdb_details')
 def api_get_omdb_details():
@@ -275,6 +360,7 @@ def api_get_omdb_details():
 
     details = get_omdb_details_api(imdb_id)
     if details:
+        # Return the raw details object from OMDB
         return jsonify(details)
     else:
         return jsonify({"Error": "Details not found or API error"}), 404
@@ -350,10 +436,12 @@ def index():
     user = session.get('user')
     greeting = get_greeting(user)
 
-    # Load all movies from Firebase
-    movies_data = load_movies_data()
+    # Load all content from Firebase for the index page
+    movies_data = load_movies_data() # Includes type: 'movie'
+    series_data_for_index = load_series_data_for_index() # Includes type: 'series'
+
     # Categorize them for standard display sections
-    categories = categorize_movies(movies_data)
+    categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
     admin_email = ADMIN_EMAIL # Ensure this is passed
@@ -362,13 +450,13 @@ def index():
     # The 'continue watching' logic is handled client-side using localStorage.
     return render_template('index.html',
                            greeting=greeting,
-                           categories=categories, # All categoried movies for display and JS lookup
+                           categories=categories, # All categoried content for display and JS lookup
                            current_year=current_year,
                            user=user,
                            admin_email=admin_email # Pass the admin email
                            )
 
-# --- New Route for Single Movie Page ---
+# --- Route for Single Movie Page ---
 @app.route('/movie/<imdb_id>')
 def movie_details(imdb_id):
     user = session.get('user')
@@ -383,8 +471,9 @@ def movie_details(imdb_id):
     # Load movie details from Firebase
     movie = load_movie_details(imdb_id)
 
-    # Check if found and if it's a movie type (assuming /Movies only contains movies)
-    if not movie or movie.get('type') != 'movie':
+    # Check if found and if it's a movie type (assuming /Movies only contains movies or add type check)
+    # Add explicit type check from loaded data if available
+    if not movie or (movie.get('type') not in [None, 'movie'] and movie.get('type') != 'movie'): # Handle potential old data without 'type'
         logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}")
         # If not found or not a movie type, show 404 or specific error page
         abort(404)
@@ -398,6 +487,35 @@ def movie_details(imdb_id):
                            admin_email=admin_email # Pass admin email for nav link
                            )
 
+# --- Route for Single Series Page (NEW) ---
+@app.route('/series/<imdb_id>')
+def series_details(imdb_id):
+    user = session.get('user')
+    current_year = datetime.datetime.utcnow().year
+    admin_email = ADMIN_EMAIL
+
+    # Validate IMDb ID format
+    if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
+        logging.warning(f"Attempted to access series page with invalid IMDb ID format: {imdb_id}")
+        abort(404)
+
+    # Load full series details from Firebase (including Seasons/Episodes)
+    series = load_full_series_details(imdb_id)
+
+    # Check if found and if it's a series type
+    # Handle potential old data without 'type' gracefully by checking existence
+    if not series or (series.get('type') not in [None, 'series'] and series.get('type') != 'series'):
+        logging.warning(f"Series details not found or is not of type 'series' for ID: {imdb_id}")
+        abort(404)
+
+    # Pass the full series object (which includes Seasons/Episodes) to the template
+    return render_template('series.html',
+                           series=series, # Pass the full series data
+                           user=user,
+                           current_year=current_year,
+                           admin_email=admin_email
+                           )
+
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_content():
@@ -408,7 +526,7 @@ def add_content():
         abort(403)
 
     # Load series from Firebase for episode form dropdown on GET request
-    available_series = load_series_data()
+    available_series = load_series_list_for_add_page()
 
     if request.method == 'POST':
         content_type = request.form.get('content_type')
@@ -427,7 +545,7 @@ def add_content():
                     return redirect(url_for('add_content'))
 
                 if not imdb_id.startswith('tt') or len(imdb_id) < 7:
-                     flash('שגיאה: פורמט IMDb ID לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו מספרים.', 'error')
+                     flash('שגיאה: פורמט IMDb ID לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
 
                 # Fetch full details from OMDB server-side using the IMDb ID
@@ -460,7 +578,7 @@ def add_content():
                     'metascore': omdb_details.get('Metascore', 'N/A'),
                     'imdbRating': omdb_details.get('imdbRating', 'N/A'),
                     'imdbVotes': omdb_details.get('imdbVotes', 'N/A'),
-                    'type': omdb_details.get('Type', 'movie'), # Should be 'movie'
+                    'type': 'movie', # Explicitly set type as 'movie'
                     'dvd': omdb_details.get('DVD', 'N/A'),
                     'boxoffice': omdb_details.get('BoxOffice', 'N/A'),
                     'production': omdb_details.get('Production', 'N/A'),
@@ -486,7 +604,7 @@ def add_content():
                     return redirect(url_for('add_content'))
 
                 if not imdb_id.startswith('tt') or len(imdb_id) < 7:
-                     flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו מספרים.', 'error')
+                     flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
 
                 # Fetch full details from OMDB server-side using the IMDb ID
@@ -519,16 +637,16 @@ def add_content():
                     'metascore': omdb_details.get('Metascore', 'N/A'),
                     'imdbRating': omdb_details.get('imdbRating', 'N/A'),
                     'imdbVotes': omdb_details.get('imdbVotes', 'N/A'),
-                    'type': omdb_details.get('Type', 'series'), # Should be 'series'
+                    'type': 'series', # Explicitly set type as 'series'
                     'totalSeasons': omdb_details.get('totalSeasons', 'N/A'), # Specific to series
                     'category': category # From form
                  }
 
 
                 # Save series data to Firebase under /Series/{imdb_id}
-                ref = db.reference(f'/Series/{imdb_id}')
                 # Set operation will overwrite existing series details but won't affect existing Seasons/Episodes
-                ref.set(series_data)
+                ref = db.reference(f'/Series/{imdb_id}')
+                ref.update(series_data) # Use update instead of set to preserve existing Seasons/Episodes
                 logging.info(f"Series '{series_data['title']}' ({imdb_id}) added/updated in Firebase.")
                 flash(f'סדרה "{series_data["title"]}" נוספה/עודכנה בהצלחה!', 'success')
 
@@ -548,6 +666,14 @@ def add_content():
                  # Validate required fields for episode
                  if not series_imdb_id or not episode_title or not season_number_str or not episode_number_str or not video_url:
                       flash('שגיאה: שדות חובה (סדרה, כותרת פרק, מספר עונה, מספר פרק, וידאו) חסרים עבור פרק.', 'error')
+                      # Check specific missing fields for more helpful error
+                      missing = []
+                      if not series_imdb_id: missing.append('סדרה')
+                      if not episode_title: missing.append('כותרת פרק')
+                      if not season_number_str: missing.append('מספר עונה')
+                      if not episode_number_str: missing.append('מספר פרק')
+                      if not video_url: missing.append('קישור וידאו')
+                      flash(f'שגיאה: שדות חובה חסרים: {", ".join(missing)}', 'error')
                       return redirect(url_for('add_content'))
 
                  # Validate season and episode numbers
@@ -562,7 +688,7 @@ def add_content():
 
                  # Validate series IMDb ID format if manually entered
                  if series_imdb_id_select == 'manual' and (not series_imdb_id.startswith('tt') or len(series_imdb_id) < 7):
-                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין (הזנה ידנית). ודא שהוא מתחיל ב-"tt" ואחריו מספרים.', 'error')
+                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין (הזנה ידנית). ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                       return redirect(url_for('add_content'))
 
                  # Check if the parent series exists (Optional but good practice)
@@ -604,11 +730,11 @@ def add_content():
 
     # GET request: Render the add content form
     # Load series from Firebase for episode form dropdown on GET request
-    available_series = load_series_data()
+    available_series = load_series_list_for_add_page()
 
     return render_template('add.html',
                            user=user,
-                           categories=CATEGORIES,
+                           categories=[c for c in CATEGORIES if c != 'ללא'], # Categories excluding 'ללא' for movie/series dropdown
                            available_series=available_series,
                            current_year=datetime.datetime.utcnow().year
                            )
@@ -639,6 +765,11 @@ def internal_server_error(e):
 if __name__ == '__main__':
     # Ensure Firebase is initialized before running the app
     # The try/except block with _apps check handles reloader
-    port = int(os.environ.get('PORT', 5000))
-    # debug=True should only be used in development
-    app.run(host='0.0.0.0', port=port, debug=True)
+    # Also check if initialization actually succeeded before running
+    if firebase_admin._apps:
+        port = int(os.environ.get('PORT', 5000))
+        # debug=True should only be used in development
+        app.run(host='0.0.0.0', port=port, debug=True)
+    else:
+        logging.error("Application not started because Firebase initialization failed.")
+        # You might want to sys.exit(1) here in a real application
