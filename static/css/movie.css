@@ -5,49 +5,71 @@
 
 /* Override or add specific styles for the movie page */
 
+/* General page adjustments */
 .movie-details-page {
     padding-top: 40px;
     padding-bottom: 50px;
+    background-color: var(--bg-color); /* Default background color */
+    color: var(--text-color);
 }
 
+/* Container for the entire content area to control max width */
+.movie-details-container {
+    max-width: 1200px; /* Adjust as needed */
+    margin: 0 auto; /* Center the content */
+    padding: 20px;
+    background-color: #1e293b; /* A slightly lighter background for content area */
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Styling for the movie title */
 .movie-details-page h1 {
     font-family: var(--font-heading);
-    font-size: 2.8em;
+    font-size: 3em;
     font-weight: 700;
     color: var(--text-heading-color);
-    text-align: center; /* Center the movie title */
-    margin-bottom: 40px; /* More space below the title */
+    text-align: center;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 
+/* Restructure the grid to place video above details */
 .movie-grid {
-    display: grid;
-    grid-template-columns: 300px 1fr; /* Poster on the left, info on the right */
-    gap: 40px; /* Gap between columns */
-    align-items: start; /* Align items to the top */
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    gap: 30px;
+}
+
+/* Style the movie poster */
+.movie-poster {
+    max-width: 300px;
+    margin: 0 auto; /* Center the poster */
 }
 
 .movie-poster img {
-    display: block; /* Ensure image is block */
-    width: 100%; /* Make image fill its container */
+    display: block;
+    width: 100%;
     height: auto;
     border-radius: var(--border-radius-md);
-    box-shadow: 0 10px 30px var(--shadow-color); /* Add shadow to poster */
+    box-shadow: 0 10px 30px var(--shadow-color);
+    transition: transform var(--transition-fast);
 }
 
-.movie-info {
-    display: flex;
-    flex-direction: column;
+.movie-poster img:hover {
+    transform: scale(1.05);
 }
 
+/* Style the video container */
 .movie-video-container {
     position: relative;
     padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
     height: 0;
     overflow: hidden;
-    margin-bottom: 30px; /* Space below video */
-    background-color: #000; /* Black background */
+    margin-bottom: 20px;
+    background-color: #000;
     border-radius: var(--border-radius-md);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
 }
 
 .movie-video-container video {
@@ -58,6 +80,7 @@
     height: 100%;
 }
 
+/* Style for when video is not available */
 .no-video-message {
     position: absolute;
     top: 0;
@@ -67,68 +90,98 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: rgba(31, 40, 51, 0.9); /* Dark background */
+    background-color: rgba(31, 40, 51, 0.9);
     color: var(--text-muted-color);
     font-size: 1.2em;
     text-align: center;
 }
 
-
-.movie-plot {
-    margin-bottom: 30px; /* Space below plot */
-    color: var(--text-color);
-    font-size: 1.1em;
-    line-height: 1.8;
-    text-align: justify; /* Justify text for better look */
+/* Style the movie information */
+.movie-info {
+    display: flex;
+    flex-direction: column;
 }
 
+/* Style the movie description */
+.movie-plot {
+    margin-bottom: 20px;
+    color: var(--text-color);
+    font-size: 1.1em;
+    line-height: 1.7;
+    text-align: justify;
+    padding: 15px;
+    border-radius: var(--border-radius-sm);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Style the details grid */
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Use grid for details */
-    gap: 15px 30px; /* Row gap, column gap */
-    margin-top: 20px; /* Space above details */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px 30px;
+    margin-top: 20px;
     padding-top: 20px;
-    border-top: 1px solid rgba(69, 162, 158, 0.2); /* Separator */
+    border-top: 1px solid rgba(69, 162, 158, 0.2);
 }
 
 .detail-line {
     display: flex;
-    align-items: start; /* Align items to the start (top) */
+    align-items: start;
     color: var(--text-color);
     font-size: 1em;
 }
 
 .detail-line i {
     color: var(--primary-accent-color);
-    margin-left: 12px; /* Space between icon and text */
-    width: 25px; /* Fixed width for icon alignment */
-    text-align: center; /* Center icon */
-    flex-shrink: 0; /* Prevent icon from shrinking */
-    font-size: 1.2em; /* Slightly larger icons */
-    margin-top: 3px; /* Adjust vertical alignment with text */
+    margin-left: 12px;
+    width: 25px;
+    text-align: center;
+    flex-shrink: 0;
+    font-size: 1.2em;
+    margin-top: 3px;
 }
 
 .detail-line strong {
-    margin-left: 8px; /* Space between label and value */
+    margin-left: 8px;
     color: var(--text-heading-color);
     flex-shrink: 0;
 }
 
 .detail-line span {
-     word-break: break-word; /* Allow long text to wrap */
+    word-break: break-word;
 }
 
-/* Style for N/A values (optional) */
 .detail-line span.na-value {
-     color: #888; /* Muted color for N/A */
-     font-style: italic;
+    color: #888;
+    font-style: italic;
 }
 
+/* Movie details list */
+.movie-details-list {
+    padding: 20px;
+    border-radius: var(--border-radius-md);
+    background-color: rgba(255, 255, 255, 0.05); /* Slightly transparent background */
+}
+
+.movie-details-list p {
+    margin-bottom: 0.75em;
+    color: var(--text-color);
+    font-size: 1.1em;
+}
+
+.movie-details-list strong {
+    font-weight: bold;
+    color: var(--text-heading-color);
+    margin-left: 0.5em;
+}
+
+/* Style the actions section */
 .movie-actions {
     margin-top: 30px;
     text-align: center;
 }
 
+/* Style the add to list button */
 .add-to-list-button {
     padding: 12px 25px;
     background-color: var(--primary-accent-color);
@@ -140,6 +193,7 @@
     font-size: 1.1em;
     font-weight: 700;
     transition: background-color var(--transition-fast), transform var(--transition-fast);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .add-to-list-button:hover {
@@ -148,79 +202,42 @@
 }
 
 .add-to-list-button i {
-    margin-left: 8px; /* Space between icon and text */
+    margin-left: 8px;
 }
 
-
-/* Responsive Adjustments for movie page */
+/* Responsive adjustments */
 @media (max-width: 992px) {
     .movie-grid {
-        grid-template-columns: 1fr; /* Stack poster and info on smaller screens */
-        gap: 30px;
+        gap: 20px;
     }
     .movie-poster {
-        max-width: 300px; /* Limit poster width when stacked */
-        margin: 0 auto; /* Center the poster */
+        max-width: 250px;
     }
-     .movie-details-page h1 {
-         font-size: 2.4em;
-         margin-bottom: 30px;
-     }
+    .info-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
 }
 
 @media (max-width: 768px) {
     .movie-details-page h1 {
-         font-size: 2em;
-         margin-bottom: 25px;
-     }
-     .movie-plot {
-         font-size: 1em;
-         margin-bottom: 25px;
-     }
-     .info-grid {
-         gap: 15px;
-         padding-top: 15px;
-         margin-top: 15px;
-     }
-      .detail-line {
-          font-size: 0.95em;
-      }
+        font-size: 2.5em;
+    }
+    .movie-plot {
+        font-size: 1em;
+    }
+    .detail-line {
+        font-size: 0.9em;
+    }
 }
 
 @media (max-width: 576px) {
-    .movie-details-page {
-        padding-top: 20px;
-        padding-bottom: 30px;
+    .movie-details-page h1 {
+        font-size: 2em;
     }
-     .movie-details-page h1 {
-         font-size: 1.8em;
-         margin-bottom: 20px;
-     }
-      .movie-grid {
-         gap: 20px;
-      }
-     .movie-poster {
-         max-width: 250px;
-     }
-     .movie-plot {
-         font-size: 0.95em;
-         margin-bottom: 20px;
-     }
-     .info-grid {
-         gap: 10px;
-         padding-top: 10px;
-         margin-top: 10px;
-     }
-     .detail-line {
-         font-size: 0.9em;
-     }
-     .detail-line i {
-         margin-left: 10px;
-         width: 20px;
-         font-size: 1em;
-     }
-      .add-to-list-button {
-          padding: 10px 20px;
-          font-size: 1em;
-      }
+    .movie-plot {
+        font-size: 0.9em;
+    }
+    .detail-line {
+        font-size: 0.85em;
+    }
 }
