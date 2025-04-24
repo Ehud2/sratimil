@@ -497,9 +497,9 @@ def movie_details(imdb_id):
 # --- Route for Single Series Page (NEW) ---
 # Base series page
 @app.route('/series/<imdb_id>')
-# Series page with specific episode selected via episode IMDb ID
-@app.route('/series/<imdb_id>/<episode_imdb_id>')
-def series_details(imdb_id, episode_imdb_id=None):
+# Series page with specific season and episode number
+@app.route('/series/<imdb_id>/<int:season_number>/<int:episode_number>') # <-- CHANGED LINE
+def series_details(imdb_id, season_number=None, episode_number=None): # <-- Keep parameters with defaults
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
     admin_email = ADMIN_EMAIL
@@ -509,13 +509,19 @@ def series_details(imdb_id, episode_imdb_id=None):
         logging.warning(f"Attempted to access series page with invalid Series IMDb ID format: {imdb_id}")
         abort(404)
 
-    # Validate Episode IMDb ID format if provided
-    if episode_imdb_id and (not episode_imdb_id.startswith('tt') or len(episode_imdb_id) < 7):
-         logging.warning(f"Attempted to access series page with invalid Episode IMDb ID format: {episode_imdb_id} for series {imdb_id}")
-         # Decide whether to abort or just ignore the invalid episode ID and load the series base page
-         # Let's ignore the invalid episode ID and load the base series page, flash a warning?
-         # Or just let the frontend JS handle the non-match. Aborting seems too harsh.
-         # For now, just proceed and let JS handle the URL part.
+    # Validate Season/Episode Numbers if provided (Flask <int:> handles non-integers,
+    # but we can add checks for non-positive if needed, though JS also validates >=1)
+    if season_number is not None and (season_number < 1):
+        logging.warning(f"Attempted to access series page with invalid season number ({season_number}) for series {imdb_id}")
+        # Option: abort(404) or proceed and let JS handle finding nothing for that number
+        # Let's let JS handle it for flexibility.
+        pass # Continue loading the page
+
+    if episode_number is not None and (episode_number < 1):
+        logging.warning(f"Attempted to access series page with invalid episode number ({episode_number}) for series {imdb_id}")
+        # Option: abort(404) or proceed
+        pass # Continue loading the page
+
 
     # Load full series details from Firebase (including Seasons/Episodes)
     series = load_full_series_details(imdb_id)
@@ -526,9 +532,10 @@ def series_details(imdb_id, episode_imdb_id=None):
         logging.warning(f"Series details not found or is not of type 'series' for ID: {imdb_id}")
         abort(404)
 
-    # Pass the full series object (which includes Seasons/Episodes) to the template
-    # The episode_imdb_id from the URL is *not* explicitly passed to the template here,
-    # because the JavaScript reads it directly from window.location.pathname.
+    # Pass the full series object to the template.
+    # The season_number and episode_number from the URL are *not* explicitly
+    # passed as template variables here, because the JavaScript reads them
+    # directly from window.location.pathname on page load.
     return render_template('series.html',
                            series=series, # Pass the full series data
                            user=user,
