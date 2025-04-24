@@ -84,8 +84,9 @@
                 <div class="movie-info">
                     <div class="movie-video-container">
                         {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
-                            <video id="movie-player" controls crossorigin playsinline>
+                            <video id="movie-player" playsinline controls crossorigin preload="metadata" poster="{{ movie.poster }}">
                                 <source src="{{ movie.video_url }}" type="video/mp4">
+                                הדפדפן שלך לא תומך בוידאו.
                             </video>
                         {% else %}
                             <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
