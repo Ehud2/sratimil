@@ -5,167 +5,152 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ movie.title or 'סרט לא ידוע' }} - סינמה פריים</title>
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}">
-
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-
-    <!-- Plyr CSS -->
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <style>
+        .vidsrc-embed-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            margin-bottom: 20px;
+        }
+        .vidsrc-embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Header -->
-    <header class="site-header">
-        <div class="container header-content">
-
-            <div class="search-container">
-                <input type="search" id="searchInput" placeholder="חיפוש...">
-                <button aria-label="Search"><i class="fas fa-search"></i></button>
-            </div>
-
-            <nav class="main-nav">
-                <a href="{{ url_for('index') }}">בית</a>
-                <a href="#">סרטים</a>
-                <a href="#">סדרות</a>
-                <a href="#">הרשימה שלי</a>
-                {% if user and user.email == admin_email %}
-                <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
-                {% endif %}
-            </nav>
-
-            <div class="auth-container">
-                {% if user %}
-                    <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
-                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('google_login') }}" class="profile-button" title="התחבר עם גוגל">
-                        <img src="image url here" alt="Sign in with Google" loading="lazy">
-                    </a>
-                {% endif %}
-            </div>
-
-            <div class="header-spacer"></div>
+<header class="site-header">
+    <div class="container header-content">
+        <div class="search-container">
+            <input type="search" id="searchInput" placeholder="חיפוש...">
+            <button aria-label="Search"><i class="fas fa-search"></i></button>
         </div>
-    </header>
-
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="container flash-messages">
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category|default('info') }}" role="alert">
-                {{ message }}
-                <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>
-            </div>
-            {% endfor %}
+        <nav class="main-nav">
+            <a href="{{ url_for('index') }}">בית</a>
+            <a href="#">סרטים</a>
+            <a href="#">סדרות</a>
+            <a href="#">הרשימה שלי</a>
+            {% if user and user.email == admin_email %}
+            <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
+            {% endif %}
+        </nav>
+        <div class="auth-container">
+            {% if user %}
+                <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
+                    <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
+                </a>
+            {% else %}
+                <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
+                    <img src="image url here" alt="Sign in with Google" loading="lazy">
+                </a>
+            {% endif %}
         </div>
-        {% endif %}
-    {% endwith %}
+        <div class="header-spacer"></div>
+    </div>
+</header>
 
-    <!-- Main Movie Content -->
-    <main class="container movie-details-page">
-        {% if movie %}
-            <h1>{{ movie.title or 'כותרת לא ידועה' }}</h1>
+<main class="container movie-details-page">
+    {% if movie %}
+        <h1>{{ movie.title or 'כותרת לא ידועה' }}</h1>
 
-            <div class="movie-grid">
-                <div class="movie-poster">
-                    <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר' }}" loading="lazy">
+        <div class="movie-grid">
+            <div class="movie-poster">
+                <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר' }}" loading="lazy">
+            </div>
+
+            <div class="movie-info">
+                <div class="vidsrc-embed-container">
+                    {% if movie.imdb_id %}
+                        <iframe
+                            src="https://vidsrc.xyz/embed/movie/{{ movie.imdb_id }}"
+                            allowfullscreen
+                            loading="lazy">
+                        </iframe>
+                    {% else %}
+                        <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
+                    {% endif %}
                 </div>
 
-                <div class="movie-info">
-                    <div class="movie-video-container">
-                        {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
-                            <video id="movie-player" playsinline controls crossorigin preload="metadata" poster="{{ movie.poster }}">
-                                <source src="{{ movie.video_url }}" type="video/mp4">
-                                הדפדפן שלך לא תומך בוידאו.
-                            </video>
+                <div class="movie-details-list">
+                    <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
+                    <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
+                    <p>
+                        <strong>אורך:</strong>
+                        {% if movie.runtime and movie.runtime != 'N/A' %}
+                            {% set runtime_parts = movie.runtime.split(' ') %}
+                            {% if runtime_parts|length == 2 %}
+                                {% set hours = runtime_parts[0]|int // 60 %}
+                                {% set minutes = runtime_parts[0]|int % 60 %}
+                                {% if hours > 0 %}
+                                    {{ hours }} שעה ו-{{ minutes }} דקות
+                                {% else %}
+                                    {{ minutes }} דקות
+                                {% endif %}
+                            {% else %}
+                                {{ movie.runtime or 'לא זמין' }}
+                            {% endif %}
                         {% else %}
-                            <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
+                            לא זמין
                         {% endif %}
-                    </div>
+                    </p>
+                    <p>
+                        <strong>תאריך יציאה:</strong>
+                        {% if movie.year and movie.year != 'N/A' %}
+                            {% set year = movie.year|string %}
+                            {{ '12/02/' + year }}
+                        {% else %}
+                            לא זמין
+                        {% endif %}
+                    </p>
+                    <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
+                    <p><strong>דירוג:</strong> {{ movie.imdbRating or 'לא זמין' }}</p>
+                </div>
 
-                    <div class="movie-details-list">
-                        <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
-                        <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
-                        <p><strong>אורך:</strong>
-                            {% if movie.runtime and movie.runtime != 'N/A' %}
-                                {{ movie.runtime }}
-                            {% else %}
-                                לא זמין
-                            {% endif %}
-                        </p>
-                        <p><strong>תאריך יציאה:</strong>
-                            {% if movie.year and movie.year != 'N/A' %}
-                                {{ '12/02/' + movie.year|string }}
-                            {% else %}
-                                לא זמין
-                            {% endif %}
-                        </p>
-                        <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
-                        <p><strong>דירוג:</strong> {{ movie.imdbRating or 'לא זמין' }}</p>
-                    </div>
-
-                    <div class="movie-actions">
-                        <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button>
-                    </div>
+                <div class="movie-actions">
+                    <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button>
                 </div>
             </div>
-        {% else %}
-            <div class="error-container">
-                <h1>שגיאה</h1>
-                <h2>הסרט לא נמצא</h2>
-                <p>מצטערים, הסרט שחיפשת לא נמצא במסד הנתונים.</p>
-                <a href="{{ url_for('index') }}">חזור לדף הבית</a>
-            </div>
-        {% endif %}
-    </main>
-
-    <!-- Footer -->
-    <footer class="site-footer-bottom">
-        <div class="container">
-            <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
         </div>
-    </footer>
+    {% else %}
+        <div class="error-container">
+            <h1>שגיאה</h1>
+            <h2>הסרט לא נמצא</h2>
+            <p>מצטערים, הסרט שחיפשת לא נמצא במסד הנתונים.</p>
+            <a href="{{ url_for('index') }}">חזור לדף הבית</a>
+        </div>
+    {% endif %}
+</main>
 
-    <!-- Plyr JS -->
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const video = document.querySelector('#movie-player');
-            if (video) {
-                const player = new Plyr(video, {
-                    ratio: '16:9',
-                    fullscreen: { enabled: true },
-                    captions: { active: true, language: 'he' }
-                });
+<footer class="site-footer-bottom">
+    <div class="container">
+        <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
+    </div>
+</footer>
+
+<script>
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                const term = this.value.trim();
+                if (term) {
+                    window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                }
             }
         });
-    </script>
-
-    <!-- Search Bar Script -->
-    <script>
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('keypress', function(event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    const searchTerm = this.value.trim();
-                    if (searchTerm) {
-                        window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(searchTerm)}`;
-                    }
-                }
-            });
-        }
-    </script>
+    }
+</script>
 
 </body>
 </html>
