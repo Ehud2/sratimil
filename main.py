@@ -160,7 +160,7 @@ def categorize_movies(movies_data):
         category = movie_details.get('category', 'ללא') # Default to 'ללא'
 
         # Add to the correct category list if category is valid and not "ללא"
-        # We need id, title, poster for the item cards in index.html
+        # We need id, title, poster for the item cards on index.html
         if category in CATEGORIES and category != "ללא":
              categorized_movies[category].append({
                 "id": imdb_id,
@@ -172,7 +172,6 @@ def categorize_movies(movies_data):
         else:
              logging.warning(f"Movie {imdb_id} has invalid/unknown category: {category}")
              pass # Skip invalid categories
-
 
     # Optional: If you want to ensure categories with no movies are still shown,
     # you might add checks here. But usually, you only show categories with items.
@@ -298,15 +297,17 @@ def google_callback():
     try:
         logging.info("Handling Google login callback.")
         token = oauth.google.authorize_access_token()
-        # FIX: Access user info directly from the response object, don't call .json()
-        userinfo = oauth.google.userinfo(token=token)
-        logging.info(f"Received user info from Google: {userinfo.get('email')}")
+
+        # --- FIX: Access user info directly from userinfo_response ---
+        # The userinfo method returns a UserInfo object directly, not a response object needing .json()
+        userinfo_response = oauth.google.userinfo(token=token)
+        # userinfo = userinfo_response.json() # Remove this line
 
         user_data = {
-            'name': userinfo.get('name'),
-            'email': userinfo.get('email'),
-            'picture': userinfo.get('picture'),
-            'google_id': userinfo.get('sub')
+            'name': userinfo_response.get('name'), # Access properties directly
+            'email': userinfo_response.get('email'), # Access properties directly
+            'picture': userinfo_response.get('picture'), # Access properties directly
+            'google_id': userinfo_response.get('sub') # Access properties directly (sub is standard OIDC ID)
         }
 
         if not user_data.get('google_id'):
@@ -360,6 +361,7 @@ def index():
 def movie_details(imdb_id):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
+    admin_email = ADMIN_EMAIL # Pass admin email to movie page for nav link
 
     # Validate IMDb ID format before querying
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
@@ -369,18 +371,17 @@ def movie_details(imdb_id):
     # Load movie details from Firebase
     movie = load_movie_details(imdb_id)
 
-    # Also ensure that if data is found, it's actually intended to be a movie page
-    # based on the 'type' field saved from OMDB.
     if not movie or movie.get('type') != 'movie':
-        logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}. Data: {movie}")
+        logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}")
         # If not found or not a movie type, show 404 or specific error page
-        abort(404) # Using 404 as it's a "not found" scenario for a movie page
+        abort(404)
 
     # Render the movie details page
     return render_template('movie.html',
                            movie=movie,
                            user=user,
-                           current_year=current_year
+                           current_year=current_year,
+                           admin_email=admin_email # Pass admin email for nav link
                            )
 
 
