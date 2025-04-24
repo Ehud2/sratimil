@@ -155,10 +155,6 @@
                          </select>
                     </div>
                     {# REMOVED: Video URL input for movies #}
-                    {# <div class="form-group">
-                        <label for="movie_video_url">קישור לקובץ וידאו:</label>
-                        <input type="url" id="movie_video_url" name="movie_video_url" required>
-                    </div> #}
                      <div class="omdb-search-section">
                         <h3>חיפוש אוטומטי ב-OMDb (סרטים):</h3>
                         <div class="omdb-search-input">
@@ -241,7 +237,7 @@
                          <input type="text" id="manual_episode_series_id" name="manual_episode_series_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
 
-                     {# ADDED: Episode IMDb ID input #}
+                     {# ADDED: Episode IMDb ID input (KEPT) #}
                      <div class="form-group">
                          <label for="episode_imdb_id">IMDb ID של הפרק (לדוגמה tt1234567):</label>
                          <input type="text" id="episode_imdb_id" name="episode_imdb_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר" required>
@@ -259,11 +255,11 @@
                         <label for="episode_number">מספר הפרק:</label>
                         <input type="number" id="episode_number" name="episode_number" min="1" required>
                     </div>
-                    <div class="form-group">
+                    {# REMOVED: Video URL input for episodes #}
+                    {# <div class="form-group">
                         <label for="episode_video_url">קישור לקובץ וידאו של הפרק:</label>
                         <input type="url" id="episode_video_url" name="episode_video_url" required>
-                         {# Note: Episode duration is not automatically extracted from video URL #}
-                    </div>
+                    </div> #}
                 </div>
 
                 <button type="submit" class="form-submit-button">הוסף תוכן</button>
@@ -300,8 +296,8 @@
 
              // const movieVideoUrlInput = document.getElementById('movie_video_url'); // REMOVED INPUT
 
-             const episodeVideoUrlInput = document.getElementById('episode_video_url'); // KEPT INPUT
-             const episodeImdbIdInput = document.getElementById('episode_imdb_id'); // ADDED INPUT
+             // const episodeVideoUrlInput = document.getElementById('episode_video_url'); // REMOVED INPUT
+             const episodeImdbIdInput = document.getElementById('episode_imdb_id'); // KEPT INPUT
              const episodeTitleInput = document.getElementById('episode_title');
              const episodeSeasonInput = document.getElementById('episode_season');
              const episodeNumberInput = document.getElementById('episode_number');
@@ -331,8 +327,8 @@
                  if(episodeTitleInput) episodeTitleInput.value = '';
                  if(episodeSeasonInput) episodeSeasonInput.value = '';
                  if(episodeNumberInput) episodeNumberInput.value = '';
-                 if(episodeVideoUrlInput) episodeVideoUrlInput.value = ''; // KEPT CLEAR FOR KEPT INPUT
-                 if(episodeImdbIdInput) episodeImdbIdInput.value = ''; // ADDED CLEAR FOR ADDED INPUT
+                 // if(episodeVideoUrlInput) episodeVideoUrlInput.value = ''; // REMOVED CLEAR FOR REMOVED INPUT
+                 if(episodeImdbIdInput) episodeImdbIdInput.value = ''; // KEPT CLEAR FOR KEPT INPUT
 
                  if(episodeSeriesSelect) episodeSeriesSelect.value = '';
                  if(manualSeriesIdGroup) manualSeriesIdGroup.style.display = 'none';
@@ -355,6 +351,7 @@
                       activeSection.querySelectorAll('input:not([type="button"]), select').forEach(input => {
                           // Add specific exclusions here if certain fields within the form shouldn't be required
                           // episode_series_id and manual_episode_series_id required state is handled by updateEpisodeSeriesRequiredState
+                          // movie_video_url and episode_video_url are removed inputs
                           if (input.id !== 'omdb_movie_search_term' && input.id !== 'omdb_series_search_term' && input.id !== 'manual_episode_series_id' && input.id !== 'episode_series_id') {
                               input.required = true;
                           }
@@ -639,16 +636,19 @@
                            const episodeTitle = episodeTitleInput.value.trim();
                            const seasonNumber = episodeSeasonInput.value.trim();
                            const episodeNumber = episodeNumberInput.value.trim();
-                           const videoUrl = episodeVideoUrlInput.value.trim(); // Get the episode video URL
+                           // const videoUrl = episodeVideoUrlInput.value.trim(); // REMOVED VALIDATION FOR REMOVED INPUT
 
-                           if (!episodeImdbId || !episodeTitle || !seasonNumber || !episodeNumber || !videoUrl) {
+
+                           // Removed the videoUrl check based on the new requirement
+
+                           if (!episodeImdbId || !episodeTitle || !seasonNumber || !episodeNumber) {
                                 // Build a list of missing fields for a clearer message
                                 const missingFields = [];
                                 if (!episodeImdbId) missingFields.push('IMDb ID של הפרק');
                                 if (!episodeTitle) missingFields.push('שם הפרק');
                                 if (!seasonNumber) missingFields.push('מספר עונה');
                                 if (!episodeNumber) missingFields.push('מספר פרק');
-                                if (!videoUrl) missingFields.push('קישור וידאו של הפרק');
+                                // Removed the video URL missing field check
                                 flash(`שגיאה: אנא מלא את כל שדות החובה לפרק: ${missingFields.join(', ')}.`, 'error');
                                 event.preventDefault(); // Stop submission
                                 return;
