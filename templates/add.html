@@ -34,6 +34,9 @@
               cursor: pointer;
               border-bottom: 1px solid #eee;
               background-color: #f9f9f9;
+              display: flex; /* Use flexbox to align title and id */
+              justify-content: space-between; /* Space out title and id */
+              align-items: center;
           }
            .omdb-search-results li:hover {
                background-color: #e9e9e9;
@@ -45,7 +48,8 @@
            .result-id {
                font-size: 0.8em;
                color: #555;
-               margin-left: 10px;
+               /* margin-left: 10px; */ /* Removed margin-left due to flexbox */
+               flex-shrink: 0; /* Prevent id from shrinking */
            }
            .omdb-search-input {
                display: flex;
@@ -89,7 +93,9 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAABR1BMV////lQzU0o1NCgO/2twQ9fu9rl/FynvPt8v0xee72tADlQTMwolDkPS7kOyv2uADkNCL98O8ln0kpoEwanUPkNibkMR3nVEjp9ez3zMntioPrenL+9vX++vr74uD73Zj3+v7f7+P519T2xMHwmZP40c7ukYroYFXnUUXzsq3xpaDkOzb98dj/+/HA0vn74auRsvX868VVjPDM2/rK5dGDw5NjtXmn1LJXsG/B4MlMrGZCX3fi8eX1u7fsgXrpaF/jKA7re3PyqZXqb2XujDvyoiv1syHpYz3sf0D3wDTwlzPnVT350XTrc0H63Z7nWTD4y1z++ej3w0mnwvf4zm2auPbe5/yFtFzJvUyeul5psF3WvUGVyqKuulXjvTSz0J2ixd1TnrRKo4xMjdtPl79Jn5lGpnFJiORhs3ZKkslJm6Y+pGd9quAEW6SpAAAHw0lEQVR4nO2b2X/bRBCAZUVJG12WddnO4cZOYjtp0yP1FZPELYVCIUAPChTcQjlKKPz/z8i3LUurlbUrrf2b76V9SKX9MrMzu2OX4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAk0yhlM/v7+fzh4XMbtKLIcpO4eL4siLZDlof5y+PlOz2wUUpk/TaopPZL3ckW7MUSUrNIEmKatlKZ+uikPQaI1A6qEiaqrjcZjwVVVOz5VLSK12IUtlZvDtynpaS84NLJ5k5ztoqht3YUrWzx0u0KUuXihVCbyhpKZdLsiUPOxY8E0H0tpegmQtdWxUaQlwVB5tMx4HwratLKo3QNG2GN+PuweqGs0vF0dLOkpaxI98NXx98XTUKkym6s6WTcSvh2IzGMbDrEXKL9UL4zZru/FYi1hh3KgpphrHzhONWIaOkB4xlKmFavQS6oFdTlpsxKFCOENHaNtsXJT3ySfoCPtx0nI9jsg1CTdqZSdpO46uYGfVBVc+glkWysz+qkewRK+KqhUWTm2ZFDVBpcpCBHcroRu9NCTo59QsC4LcVqjLhKJamnP/r2az2api25aK+PWwkaLchY1tJ6ma3SkfHWYyO30ymcOjcsXWfAZWSpYJwQxuGXX0UuW8R+XfyW9JmsfUio09yHGYm1DSUluIi17+8dxklZE96Nx48fyqRwHrLbimV4ykKFfAmTlJlnSBcS7JlKcmkEqVDUGug5GjinqA+bRCZ3R0YGUP4tRRSeuEGAkeDS7RrKQotxt8mJHs41CPLFRUhlKUOw7s9YoUelL2RFNSrAhmAo9dCx1KyswIcp8GhdB6stBzmRE8SX92GxlEi5ER2cLcEtOfVxGK1nbSK4yKIAjpp1/c9t2DnaQXGJV7Yk9R+NInUxUmxiuReCb0SX/lqSipTH70F4Y7ojBUfPr1fKZK2n7SC4zM1cjQydRv5hStraTXF5kTYUJ6rm1IqaXfhNwDUZh2dLUN+zDp9UXnasbQ1TZUJj4qikhamCWdnrSNFaij7iR1tQ2Vmc9sI3Br3nDcNlYihKN271IctA31加拿大nVEeDEI4TjtmGvQgg9tuG4bSjZpFdHgm/9DJ3N+N1F0加拿大nVEeDEI4TjtmGvQgg9tuG4bSjZpFdHgm/9DJ3N+N1F0qsjwXNfQ2czniS9OhJ4Fpohz/EecXMjIjdoCr5w9/spxFuYhpvr0Vjbo2h4xz9JBfEOruFaNNZvUjT0LaU9MLdhZMPNHygaep1oRrzEfEZ0w7sUDa/8DcWr2AxfUTT8HmF4Ly7D9fsUDRHtUHwQmyHNdvHSfxvillLGDRENX3wRm+EGPcETlCHumS264ekeGC5u6C8oiLgPYduQiRiugWEUmKilVA3Z6Ic0DZ8jDOM709A0ZONcSlHjs7G3oGrIxP2Q6rmUiTs91dsTE3OazdcUDcnM2qIa0rzjE5mXRjZ8SNMQdclP421EvHkpypDmrA1RTEXhxzM8w40bGKCCSHNe6l9MxXdt45rce276+3fknuNBz6fHwriT7zMmzli93nov1mptkPOp9SIwhvewagTe81rf0OqzYLz3ojis5/5PjKxIG74lxq6pdRzI4q/8EP0LqG3oDrKJtVCw81/n0YQ3/JjSAXxFapnknmFP64LlNMkJoLEdiLCj+qptM9smjpNgp/GLJJ4x11UktL85KnPyXSaOk1iFpkn8Y5TxJFmc4/EG5BMp+kb3g2JYoMKIdXr75Bxmo6bxKxiLeoL9pAhpHqxGPLM3SRm8zRyPb2PKqTUe0WP4beG3noKOoqtaI9HHNjiSVKu//8tZpuEK08bUR6+h/CLKUl7JzfxnVM1/RWjdEXEeW2N8jdNJpwI7iZBTvEGcgJA+14x5lcdbbi4IrLK0L7eT5ELEFx4L6IjSPvyO003KIi8wYc/v+1tBAyp6J/YJqAKzQBZb4Z85sM1ZJGJNYQcd2YGJipv1kP1/t8+CRCMNYQcd20EKxo8fhhrbfN9gGKsIeS4cwxDp+C08U6pxYYp8+bvqANp3CHkuGZgsekhm63gKWqtrvd/X/q/f3yCCGE8B7YpWoHFZujYbqL2Y67Z0kf5IMt/+ivG1gsnS8MoNoN163qr6d07io6ePvWbks2//ArqJvXpxTw49XQsafL1Zi03DmYuVzzrNmRTdyeC+eFvz6ZI9cN7X+pYW3Ekaeimybdb141Gq9XmdVM3PNPc4P/xylTaU1If2lgFdcZzCOpH9I/zbSOJHO2RCz7aLIL54dSVqTG3wimKYfIUH6PtahsxXQu9CFFtwiAb76cVE9qEA5p0FJ0DzqRtxDS6iFtxcsBJqspQVxwdcDbjmlwkoGh+XF9nQdApN3MnE0LozgGHBUHncoBs4REwjP+SdhtyHv50g4UZdhJCkQaFzSibeN/QiYkm8c24yLiOKrU22SOc3iD39RxS1E1yYZRZ2oITajypMOrt86RlfOgaJIqqITMZwAHnjcipKoccJcdO7TqSo2w2GCuhHtSu9UVz1dCvI3/TIRaKdXmB9uj8mzr78RuRa7bNcIE0AkbHDFKsyqb3xNAjeqbcXZ7wTVHstnifuehYTjZM3m8mvhTkzurXvKl7eMr9IXG30a0tWXJ60Bvh11u82UfXB38ajltxBeRmyBWLtdrZWa1WO18xMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAQ/wNhUPDo3tE+ZAAAAABJRU5ErkJggg==" alt="Sign in with Google" loading="lazy">
+                         {# As requested, replacing the base64 image data with placeholder text #}
+                         {# Reverting to a default placeholder image URL that exists #}
+                         <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -143,9 +149,7 @@
                          <label for="movie_category">קטגוריה:</label>
                          <select id="movie_category" name="movie_category">
                               {% for category in categories %}
-                                   {% if category != "ללא" %}
-                                        <option value="{{ category }}">{{ category }}</option>
-                                   {% endif %}
+                                   <option value="{{ category }}">{{ category }}</option>
                               {% endfor %}
                               <option value="ללא">ללא</option>
                          </select>
@@ -171,11 +175,7 @@
                               <p><strong>דירוג IMDb:</strong> <span id="omdbMovieRatingDisplay"></span></p>
                               <p><strong>תקציר:</strong> <span id="omdbMoviePlotDisplay"></span></p>
                              <p><strong>IMDb ID:</strong> <span id="omdbMovieIdDisplay"></span></p>
-                             <img id="omdbMoviePosterDisplay" src="" alt="פוסטר">
-                              {# These hidden fields are NOT needed anymore as server-side re-fetches #}
-                              {# <input type="hidden" id="hidden_selected_movie_id"> #}
-                              {# <input type="hidden" id="hidden_selected_movie_title"> #}
-                              {# <input type="hidden" id="hidden_selected_movie_poster_url" name="movie_poster_url"> #}
+                             <img id="omdbMoviePosterDisplay" src="" alt="פוסטר" style="display: none;">
                          </div>
                     </div>
                 </div>
@@ -195,9 +195,7 @@
                          <label for="series_category">קטגוריה:</label>
                          <select id="series_category" name="series_category">
                               {% for category in categories %}
-                                   {% if category != "ללא" %}
-                                        <option value="{{ category }}">{{ category }}</option>
-                                   {% endif %}
+                                   <option value="{{ category }}">{{ category }}</option>
                               {% endfor %}
                               <option value="ללא">ללא</option>
                          </select>
@@ -220,11 +218,7 @@
                               <p><strong>דירוג IMDb:</strong> <span id="omdbSeriesRatingDisplay"></span></p>
                               <p><strong>תקציר:</strong> <span id="omdbSeriesPlotDisplay"></span></p>
                              <p><strong>IMDb ID:</strong> <span id="omdbSeriesIdDisplay"></span></p>
-                              <img id="omdbSeriesPosterDisplay" src="" alt="פוסטר">
-                             {# These hidden fields are NOT needed anymore as server-side re-fetches #}
-                             {# <input type="hidden" id="hidden_selected_series_id"> #}
-                             {# <input type="hidden" id="hidden_selected_series_title"> #}
-                             {# <input type="hidden" id="hidden_selected_series_poster_url" name="series_poster_url"> #}
+                              <img id="omdbSeriesPosterDisplay" src="" alt="פוסטר" style="display: none;">
                          </div>
                     </div>
                 </div>
@@ -292,14 +286,6 @@
             const selectedOmdbMovieDetailsDiv = document.getElementById('selectedOmdbMovieDetails');
             const selectedOmdbSeriesDetailsDiv = document.getElementById('selectedOmdbSeriesDetails');
 
-            // Removed hidden inputs as server-side refetches details
-            // const hiddenSelectedMovieId = document.getElementById('hidden_selected_movie_id');
-            // const hiddenSelectedMovieTitle = document.getElementById('hidden_selected_movie_title');
-            // const hiddenSelectedMoviePosterUrl = document.getElementById('hidden_selected_movie_poster_url');
-            // const hiddenSelectedSeriesId = document.getElementById('hidden_selected_series_id');
-            // const hiddenSelectedSeriesTitle = document.getElementById('hidden_selected_series_title');
-            // const hiddenSelectedSeriesPosterUrl = document.getElementById('hidden_selected_series_poster_url');
-
             const movieTitleInput = document.getElementById('movie_title');
             const movieImdbIdInput = document.getElementById('movie_imdb_id');
              const seriesTitleInput = document.getElementById('series_title');
@@ -322,7 +308,10 @@
                 clearOmdbSearch('Series');
 
 
-                // Clear main form inputs that might be populated by OMDB
+                // Clear main form inputs that might be populated by OMDB or user
+                // Note: This clears ALL inputs, might be too aggressive if user partially filled
+                // A better approach might be to only clear inputs associated with the specific form being hidden.
+                // For simplicity here, we clear the main target inputs.
                 if(movieTitleInput) movieTitleInput.value = '';
                 if(movieImdbIdInput) movieImdbIdInput.value = '';
                 if(movieVideoUrlInput) movieVideoUrlInput.value = '';
@@ -343,41 +332,27 @@
                 }
 
                 // Set required attributes based on the active form
-                 document.querySelectorAll('.content-form-section input, .content-form-section select').forEach(input => {
-                     // Only manage required for the currently visible section
-                     if (input.closest('.content-form-section') === activeSection) {
-                          // General required check, specific overrides below
-                         if (input.type !== 'button' && input.id !== 'omdb_movie_search_term' && input.id !== 'omdb_series_search_term') {
-                             input.required = true;
-                         }
-                     } else {
-                         // Ensure inputs in hidden sections are NOT required
-                         input.required = false;
-                     }
+                // First, set all relevant inputs in *all* form sections to not required
+                document.querySelectorAll('.content-form-section input:not([type="button"]), .content-form-section select').forEach(input => {
+                     input.required = false;
                  });
 
-                 // Specific required logic for episode form
-                 if (type === 'episode') {
-                      // episode_series_id select and manual_episode_series_id input
-                      // are mutually exclusive requirements, handled by updateEpisodeSeriesRequiredState
-                      if(episodeSeriesSelect) episodeSeriesSelect.required = true; // Start by requiring the select
-                      // Others are required if ANY series ID is chosen
-                      if(episodeTitleInput) episodeTitleInput.required = true;
-                      if(episodeSeasonInput) episodeSeasonInput.required = true;
-                      if(episodeNumberInput) episodeNumberInput.required = true;
-                      if(episodeVideoUrlInput) episodeVideoUrlInput.required = true;
-                     updateEpisodeSeriesRequiredState(); // Initial call to set manual ID required state
-                 } else {
-                      // Ensure episode-specific inputs are not required if not on episode form
-                       if(episodeTitleInput) episodeTitleInput.required = false;
-                       if(episodeSeasonInput) episodeSeasonInput.required = false;
-                       if(episodeNumberInput) episodeNumberInput.required = false;
-                       if(episodeVideoUrlInput) episodeVideoUrlInput.required = false;
-                       if(episodeSeriesSelect) episodeSeriesSelect.required = false;
-                       if(manualEpisodeSeriesIdInput) manualEpisodeSeriesIdInput.required = false;
+                // Then, set required only for the active form's inputs
+                 if (activeSection) {
+                      activeSection.querySelectorAll('input:not([type="button"]), select').forEach(input => {
+                          // Add specific exclusions here if certain fields within the form shouldn't be required
+                          if (input.id !== 'omdb_movie_search_term' && input.id !== 'omdb_series_search_term' && input.id !== 'manual_episode_series_id' && input.id !== 'episode_series_id') {
+                              input.required = true;
+                          }
+                      });
+
+                      // Handle episode series ID required state specifically
+                      if (type === 'episode') {
+                           updateEpisodeSeriesRequiredState();
+                      }
                  }
 
-                 // OMDB search inputs and display are not required for form submission logic
+                 // OMDB search inputs are never required for form submission
                  if (omdbMovieSearchTermInput) omdbMovieSearchTermInput.required = false;
                  if (omdbSeriesSearchTermInput) omdbSeriesSearchTermInput.required = false;
             }
@@ -390,44 +365,42 @@
 
             function updateEpisodeSeriesRequiredState() {
                  const manualInput = document.getElementById('manual_episode_series_id');
-                 if (!episodeSeriesSelect || !manualSeriesIdGroup || !manualInput) return;
+                 const seriesSelect = document.getElementById('episode_series_id');
+                 const manualIdGroup = document.getElementById('manual_series_id_group');
 
-                 const isManualSelected = episodeSeriesSelect.value === 'manual';
-                 const isDropdownSelected = episodeSeriesSelect.value !== '' && !isManualSelected;
+                 if (!seriesSelect || !manualIdGroup || !manualInput) return;
 
-                 manualSeriesIdGroup.style.display = isManualSelected ? 'block' : 'none';
+                 const isManualSelected = seriesSelect.value === 'manual';
+                 // const isDropdownSelected = seriesSelect.value !== '' && !isManualSelected; // Not strictly needed for required logic
+
+                 manualIdGroup.style.display = isManualSelected ? 'block' : 'none';
 
                  // Require the manual input ONLY if "manual" is selected in the dropdown
                  manualInput.required = isManualSelected;
 
                  // Require the dropdown ONLY if "manual" is NOT selected AND nothing is selected
-                 episodeSeriesSelect.required = !isManualSelected && episodeSeriesSelect.value === '';
+                 // The form's submit listener will provide a more user-friendly error for this.
+                 // Let's rely on the form listener for the combined "select OR manual" requirement.
+                 // Set both to false here and handle combined requirement in submit listener
+                 seriesSelect.required = false; // Not required by itself
+                 manualInput.required = false; // Not required by itself UNLESS manual option is chosen
 
-                 // Episode details (title, season, number, video) are required if *either* a dropdown series
-                 // is selected *or* manual is selected AND the manual ID is not empty.
-                 // We set required true initially in showFormSection, now refine if needed,
-                 // but it's simpler to keep them required if *any* series ID input is expected.
-                 // The server-side validation handles the final check.
-
+                 // Instead, we will check in the form submit handler if *either* select has a value
+                 // *or* manual input has a value when 'manual' is selected.
             }
 
             if (episodeSeriesSelect) {
                  episodeSeriesSelect.addEventListener('change', updateEpisodeSeriesRequiredState);
             }
-             if (manualEpisodeSeriesIdInput) {
-                manualEpisodeSeriesIdInput.addEventListener('input', function() {
-                    // If manual input is used, re-evaluate required state (though input itself is only required when manual option is chosen)
-                     if (episodeSeriesSelect && episodeSeriesSelect.value === 'manual') {
-                          updateEpisodeSeriesRequiredState();
-                     }
-                 });
-             }
+             // No need for input listener on manualEpisodeSeriesIdInput for required state logic,
+             // as its required state is determined solely by the dropdown selection.
 
 
             const initialChecked = document.querySelector('input[name="content_type"]:checked');
             if (initialChecked) {
                 showFormSection(initialChecked.value);
             } else {
+                 // Default to movie if nothing is checked on load
                  const defaultMovieRadio = document.getElementById('type_movie');
                  if (defaultMovieRadio) defaultMovieRadio.checked = true;
                  showFormSection('movie');
@@ -444,7 +417,7 @@
                      detailsDiv.style.display = 'none';
                      // Clear display spans and image
                      detailsDiv.querySelectorAll('span').forEach(span => span.textContent = '');
-                     const img = detailsDiv.querySelector('img');
+                     const img = detailsDiv.querySelector(`#omdb${type}PosterDisplay`);
                      if(img) { img.src = ''; img.style.display = 'none'; }
                  }
 
@@ -622,34 +595,76 @@
                   });
              }
 
-            // Add event listener for the form submission to potentially do final client-side checks
+            // Add event listener for the form submission to do final client-side checks for episodes
             const addContentForm = document.querySelector('.add-movie-form-container form'); // Assuming container class is correct
 
             if (addContentForm) {
                  addContentForm.addEventListener('submit', function(event) {
                      console.log("Form submitting...");
-                     // Optional: Add more client-side validation here if needed
-                     // For example, check if manual series ID is provided if manual option is selected
                      const contentType = document.querySelector('input[name="content_type"]:checked').value;
+
                      if (contentType === 'episode') {
                           const seriesSelectValue = episodeSeriesSelect.value;
                           const manualId = manualEpisodeSeriesIdInput.value.trim();
-                          if (seriesSelectValue === 'manual' && manualId === '') {
-                               flash('שגיאה: אנא הזן IMDb ID לסדרה ידנית.', 'error');
+
+                          // Check if *either* a series is selected from the dropdown
+                          // OR manual is selected and a manual ID is provided.
+                          const isSeriesIdProvided = (seriesSelectValue !== '' && seriesSelectValue !== 'manual') || (seriesSelectValue === 'manual' && manualId !== '');
+
+                          if (!isSeriesIdProvided) {
+                               flash('שגיאה: אנא בחר סדרה קיימת מהרשימה או הזן IMDb ID ידנית.', 'error');
                                event.preventDefault(); // Stop submission
-                          } else if (seriesSelectValue === '' && manualId === '') {
-                                // This case should be caught by 'required' on the select, but double-check
-                                flash('שגיאה: אנא בחר סדרה קיימת או הזן IMDb ID ידנית.', 'error');
-                                event.preventDefault(); // Stop submission
+                                // Optional: Focus the relevant input/select
+                                if (seriesSelectValue === 'manual') {
+                                    manualEpisodeSeriesIdInput.focus();
+                                } else {
+                                     episodeSeriesSelect.focus();
+                                }
+                                return; // Stop further validation for episode form
                           }
+
+                          // Validate other required fields for episode if series ID is provided
+                          // These inputs have 'required' attribute, but this adds a custom message
+                           const episodeTitle = episodeTitleInput.value.trim();
+                           const seasonNumber = episodeSeasonInput.value.trim();
+                           const episodeNumber = episodeNumberInput.value.trim();
+                           const videoUrl = episodeVideoUrlInput.value.trim();
+
+                           if (!episodeTitle || !seasonNumber || !episodeNumber || !videoUrl) {
+                                flash('שגיאה: אנא מלא את כל שדות הפרק (כותרת, עונה, פרק, וידאו).', 'error');
+                                event.preventDefault(); // Stop submission
+                                return;
+                           }
+
+                            // Validate season and episode are positive numbers
+                            try {
+                                if (parseInt(seasonNumber, 10) < 1 || parseInt(episodeNumber, 10) < 1) {
+                                     flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים.', 'error');
+                                     event.preventDefault();
+                                     return;
+                                }
+                            } catch (e) {
+                                 flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים תקינים.', 'error');
+                                 event.preventDefault();
+                                 return;
+                            }
                      }
                  });
             }
 
+
             // Re-evaluate required state if page is loaded with 'manual' selected due to back button or refresh
+            // This ensures manual ID is visible if needed on load.
             if (episodeSeriesSelect && episodeSeriesSelect.value === 'manual') {
-                 updateEpisodeSeriesRequiredState();
+                 manualSeriesIdGroup.style.display = 'block';
             }
+
+            // Initial state setup based on checked radio button
+             const initiallyCheckedType = document.querySelector('input[name="content_type"]:checked');
+             if (initiallyCheckedType) {
+                  showFormSection(initiallyCheckedType.value);
+             }
+
 
         }); // End DOMContentLoaded
     </script>
