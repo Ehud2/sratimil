@@ -14,16 +14,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
      {# Include loading spinner styles IF you want a spinner on this page too #}
      {# <style> /* Paste loading spinner CSS from style.css here if needed */ </style> #}
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
 </head>
 <body>
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const player = new Plyr('#movie-player');
-      });
-    </script>
-
     {# --- Loading Spinner (Optional on this page) --- #}
     {# If you want a spinner while the movie details page itself loads: #}
     {# <div id="loading-spinner">
@@ -101,12 +93,12 @@
                 </div>
 
                 <div class="movie-info">
-                    <div class="movie-video-container {% if not movie.video_url or movie.video_url == '#' or movie.video_url == 'N/A' %}no-video-container{% endif %}">
+                    <div class="movie-video-container">
                         {# Use movie.video_url #}
                         {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
-                            <video id="movie-player" controls playsinline data-poster="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}">
-                                <source src="{{ movie.video_url }}" type="video/mp4">
-                                הדפדפן שלך לא תומך בתגית וידאו.
+                             <video id="movie-player" controls preload="metadata">
+                                <source src="{{ movie.video_url }}" type="video/mp4"> {# Assuming MP4, change type if needed #}
+                                Your browser does not support the video tag.
                             </video>
                         {% else %}
                             <div class="no-video-message">וידאו אינו זמין עבור תוכן זה.</div>
@@ -207,7 +199,7 @@
                    const searchTerm = this.value.trim();
                    if (searchTerm) {
                        // Option 1: Navigate back to index with search term
-                       window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(searchTerm)}`;
+                       window.location.href = {{ url_for('index') }}?s=${encodeURIComponent(searchTerm)};
                        // Option 2: Implement search logic here (more complex)
                    }
                }
