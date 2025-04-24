@@ -78,11 +78,11 @@
         {% endif %}
     {% endwith %}
 
-    {# The movie-details-page container will handle centering and max-width #}
+    {# The movie-details-page container will handle centering and max-width, background color #}
     <main class="movie-details-page">
         {# Use movie variable passed from Flask route #}
         {% if movie %}
-            {# Video player at the top #}
+            {# Video player at the top, spans the width of the main element #}
             <div class="main-video-area">
                  {% if movie.video_url and movie.video_url != '#' and movie.video_url != 'N/A' %}
                      <video id="movie-player" controls preload="metadata">
@@ -94,24 +94,25 @@
                  {% endif %}
             </div>
 
-            {# Content area below the video - Poster, Title, Plot, Info Grid #}
-            <div class="container content-area"> {# Use container class for centering and max-width #}
+            {# Content area below the video - uses container for centering #}
+            <div class="container content-area">
 
                  <h1 class="movie-title">{{ movie.title or 'כותרת לא ידועה' }}</h1>
 
-                <div class="details-flex-container"> {# Container for poster and text content #}
-                    <div class="movie-poster-sidebar"> {# Sidebar for poster #}
-                         {# Use movie.poster, fall back to default if N/A or empty #}
-                        <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר' }}" loading="lazy">
-                         {# Optional: Add action buttons below poster #}
-                         <div class="movie-actions">
-                             <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> {# TODO #}
-                         </div>
-                    </div>
+                 {# Details section - poster sidebar and text content (plot + info) #}
+                <div class="details-flex-container">
+                     {# Optional: Poster can be moved here if you prefer it next to text content #}
+                     {# <div class="movie-poster-sidebar">
+                         <img src="{{ movie.poster if movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר' }}" loading="lazy">
+                          <div class="movie-actions">
+                             <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button>
+                          </div>
+                     </div> #}
 
-                    <div class="text-content-area"> {# Area for plot and info grid #}
+                    <div class="text-content-area"> {# This area holds plot and info grid #}
                          <p class="movie-plot">{{ movie.plot or 'אין תיאור זמין.' }}</p>
 
+                         {# Info grid - details aligned to the right within this flex item #}
                         <div class="info-grid">
                              {# Release Year #}
                             <div class="detail-line"><i class="fas fa-calendar-alt"></i> <strong>שנת יציאה:</strong> <span class="{{ 'na-value' if not movie.year or movie.year == 'N/A' }}"> {{ movie.year or 'לא זמין' }}</span></div>
@@ -120,7 +121,13 @@
                             {% set runtime_str = movie.runtime or 'N/A' %}
                             {% set total_minutes = 0 %}
                             {% if runtime_str != 'N/A' and ' min' in runtime_str %}
-                                {% set total_minutes = runtime_str.split(' ')[0] | int(default=0) %}
+                                {% try %}
+                                    {% set total_minutes = runtime_str.split(' ')[0] | int %}
+                                {% except %}
+                                     {# Handle potential errors in parsing runtime string #}
+                                     {% set total_minutes = 0 %}
+                                     {# Log error if possible in Jinja or Flask #}
+                                {% endtry %}
                             {% endif %}
                             {% set hours = total_minutes // 60 %}
                             {% set minutes = total_minutes % 60 %}
@@ -129,7 +136,7 @@
                                 <i class="fas fa-clock"></i> <strong>משך זמן:</strong>
                                 <span class="{{ 'na-value' if total_minutes == 0 }}">
                                     {% if total_minutes > 0 %}
-                                        {% if hours > 0 %}{{ 'שעות: ' + hours + ', ' }}{% endif %}דקות: {{ minutes }}
+                                        {% if hours > 0 %}{{ 'שעות: ' ~ hours ~ ', ' }}{% endif %}דקות: {{ minutes }}
                                     {% else %}
                                         לא זמין
                                     {% endif %}
@@ -160,6 +167,10 @@
                     </div>
                 </div>
 
+                 {# Optional: Add action buttons below the flex container #}
+                 {# <div class="movie-actions">
+                      <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button>
+                 </div> #}
 
             </div>
 
