@@ -138,7 +138,8 @@
             <h1>הוספת תוכן חדש</h1>
 
             {# Ensure form method is POST and action is correct #}
-            <form method="POST" action="{{ url_for('add_content') }}">
+            {# Added novalidate to prevent default browser validation #}
+            <form method="POST" action="{{ url_for('add_content') }}" novalidate>
                 <div class="form-group content-type-selector">
                     <label>סוג התוכן:</label><br>
                     <input type="radio" id="type_movie" name="content_type" value="movie" checked>
@@ -267,10 +268,8 @@
                     </div>
                     <div class="form-group hidden-manual-series-id" id="manual_series_id_group">
                          <label for="manual_episode_series_id">IMDb ID של הסדרה (הזנה ידנית):</label>
-                         <input type="text" id="manual_episode_series_id" name="manual_episode_series_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
+                         <input type="text" id="manual_episode_series_id" name="manual_episode_series_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-"tt" ואחריו 7 ספרות או יותר">
                     </div>
-
-                     {# REMOVED: Episode IMDb ID input #}
 
                     <div class="form-group">
                         <label for="episode_title">שם הפרק (אופציונלי, אם לא יסופק יאוחזר מ-OMDb):</label> {# Updated label #}
@@ -322,11 +321,10 @@
              const seasonEpisodeInputsDiv = document.getElementById('season-episode-inputs'); // The container for dynamic inputs
 
 
-             // const episodeImdbIdInput = document.getElementById('episode_imdb_id'); // REMOVED INPUT
-             const episodeTitleInput = document.getElementById('episode_title'); // KEPT INPUT (Optional)
+             const episodeTitleInput = document.getElementById('episode_title');
              const episodeSeasonInput = document.getElementById('episode_season');
              const episodeNumberInput = document.getElementById('episode_number');
-             const manualEpisodeSeriesIdInput = document.getElementById('manual_episode_series_id'); // Get manual input
+             const manualEpisodeSeriesIdInput = document.getElementById('manual_episode_series_id');
 
 
             function showFormSection(type) {
@@ -361,7 +359,6 @@
                  if(episodeTitleInput) episodeTitleInput.value = '';
                  if(episodeSeasonInput) episodeSeasonInput.value = '';
                  if(episodeNumberInput) episodeNumberInput.value = '';
-                 // if(episodeImdbIdInput) episodeImdbIdInput.value = ''; // REMOVED INPUT
 
                  // Reset episode series selection
                  if(episodeSeriesSelect) episodeSeriesSelect.value = '';
@@ -375,40 +372,44 @@
                 }
 
                 // Set required attributes based on the active form
-                // First, set all relevant inputs in *all* form sections to not required
+                // Note: With novalidate, browser doesn't enforce 'required'.
+                // We set it here visually/semantically and our JS submit handler checks it.
                 document.querySelectorAll('.content-form-section input:not([type="button"]), .content-form-section select').forEach(input => {
+                    // Reset required state for all inputs in hidden sections
                      input.required = false;
                  });
 
-                // Then, set required only for the active form's inputs
-                 if (activeSection) {
-                      activeSection.querySelectorAll('input:not([type="button"]):not([type="radio"]), select').forEach(input => {
-                          // Add specific exclusions here if certain fields within the form shouldn't be required
-                          // OMDB search terms are not required for form submission
-                          // episode_series_id and manual_episode_series_id required state is handled by updateEpisodeSeriesRequiredState
-                          // episode_title is now optional
-                          // movie_imdb_id and series_imdb_id are now populated by JS, but still required for form submission
-                          if (input.id !== 'omdb_movie_search_term' && input.id !== 'omdb_series_search_term' && input.id !== 'manual_episode_series_id' && input.id !== 'episode_series_id' && input.id !== 'episode_title') {
-                              input.required = true;
-                          }
-                      });
+                if (activeSection) {
+                    // Set required for inputs in the active section
+                     activeSection.querySelectorAll('input:not([type="button"]):not([type="radio"]), select').forEach(input => {
+                         // Explicitly set required for fields that *should* be required for the selected form
+                         if (input.id === 'movie_imdb_id' || input.id === 'movie_category') { // Movie form
+                             input.required = true;
+                         } else if (input.id === 'series_imdb_id' || input.id === 'series_category' || input.id === 'total_seasons') { // Series form (basic fields)
+                             input.required = true;
+                         } else if (input.id === 'episode_season' || input.id === 'episode_number') { // Episode form (basic fields)
+                             input.required = true;
+                         }
+                         // episode_title is optional, manual_episode_series_id and episode_series_id handled separately
+                     });
 
-                      // Handle episode series ID required state specifically
+                     // Handle episode series ID required state specifically
                       if (type === 'episode') {
-                           updateEpisodeSeriesRequiredState();
+                           // These are *not* HTML required, but checked by our JS validation
+                           // manualEpisodeSeriesIdInput.required = true; // This is handled in the submit check
+                           // episodeSeriesSelect.required = true; // This is handled in the submit check
+                           updateEpisodeSeriesRequiredState(); // Manage display
                       }
-                      // Handle dynamic season/episode input required state specifically for series
+                       // Handle dynamic season/episode input required state specifically for series
                        if (type === 'series') {
-                           // totalSeasonsInput is marked required above
-                           // Dynamic inputs required status is handled by populateSeasonEpisodeInputs
-                           // Re-populate/update required state based on current total seasons value, but only if a value exists
-                           if (totalSeasonsInput && totalSeasonsInput.value) {
-                                populateSeasonEpisodeInputs();
+                           // Dynamic inputs inside seasonEpisodeInputsDiv are handled by populateSeasonEpisodeInputs
+                            if (totalSeasonsInput && totalSeasonsInput.value) {
+                                populateSeasonEpisodeInputs(); // Re-populate/update required state based on current total seasons value
                            }
                        }
                  }
-
             }
+
 
             contentTypes.forEach(radio => {
                 radio.addEventListener('change', function() {
@@ -427,21 +428,14 @@
 
                  manualIdGroup.style.display = isManualSelected ? 'block' : 'none';
 
-                 // These will be checked by the form submit listener for combined validation
-                 manualInput.required = false;
-                 seriesSelect.required = false;
-
-                 // Ensure the required state is updated visually if needed (e.g. asterisk)
-                 // CSS might handle this based on [required] attribute, but since we set it to false
-                 // here and rely on JS validation, you might need custom CSS classes if visual required
-                 // indicators are important.
+                 // HTML required attributes are *not* set here because we rely on JS validation
+                 // manualInput.required = false; // No need to set/unset HTML required with novalidate
+                 // seriesSelect.required = false; // No need to set/unset HTML required with novalidate
             }
 
             if (episodeSeriesSelect) {
                  episodeSeriesSelect.addEventListener('change', updateEpisodeSeriesRequiredState);
             }
-             // No need for input listener on manualEpisodeSeriesIdInput for required state logic,
-             // as its required state is determined solely by the dropdown selection.
 
 
             // --- Dynamic Season/Episode Inputs for Series Form ---
@@ -470,7 +464,7 @@
                          input.setAttribute('id', `num_episodes_season_${i}`);
                          input.setAttribute('name', `num_episodes_season_${i}`);
                          input.setAttribute('min', '0'); // Allow 0 episodes for upcoming season? Or '1'? Let's stick to 0 for now.
-                         input.required = true; // Make number of episodes required for each season
+                         input.required = true; // Make number of episodes required for each season (for JS validation)
 
                          formGroup.appendChild(label);
                          formGroup.appendChild(input);
@@ -486,16 +480,7 @@
             }
 
 
-            const initialChecked = document.querySelector('input[name="content_type"]:checked');
-            if (initialChecked) {
-                showFormSection(initiallyCheckedType.value);
-            } else {
-                 // Default to movie if nothing is checked on load
-                 const defaultMovieRadio = document.getElementById('type_movie');
-                 if (defaultMovieRadio) defaultMovieRadio.checked = true;
-                 showFormSection('movie');
-            }
-
+            // --- OMDB Search Functionality ---
 
             // Function to clear OMDB search results and details display
             function clearOmdbSearch(type) {
@@ -525,7 +510,8 @@
 
                  resultsUl.innerHTML = '<li><i class="fas fa-spinner fa-spin"></i> מחפש...</li>';
                  detailsDiv.style.display = 'none';
-                 // Don't clear main inputs here, let the user potentially mix manual + OMDB
+                 // Don't clear main inputs here, user might want to refine
+
 
                  fetch(`/api/search_omdb?s=${encodeURIComponent(searchTerm)}&type=${contentType}`)
                      .then(response => {
@@ -545,6 +531,8 @@
                                   li.dataset.imdbId = result.imdbID;
                                   li.dataset.title = result.Title;
                                   li.dataset.year = result.Year; // OMDB search results include Year
+                                  li.dataset.type = result.Type; // Include type
+
 
                                  li.innerHTML = `<span>${result.Title} (${result.Year})</span> <span class="result-id">${result.imdbID}</span>`;
                                  li.addEventListener('click', function() {
@@ -554,23 +542,34 @@
                                      this.classList.add('selected-result');
 
                                      // Populate the main IMDb ID and Title fields for the relevant form
-                                     // These fields are no longer readonly, so this should work correctly.
-                                     if (type === 'Movie' && movieImdbIdInput && movieTitleInput) {
-                                         movieImdbIdInput.value = this.dataset.imdbId;
-                                         movieTitleInput.value = this.dataset.title;
-                                     } else if (type === 'Series' && seriesImdbIdInput && seriesTitleInput) {
-                                          seriesImdbIdInput.value = this.dataset.imdbId;
-                                          seriesTitleInput.value = this.dataset.title;
+                                     // These fields are now editable again.
+                                     const selectedImdbId = this.dataset.imdbId;
+                                     const selectedTitle = this.dataset.title;
+                                     const selectedType = this.dataset.type;
+
+                                     if (type === 'Movie' && selectedType === 'movie' && movieImdbIdInput && movieTitleInput) {
+                                         movieImdbIdInput.value = selectedImdbId;
+                                         movieTitleInput.value = selectedTitle;
+                                     } else if (type === 'Series' && selectedType === 'series' && seriesImdbIdInput && seriesTitleInput) {
+                                          seriesImdbIdInput.value = selectedImdbId;
+                                          seriesTitleInput.value = selectedTitle;
                                           // Optionally clear total seasons and episode counts when selecting a new series
                                            if (totalSeasonsInput) totalSeasonsInput.value = '';
                                            if (seasonEpisodeInputsDiv) {
                                                seasonEpisodeInputsDiv.innerHTML = '';
                                                 seasonEpisodeInputsDiv.style.display = 'none';
                                            }
+                                     } else {
+                                          console.warn(`Selected result type (${selectedType}) doesn't match search type (${type}). Ignoring auto-population.`);
+                                          // Clear previous auto-populated fields if types don't match?
+                                          if (type === 'Movie') { movieImdbIdInput.value = ''; movieTitleInput.value = ''; }
+                                          else if (type === 'Series') { seriesImdbIdInput.value = ''; seriesTitleInput.value = ''; }
                                      }
 
+
                                      // Fetch and display full details (plot, poster, rating, total seasons etc.)
-                                     fetchAndDisplayOmdbDetails(this.dataset.imdbId, detailsDiv, type);
+                                     // Always fetch details for the selected ID, regardless of auto-population success
+                                     fetchAndDisplayOmdbDetails(selectedImdbId, detailsDiv, type);
                                  });
                                  resultsUl.appendChild(li);
                              });
@@ -650,6 +649,7 @@
                               }
 
                              // Optionally auto-populate total seasons input for series
+                             // Only auto-populate if the form type is series AND totalSeasonsInput exists
                              if (type === 'Series' && totalSeasonsInput && details.totalSeasons && details.totalSeasons !== 'N/A') {
                                   const omdbTotalSeasons = parseInt(details.totalSeasons, 10);
                                    if (!isNaN(omdbTotalSeasons) && omdbTotalSeasons >= 1) {
@@ -712,137 +712,179 @@
                      console.log("Form submitting...");
                      const contentType = document.querySelector('input[name="content_type"]:checked').value;
 
-                     if (contentType === 'episode') {
+                     // Manually perform validation because of the 'novalidate' attribute
+                     let isValid = true;
+                     let errorMessage = '';
+                     let firstInvalidInput = null; // To focus on
+
+                     if (contentType === 'movie') {
+                         // Validate Movie form required fields
+                         const imdbId = movieImdbIdInput.value.trim();
+                         const category = movieCategorySelect.value; // Assuming movieCategorySelect is defined globally or accessed here
+
+                         if (!imdbId) {
+                             isValid = false;
+                             errorMessage = 'שגיאה: שדה IMDb ID חסר עבור סרט.';
+                             firstInvalidInput = movieImdbIdInput;
+                         } else if (!/^tt\d{7,}$/.test(imdbId)) {
+                              isValid = false;
+                              errorMessage = 'שגיאה: פורמט IMDb ID לא תקין עבור סרט.';
+                              firstInvalidInput = movieImdbIdInput;
+                         } else if (!category) {
+                             isValid = false;
+                             errorMessage = 'שגיאה: שדה קטגוריה חסר עבור סרט.';
+                              // Assuming movieCategorySelect is available
+                             firstInvalidInput = document.getElementById('movie_category'); // Get by ID if not defined globally
+                         }
+
+
+                     } else if (contentType === 'series') {
+                          // Validate Series form required fields
+                          const seriesImdbId = seriesImdbIdInput.value.trim();
+                          const category = document.getElementById('series_category').value; // Assuming series_category is available
+                          const totalSeasons = totalSeasonsInput.value.trim();
+                          const totalSeasonsInt = parseInt(totalSeasons, 10);
+
+                           if (!seriesImdbId) {
+                              isValid = false;
+                              errorMessage = 'שגיאה: שדה IMDb ID חסר עבור סדרה.';
+                              firstInvalidInput = seriesImdbIdInput;
+                           } else if (!/^tt\d{7,}$/.test(seriesImdbId)) {
+                                isValid = false;
+                                errorMessage = 'שגיאה: פורמט IMDb ID לא תקין עבור סדרה.';
+                                firstInvalidInput = seriesImdbIdInput;
+                           } else if (!category) {
+                                isValid = false;
+                                errorMessage = 'שגיאה: שדה קטגוריה חסר עבור סדרה.';
+                                firstInvalidInput = document.getElementById('series_category');
+                           }
+                            else if (!totalSeasons) {
+                                isValid = false;
+                                errorMessage = 'שגיאה: שדה סה"כ עונות חסר עבור סדרה.';
+                                firstInvalidInput = totalSeasonsInput;
+                            }
+                           else if (isNaN(totalSeasonsInt) || totalSeasonsInt < 1) {
+                                isValid = false;
+                                errorMessage = 'שגיאה: סה"כ עונות חייב להיות מספר שלם חיובי עבור סדרה.';
+                                firstInvalidInput = totalSeasonsInput;
+                            } else {
+                              // Check dynamic episode count inputs for each season
+                              for (let i = 1; i <= totalSeasonsInt; i++) {
+                                   const numEpisodesInput = document.getElementById(`num_episodes_season_${i}`);
+                                   if (!numEpisodesInput || numEpisodesInput.value.trim() === '' || parseInt(numEpisodesInput.value.trim(), 10) < 0 || isNaN(parseInt(numEpisodesInput.value.trim(), 10))) { // Check for empty, negative or non-numeric
+                                       isValid = false;
+                                       errorMessage = `שגיאה: אנא הזן מספר פרקים תקין (מספר שלם לא שלילי) עבור עונה ${i}.`;
+                                        if (numEpisodesInput) firstInvalidInput = numEpisodesInput;
+                                       break; // Stop checking other seasons
+                                   }
+                               }
+                           }
+
+
+                     } else if (contentType === 'episode') {
+                          // Validate Episode form required fields
                           const seriesSelectValue = episodeSeriesSelect.value;
                           const manualId = manualEpisodeSeriesIdInput.value.trim();
+                          const seasonNumber = episodeSeasonInput.value.trim();
+                          const episodeNumber = episodeNumberInput.value.trim();
+                          // episode_title is optional
+
 
                           // Check if *either* a series is selected from the dropdown
                           // OR manual is selected and a manual ID is provided.
                           const isSeriesIdProvided = (seriesSelectValue !== '' && seriesSelectValue !== 'manual') || (seriesSelectValue === 'manual' && manualId !== '');
 
                           if (!isSeriesIdProvided) {
-                               flash('שגיאה: אנא בחר סדרה קיימת מהרשימה או הזן IMDb ID ידנית.', 'error');
-                               event.preventDefault(); // Stop submission
-                                // Optional: Focus the relevant input/select
+                               errorMessage = 'שגיאה: אנא בחר סדרה קיימת מהרשימה או הזן IMDb ID ידנית עבור פרק.';
                                 if (seriesSelectValue === 'manual') {
-                                    manualEpisodeSeriesIdInput.focus();
+                                    firstInvalidInput = manualEpisodeSeriesIdInput;
                                 } else {
-                                     episodeSeriesSelect.focus();
+                                     firstInvalidInput = episodeSeriesSelect;
                                 }
-                                return; // Stop further validation for episode form
+                                isValid = false;
                           }
 
-                          // Validate manual series ID format if manual is selected
-                          if (seriesSelectValue === 'manual' && manualId !== '') {
+                          // Validate manual series ID format if manual is selected AND provided
+                          if (isValid && seriesSelectValue === 'manual' && manualId !== '') { // Check isValid first to avoid re-checking if series ID is already invalid
                               const imdbIdPattern = /^tt\d{7,}$/;
                                if (!imdbIdPattern.test(manualId)) {
-                                   flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error');
-                                   event.preventDefault();
-                                   manualEpisodeSeriesIdInput.focus();
-                                   return;
+                                   errorMessage = 'שגיאה: פורמט IMDb ID של הסדרה לא תקין (הזנה ידנית) עבור פרק.';
+                                   firstInvalidInput = manualEpisodeSeriesIdInput;
+                                   isValid = false;
                                }
                           }
 
-
-                          // Validate other required fields for episode (title is now optional)
-                           const seasonNumber = episodeSeasonInput.value.trim();
-                           const episodeNumber = episodeNumberInput.value.trim();
-
-                           // Build a list of missing fields for a clearer message
-                           const missingFields = [];
-                           // Removed episode IMDb ID missing field check
-                           if (!seasonNumber) missingFields.push('מספר עונה');
-                           if (!episodeNumber) missingFields.push('מספר פרק');
-                           // Removed video URL missing field check
-
-                           if (missingFields.length > 0) {
-                                flash(`שגיאה: אנא מלא את כל שדות החובה לפרק: ${missingFields.join(', ')}.`, 'error');
-                                event.preventDefault(); // Stop submission
-                                return;
+                           // Validate other required fields for episode
+                           if (isValid && !seasonNumber) {
+                                errorMessage = 'שגיאה: שדה מספר עונה חסר עבור פרק.';
+                                firstInvalidInput = episodeSeasonInput;
+                                isValid = false;
                            }
+                            if (isValid && !episodeNumber) { // Check isValid before checking episode number
+                                errorMessage = 'שגיאה: שדה מספר פרק חסר עבור פרק.';
+                                firstInvalidInput = episodeNumberInput;
+                                isValid = false;
+                           }
+
 
                             // Validate season and episode are positive numbers
-                            try {
-                                const seasonNumInt = parseInt(seasonNumber, 10);
-                                const episodeNumInt = parseInt(episodeNumber, 10);
-                                if (seasonNumInt < 1 || episodeNumInt < 1) {
-                                     flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים.', 'error');
-                                     event.preventDefault();
-                                     return;
+                            if (isValid) { // Only check if other fields are valid
+                                try {
+                                    const seasonNumInt = parseInt(seasonNumber, 10);
+                                    const episodeNumInt = parseInt(episodeNumber, 10);
+                                    if (seasonNumInt < 1 || episodeNumInt < 1) {
+                                         errorMessage = 'שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים עבור פרק.';
+                                          if (seasonNumInt < 1) firstInvalidInput = episodeSeasonInput;
+                                          else firstInvalidInput = episodeNumberInput;
+                                         isValid = false;
+                                    }
+                                } catch (e) {
+                                     errorMessage = 'שגיאה: מספרי עונה ופרק חייבים להיות מספרים תקינים עבור פרק.';
+                                      firstInvalidInput = episodeSeasonInput; // Or episodeNumberInput
+                                     isValid = false;
                                 }
-                            } catch (e) {
-                                 flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים תקינים.', 'error');
-                                 event.preventDefault();
-                                 return;
-                            }
-
-                          // No client-side validation needed for episode IMDb ID input as it's removed.
-                          // The server will fetch it from OMDB or use a placeholder.
-
-
-                     } else if (contentType === 'series') {
-                          // Client-side validation for Series form
-                          const seriesImdbId = seriesImdbIdInput.value.trim();
-                          const totalSeasons = totalSeasonsInput.value.trim();
-                          const totalSeasonsInt = parseInt(totalSeasons, 10);
-
-                           // Basic required check already handled by 'required' attribute
-                           // Check IMDb ID format (redundant with pattern but good practice)
-                           const imdbIdPattern = /^tt\d{7,}$/;
-                            if (!imdbIdPattern.test(seriesImdbId)) {
-                                flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error');
-                                event.preventDefault();
-                                seriesImdbIdInput.focus();
-                                return;
-                            }
-
-                           // Check total seasons is a positive number
-                            if (isNaN(totalSeasonsInt) || totalSeasonsInt < 1) {
-                                flash('שגיאה: סה"כ עונות חייב להיות מספר שלם חיובי.', 'error');
-                                event.preventDefault();
-                                totalSeasonsInput.focus();
-                                return;
-                            }
-
-                          // Check that episode counts were entered for all seasons
-                           let allEpisodeCountsEntered = true;
-                           for (let i = 1; i <= totalSeasonsInt; i++) {
-                               const numEpisodesInput = document.getElementById(`num_episodes_season_${i}`);
-                               if (!numEpisodesInput || numEpisodesInput.value.trim() === '' || parseInt(numEpisodesInput.value.trim(), 10) < 0 || isNaN(parseInt(numEpisodesInput.value.trim(), 10))) { // Check for empty, negative or non-numeric
-                                   allEpisodeCountsEntered = false;
-                                    // Optionally focus the missing input
-                                    if (numEpisodesInput) numEpisodesInput.focus();
-                                   break;
-                               }
                            }
 
-                           if (!allEpisodeCountsEntered) {
-                                flash('שגיאה: אנא הזן מספר פרקים תקין (מספר שלם לא שלילי) עבור כל עונה.', 'error');
-                                event.preventDefault(); // Stop submission
-                                return;
-                           }
 
-                           // All client-side checks passed for series form
-                           console.log("Series form client-side validation passed.");
+                     } // End if contentType === 'episode'
 
 
-                     } // End if contentType === 'series'
-                     // Movie form has basic 'required' attributes handled by the browser.
+                     if (!isValid) {
+                         flash(errorMessage, 'error');
+                         event.preventDefault(); // Stop submission
+
+                         // Try to focus the first invalid input if found
+                         if (firstInvalidInput && typeof firstInvalidInput.focus === 'function') {
+                             // Before focusing, ensure it's visible by making its parent section visible
+                             const parentSection = firstInvalidInput.closest('.content-form-section');
+                             if (parentSection && parentSection.classList.contains('hidden-form-section')) {
+                                  // This shouldn't happen if showFormSection is called correctly on radio change,
+                                  // but as a fallback, you might temporarily show the section.
+                                  // However, the logic is that validation runs *only* on the visible form,
+                                  // so focusing should work if isValid is false means a visible required field is empty/invalid.
+                                  // Let's just try to focus directly.
+                                   firstInvalidInput.focus();
+                             } else {
+                                 firstInvalidInput.focus();
+                             }
+                         } else {
+                              console.warn("Could not find or focus the first invalid input element.");
+                         }
+
+                     } else {
+                          console.log("Form client-side validation passed. Submitting...");
+                          // If validation passes, the form will submit normally (since preventDefault was not called)
+                     }
 
                  }); // End form submit listener
             }
 
 
-            // Re-evaluate required state if page is loaded with 'manual' selected due to back button or refresh
-            // This ensures manual ID is visible if needed on load.
-            if (episodeSeriesSelect && episodeSeriesSelect.value === 'manual') {
-                 manualSeriesIdGroup.style.display = 'block';
-            }
-
-            // Initial state setup based on checked radio button
-             const initiallyCheckedType = document.querySelector('input[name="content_type"]:checked');
-             if (initiallyCheckedType) {
-                  showFormSection(initiallyCheckedType.value);
+            // Re-evaluate required state and visibility on page load
+            // This handles cases like back button, refresh, or initial load
+            const initialChecked = document.querySelector('input[name="content_type"]:checked');
+             if (initialChecked) {
+                  showFormSection(initialChecked.value);
              }
 
 
@@ -858,11 +900,19 @@
              // A real implementation would add a div to the .flash-messages container
              const flashMessagesDiv = document.querySelector('.flash-messages');
              if (flashMessagesDiv) {
+                 // Create a new alert div
                  const alertDiv = document.createElement('div');
                  alertDiv.classList.add('alert', `alert-${category || 'info'}`);
                  alertDiv.setAttribute('role', 'alert');
+                 // Add the message and the close button
                  alertDiv.innerHTML = `${message} <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>`;
+                 // Append the new alert div
                  flashMessagesDiv.appendChild(alertDiv);
+
+                 // Optional: Auto-remove flash messages after a few seconds
+                 // setTimeout(() => {
+                 //    alertDiv.style.display = 'none'; // Or alertDiv.remove();
+                 // }, 5000); // 5 seconds
              }
         }
     </script>
