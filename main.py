@@ -11,8 +11,9 @@ from firebase_admin import credentials, db
 import logging # Import logging for better error handling
 import threading
 import time
-import sys # Import sys for KinoCheck function
-from typing import Union # Import Union for KinoCheck function
+import sys # Import sys to use stderr
+# Removed typing.Union as get_movie_trailer_link returns str or None
+from youtube_search import YoutubeSearch # Import the new library
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -206,7 +207,7 @@ def load_movie_details(imdb_id):
         return movie_details
     except Exception as e:
         logging.error(f"Error loading movie details for ID {imdb_id}: {e}", exc_info=True)
-        return None
+        return {} # Return empty dict on error
 
 
 def categorize_content(movies_data, series_data):
@@ -379,58 +380,48 @@ def get_omdb_details_api(imdb_id, season=None, episode=None):
         logging.error(f"Error calling OMDB details API for ID {imdb_id} (Season {season}, Episode {episode}): {e}", exc_info=True)
         return {'Response': 'False', 'Error': f'Request Error: {e}'}
 
-# --- KinoCheck API for Trailers ---
-KINOCHECK_BASE_URL = 'https://api.kinocheck.com/'
 
-def get_youtube_trailer_url(imdb_id: str, language: str = 'en') -> Union[str, None]:
+# --- YouTube Search Function for Trailers ---
+def get_movie_trailer_link(movie_title: str) -> str or None:
     """
-    מאחזר את קישור הטריילר ביוטיוב עבור ID נתון של IMDB באמצעות KinoCheck API.
+    Searches YouTube for a movie trailer link based on the movie title.
 
     Args:
-        imdb_id: ה-ID של IMDB של הסרט (לדוגמה, 'tt4154796').
-        language: השפה המועדפת לטריילר ('en' או 'de'). ברירת המחדל היא 'en'.
+        movie_title: The title of the movie (string).
 
     Returns:
-        הכתובת של הטריילר ביוטיוב, או None אם לא נמצא או אירעה שגיאה.
+        A string containing the YouTube URL of the first trailer found,
+        or None if no trailer is found or an error occurs.
     """
-    endpoint = f"{KINOCHECK_BASE_URL}/trailers"
-    params = {
-        'imdb_id': imdb_id,
-        'categories': 'Trailer', # מבקש במפורש רק טריילרים
-        'language': language     # מציין שפה מועדפת
-    }
+    if not movie_title:
+        logging.warning("Trailer search: Movie title cannot be empty.")
+        return None
 
-    logging.info(f"Attempting to retrieve trailer for IMDb ID: {imdb_id} in language: {language}")
+    search_query = f"{movie_title} trailer official" # Added "official" for potentially better results
 
     try:
-        response = requests.get(endpoint, params=params, timeout=5) # Added timeout
-        response.raise_for_status() # Raises HTTPError for bad responses
+        # Use YoutubeSearch. max_results=1 to get only the first result.
+        results_list = YoutubeSearch(search_query, max_results=1).to_dict()
 
-        trailer_data = response.json()
+        if results_list and isinstance(results_list, list) and len(results_list) > 0:
+            first_video = results_list[0]
+            video_id = first_video.get('id')
 
-        if trailer_data and isinstance(trailer_data, list):
-             # Find the first item with a youtube_video_id
-             first_trailer = next((item for item in trailer_data if item.get('youtube_video_id')), None)
-
-             if first_trailer:
-                 youtube_video_id = first_trailer.get('youtube_video_id')
-                 youtube_url = f"https://www.youtube.com/watch?v={youtube_video_id}"
-                 logging.info(f"Successfully retrieved trailer URL for {imdb_id}: {youtube_url}")
-                 return youtube_url
-             else:
-                  logging.warning(f"No youtube_video_id found in results for IMDb ID {imdb_id}.")
-                  return None
+            if video_id:
+                youtube_url = f"https://www.youtube.com/watch?v={video_id}"
+                logging.info(f"Found YouTube trailer for '{movie_title}': {youtube_url}")
+                return youtube_url
+            else:
+                logging.warning(f"Trailer search: Found video result for '{search_query}' but no ID.")
+                return None
         else:
-             logging.info(f"No trailer results found for IMDb ID {imdb_id} with specified criteria.")
-             return None
+            logging.info(f"Trailer search: No YouTube results found for '{search_query}'.")
+            return None
 
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error requesting KinoCheck API for {imdb_id}: {e}", exc_info=True)
-        return None
     except Exception as e:
-        logging.error(f"Unexpected error during KinoCheck API call for {imdb_id}: {e}", exc_info=True)
+        logging.error(f"An error occurred while searching for trailer for '{movie_title}': {e}", exc_info=True)
         return None
+
 
 # --- API Routes for Frontend OMDB Search (Used by add.html) ---
 @app.route('/api/search_omdb')
@@ -486,61 +477,59 @@ def api_get_omdb_details():
         error_message = details.get('Error', 'Details not found or API error') if isinstance(details, dict) else 'Details not found or API error'
         return jsonify({"Error": error_message}), 404
 
-# --- New API route for getting a trailer URL ---
+# --- Updated API route for getting a trailer URL ---
 @app.route('/api/get_trailer/<string:imdb_id>')
 def api_get_trailer(imdb_id):
     """
     Fetches the YouTube trailer URL and basic movie details for a given IMDb ID.
-    Returns JSON: {'trailer_url': '...', 'title': '...', 'poster': '...'} or {'error': '...'}
+    Looks up movie details (especially title) from Firebase, then searches YouTube by title.
+    Returns JSON: {'trailer_url': '...', 'title': '...', 'poster': '...', 'imdb_id': '...'} or {'error': '...'}
     """
     # Validate IMDb ID format before querying
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
          logging.warning(f"API get_trailer called with invalid IMDb ID format: {imdb_id}")
          return jsonify({"error": "Invalid IMDb ID format"}), 400
 
-    # Attempt to get the trailer URL (try English first)
-    trailer_url = get_youtube_trailer_url(imdb_id, language='en')
-
-    # If no English trailer found, try German (as per original function, though only 'en' was used in example)
-    # if not trailer_url:
-    #     logging.info(f"No English trailer found for {imdb_id}. Trying German.")
-    #     trailer_url = get_youtube_trailer_url(imdb_id, language='de') # Example fallback
-
-    # Fetch basic movie details from Firebase or OMDB (Firebase preferred if exists)
-    # We need title and poster for the trailer display.
+    # Fetch movie details from Firebase to get the title
     movie_details = load_movie_details(imdb_id)
 
-    if not movie_details:
-        # If not in Firebase, try OMDB (though OMDB details are usually fetched on add)
-        omdb_details = get_omdb_details_api(imdb_id)
-        if omdb_details and omdb_details.get('Response') == 'True' and omdb_details.get('Type', '').lower() == 'movie':
-             movie_details = {
-                 'title': omdb_details.get('Title', 'כותרת לא ידועה'),
-                 'poster': omdb_details.get('Poster', 'N/A'),
-                 'imdbID': omdb_details.get('imdbID', imdb_id) # Ensure imdbID is present
-             }
-             logging.info(f"Fetched movie details for {imdb_id} from OMDB for trailer API.")
-        else:
-             logging.warning(f"Could not get movie details for IMDb ID {imdb_id} for trailer API.")
-             # Even if no trailer, return the movie ID so JS can handle the 'not found' state
-             return jsonify({
-                 "imdb_id": imdb_id,
-                 "trailer_url": None,
-                 "title": "סרט לא ידוע",
-                 "poster": "N/A",
-                 "error": "פרטי סרט או טריילר לא נמצאו"
-             }), 404
+    if not movie_details or movie_details.get('type') != 'movie':
+         logging.warning(f"Movie details not found in Firebase or is not a movie for IMDb ID: {imdb_id}")
+         return jsonify({
+             "imdb_id": imdb_id,
+             "trailer_url": None,
+             "title": "סרט לא נמצא בבסיס הנתונים",
+             "poster": "N/A",
+             "error": "פרטי סרט לא נמצאו בבסיס הנתונים"
+         }), 404 # Return 404 Not Found if the movie isn't in your DB
 
+    movie_title = movie_details.get('title')
+    movie_poster = movie_details.get('poster', 'N/A') # Get poster for the response
+
+    if not movie_title:
+        logging.warning(f"Movie found in Firebase ({imdb_id}) but has no title.")
+        return jsonify({
+             "imdb_id": imdb_id,
+             "trailer_url": None,
+             "title": "סרט ללא כותרת",
+             "poster": movie_poster,
+             "error": "לסרט אין כותרת בבסיס הנתונים"
+         }), 404
+
+    # Use the new function to get the trailer link based on title
+    trailer_url = get_movie_trailer_link(movie_title)
 
     response_data = {
         "imdb_id": imdb_id,
         "trailer_url": trailer_url,
-        "title": movie_details.get('title', 'כותרת לא ידועה'),
-        "poster": movie_details.get('poster', 'N/A')
+        "title": movie_title,
+        "poster": movie_poster # Include poster in the response
     }
 
     if not trailer_url:
-         response_data["error"] = "טריילר לא נמצא"
+         response_data["error"] = "טריילר לא נמצא ביוטיוב"
+         # Return 404 if no trailer found, but include movie details
+         return jsonify(response_data), 404
 
     return jsonify(response_data)
 
