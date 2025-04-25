@@ -1,17 +1,17 @@
-# main.py
+```python
 import datetime
 import traceback
 import os
 import requests
 import json
-import re
+import re # Import re for regex validation
 from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
 import firebase_admin
 from firebase_admin import credentials, db
-import logging
-import random # Added for random movie selection
-from typing import Union # Added for type hinting in get_youtube_trailer_url
+import logging # Import logging for better error handling
+import sys # Import sys for print to stderr
+from typing import Union # Import Union
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -377,73 +377,62 @@ def get_omdb_details_api(imdb_id, season=None, episode=None):
         return {'Response': 'False', 'Error': f'Request Error: {e}'}
 
 
-# --- KinoCheck API Function for Trailers ---
+# --- KinoCheck API Function ---
 KINOCHECK_BASE_URL = 'https://api.kinocheck.com/'
 
 def get_youtube_trailer_url(imdb_id: str, language: str = 'en') -> Union[str, None]:
     """
     מאחזר את קישור הטריילר ביוטיוב עבור ID נתון של IMDB באמצעות KinoCheck API.
-    מנסה שפה נבחרת (ברירת מחדל אנגלית), ואם לא מוצא, מנסה ללא הגבלת שפה.
+
+    Args:
+        imdb_id: ה-ID של IMDB של הסרט (לדוגמה, 'tt4154796').
+        language: השפה המועדפת לטריילר ('en' או 'de'). ברירת המחדל היא 'en'.
+
+    Returns:
+        הכתובת של הטריילר ביוטיוב (רק ה-ID של הסרטון ביוטיוב), או None אם לא נמצא או אירעה שגיאה.
+        שינוי: החזר רק את ה-youtube_video_id במקום את הכתובת המלאה.
     """
-    if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
-         logging.warning(f"Invalid IMDb ID format for trailer lookup: {imdb_id}")
-         return None
-
     endpoint = f"{KINOCHECK_BASE_URL}/trailers"
-    languages_to_try = [language, None] # Try specific language first, then any language
+    params = {
+        'imdb_id': imdb_id,
+        'categories': 'Trailer', # מבקש במפורש רק טריילרים
+        'language': language     # מציין שפה מועדפת
+    }
 
-    for lang_to_try in languages_to_try:
-        params = {
-            'imdb_id': imdb_id,
-            'categories': 'Trailer',
-        }
-        if lang_to_try:
-            params['language'] = lang_to_try
+    logging.info(f"מנסה לאחזר טריילר עבור IMDb ID: {imdb_id} בשפה: {language}")
 
-        logging.info(f"Attempting to fetch trailer for IMDb ID: {imdb_id} in language: {lang_to_try or 'any'}")
+    try:
+        response = requests.get(endpoint, params=params, timeout=5) # Added timeout
+        response.raise_for_status() # זורק חריגה עבור קודי סטטוס שגיאה (4xx או 5xx)
 
-        try:
-            response = requests.get(endpoint, params=params, timeout=5) # Added timeout
-            response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
+        trailer_data = response.json()
 
-            trailer_data = response.json()
+        if trailer_data and isinstance(trailer_data, list):
+             # חיפוש המשאב הראשון שיש לו youtube_video_id ושסוג הקטגוריה הוא 'Trailer'
+             first_trailer = next((item for item in trailer_data if item.get('youtube_video_id') and item.get('category', '').lower() == 'trailer'), None)
 
-            if trailer_data and isinstance(trailer_data, list):
-                 # Find the first trailer resource with a youtube_video_id
-                 first_trailer = next((item for item in trailer_data if item.get('youtube_video_id')), None)
-
-                 if first_trailer:
-                     youtube_video_id = first_trailer.get('youtube_video_id')
-                     youtube_url = f"https://www.youtube.com/watch?v={youtube_video_id}"
-                     logging.info(f"Successfully found trailer for IMDb ID {imdb_id}.")
-                     return youtube_url
-                 else:
-                      logging.warning(f"No youtube_video_id found in trailer results for IMDb ID {imdb_id} (language: {lang_to_try or 'any'}).")
-                      # Continue to the next language if available, or return None after loop
-                      pass # Continue the loop
-
-            else:
-                 logging.warning(f"No trailer results returned for IMDb ID {imdb_id} (language: {lang_to_try or 'any'}). Response data: {trailer_data}")
-                 # Continue to the next language if available, or return None after loop
-                 pass # Continue the loop
+             if first_trailer:
+                 youtube_video_id = first_trailer.get('youtube_video_id')
+                 # Return just the video ID
+                 return youtube_video_id
+             else:
+                  logging.warning(f"לא נמצא youtube_video_id או שהקטגוריה אינה 'Trailer' בתוצאות שחזרו עבור IMDb ID {imdb_id}.", file=sys.stderr)
+                  return None
+        else:
+             logging.info(f"לא נמצאו תוצאות טריילר עבור IMDb ID {imdb_id} עם הקריטריונים שצוינו. תשובת API: {trailer_data}", file=sys.stderr)
+             return None
 
 
-        except requests.exceptions.Timeout:
-            logging.error(f"Timeout fetching trailer for IMDb ID {imdb_id} (language: {lang_to_try or 'any'}).")
-            # Continue to the next language if available, or return None after loop
-            pass # Continue the loop
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error during API request for trailer for IMDb ID {imdb_id} (language: {lang_to_try or 'any'}): {e}")
-            # Continue to the next language if available, or return None after loop
-            pass # Continue the loop
-        except Exception as e:
-            logging.error(f"Unexpected error processing trailer data for IMDb ID {imdb_id} (language: {lang_to_try or 'any'}): {e}", exc_info=True)
-            # Continue to the next language if available, or return None after loop
-            pass # Continue the loop
+    except requests.exceptions.Timeout:
+        logging.error(f"Timeout while requesting KinoCheck API for IMDb ID: {imdb_id}", exc_info=True)
+        return None
+    except requests.exceptions.RequestException as e:
+        logging.error(f"שגיאה במהלך שליחת בקשה ל-KinoCheck API עבור IMDb ID {imdb_id}: {e}", exc_info=True)
+        return None
+    except Exception as e:
+        logging.error(f"אירעה שגיאה בלתי צפויה במהלך אחזור טריילר עבור IMDb ID {imdb_id}: {e}", exc_info=True)
+        return None
 
-    # If loop finishes without finding a trailer in any language
-    logging.warning(f"Failed to find trailer for IMDb ID {imdb_id} after trying all options.")
-    return None
 
 # --- API Routes for Frontend OMDB Search (Used by add.html) ---
 @app.route('/api/search_omdb')
@@ -499,50 +488,75 @@ def api_get_omdb_details():
         error_message = details.get('Error', 'Details not found or API error') if isinstance(details, dict) else 'Details not found or API error'
         return jsonify({"Error": error_message}), 404
 
-# --- NEW API Route for Fetching Random Movie Trailer Details ---
-@app.route('/api/get_movie_trailer_details/<string:imdb_id>')
-def api_get_movie_trailer_details(imdb_id):
-    """
-    Fetches movie details and trailer URL for a given IMDb ID.
-    Used by the frontend to update the trailer player.
-    """
+
+# --- New API Routes for Trailer Feature ---
+
+@app.route('/api/movie_imdb_ids')
+def api_movie_imdb_ids():
+    """Returns a list of all movie IMDb IDs present in Firebase."""
+    try:
+        ref = db.reference('/Movies')
+        movies = ref.get() # Get the dictionary {imdb_id: movie_details}
+        if movies:
+            # Extract just the keys (IMDb IDs)
+            movie_ids = list(movies.keys())
+            logging.info(f"Found {len(movie_ids)} movie IDs in Firebase.")
+            return jsonify(movie_ids)
+        else:
+            logging.info("No movies found in Firebase to return IDs.")
+            return jsonify([]) # Return empty list if no movies
+    except Exception as e:
+        logging.error(f"Error fetching movie IMDb IDs from Firebase: {e}", exc_info=True)
+        return jsonify({"Error": "Failed to fetch movie IDs"}), 500
+
+
+@app.route('/api/trailer_info/<imdb_id>')
+def api_trailer_info(imdb_id):
+    """Fetches trailer and basic movie info for a given IMDb ID."""
     # Validate IMDb ID format
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
-        logging.warning(f"API get movie trailer details called with invalid IMDb ID format: {imdb_id}")
-        return jsonify({'success': False, 'error': 'Invalid IMDb ID format'}), 400
+         logging.warning(f"API trailer_info called with invalid IMDb ID format: {imdb_id}")
+         return jsonify({"Error": "Invalid IMDb ID format"}), 400
 
-    # Load movie details from Firebase
-    movie = load_movie_details(imdb_id)
+    try:
+        # 1. Get movie details from Firebase (for title, poster, etc. for the link)
+        movie_details = load_movie_details(imdb_id)
 
-    # Check if found and is a movie
-    if not movie or movie.get('type') != 'movie':
-        logging.warning(f"API get movie trailer details: Movie not found or is not of type 'movie' for ID: {imdb_id}")
-        return jsonify({'success': False, 'error': 'Movie not found or is not a movie type'}), 404
+        if not movie_details:
+            logging.warning(f"Movie details not found in Firebase for ID: {imdb_id}")
+            return jsonify({"Error": "Movie not found"}), 404 # Movie not found in your DB
 
-    # Get the trailer URL using KinoCheck API
-    trailer_url = get_youtube_trailer_url(imdb_id, language='iw') # Try Hebrew first, then any
+        # 2. Get trailer URL from KinoCheck API
+        # Try English first, then maybe German as a fallback if needed (though UI is Hebrew)
+        youtube_video_id = get_youtube_trailer_url(imdb_id, language='en')
+        if not youtube_video_id:
+             # Optionally try 'de' or another language if needed
+             # youtube_video_id = get_youtube_trailer_url(imdb_id, language='de')
+             # if not youtube_video_id:
+             logging.warning(f"No English trailer found for IMDb ID: {imdb_id}")
+             # Return movie details but indicate no trailer URL
+             return jsonify({
+                  "imdbID": movie_details.get('imdbID'),
+                  "title": movie_details.get('title'),
+                  "poster": movie_details.get('poster'),
+                  "movie_url": url_for('movie_details', imdb_id=imdb_id, _external=False), # Use _external=False for relative path
+                  "youtube_video_id": None, # Explicitly indicate no trailer
+                  "error": "Trailer not found"
+             })
 
-    if not trailer_url:
-         logging.warning(f"API get movie trailer details: No trailer found for movie ID: {imdb_id}")
-         return jsonify({'success': False, 'error': 'Trailer not found for this movie'}), 404
 
-    # Extract YouTube Video ID
-    youtube_video_id_match = re.search(r'(?<=v=)[a-zA-Z0-9_-]+', trailer_url)
-    youtube_video_id = youtube_video_id_match.group(0) if youtube_video_id_match else None
+        # If trailer is found, return movie info plus the trailer ID
+        return jsonify({
+            "imdbID": movie_details.get('imdbID'),
+            "title": movie_details.get('title'),
+            "poster": movie_details.get('poster'), # Can include poster if needed in UI
+            "movie_url": url_for('movie_details', imdb_id=imdb_id, _external=False),
+            "youtube_video_id": youtube_video_id # The ID needed for the player
+        })
 
-    if not youtube_video_id:
-         logging.warning(f"API get movie trailer details: Could not extract YouTube video ID from URL: {trailer_url} for movie ID: {imdb_id}")
-         return jsonify({'success': False, 'error': 'Could not extract YouTube video ID'}), 404
-
-
-    # Return the details needed by the frontend
-    return jsonify({
-        'success': True,
-        'imdb_id': movie.get('imdbID', imdb_id),
-        'title': movie.get('title', 'כותרת לא ידועה'),
-        'trailer_url': trailer_url, # Although the frontend extracts ID, sending URL can be useful
-        'video_id': youtube_video_id # Explicitly send video ID
-    })
+    except Exception as e:
+        logging.error(f"Error fetching trailer info for IMDb ID {imdb_id}: {e}", exc_info=True)
+        return jsonify({"Error": "Internal server error fetching trailer info"}), 500
 
 
 # --- Authentication Routes ---
@@ -623,67 +637,18 @@ def index():
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
+    # Pass the list of admin emails to the template if needed (though index.html might not use it)
+    # If admin status is only checked server-side, passing the list isn't strictly necessary here.
+    # However, keeping it consistent with previous logic of passing *something* related to admin.
 
-    # --- Logic for Random Trailer ---
-    all_movie_ids = list(movies_data.keys()) # Get a list of all movie IMDb IDs
-    initial_trailer_data = None # Will hold {'imdb_id', 'title', 'trailer_url', 'video_id'}
-
-    if all_movie_ids:
-        # Shuffle the list and pick the first movie ID for the initial trailer
-        # This ensures a different initial trailer on each page load (within limits of list size)
-        random.shuffle(all_movie_ids)
-        initial_movie_id = all_movie_ids[0]
-
-        # Get trailer URL for the selected random movie
-        trailer_url = get_youtube_trailer_url(initial_movie_id, language='iw') # Try Hebrew first, then any
-
-        if trailer_url:
-            # Extract YouTube Video ID from the URL
-            # This regex is basic, a more robust one might be needed
-            youtube_video_id_match = re.search(r'(?<=v=)[a-zA-Z0-9_-]+', trailer_url)
-            youtube_video_id = youtube_video_id_match.group(0) if youtube_video_id_match else None
-
-            if youtube_video_id:
-                 # Get the movie title from the loaded data
-                 movie_details = movies_data.get(initial_movie_id, {})
-                 initial_trailer_data = {
-                     'imdb_id': initial_movie_id,
-                     'title': movie_details.get('title', 'כותרת לא ידועה'),
-                     'trailer_url': trailer_url,
-                     'video_id': youtube_video_id
-                 }
-                 logging.info(f"Selected initial random movie trailer: {initial_trailer_data['title']} ({initial_trailer_data['imdb_id']})")
-            else:
-                 logging.warning(f"Could not extract YouTube video ID from URL: {trailer_url} for ID: {initial_movie_id}")
-                 # If initial trailer cannot be prepared, don't pass trailer data
-                 initial_trailer_data = None
-                 # Remove this ID from all_movie_ids list so JS doesn't try it again immediately
-                 if initial_movie_id in all_movie_ids:
-                     all_movie_ids.remove(initial_movie_id)
-
-        else:
-            logging.warning(f"Could not fetch trailer URL for initial random movie ID: {initial_movie_id}")
-            # If initial trailer cannot be prepared, don't pass trailer data
-            initial_trailer_data = None
-             # Remove this ID from all_movie_ids list so JS doesn't try it again immediately
-            if initial_movie_id in all_movie_ids:
-                all_movie_ids.remove(initial_movie_id)
-
-
-    else:
-        logging.info("No movies found in database to display random trailer.")
-        initial_trailer_data = None # No movies, no trailer
-
-    # Pass the list of all movie IDs to the template (for client-side random picking)
-    # Pass the initial trailer data (or None)
+    # Pass the user object and categorized data to the template.
+    # The 'continue watching' logic is handled client-side using localStorage.
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories, # All categoried content for display and JS lookup
                            current_year=current_year,
                            user=user,
-                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
-                           movie_ids=all_movie_ids, # Pass list of all *remaining* movie IDs for JS
-                           initial_trailer_data=initial_trailer_data # Pass initial trailer data
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
 # --- Route for Single Movie Page ---
@@ -691,6 +656,7 @@ def index():
 def movie_details(imdb_id):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
+    # admin_email = ADMIN_EMAIL # Pass admin email to movie page for nav link # <-- REMOVED
 
     # Validate IMDb ID format before querying
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
@@ -993,7 +959,7 @@ def add_content():
                  manual_series_imdb_id = request.form.get('manual_episode_series_id', '').strip()
                  episode_title_form = request.form.get('episode_title', '').strip() # Get title from form (user override)
                  season_number_str = request.form.get('episode_season', '').strip()
-                 episode_number_str = request.form.get('episode_episode', '').strip() # Corrected form field name
+                 episode_number_str = request.form.get('episode_number', '').strip()
                  # video_url = request.form.get('episode_video_url', '').strip() # REMOVED INPUT
 
                  # Determine the series IMDb ID
@@ -1043,7 +1009,6 @@ def add_content():
                      error_msg = episode_details_from_omdb.get('Error', 'Unknown Error') if isinstance(episode_details_from_omdb, dict) else 'Unknown Error'
                      logging.warning(f"Failed to fetch OMDB details for episode {series_imdb_id} S{season_number}E{episode_number}. OMDB Error: {error_msg}. Proceeding with form data and placeholder ID.")
                      # Use placeholder ID if OMDB fails to provide one
-                     # Adding series_imdb_id to placeholder for better uniqueness/debugging
                      episode_imdb_id_to_save = f'tt_placeholder_{series_imdb_id}_s{season_number}e{episode_number}'
                      # If OMDB fetch failed and user didn't provide a title, use a generic placeholder title
                      if not episode_title_form:
