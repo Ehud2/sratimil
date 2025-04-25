@@ -221,14 +221,6 @@
 
                      {# REMOVED: Fields for total seasons and dynamic episode counts #}
                      {# The server will now fetch total seasons and episode counts from OMDB #}
-                     {# <div class="form-group">
-                         <label for="total_seasons">סה"כ עונות:</label>
-                         <input type="number" id="total_seasons" name="total_seasons" min="1" required>
-                     </div> #}
-                     {# <div id="season-episode-inputs" class="season-episode-inputs" style="display: none;">
-                         {# Dynamic inputs will be added here by JavaScript #}
-                         {# <p>הזן את מספר הפרקים עבור כל עונה:</p> #}
-                     {# </div> #}
 
 
                      <div class="omdb-search-section">
@@ -440,10 +432,16 @@
 
 
             // Initial state setup based on checked radio button
-             const initiallyCheckedType = document.querySelector('input[name="content_type"]:checked');
-             if (initiallyCheckedType) {
-                  showFormSection(initiallyCheckedType.value);
-             }
+            // Moved this block INSIDE the DOMContentLoaded listener and ensure it's not duplicated
+            const initiallyCheckedType = document.querySelector('input[name="content_type"]:checked');
+            if (initiallyCheckedType) {
+                 showFormSection(initiallyCheckedType.value);
+            } else {
+                 // Default to movie if nothing is checked on load
+                 const defaultMovieRadio = document.getElementById('type_movie');
+                 if (defaultMovieRadio) defaultMovieRadio.checked = true;
+                 showFormSection('movie');
+            }
 
 
             // Function to clear OMDB search results and details display
@@ -762,14 +760,9 @@
                  manualSeriesIdGroup.style.display = 'block';
             }
 
-            // Initial state setup based on checked radio button
-             const initiallyCheckedType = document.querySelector('input[name="content_type"]:checked');
-             if (initiallyCheckedType) {
-                  showFormSection(initiallyCheckedType.value);
-             }
 
+        }); // End DOMContentLoaded listener correctly closed here.
 
-        }); // End DOMContentLoaded
     </script>
     {# Add a simple flash message display function if you're not using a Flask-specific one #}
     <script>
