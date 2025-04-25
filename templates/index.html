@@ -20,7 +20,7 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
+                <img src="imageurlhere" alt="Sign in with Google" loading="lazy"> {# REPLACED BASE64 URL #}
             {% endif %}
         </div>
         <p>טוען סינמה פריים...</p>
@@ -80,6 +80,27 @@
             <p>מה נראה היום?</p>
         </div>
 
+        {# --- Random Trailer Section --- #}
+        {% if initial_trailer_data %}
+        <section class="trailer-section">
+            <div class="trailer-container">
+                <div id="random-trailer-player"></div> {# YouTube player iframe will be embedded here #}
+                <div class="custom-trailer-controls">
+                     <div class="control-group top-left">
+                         <button class="open-button" aria-label="פתח לצפייה"><i class="fas fa-external-link-alt"></i> פתח</button>
+                         <button class="mute-button" aria-label="השתק"><i class="fas fa-volume-up"></i></button> {# Initial icon #}
+                     </div>
+                     <div class="control-group top-right">
+                         <span class="trailer-title-display">{{ initial_trailer_data.title }}</span>
+                         <button class="nav-button prev-button" aria-label="טריילר קודם"><i class="fas fa-chevron-left"></i></button> {# Right arrow in RTL #}
+                         <button class="nav-button next-button" aria-label="טריילר הבא"><i class="fas fa-chevron-right"></i></button> {# Left arrow in RTL #}
+                     </div>
+                 </div>
+            </div>
+        </section>
+        {% endif %}
+        {# --- End Random Trailer Section --- #}
+
         {# The "Continue Watching" section will be added here by JavaScript if applicable #}
         <section id="continueWatchingSection" class="category-section" style="display: none;">
             <h2>המשך צפייה</h2>
@@ -137,6 +158,9 @@
         </div>
     </footer>
 
+    {# YouTube IFrame Player API script #}
+    <script src="https://www.youtube.com/iframe_api"></script>
+
     <script>
         // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -179,7 +203,7 @@
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
-                    // Select only the items within the main categories, not Continue Watching
+                    // Select only the items within the main categories, not Continue Watching or Trailer
                     const itemCardLinks = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Target catalog items
                     let anyVisible = false;
                     itemCardLinks.forEach(link => {
@@ -424,8 +448,222 @@
 
         }); // End DOMContentLoaded
 
-        {# If you have a separate static/js/script.js, link it here AFTER this script block #}
-        {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
+        // --- YouTube Trailer Player Logic ---
+        let player; // Global YouTube player variable
+        const trailerContainer = document.querySelector('.trailer-container');
+        const trailerTitleDisplay = document.querySelector('.trailer-title-display');
+        const muteButton = document.querySelector('.trailer-section .mute-button');
+        const prevButton = document.querySelector('.trailer-section .prev-button');
+        const nextButton = document.querySelector('.trailer-section .next-button');
+        const openButton = document.querySelector('.trailer-section .open-button');
+
+
+        // Data passed from Flask
+        const movieIds = {{ movie_ids | tojson }}; // List of all movie IMDb IDs
+        const initialTrailerData = {{ initial_trailer_data | tojson }}; // Initial trailer info or null
+
+        let currentMovieId = initialTrailerData ? initialTrailerData.imdb_id : null;
+        let currentMovieTitle = initialTrailerData ? initialTrailerData.title : null;
+        let currentMovieIndex = movieIds.indexOf(currentMovieId); // Keep track of index if needed for prev/next cycle (though we'll do random)
+        let allMovieIds = movieIds || []; // Ensure it's an array
+
+        // Function required by YouTube IFrame Player API
+        function onYouTubeIframeAPIReady() {
+             console.log("YouTube IFrame API Ready.");
+            if (initialTrailerData && initialTrailerData.video_id) {
+                createPlayer(initialTrailerData.video_id);
+                // Update control display initially
+                if (trailerTitleDisplay) trailerTitleDisplay.textContent = initialTrailerData.title || 'טריילר';
+                if (openButton) openButton.href = `{{ url_for('movie_details', imdb_id='') }}${initialTrailerData.imdb_id}`;
+
+                // Show the trailer section if it was initially hidden (e.g., if only movie data was present)
+                if (trailerContainer) trailerContainer.parentElement.style.display = 'block'; // Assuming trailer-section is the parent
+            } else {
+                 console.log("No initial trailer data available or invalid video ID. Hiding trailer section.");
+                 // Hide the trailer section if no initial data
+                 if (trailerContainer) trailerContainer.parentElement.style.display = 'none';
+            }
+        }
+
+        function createPlayer(videoId) {
+            if (!videoId) {
+                console.error("Cannot create player: Invalid video ID provided.");
+                 // Hide controls and player area
+                 if (trailerContainer) trailerContainer.style.display = 'none';
+                return;
+            }
+             console.log(`Creating YouTube player for video ID: ${videoId}`);
+            player = new YT.Player('random-trailer-player', {
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 1,          // Autoplay the video
+                    'controls': 0,          // Hide standard controls
+                    'disablekb': 1,         // Disable keyboard controls
+                    'modestbranding': 1,    // Hide YouTube logo
+                    'rel': 0,               // Do not show related videos at the end
+                    'showinfo': 0,          // Hide video title and uploader info
+                    'iv_load_policy': 3,    // Do not show video annotations
+                    'start': 3,             // Start video playback at 3 seconds
+                    'mute': 1,              // Start muted to comply with autoplay policies
+                    'origin': window.location.origin // Required for some APIs when using JS API
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            console.log("YouTube Player Ready. Attempting to play and unmute.");
+            // event.target.playVideo(); // Start playback
+            // event.target.seekTo(3, true); // Ensure it starts at 3 seconds
+            // The 'start' parameter in playerVars should handle the start time.
+            // Autoplay and mute in playerVars should handle initial state.
+
+            // If starting muted, update mute button icon
+            if (muteButton && event.target.isMuted()) {
+                 muteButton.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                 muteButton.setAttribute('aria-label', 'בטל השתקה');
+            }
+             // Try to unmute after a brief delay or user interaction (autoplay rules)
+             // The mute button will allow explicit unmuting.
+        }
+
+        function onPlayerStateChange(event) {
+            console.log("Player state changed:", event.data);
+            // State 0: Ended
+            if (event.data === YT.PlayerState.ENDED) {
+                 console.log("Video ended. Loading next random trailer...");
+                loadNextRandomTrailer(); // Auto-advance to the next random trailer
+            }
+             // State 1: Playing
+             // State 2: Paused
+             // State 3: Buffering
+             // State 5: Cued
+        }
+
+         function onPlayerError(event) {
+             console.error("YouTube Player Error:", event.data);
+              // Attempt to load the next random trailer on error
+             console.log("Loading next random trailer due to error...");
+             loadNextRandomTrailer();
+         }
+
+
+        // Function to load a trailer for a given IMDb ID
+        async function loadMovieTrailer(imdbId) {
+             console.log(`Attempting to load trailer for IMDb ID: ${imdbId}`);
+             // Hide controls while loading
+             if (trailerContainer) trailerContainer.classList.add('loading');
+
+            try {
+                const response = await fetch(`/api/get_movie_trailer_details/${imdbId}`);
+                const data = await response.json();
+
+                if (data.success && data.video_id) {
+                    console.log(`Successfully fetched trailer for ${data.title} (${data.imdb_id}).`);
+                    currentMovieId = data.imdb_id;
+                    currentMovieTitle = data.title;
+
+                    // Update control display
+                    if (trailerTitleDisplay) trailerTitleDisplay.textContent = data.title || 'טריילר';
+                    if (openButton) openButton.href = `{{ url_for('movie_details', imdb_id='') }}${data.imdb_id}`;
+
+                    // Load the new video into the player
+                    // Use loadVideoById to replace the current video
+                    if (player && typeof player.loadVideoById === 'function') {
+                        player.loadVideoById({
+                            videoId: data.video_id,
+                            startSeconds: 3 // Start from 3 seconds
+                        });
+                         // Player state will change, triggering onPlayerStateChange (play, ended, etc.)
+                    } else {
+                        console.error("YouTube player object not initialized or loadVideoById not available.");
+                         // If player isn't ready, try creating it? Or just show an error.
+                         // Let's try recreating if it exists but function is missing
+                         if (player) {
+                             player.destroy(); // Clean up the old invalid player
+                         }
+                         createPlayer(data.video_id); // Try creating a new one
+                    }
+
+
+                } else {
+                    console.error(`Failed to fetch trailer details for ID ${imdbId}: ${data.error || 'Unknown error'}`);
+                     // If fetching fails, try the next random one immediately
+                     loadNextRandomTrailer(); // Automatically skip to the next
+                }
+            } catch (error) {
+                console.error(`Error during trailer API call for ID ${imdbId}:`, error);
+                 // If fetch fails entirely, try the next random one
+                 loadNextRandomTrailer(); // Automatically skip to the next
+            } finally {
+                // Remove loading state after API call completes (success or fail)
+                 if (trailerContainer) trailerContainer.classList.remove('loading');
+            }
+        }
+
+        // Function to load the next random trailer
+        function loadNextRandomTrailer() {
+             if (allMovieIds.length === 0) {
+                 console.log("No movie IDs available to load next trailer.");
+                 // Optionally hide the trailer section or show a message
+                 if (trailerContainer) trailerContainer.parentElement.style.display = 'none';
+                 return;
+             }
+
+             // Select a random index from the available movie IDs
+             const randomIndex = Math.floor(Math.random() * allMovieIds.length);
+             const nextMovieId = allMovieIds[randomIndex];
+
+             // Call the function to load the trailer for this ID
+             loadMovieTrailer(nextMovieId);
+        }
+
+        // Function to load the previous random trailer (same as next random for now per user request interpretation)
+        function loadPreviousRandomTrailer() {
+             console.log("Previous trailer button clicked. Loading a new random trailer.");
+             // As per requirement interpretation ("next random movie"),
+             // clicking "Previous" will also just load another random trailer from the full list.
+             // If a true chronological history of viewed trailers was needed, we'd store IDs in an array.
+             loadNextRandomTrailer();
+        }
+
+
+        // Add event listeners to custom controls
+        if (muteButton) {
+            muteButton.addEventListener('click', () => {
+                if (player && typeof player.isMuted === 'function') {
+                    if (player.isMuted()) {
+                        player.unMute();
+                        muteButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+                        muteButton.setAttribute('aria-label', 'השתק');
+                        console.log("Player unmuted.");
+                    } else {
+                        player.mute();
+                        muteButton.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                        muteButton.setAttribute('aria-label', 'בטל השתקה');
+                         console.log("Player muted.");
+                    }
+                } else {
+                     console.warn("YouTube player not ready for mute toggle.");
+                }
+            });
+        }
+
+        if (prevButton) {
+             prevButton.addEventListener('click', loadPreviousRandomTrailer);
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener('click', loadNextRandomTrailer);
+        }
+
+        // Open button href is set when loading a trailer
+
+
     </script>
 </body>
 </html>
