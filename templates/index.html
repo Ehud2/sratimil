@@ -529,10 +529,10 @@
                                 overlay.appendChild(subtitleElement);
                              }
                             overlay.appendChild(actionsDiv);
-                            imageContainer.appendChild(imageContainer);
-                            itemCard.appendChild(imageContainer);
-                            itemLink.appendChild(itemCard);
-                            continueWatchingRow.appendChild(itemLink);
+                            imageContainer.appendChild(overlay); // Append overlay to imageContainer
+                            itemCard.appendChild(imageContainer); // Append imageContainer to itemCard <--- CORRECTED LINE
+                            itemLink.appendChild(itemCard); // Append itemCard to itemLink
+                            continueWatchingRow.appendChild(itemLink); // Append itemLink to continueWatchingRow
                         });
 
                         // Show/hide sections based on uniqueValidItemsMap size
@@ -571,7 +571,7 @@
         // --- YouTube Trailer Functionality (Client-Side) ---
 
         let player; // YouTube player instance
-        let availableTrailerMovies = []; // List of movies with potential trailers (IMDb IDs only needed here)
+        let availableTrailerMovies = []; // List of movies with potential trailers (IMDb IDs and titles)
         let currentTrailerIndex = 0; // Index in the shuffled list
         let isPlayerReady = false; // Flag to ensure player is ready before calling methods
         let currentTrailerItem = null; // Store details of the currently playing trailer item { imdbID, title }
@@ -592,11 +592,11 @@
             const allMovies = {{ all_movies_list | tojson }};
 
              // Filter for movies that have a valid IMDb ID (and are type movie)
-             // We only need the IMDb ID for the frontend list, we'll fetch details via API
+             // We only need the IMDb ID and Title for the frontend list
              availableTrailerMovies = allMovies.filter(movie =>
                  movie.imdbID && movie.imdbID.startsWith('tt') && movie.imdbID.length >= 7 &&
-                 movie.type === 'movie'
-             ).map(movie => ({ imdbID: movie.imdbID, title: movie.title || 'סרט ללא כותרת' })); // Store just ID and title
+                 movie.type === 'movie' && movie.title // Filter out movies without a title
+             ).map(movie => ({ imdbID: movie.imdbID, title: movie.title })); // Store just ID and title
 
             console.log(`Found ${availableTrailerMovies.length} potential movies for trailers.`);
 
@@ -605,7 +605,8 @@
                  currentTrailerIndex = 0; // Start at the beginning of the shuffled list
 
                  // Show the trailer section container (CSS handles display: flex)
-                 document.getElementById('trailerSection').style.display = '';
+                 // Use flex display here as set in the CSS for the initial state
+                 document.getElementById('trailerSection').style.display = 'flex';
 
 
                  // Load the first trailer
@@ -687,13 +688,13 @@
                   console.warn(`Movie data not found locally for IMDb ID: ${imdbId}. Using API response for details.`);
              }
 
-              // Store the requested IMDb ID in currentTrailerItem
+              // Store the requested IMDb ID and title in currentTrailerItem
               currentTrailerItem = { imdbID: imdbId, title: document.getElementById('trailerTitle').textContent, type: 'movie' };
               // Update the Open button href based on the ID we know we're requesting
               document.getElementById('openMovieButton').href = `${movieDetailsBaseUrl}${imdbId}`;
 
 
-             // Call backend API to get the trailer URL and fresh details
+             // Call backend API to get the trailer URL and potentially more accurate details
              try {
                  // Use the Flask url_for helper to get the API endpoint URL
                  const apiUrl = `{{ url_for('api_get_trailer', imdb_id='') }}${imdbId}`;
@@ -787,7 +788,7 @@
         function displayTrailerError(message) {
              // Ensure player is stopped and hidden on error
              if (player && typeof player.stopVideo === 'function') {
-                 player.stopVideo();
+                 try { player.stopVideo(); } catch (e) { console.warn("Error stopping video:", e); }
              }
              document.getElementById('youtubePlayer').style.display = 'none'; // Hide player
              document.getElementById('trailerTitle').textContent = 'שגיאת טריילר';
@@ -820,6 +821,9 @@
              errorDiv.style.flexDirection = 'column';
              errorDiv.style.alignItems = 'center';
              errorDiv.style.justifyContent = 'center';
+             // Show the error div
+             errorDiv.style.display = 'flex'; // Ensure it's visible
+
         }
 
 
@@ -874,6 +878,9 @@
                  case 101:
                  case 150:
                      errorText = 'הסרטון לא זמין להטמעה.';
+                     break;
+                 default:
+                     errorText = `אירעה שגיאה בטריילר (${event.data})`;
                      break;
              }
              displayTrailerError(`שגיאת נגן: ${errorText}`);
