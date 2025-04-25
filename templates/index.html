@@ -227,6 +227,11 @@
 
             // --- Continue Watching Functionality (Client-Side) ---
             const user = {{ user | tojson }}; // Pass user object from Flask
+            // Get base URL patterns from Flask using placeholders for dynamic parts
+            const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id='__IMDB_ID__') }}";
+            const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id='__IMDB_ID__', season_number='__SEASON__', episode_number='__EPISODE__') }}";
+
+
             const continueWatchingSection = document.getElementById('continueWatchingSection');
             const continueWatchingRow = document.getElementById('continueWatchingRow');
             const noContinueWatchingMessage = document.getElementById('noContinueWatchingMessage');
@@ -254,17 +259,18 @@
                     }
 
                     // Convert object values into an array for easier iteration/sorting if needed
-                    const itemsArray = Object.values(continueWatchingItems);
-
-                    if (itemsArray.length > 0) {
-                        // Sort items if desired (e.g., by last watched time - though we aren't saving that accurately yet)
-                        // For now, display in the order they were added/updated in the object (less predictable)
-                        // Or sort by title, or add a 'lastWatchedTimestamp' field when saving.
-                        // Let's add a simple sort by item title for now.
-                        itemsArray.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                    // Filter out any potentially invalid items before processing
+                    const validItems = Object.values(continueWatchingItems).filter(item =>
+                        item && typeof item === 'object' && item.id && item.type && item.title
+                    );
 
 
-                        itemsArray.forEach(item => {
+                    if (validItems.length > 0) {
+                        // Sort items if desired (e.g., by title)
+                        validItems.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+
+                        validItems.forEach(item => {
                             const itemLink = document.createElement('a');
                             let href = '#'; // Default fallback
                             let titleText = item.title || 'פריט לא ידוע';
@@ -272,27 +278,35 @@
 
                             // Construct the correct URL and subtitle based on item type
                             if (item.type === 'movie') {
-                                 // Link to movie page, add timestamp hash if available (even if it's 0)
-                                href = `{{ url_for('movie_details', imdb_id='') }}${item.id}#timestamp=${item.timestamp || 0}`;
-                                subtitleText = 'סרט';
-                            } else if (item.type === 'series' && item.season && item.episode) {
-                                 // Link to series page with season/episode, add timestamp hash
-                                href = `{{ url_for('series_details', imdb_id='', season_number=0, episode_number=0) }}`
-                                     .replace('/0/0', `/${item.season}/${item.episode}`) // Replace placeholders
-                                     + `#timestamp=${item.timestamp || 0}`;
-                                subtitleText = `עונה ${item.season}, פרק ${item.episode}`;
-                                // For series, maybe show episode title if available, or main series title + episode info
-                                if (item.episode_title) {
-                                    titleText = item.episode_title; // Show episode title
-                                    subtitleText = `${item.title || 'סדרה לא ידועה'} - עונה ${item.season}, פרק ${item.episode}`; // Show series title + episode info below
-                                } else {
-                                     // If no episode title, show series title and episode info
-                                    titleText = item.title || 'סדרה לא ידועה';
-                                    subtitleText = `עונה ${item.season}, פרק ${item.episode}`;
-                                }
+                                 // Use the movie base URL and replace the placeholder
+                                 href = movieDetailsBaseUrl.replace('__IMDB_ID__', item.id);
+                                 // Add timestamp hash if available (even if it's 0)
+                                 if (item.timestamp && item.timestamp > 0) {
+                                     href += `#timestamp=${item.timestamp}`;
+                                 } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
+                                      href += `#timestamp=0`;
+                                 }
+                                 subtitleText = 'סרט';
+                            } else if (item.type === 'series' && item.id && item.latest_season && item.latest_episode) {
+                                 // Use the series base URL and replace placeholders
+                                 href = seriesDetailsBaseUrl
+                                    .replace('__IMDB_ID__', item.id)
+                                    .replace('__SEASON__', item.latest_season)
+                                    .replace('__EPISODE__', item.latest_episode);
+
+                                 // Add timestamp hash if available (even if it's 0)
+                                 if (item.timestamp && item.timestamp > 0) {
+                                     href += `#timestamp=${item.timestamp}`;
+                                 } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
+                                     href += `#timestamp=0`;
+                                 }
+
+                                 // Display series title as main title and latest episode info as subtitle
+                                 titleText = item.title || 'סדרה לא ידועה';
+                                 subtitleText = `עונה ${item.latest_season}, פרק ${item.latest_episode}`;
 
                             } else {
-                                 console.warn("Skipping invalid item in continue watching:", item);
+                                 console.warn("Skipping invalid or incomplete item in continue watching:", item);
                                  return; // Skip this item
                             }
 
@@ -300,8 +314,13 @@
                             itemLink.classList.add('item-card-link');
                              // Use a different class for CW items if needed for styling/selection
                              itemLink.classList.add('continue-watching-item');
+                             // Add data attributes for filtering if needed, but not strictly necessary for CW items
+                             // itemLink.dataset.id = item.id;
+                             // itemLink.dataset.type = item.type;
+                             // itemLink.dataset.title = titleText.toLowerCase();
 
-                            // Create the item card structure
+
+                            // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
                             itemCard.classList.add('item-card');
                             itemCard.setAttribute('tabindex', '0'); // Make it focusable
@@ -349,25 +368,40 @@
                                   e.preventDefault();
                                   e.stopPropagation(); // Prevent link click
 
-                                   // Get the unique key for this item
-                                   let itemKey = null;
-                                   if (item.type === 'movie') {
-                                       itemKey = `movie_${item.id}`;
-                                   } else if (item.type === 'series' && item.season && item.episode) {
-                                       itemKey = `series_${item.id}_S${item.season}E${item.episode}`;
+                                   // Get the unique key for this item.
+                                   // Movie key: movie_imdbID
+                                   // Series key: series_imdbID
+                                   let itemKeyToRemove = null;
+                                   if (item.id && item.type) { // Ensure item has ID and type
+                                       itemKeyToRemove = `${item.type}_${item.id}`;
                                    }
 
-                                  if (itemKey && continueWatchingItems[itemKey]) {
-                                       delete continueWatchingItems[itemKey]; // Remove from the object
-                                       localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems)); // Save back to localStorage
-                                       itemLink.remove(); // Remove the item's link element from the DOM
-                                       console.log(`Removed item ${itemKey} from continue watching.`);
 
-                                       // If the last item was removed, hide the section
-                                       if (Object.keys(continueWatchingItems).length === 0) {
-                                           continueWatchingSection.style.display = 'none';
-                                            noContinueWatchingMessage.style.display = 'block'; // Show empty message
+                                  if (itemKeyToRemove && continueWatchingItems[itemKeyToRemove]) {
+                                       delete continueWatchingItems[itemKeyToRemove]; // Remove from the object
+                                       try {
+                                            localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems)); // Save back to localStorage
+                                            itemLink.remove(); // Remove the item's link element from the DOM
+                                            console.log(`Removed item ${itemKeyToRemove} from continue watching.`);
+
+                                            // If the last item was removed, hide the section
+                                            // Re-filter valid items to check if the section should still be visible
+                                            const remainingValidItems = Object.values(continueWatchingItems).filter(item =>
+                                                item && typeof item === 'object' && item.id && item.type && item.title
+                                            );
+
+                                            if (remainingValidItems.length === 0) {
+                                                continueWatchingSection.style.display = 'none';
+                                                 // Decide if you want to show the "אין פריטים ברשימת 'המשך צפייה'." message
+                                                 noContinueWatchingMessage.style.display = 'block';
+                                            }
+
+
+                                       } catch (e) {
+                                            console.error("Error saving continue watching data after removing item:", e);
                                        }
+                                  } else {
+                                      console.warn("Could not find item key to remove from continue watching.", item);
                                   }
                               });
                              actionsDiv.appendChild(removeButton);
@@ -377,7 +411,10 @@
                             imageContainer.appendChild(img);
                              overlay.appendChild(playButton); // Add play button to overlay
                             overlay.appendChild(titleElement);
-                             overlay.appendChild(subtitleElement); // Add subtitle to overlay
+                             // Append subtitle only if it has content
+                             if (subtitleText) {
+                                overlay.appendChild(subtitleElement); // Add subtitle to overlay
+                             }
                             overlay.appendChild(actionsDiv); // Add actions to overlay
                             imageContainer.appendChild(overlay); // Overlay goes inside image container
                             itemCard.appendChild(imageContainer); // Image container goes inside card
@@ -389,36 +426,37 @@
                             continueWatchingRow.appendChild(itemLink);
                         });
 
-                        // Show the continue watching section if there are items
-                        if (itemsArray.length > 0) {
+                        // Show the continue watching section if there are valid items
+                        if (validItems.length > 0) {
                              continueWatchingSection.style.display = 'block';
                               noContinueWatchingMessage.style.display = 'none'; // Hide empty message
                         } else {
-                             continueWatchingSection.style.display = 'block'; // Show the section title even if empty? User asked not to show unless *has content*. Let's hide section entirely if empty.
-                              continueWatchingSection.style.display = 'none';
-                              // Or show the empty message? Let's show the section but with an empty message if no items after load/sort
-                              // continueWatchingSection.style.display = 'block'; // Show the section title
-                              // noContinueWatchingMessage.style.display = 'block'; // Show empty message inside the section
-                               console.log("Continue Watching list is empty.");
+                             // If no valid items found after filtering, hide the section
+                             continueWatchingSection.style.display = 'none';
+                             noContinueWatchingMessage.style.display = 'block';
+                             console.log("No valid continue watching items found after filtering.");
                         }
 
 
                     } else {
-                        console.log("No continue watching data found for this user.");
+                        console.log("No continue watching data found for this user or all items invalid.");
                          // Hide the section if no data
                          continueWatchingSection.style.display = 'none';
+                         noContinueWatchingMessage.style.display = 'block'; // Show empty message
                     }
 
                 } catch (e) {
                     console.error("Error loading or displaying continue watching data:", e);
                     // Hide the section on error
                     continueWatchingSection.style.display = 'none';
+                    noContinueWatchingMessage.style.display = 'block'; // Show empty message on error
                 }
 
             } else {
                 console.log("User not logged in. Continue Watching hidden.");
-                 // Hide the section if user is not logged in
+                 // Hide the section if user is not logged in and hide the empty message
                  continueWatchingSection.style.display = 'none';
+                 noContinueWatchingMessage.style.display = 'none';
             }
 
 
