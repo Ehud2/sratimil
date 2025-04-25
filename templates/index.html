@@ -529,7 +529,7 @@
                                 overlay.appendChild(subtitleElement);
                              }
                             overlay.appendChild(actionsDiv);
-                            imageContainer.appendChild(overlay);
+                            imageContainer.appendChild(imageContainer);
                             itemCard.appendChild(imageContainer);
                             itemLink.appendChild(itemCard);
                             continueWatchingRow.appendChild(itemLink);
@@ -571,18 +571,17 @@
         // --- YouTube Trailer Functionality (Client-Side) ---
 
         let player; // YouTube player instance
-        let availableTrailerMovies = []; // List of movies with potential trailers
+        let availableTrailerMovies = []; // List of movies with potential trailers (IMDb IDs only needed here)
         let currentTrailerIndex = 0; // Index in the shuffled list
         let isPlayerReady = false; // Flag to ensure player is ready before calling methods
-        let currentTrailerItem = null; // Store details of the currently playing trailer item
+        let currentTrailerItem = null; // Store details of the currently playing trailer item { imdbID, title }
 
 
         // This function is called automatically by the YouTube Iframe API when it's loaded
         function onYouTubeIframeAPIReady() {
             console.log("YouTube Iframe API is ready.");
             isPlayerReady = true;
-             // DOMContentLoaded might have already fired. Let's call initializeTrailerPlayer
-             // here directly. We need the movies list from the template anyway.
+             // Initialize trailer player setup
              initializeTrailerPlayer();
         }
 
@@ -592,12 +591,12 @@
             // This variable is available because Flask renders it directly into the template
             const allMovies = {{ all_movies_list | tojson }};
 
-             // Filter for movies that have an IMDb ID (and potentially a poster)
+             // Filter for movies that have a valid IMDb ID (and are type movie)
+             // We only need the IMDb ID for the frontend list, we'll fetch details via API
              availableTrailerMovies = allMovies.filter(movie =>
                  movie.imdbID && movie.imdbID.startsWith('tt') && movie.imdbID.length >= 7 &&
-                 movie.type === 'movie' // Ensure it's actually a movie
-                 // We don't strictly need the poster here, but imdbID is essential
-             );
+                 movie.type === 'movie'
+             ).map(movie => ({ imdbID: movie.imdbID, title: movie.title || 'סרט ללא כותרת' })); // Store just ID and title
 
             console.log(`Found ${availableTrailerMovies.length} potential movies for trailers.`);
 
@@ -605,25 +604,29 @@
                  availableTrailerMovies = shuffleArray(availableTrailerMovies);
                  currentTrailerIndex = 0; // Start at the beginning of the shuffled list
 
-                 // Show the trailer section container
-                 document.getElementById('trailerSection').style.display = 'flex'; // Use flex as per CSS
-                 document.getElementById('trailerError').style.display = 'none';
+                 // Show the trailer section container (CSS handles display: flex)
+                 document.getElementById('trailerSection').style.display = '';
+
 
                  // Load the first trailer
                  loadAndPlayTrailer(availableTrailerMovies[currentTrailerIndex].imdbID);
 
                  // Add event listeners for navigation and mute buttons only once
                  // Check if listeners are already added to prevent duplicates on hot reload in debug
-                 if (!document.getElementById('nextTrailerButton').dataset.listenerAttached) {
+                 // Added null check for elements in case of unexpected DOM issues
+                 if (document.getElementById('nextTrailerButton') && !document.getElementById('nextTrailerButton').dataset.listenerAttached) {
                      document.getElementById('nextTrailerButton').addEventListener('click', loadNextTrailer);
                      document.getElementById('nextTrailerButton').dataset.listenerAttached = 'true'; // Mark as attached
-
+                 }
+                  if (document.getElementById('prevTrailerButton') && !document.getElementById('prevTrailerButton').dataset.listenerAttached) {
                      document.getElementById('prevTrailerButton').addEventListener('click', loadPreviousTrailer);
                       document.getElementById('prevTrailerButton').dataset.listenerAttached = 'true'; // Mark as attached
-
+                 }
+                 if (document.getElementById('muteToggleButton') && !document.getElementById('muteToggleButton').dataset.listenerAttached) {
                       document.getElementById('muteToggleButton').addEventListener('click', toggleMute);
                       document.getElementById('muteToggleButton').dataset.listenerAttached = 'true'; // Mark as attached
-
+                 }
+                 if (document.getElementById('retryNextTrailer') && !document.getElementById('retryNextTrailer').dataset.listenerAttached) {
                       document.getElementById('retryNextTrailer').addEventListener('click', loadNextTrailer);
                        document.getElementById('retryNextTrailer').dataset.listenerAttached = 'true'; // Mark as attached
                  }
@@ -675,35 +678,46 @@
              document.getElementById('trailerError').style.display = 'none'; // Hide error message
              document.getElementById('youtubePlayer').style.display = 'block'; // Show player container
 
-             // Find the movie details locally first (for title/link while API is loading)
+             // Find the movie details locally first (for temporary title/link)
              const movie = availableTrailerMovies.find(m => m.imdbID === imdbId);
              if (movie) {
                  document.getElementById('trailerTitle').textContent = movie.title || 'סרט ללא כותרת';
-                 // Update the Open button link temporarily
-                 document.getElementById('openMovieButton').href = `${movieDetailsBaseUrl}${movie.imdbID}`;
              } else {
                   document.getElementById('trailerTitle').textContent = 'סרט לא ידוע';
-                   document.getElementById('openMovieButton').href = '#'; // Clear link if movie not found locally
                   console.warn(`Movie data not found locally for IMDb ID: ${imdbId}. Using API response for details.`);
              }
 
-              // Store the requested IMDb ID in currentTrailerItem even before API response
-              // This ensures the Open button link is correct even if the API fails to return details
-              currentTrailerItem = { imdbID: imdbId, type: 'movie', title: document.getElementById('trailerTitle').textContent };
-              // Update the Open button href again based on the ID we know we're requesting
+              // Store the requested IMDb ID in currentTrailerItem
+              currentTrailerItem = { imdbID: imdbId, title: document.getElementById('trailerTitle').textContent, type: 'movie' };
+              // Update the Open button href based on the ID we know we're requesting
               document.getElementById('openMovieButton').href = `${movieDetailsBaseUrl}${imdbId}`;
 
 
              // Call backend API to get the trailer URL and fresh details
              try {
-                 const response = await fetch(`{{ url_for('api_get_trailer', imdb_id='') }}${imdbId}`);
+                 // Use the Flask url_for helper to get the API endpoint URL
+                 const apiUrl = `{{ url_for('api_get_trailer', imdb_id='') }}${imdbId}`;
+                 const response = await fetch(apiUrl);
                  const data = await response.json();
 
                  if (response.ok && data.trailer_url) {
                      const youtubeId = getYouTubeVideoId(data.trailer_url);
 
                      if (youtubeId) {
-                         console.log(`Playing YouTube ID: ${youtubeId} for ${imdbId}`);
+                         console.log(`Playing YouTube ID: ${youtubeId} for ${data.imdb_id || imdbId}`);
+
+                         // Store the currently playing movie data using potentially fresher data from API
+                         currentTrailerItem = {
+                              imdbID: data.imdb_id || imdbId,
+                              type: 'movie',
+                              title: data.title || 'כותרת לא ידועה',
+                              // poster: data.poster // Poster not strictly needed for trailer item state
+                         };
+
+                         // Update title element and Open button based on API response
+                         document.getElementById('trailerTitle').textContent = currentTrailerItem.title;
+                         document.getElementById('openMovieButton').href = `${movieDetailsBaseUrl}${currentTrailerItem.imdbID}`;
+
 
                          // If player doesn't exist, create it
                          if (!player) {
@@ -744,17 +758,6 @@
                              document.getElementById('youtubePlayer').style.display = 'block'; // Show player
                          }
 
-                         // Store the currently playing movie data using potentially fresher data from API
-                         currentTrailerItem = {
-                              imdbID: data.imdb_id || imdbId,
-                              type: 'movie',
-                              title: data.title || 'כותרת לא ידועה',
-                              // poster: data.poster // Poster not strictly needed for trailer item state
-                         };
-                         // Update title element and Open button based on API response
-                         document.getElementById('trailerTitle').textContent = currentTrailerItem.title;
-                         document.getElementById('openMovieButton').href = `${movieDetailsBaseUrl}${currentTrailerItem.imdbID}`;
-
 
                      } else {
                           console.error(`Could not extract YouTube ID from URL: ${data.trailer_url}`);
@@ -764,6 +767,7 @@
                      }
 
                  } else {
+                      // API returned error or no trailer_url
                       const errorMsg = data.error || 'טריילר לא נמצא';
                       console.warn(`API returned error for trailer ${imdbId}: ${errorMsg}`);
                       displayTrailerError(`שגיאה: ${errorMsg}.`);
@@ -781,6 +785,10 @@
 
         // Display an error message in the trailer section
         function displayTrailerError(message) {
+             // Ensure player is stopped and hidden on error
+             if (player && typeof player.stopVideo === 'function') {
+                 player.stopVideo();
+             }
              document.getElementById('youtubePlayer').style.display = 'none'; // Hide player
              document.getElementById('trailerTitle').textContent = 'שגיאת טריילר';
              // Update the Open button href to reflect the last attempted movie ID before error
@@ -798,7 +806,14 @@
                  // If the p element doesn't exist, add it
                  const p = document.createElement('p');
                  p.textContent = message;
-                 errorDiv.insertBefore(p, errorDiv.querySelector('#retryNextTrailer'));
+                 // Find the retry button and insert the message before it
+                 const retryButton = errorDiv.querySelector('#retryNextTrailer');
+                 if (retryButton) {
+                    errorDiv.insertBefore(p, retryButton);
+                 } else {
+                    // Fallback if button doesn't exist
+                     errorDiv.appendChild(p);
+                 }
              }
 
              errorDiv.style.display = 'flex'; // Use flex for layout
@@ -828,16 +843,17 @@
             } else if (event.data === YT.PlayerState.PLAYING) {
                  // Ensure mute button shows volume up when playing and not muted
                  const muteButton = document.getElementById('muteToggleButton');
-                 if (!player.isMuted()) {
+                 // Only update if the button is currently showing muted icon, avoids flickering
+                 if (!player.isMuted() && muteButton.innerHTML.includes('fa-volume-off')) {
                       muteButton.innerHTML = '<i class="fas fa-volume-up"></i>';
                  }
             } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.BUFFERING) {
                  // Ensure mute button reflects state when paused/buffering
                   const muteButton = document.getElementById('muteToggleButton');
-                 if (player.isMuted()) {
+                 if (player.isMuted() && muteButton.innerHTML.includes('fa-volume-up')) {
                      muteButton.innerHTML = '<i class="fas fa-volume-off"></i>';
-                 } else {
-                     muteButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+                 } else if (!player.isMuted() && muteButton.innerHTML.includes('fa-volume-off')) {
+                      muteButton.innerHTML = '<i class="fas fa-volume-up"></i>';
                  }
             }
         }
@@ -847,7 +863,7 @@
              let errorText = 'אירעה שגיאה בטריילר (קוד: ' + event.data + ').';
              switch(event.data) {
                  case 2:
-                     errorText = 'ID וידאו לא תקין או תוכן הוסר.'; // Updated error text
+                     errorText = 'ID וידאו לא תקין או תוכן הוסר.';
                      break;
                  case 5:
                      errorText = 'שגיאת HTML5 Player.';
@@ -870,30 +886,44 @@
         function loadNextTrailer() {
             if (availableTrailerMovies.length === 0) {
                  console.warn("No movies available for trailers. Cannot load next.");
-                 return; // Do nothing if no movies
+                 // Optionally hide the trailer section entirely here
+                 document.getElementById('trailerSection').style.display = 'none';
+                 return;
             }
 
             currentTrailerIndex = (currentTrailerIndex + 1) % availableTrailerMovies.length;
             console.log(`Loading next trailer (index: ${currentTrailerIndex})`);
-            // Stop the current video before loading the next one
+            // Stop the current video before loading the next one (helps prevent errors on rapid loading)
             if (player && typeof player.stopVideo === 'function') {
-                player.stopVideo(); // Stop playback immediately
+                try { player.stopVideo(); } catch (e) { console.warn("Error stopping video:", e); }
             }
+            // Clear current title and show loading state immediately
+            document.getElementById('trailerTitle').textContent = 'טוען טריילר...';
+            document.getElementById('openMovieButton').href = '#'; // Clear link while loading
+
+            // Load the trailer for the next movie in the shuffled list
             loadAndPlayTrailer(availableTrailerMovies[currentTrailerIndex].imdbID);
         }
 
         function loadPreviousTrailer() {
             if (availableTrailerMovies.length === 0) {
                 console.warn("No movies available for trailers. Cannot load previous.");
-                return; // Do nothing if no movies
+                 // Optionally hide the trailer section entirely here
+                 document.getElementById('trailerSection').style.display = 'none';
+                return;
             }
 
             currentTrailerIndex = (currentTrailerIndex - 1 + availableTrailerMovies.length) % availableTrailerMovies.length;
              console.log(`Loading previous trailer (index: ${currentTrailerIndex})`);
             // Stop the current video before loading the previous one
-            if (player && typeof player.stopVideo === 'function') {
-                player.stopVideo(); // Stop playback immediately
+             if (player && typeof player.stopVideo === 'function') {
+                try { player.stopVideo(); } catch (e) { console.warn("Error stopping video:", e); }
             }
+            // Clear current title and show loading state immediately
+            document.getElementById('trailerTitle').textContent = 'טוען טריילר...';
+             document.getElementById('openMovieButton').href = '#'; // Clear link while loading
+
+            // Load the trailer for the previous movie in the shuffled list
             loadAndPlayTrailer(availableTrailerMovies[currentTrailerIndex].imdbID);
         }
 
