@@ -607,9 +607,10 @@ def add_content():
                     return redirect(url_for('add_content'))
 
                 imdb_id_pattern = re.compile(r'^tt\d{7,}$')
-                if not imdb_id_pattern.match(imdb_id):
+                if not imdb_id_pattern.match(imdb_id): # Corrected variable name (was imdb_imdb_id in previous version)
                      flash('שגיאה: פורמט IMDb ID לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
+
 
                 # Fetch full details from OMDB server-side using the IMDb ID
                 omdb_details = get_omdb_details_api(imdb_id)
@@ -668,7 +669,7 @@ def add_content():
                      return redirect(url_for('add_content'))
 
                  imdb_id_pattern = re.compile(r'^tt\d{7,}$')
-                 if not imdb_imdb_id.match(series_imdb_id): # Corrected variable name
+                 if not imdb_id_pattern.match(series_imdb_id):
                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
 
@@ -694,7 +695,7 @@ def add_content():
                  series_data = {
                     'imdbID': omdb_details.get('imdbID', series_imdb_id),
                     'title': omdb_details.get('Title', 'Untitled Series'),
-                    'year': omdb_details.get('Year', 'N/A'),
+                    'year': omdb_details.get('Year', 'N/A'), # This might be a range (e.g., 2008–2013)
                     'rated': omdb_details.get('Rated', 'N/A'),
                     'released': omdb_details.get('Released', 'N/A'),
                     'runtime': omdb_details.get('Runtime', 'N/A'), # Runtime per episode/total? OMDB is inconsistent.
@@ -736,32 +737,36 @@ def add_content():
                          # Fetch episode details from OMDB using series ID, season, and episode numbers
                          episode_details = get_omdb_details_api(series_imdb_id, season=season_num, episode=episode_num)
 
+                         # Determine the episode's IMDb ID and Title to save
+                         episode_imdb_id_to_save = None
+                         episode_title_to_save = f'פרק {episode_num}' # Default title
+
                          if episode_details and episode_details.get('Response') == 'True':
                              # Use fetched details, provide placeholders if missing
-                             episode_imdb_id = episode_details.get('imdbID', f'tt_placeholder_{series_imdb_id}_s{season_num}e{episode_num}')
-                             episode_title = episode_details.get('Title', f'פרק {episode_num}')
-                             episodes_data[str(episode_num)] = { # Use episode number as the key
-                                 'episode_imdb_id': episode_imdb_id,
-                                 'title': episode_title,
+                             episode_imdb_id_to_save = episode_details.get('imdbID')
+                             episode_title_to_save = episode_details.get('Title', f'פרק {episode_num} (מ-OMDb)')
+                             logging.info(f"Fetched OMDB details for S{season_num}E{episode_num} ({series_imdb_id}). Title: '{episode_title_to_save}', Episode IMDb ID: {episode_imdb_id_to_save}")
+                         else:
+                             # If OMDB fails for an episode, log a warning, add a placeholder, and mark failure
+                             logging.warning(f"Failed to fetch OMDB details for S{season_num}E{episode_num} ({series_imdb_id}). OMDB error: {episode_details.get('Error', 'Unknown Error')}. Adding placeholder.")
+                             # Use placeholder ID if OMDB fails to provide one
+                             episode_imdb_id_to_save = f'tt_placeholder_{series_imdb_id}_s{season_num}e{episode_num}'
+                             all_episodes_added = False # Mark that not all episodes were added with full OMDB data
+
+                         # Ensure we have at least a placeholder ID
+                         if not episode_imdb_id_to_save:
+                             episode_imdb_id_to_save = f'tt_fallback_{series_imdb_id}_s{season_num}e{episode_num}'
+                             logging.warning(f"No episode IMDb ID available from OMDB or placeholder logic. Using fallback placeholder: {episode_imdb_id_to_save}")
+
+
+                         episodes_data[str(episode_num)] = { # Use episode number as the key
+                                 'episode_imdb_id': episode_imdb_id_to_save,
+                                 'title': episode_title_to_save,
                                  'season_number': season_num,
                                  'episode_number': episode_num,
                                  'video_url': '' # Placeholder: Video URL must be added separately per episode
                                  # Add other episode details if available from OMDB, e.g., Released, Plot, imdbRating etc.
-                                 # Be cautious as OMDB episode details might be less complete than series details.
-                                 # Let's keep it minimal for now as per request.
                              }
-                             logging.info(f"Fetched OMDB details for S{season_num}E{episode_num} ({series_imdb_id}). Title: '{episode_title}', Episode IMDb ID: {episode_imdb_id}")
-                         else:
-                             # If OMDB fails for an episode, log a warning, add a placeholder, and mark failure
-                             logging.warning(f"Failed to fetch OMDB details for S{season_num}E{episode_num} ({series_imdb_id}). OMDB error: {episode_details.get('Error', 'Unknown Error')}. Adding placeholder.")
-                             episodes_data[str(episode_num)] = {
-                                 'episode_imdb_id': f'tt_placeholder_{series_imdb_id}_s{season_num}e{episode_num}', # Placeholder ID
-                                 'title': f'פרק {episode_num} (לא נמצא שם ב-OMDb)',
-                                 'season_number': season_num,
-                                 'episode_number': episode_num,
-                                 'video_url': ''
-                             }
-                             all_episodes_added = False # Mark that not all episodes were added with full OMDB data
 
 
                      if episodes_data: # Only add season node if it has episodes
@@ -794,7 +799,6 @@ def add_content():
                  # Get form data for episode
                  series_imdb_id_select = request.form.get('episode_series_id')
                  manual_series_imdb_id = request.form.get('manual_episode_series_id', '').strip()
-                 # episode_imdb_id = request.form.get('episode_imdb_id', '').strip() # REMOVED INPUT
                  episode_title_form = request.form.get('episode_title', '').strip() # Get title from form (user override)
                  season_number_str = request.form.get('episode_season', '').strip()
                  episode_number_str = request.form.get('episode_number', '').strip()
@@ -804,14 +808,12 @@ def add_content():
                  series_imdb_id = manual_series_imdb_id if series_imdb_id_select == 'manual' else series_imdb_id_select
 
                  # Validate required fields for episode (excluding episode_imdb_id and video_url)
-                 if not series_imdb_id or not episode_title_form or not season_number_str or not episode_number_str:
+                 # Title is now optional from form, but we need season, episode, and series ID
+                 if not series_imdb_id or not season_number_str or not episode_number_str:
                       missing = []
                       if not series_imdb_id: missing.append('סדרה')
-                      # Removed episode IMDb ID missing field check
-                      if not episode_title_form: missing.append('כותרת פרק')
                       if not season_number_str: missing.append('מספר עונה')
                       if not episode_number_str: missing.append('מספר פרק')
-                      # Removed video URL missing field check
                       flash(f'שגיאה: שדות חובה חסרים: {", ".join(missing)}.', 'error')
                       return redirect(url_for('add_content'))
 
@@ -836,7 +838,7 @@ def add_content():
 
                  # Determine the episode's IMDb ID and Title to save
                  episode_imdb_id_to_save = None
-                 episode_title_to_save = episode_title_form # Use form title by default
+                 episode_title_to_save = episode_title_form # Use form title if provided
 
                  if episode_details_from_omdb and episode_details_from_omdb.get('Response') == 'True':
                       episode_imdb_id_to_save = episode_details_from_omdb.get('imdbID')
@@ -846,14 +848,17 @@ def add_content():
                       logging.info(f"Fetched OMDB details for episode {series_imdb_id} S{season_number}E{episode_number}. Episode IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_details_from_omdb.get('Title')}'")
                  else:
                      logging.warning(f"Failed to fetch OMDB details for episode {series_imdb_id} S{season_number}E{episode_number}. OMDB Error: {episode_details_from_omdb.get('Error', 'Unknown Error')}. Proceeding with form data and placeholder ID.")
-                     episode_imdb_id_to_save = f'tt_placeholder_{series_imdb_id}_s{season_number}e{episode_number}' # Use placeholder ID if OMDB fails
-
-
-                 # Ensure we have at least a placeholder ID
-                 if not episode_imdb_id_to_save:
+                     # Use placeholder ID if OMDB fails to provide one
                      episode_imdb_id_to_save = f'tt_placeholder_{series_imdb_id}_s{season_number}e{episode_number}'
-                     logging.warning(f"No episode IMDb ID available from OMDB or placeholder logic. Using fallback placeholder: {episode_imdb_id_to_save}")
+                     # If OMDB fetch failed and user didn't provide a title, use a generic placeholder title
+                     if not episode_title_form:
+                         episode_title_to_save = f'פרק {episode_number} (לא נמצא שם ב-OMDb)'
 
+
+                 # Ensure we have at least a placeholder ID even if OMDB fetch failed AND fallback placeholder logic had an issue (highly unlikely)
+                 if not episode_imdb_id_to_save:
+                     episode_imdb_id_to_save = f'tt_fallback_{series_imdb_id}_s{season_number}e{episode_number}'
+                     logging.error(f"Critical: No episode IMDb ID could be determined for {series_imdb_id} S{season_number}E{episode_number}. Using double-fallback placeholder.")
 
                  # Construct episode data (without video_url from form, but setting it to empty)
                  episode_data = {
@@ -893,7 +898,7 @@ def add_content():
                            categories=[c for c in CATEGORIES if c != 'ללא'], # Categories excluding 'ללא' for movie/series dropdown
                            available_series=available_series,
                            current_year=datetime.datetime.utcnow().year,
-                           admin_emails=ADMIN_EMAELS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
 
@@ -977,12 +982,25 @@ if __name__ == '__main__':
     # Also check if initialization actually succeeded before running
     if firebase_admin._apps:
         # Check if Firebase creds were successfully loaded
-        if firebase_admin._apps['[DEFAULT]'].options.get('credential') is not None:
-            port = int(os.environ.get('PORT', 5000))
-            # debug=True should only be used in development
-            app.run(host='0.0.0.0', port=port, debug=True)
-        else:
-            logging.error("Application not started because Firebase initialization failed due to missing credentials.")
+        # This check firebase_admin._apps['[DEFAULT]'].options.get('credential') is more robust
+        # than just checking if firebase_admin._apps is not empty, as initialization might
+        # have failed without raising an immediate exception if cred was None.
+        try:
+            # Attempt to access the default app's options. This will raise an exception if not initialized correctly.
+             default_app_creds = firebase_admin._apps['[DEFAULT]'].options.get('credential')
+             if default_app_creds is not None:
+                logging.info("Firebase default app credential check passed.")
+                port = int(os.environ.get('PORT', 5000))
+                # debug=True should only be used in development
+                app.run(host='0.0.0.0', port=port, debug=True)
+             else:
+                 logging.error("Application not started: Firebase default app credential is None.")
+        except KeyError:
+            # If firebase_admin._apps['[DEFAULT]'] doesn't exist, it wasn't initialized correctly.
+            logging.error("Application not started: Firebase default app was not initialized.")
+        except Exception as e:
+             logging.error(f"Application not started: Unexpected error during Firebase check: {e}", exc_info=True)
+
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
