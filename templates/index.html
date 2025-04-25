@@ -20,8 +20,7 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                {# Replacing the base64 string with the requested placeholder #}
-                <img src="imageurlhere" alt="Default profile picture"> {# REPLACED BASE64 HERE #}
+                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
             {% endif %}
         </div>
         <p>טוען סינמה פריים...</p>
@@ -52,7 +51,7 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# This is a Flask url_for, not the long base64 link. Keeping it as is. #}
+                         {# Reverting to a default placeholder image URL that exists #}
                          <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
@@ -76,37 +75,10 @@
     {% endwith %}
 
     <main class="container main-content">
-        <div class="top-section-grid">
-            <div class="page-greeting">
-                <h1>{{ greeting }}!</h1>
-                <p>מה נראה היום?</p>
-            </div>
-
-             {# --- Trailer Section --- #}
-             <section id="trailerSection" class="trailer-section" style="display: none;"> {# Hide initially #}
-                 <div class="trailer-player-container">
-                      {# YouTube player iframe will be embedded here by JS #}
-                      <div id="trailerPlayer"></div>
-                      <div class="trailer-overlay">
-                           <div class="trailer-controls top-controls">
-                                <button id="trailerMuteButton" class="trailer-control-button" aria-label="Mute trailer"><i class="fas fa-volume-up"></i></button>
-                                <div class="trailer-navigation">
-                                     <button id="trailerPrevButton" class="trailer-control-button" aria-label="Previous trailer"><i class="fas fa-chevron-left"></i></button>
-                                     <span id="trailerTitle" class="trailer-title">טוען טריילר...</span>
-                                     <button id="trailerNextButton" class="trailer-control-button" aria-label="Next trailer"><i class="fas fa-chevron-right"></i></button>
-                                </div>
-                                <a id="openMovieButton" class="open-movie-button" href="#" target="_blank" style="display: none;">פתח <i class="fas fa-external-link-alt"></i></a> {# Hide until URL is set #}
-                           </div>
-                           {# Progress bar overlay (covers default YT bar) #}
-                           <div class="trailer-progress-overlay"></div>
-                      </div>
-                 </div>
-                  <div id="noTrailersMessage" style="display: none; color: #aaa; text-align: center; padding: 20px;">אין טריילרים זמינים כעת.</div>
-             </section>
-
-
-        </div> {# End top-section-grid #}
-
+        <div class="page-greeting">
+            <h1>{{ greeting }}!</h1>
+            <p>מה נראה היום?</p>
+        </div>
 
         {# The "Continue Watching" section will be added here by JavaScript if applicable #}
         <section id="continueWatchingSection" class="category-section" style="display: none;">
@@ -165,9 +137,6 @@
         </div>
     </footer>
 
-     {# Load the YouTube Iframe Player API #}
-     <script src="https://www.youtube.com/iframe_api"></script>
-
     <script>
         // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -210,8 +179,8 @@
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
-                    // Select only the items within the main categories, not Continue Watching or Trailer
-                    const itemCardLinks = document.querySelectorAll('.category-section:not(#continueWatchingSection):not(#trailerSection) .item-card-link.catalog-item'); // Target catalog items
+                    // Select only the items within the main categories, not Continue Watching
+                    const itemCardLinks = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Target catalog items
                     let anyVisible = false;
                     itemCardLinks.forEach(link => {
                          // Use data-title directly from the link
@@ -409,11 +378,7 @@
                              overlay.appendChild(playButton); // Add play button to overlay
                             overlay.appendChild(titleElement);
                              overlay.appendChild(subtitleElement); // Add subtitle to overlay
-                            overlay.appendChild(actionsDiv); # Add actions to overlay # This looks like a typo/leftover from copy-paste, should be part of the overlay
-                            // Corrected structure:
-                            overlay.appendChild(actionsDiv);
-
-
+                            overlay.appendChild(actionsDiv); // Add actions to overlay
                             imageContainer.appendChild(overlay); // Overlay goes inside image container
                             itemCard.appendChild(imageContainer); // Image container goes inside card
 
@@ -425,12 +390,16 @@
                         });
 
                         // Show the continue watching section if there are items
-                        if (Object.keys(continueWatchingItems).length > 0) { // Check the object directly
+                        if (itemsArray.length > 0) {
                              continueWatchingSection.style.display = 'block';
                               noContinueWatchingMessage.style.display = 'none'; // Hide empty message
                         } else {
-                              continueWatchingSection.style.display = 'none'; // Hide section if no items after processing
-                              console.log("Continue Watching list is empty.");
+                             continueWatchingSection.style.display = 'block'; // Show the section title even if empty? User asked not to show unless *has content*. Let's hide section entirely if empty.
+                              continueWatchingSection.style.display = 'none';
+                              // Or show the empty message? Let's show the section but with an empty message if no items after load/sort
+                              // continueWatchingSection.style.display = 'block'; // Show the section title
+                              // noContinueWatchingMessage.style.display = 'block'; // Show empty message inside the section
+                               console.log("Continue Watching list is empty.");
                         }
 
 
@@ -453,253 +422,7 @@
             }
 
 
-        }); // End DOMContentLoaded for spinner, search, continue watching
-
-
-        // --- Trailer Player Functionality (Client-Side) ---
-
-        let player; // Global YouTube player object
-        let movieImdbIds = []; // Array of movie IMDb IDs fetched from the backend
-        let shuffledMovieImdbIds = []; // Shuffled list for random playback
-        let currentTrailerIndex = 0; // Index in the shuffled list
-        let isMuted = false; // Track mute state
-
-        // This function is called by the YouTube API script when it's ready
-        function onYouTubeIframeAPIReady() {
-            console.log("YouTube Iframe API is ready.");
-            fetchMovieImdbIds(); // Start the process by fetching movie IDs
-        }
-
-        // Fetch movie IMDb IDs from the backend API
-        async function fetchMovieImdbIds() {
-            try {
-                const response = await fetch('{{ url_for('api_movie_imdb_ids') }}');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const ids = await response.json();
-                if (Array.isArray(ids) && ids.length > 0) {
-                     movieImdbIds = ids; // Store the original list
-                     shuffledMovieImdbIds = shuffleArray([...movieImdbIds]); // Shuffle a copy
-                     currentTrailerIndex = 0; // Start at the beginning of the shuffled list
-                     console.log(`Fetched ${movieImdbIds.length} movie IDs. Shuffled list created.`);
-
-                     // Show the trailer section and load the first trailer
-                     document.getElementById('trailerSection').style.display = 'block';
-                     document.getElementById('noTrailersMessage').style.display = 'none';
-
-                     createPlayer(); // Initialize the YouTube player
-                } else {
-                    console.warn("No movie IMDb IDs returned from backend or list is empty.");
-                     // Show the no trailers message
-                     document.getElementById('trailerSection').style.display = 'block'; // Show the section wrapper
-                     document.getElementById('noTrailersMessage').style.display = 'block'; // Show the message inside
-                }
-            } catch (error) {
-                console.error("Error fetching movie IMDb IDs:", error);
-                 // Show the no trailers message on error
-                 document.getElementById('trailerSection').style.display = 'block'; // Show the section wrapper
-                 document.getElementById('noTrailersMessage').style.display = 'block'; // Show the message inside
-            }
-        }
-
-        // Shuffle array function (Fisher-Yates Shuffle)
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
-            }
-            return array;
-        }
-
-        // Create the YouTube player
-        function createPlayer() {
-            if (!shuffledMovieImdbIds || shuffledMovieImdbIds.length === 0) {
-                console.warn("Cannot create player: No shuffled movie IDs available.");
-                return;
-            }
-
-            player = new YT.Player('trailerPlayer', {
-                height: '100%', // Will be controlled by CSS/parent container
-                width: '100%',  // Will be controlled by CSS/parent container
-                videoId: '', // Start with empty video ID
-                playerVars: {
-                    'autoplay': 1, // Auto-play the video
-                    'controls': 0, // Hide player controls
-                    'disablekb': 1, // Disable keyboard controls
-                    'fs': 0, // Hide fullscreen button
-                    'modestbranding': 1, // Hide YouTube logo
-                    'rel': 0, // Do not show related videos at the end
-                    'showinfo': 0, // Hide video title and uploader info
-                    'iv_load_policy': 3, // Hide video annotations
-                    'loop': 0, // Do not loop the video (handle next in onStateChange)
-                    'enablejsapi': 1, // Enable JS API control
-                    'origin': window.location.origin // Required for JS API security
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange,
-                    'onError': onPlayerError
-                }
-            });
-        }
-
-        // Player ready event handler
-        function onPlayerReady(event) {
-            console.log("YouTube Player is ready.");
-            // Load the first trailer from the shuffled list
-            loadCurrentTrailer();
-
-            // Add event listeners for controls after player is ready
-            document.getElementById('trailerMuteButton').addEventListener('click', toggleMute);
-            document.getElementById('trailerNextButton').addEventListener('click', loadNextTrailer);
-            document.getElementById('trailerPrevButton').addEventListener('click', loadPreviousTrailer);
-            // Open button link is set dynamically in loadTrailer
-        }
-
-        // Player state change event handler
-        function onPlayerStateChange(event) {
-            console.log("Player state changed:", event.data);
-            if (event.data === YT.PlayerState.ENDED) {
-                console.log("Trailer ended. Loading next.");
-                loadNextTrailer(); // Load the next trailer automatically
-            } else if (event.data === YT.PlayerState.PLAYING) {
-                 // Ensure the video is unmuted when playing, unless explicitly muted by the user
-                 if (!isMuted) {
-                     event.target.unMute();
-                 }
-                 // Start from 3 seconds if it's the initial load (or a manual load)
-                 // This needs careful handling so it doesn't seek on pause/resume
-                 // The 'start' parameter in playerVars handles the initial load seek.
-                 // If loading a *new* video after the first, loadVideoById should be used with start parameter.
-                 // Check current time and seek if needed (e.g., if state changes from CUE to PLAYING)
-                 if (event.target.getCurrentTime() < 3) {
-                      console.log("Seeking to 3 seconds...");
-                      event.target.seekTo(3, true); // Seek to 3 seconds, allow seeking ahead
-                 }
-
-            } else if (event.data === YT.PlayerState.PAUSED) {
-                 // Handle pause if needed (though UI doesn't have pause button)
-            } else if (event.data === YT.PlayerState.BUFFERING) {
-                 // Handle buffering if needed
-            } else if (event.data === YT.PlayerState.CUED) {
-                 // Handle cued state if needed
-            }
-        }
-
-        // Player error event handler
-        function onPlayerError(event) {
-            console.error("YouTube Player error:", event.data);
-            // On error, try loading the next trailer
-            console.warn("Error playing current trailer. Attempting to load next.");
-            loadNextTrailer();
-        }
-
-        // Load the trailer for the current index
-        async function loadCurrentTrailer() {
-            if (!shuffledMovieImdbIds || shuffledMovieImdbIds.length === 0) {
-                console.warn("No movie IDs to load trailer from.");
-                // Optionally hide the trailer section here if it wasn't already
-                document.getElementById('trailerSection').style.display = 'block'; // Show wrapper
-                document.getElementById('noTrailersMessage').style.display = 'block'; // Show message
-                document.getElementById('openMovieButton').style.display = 'none'; // Hide open button
-                document.getElementById('trailerTitle').textContent = 'אין טריילרים זמינים כעת.';
-                return;
-            }
-
-            const currentImdbId = shuffledMovieImdbIds[currentTrailerIndex];
-            console.log(`Loading trailer for IMDb ID: ${currentImdbId} (Index: ${currentTrailerIndex})`);
-
-            // Update UI placeholders while fetching
-            document.getElementById('trailerTitle').textContent = 'טוען טריילר...';
-            document.getElementById('openMovieButton').style.display = 'none'; // Hide open button while loading
-
-            try {
-                const response = await fetch(`/api/trailer_info/${currentImdbId}`);
-                if (!response.ok) {
-                     // If backend couldn't find movie or had API error, log and try next
-                     console.warn(`Failed to fetch trailer info for ${currentImdbId}. Status: ${response.status}`);
-                     loadNextTrailer(); // Try the next one
-                     return; // Stop processing for this ID
-                }
-                const trailerInfo = await response.json();
-
-                if (trailerInfo && trailerInfo.youtube_video_id) {
-                    console.log(`Found trailer for '${trailerInfo.title}': ${trailerInfo.youtube_video_id}`);
-
-                    // Load the video into the player, starting at 3 seconds
-                    // Use loadVideoById instead of cueVideoById to auto-play
-                    player.loadVideoById({
-                        videoId: trailerInfo.youtube_video_id,
-                        startSeconds: 3
-                    });
-
-                    // Update UI with actual title and movie link
-                    document.getElementById('trailerTitle').textContent = trailerInfo.title || 'טריילר';
-                    const openButton = document.getElementById('openMovieButton');
-                    openButton.href = trailerInfo.movie_url || '#'; // Set the link
-                    openButton.style.display = 'inline-block'; // Show the button
-
-                     // Ensure player is unmuted if not explicitly muted by user
-                     if (!isMuted && player.isMuted()) {
-                        player.unMute();
-                        updateMuteButtonIcon(); // Update icon to 'unmuted'
-                     }
-
-                } else {
-                    console.warn(`No YouTube video ID found in trailer info for IMDb ID: ${currentImdbId}. Error: ${trailerInfo.error || 'Unknown'}`);
-                    // No trailer found for this ID, load the next one
-                    loadNextTrailer();
-                }
-
-            } catch (error) {
-                console.error(`Error fetching or processing trailer info for ${currentImdbId}:`, error);
-                // On error, try loading the next trailer
-                loadNextTrailer();
-            }
-        }
-
-        // Load the next trailer in the shuffled list
-        function loadNextTrailer() {
-            if (!shuffledMovieImdbIds || shuffledMovieImdbIds.length === 0) return;
-
-            currentTrailerIndex = (currentTrailerIndex + 1) % shuffledMovieImdbIds.length; // Cycle through the list
-            console.log("Moving to next trailer index:", currentTrailerIndex);
-            loadCurrentTrailer();
-        }
-
-        // Load the previous trailer in the shuffled list
-        function loadPreviousTrailer() {
-             if (!shuffledMovieImdbIds || shuffledMovieImdbIds.length === 0) return;
-
-             currentTrailerIndex = (currentTrailerIndex - 1 + shuffledMovieImdbIds.length) % shuffledMovieImdbIds.length; // Cycle backward
-             console.log("Moving to previous trailer index:", currentTrailerIndex);
-             loadCurrentTrailer();
-        }
-
-        // Toggle mute state
-        function toggleMute() {
-            if (!player || typeof player.isMuted !== 'function') return;
-
-            if (player.isMuted()) {
-                player.unMute();
-                isMuted = false;
-            } else {
-                player.mute();
-                isMuted = true;
-            }
-            updateMuteButtonIcon();
-        }
-
-        // Update mute button icon based on mute state
-        function updateMuteButtonIcon() {
-            const muteButton = document.getElementById('trailerMuteButton');
-            if (muteButton) {
-                 muteButton.innerHTML = isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
-                 muteButton.setAttribute('aria-label', isMuted ? 'Unmute trailer' : 'Mute trailer');
-            }
-        }
-
+        }); // End DOMContentLoaded
 
         {# If you have a separate static/js/script.js, link it here AFTER this script block #}
         {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
