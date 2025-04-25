@@ -11,8 +11,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-     {# Include loading spinner styles IF you want a spinner on this page too #}
-     {# <style> /* Paste loading spinner CSS from style.css here if needed */ </style> #}
 
     {# CSS for the Vidsrc embed container and messages #}
     <style>
@@ -25,6 +23,7 @@
             display: flex; /* Use flexbox to center message */
             align-items: center;
             justify-content: center;
+            overflow: hidden; /* Hide potential iframe scrollbars */
         }
         .series-video-container iframe {
             position: absolute;
@@ -90,15 +89,19 @@
              text-align: center;
              color: #aaa;
         }
+         /* Style for the timestamp display (optional) */
+        #current-episode-timestamp {
+             margin-top: 10px;
+             text-align: center;
+             color: #ccc;
+             font-size: 14px;
+             display: none; /* Initially hidden */
+        }
+
 
     </style>
 </head>
 <body>
-    {# --- Loading Spinner (Optional on this page) --- #}
-    {# If you added a spinner HTML block in index.html, copy its structure here if needed #}
-    {# <div id="loading-spinner" class="loading-spinner-overlay"> ... </div> #}
-
-
     <header class="site-header">
         <div class="container header-content">
 
@@ -124,7 +127,7 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Placeholder replaced #}
+                         <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy"> {# Reverted to local image #}
                     </a>
                 {% endif %}
             </div>
@@ -166,6 +169,10 @@
                          <div id="embed-message" class="no-video-message">אנא בחר עונה ופרק כדי לצפות.</div>
                     </div>
 
+                    {# Optional: Add a div to display current timestamp (debug/info) #}
+                     <div id="current-episode-timestamp"></div>
+
+
                     <div class="episode-selection">
                         <div class="form-group">
                             <label for="season-select">בחירת עונה:</label>
@@ -175,7 +182,7 @@
                             </select>
                         </div>
                          <div class="form-group">
-                             <label for="episode-select">בחירת פרק:</label>
+                             <label for="episode-list">בחירת פרק:</label> {# Changed label for clarity #}
                              {# Using a ul list for episodes for potentially richer display than a select #}
                              <ul id="episode-list" class="episode-list">
                                  {# Episodes will be populated by JavaScript #}
@@ -225,17 +232,40 @@
             // Embed series data from Flask into a JavaScript variable
             const seriesData = {{ series | tojson }}; // Flask renders the 'series' object as JSON
             const seriesImdbId = seriesData ? seriesData.imdbID : null; // Get the series IMDb ID
+            const user = {{ user | tojson }}; // Pass user object from Flask
 
             const seasonSelect = document.getElementById('season-select');
             const episodeListUl = document.getElementById('episode-list');
             // Reference the new embed container and message div
             const episodeEmbedContainer = document.getElementById('episode-embed-container');
             const embedMessageDiv = document.getElementById('embed-message');
+            const currentEpisodeTimestampDiv = document.getElementById('current-episode-timestamp'); // Optional display
 
-             // Get season and episode numbers from URL path
+            let saveTimer = null; // Timer for saving state (not real-time playback)
+            let currentSeason = null;
+            let currentEpisode = null;
+            let currentEpisodeKey = null; // Key for localStorage
+
+
+             // Get season and episode numbers from URL path for initial load
              const pathParts = window.location.pathname.split('/').filter(part => part !== ''); // Split path and remove empty parts
              let initialSeasonFromUrl = null;
              let initialEpisodeFromUrl = null;
+             let initialTimestampFromUrl = 0; // Default timestamp from URL hash
+
+
+             // Check URL hash for initial timestamp
+             const urlHash = window.location.hash;
+             if (urlHash.startsWith('#timestamp=')) {
+                 const hashTimestamp = parseInt(urlHash.substring('#timestamp='.length), 10);
+                 if (!isNaN(hashTimestamp) && hashTimestamp >= 0) {
+                      initialTimestampFromUrl = hashTimestamp; // Use timestamp from URL hash if valid
+                      console.log(`Loaded initial timestamp from URL hash: ${initialTimestampFromUrl} seconds.`);
+                 }
+             } else {
+                  console.log("No #timestamp hash found in URL.");
+             }
+
 
              // Expected path format: /series/<series_imdb_id> or /series/<series_imdb_id>/<season_number>/<episode_number>
              // Parts for episode: [series, <series_imdb_id>, <season_number>, <episode_number>]
@@ -249,14 +279,26 @@
                       initialEpisodeFromUrl = episodeCandidate;
                       console.log(`Found initial season '${initialSeasonFromUrl}' and episode '${initialEpisodeFromUrl}' in URL.`);
                  } else {
-                     console.warn("Invalid season or episode number format in URL.");
+                     console.warn("Invalid season or episode number format in URL path.");
                  }
              } else if (pathParts.length === 2 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
-                  console.log("No specific season/episode numbers found in URL.");
+                  console.log("No specific season/episode numbers found in URL path.");
              }
              else {
                   console.warn("URL format is unexpected for a series page with optional season/episode.");
              }
+
+
+             // Helper to format time for display (HH:MM:SS)
+             const formatTime = (seconds) => {
+                 const h = Math.floor(seconds / 3600);
+                 const m = Math.floor((seconds % 3600) / 60);
+                 const s = Math.floor(seconds % 60);
+                 return [h, m, s]
+                     .map(v => v < 10 ? '0' + v : v)
+                     .filter((v, i) => v !== '00' || i > 0) // Hide hours if zero
+                     .join(':');
+             };
 
 
             // Function to find episode data by season and episode numbers
@@ -268,8 +310,7 @@
                       // Access episode directly using the episode number key
                       const episode = seasonData.Episodes[episodeNum];
                        // Ensure episode data exists and is an object
-                      if (episode && typeof episode === 'object') { // Removed check for episode_imdb_id here
-                           // Found the episode! Return its data
+                      if (episode && typeof episode === 'object') {
                            return {
                                season: seasonNum,
                                episode: episodeNum,
@@ -285,7 +326,7 @@
             function populateSeasons() {
                 if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
                     // Get season numbers from the keys of the Seasons object, convert to numbers, sort
-                    const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).sort((a, b) => a - b);
+                    const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b); // Added filter for NaN
 
                     // Always add the default option first
                     seasonSelect.innerHTML = '<option value="">-- בחר עונה --</option>';
@@ -307,7 +348,6 @@
                          seasonSelect.appendChild(option);
                          seasonSelect.disabled = true; // Disable select
                          episodeListUl.innerHTML = '<li class="placeholder-episode">אין פרקים זמינים.</li>';
-                         // Show "No seasons available" message in embed area
                          showEmbedMessage('אין עונות זמינות עבור סדרה זו.');
                     }
                 } else {
@@ -319,7 +359,6 @@
                      seasonSelect.appendChild(option);
                      seasonSelect.disabled = true; // Disable select
                      episodeListUl.innerHTML = '<li class="placeholder-episode">אין פרקים זמינים.</li>';
-                      // Show "No seasons available" message in embed area
                      showEmbedMessage('נתוני סדרה אינם זמינים.');
 
                 }
@@ -330,12 +369,13 @@
                   // Clear any previous iframe/content but keep the message div structure
                   episodeEmbedContainer.querySelectorAll('iframe').forEach(iframe => iframe.remove());
                   // Ensure the message div is present and update its text
-                   if (!embedMessageDiv) { // Should not happen with the static HTML, but safety check
+                   if (!embedMessageDiv) {
                        console.error("Embed message div not found!");
                        return;
                    }
                   embedMessageDiv.textContent = messageText;
                   embedMessageDiv.style.display = 'flex'; // Use flex to center
+                  currentEpisodeTimestampDiv.style.display = 'none'; // Hide timestamp display
              }
 
              // Helper to hide message
@@ -345,9 +385,195 @@
                   }
              }
 
+            // --- Continue Watching Functionality for Series ---
+            // Note: Actual timestamp saving from player is NOT possible with standard Vidsrc iframe.
+            // We save which episode is being watched and the timestamp we attempted to start with.
+
+            let continueWatchingItems = {}; // Cache loaded CW items
+            const userId = user && user.google_id ? user.google_id : null;
+            const localStorageKey = `continueWatching_${userId}`;
+
+            // Load existing continue watching data on page load
+            function loadContinueWatchingData() {
+                 if (!userId) return;
+                 try {
+                     const storedData = localStorage.getItem(localStorageKey);
+                     if (storedData) {
+                         continueWatchingItems = JSON.parse(storedData) || {};
+                          if (typeof continueWatchingItems !== 'object' || continueWatchingItems === null) {
+                              console.warn("localStorage data for continue watching is not an object. Resetting.");
+                               continueWatchingItems = {};
+                          }
+                         console.log("Loaded continue watching data for series:", continueWatchingItems);
+                     }
+                 } catch (e) {
+                     console.error("Error loading continue watching data from localStorage:", e);
+                      continueWatchingItems = {}; // Reset on error
+                 }
+            }
+
+            // Function to save the current episode's details to localStorage
+            // timestampToSave here is the timestamp we started playback at, NOT current player time.
+            function saveContinueWatchingState(season, episode, timestampToSave = 0) {
+                if (!userId || !seriesData || !seriesData.imdbID) {
+                     console.log("Cannot save continue watching state: User not logged in or missing series data.");
+                     return;
+                }
+
+                 const episodeData = findEpisodeByNumbers(season, episode)?.data;
+
+                 if (!episodeData) {
+                     console.error(`Cannot save continue watching state: Episode S${season}E${episode} data not found.`);
+                     return;
+                 }
+
+                // Unique key for this specific episode
+                const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
+
+                // Create or update the item entry
+                continueWatchingItems[itemKey] = {
+                    id: seriesImdbId, // Save series ID
+                    type: 'series',
+                    season: season,
+                    episode: episode,
+                    title: seriesData.title || 'כותרת סדרה לא ידועה', // Save series title
+                    episode_title: episodeData.title || `פרק ${episode}`, // Save episode title
+                    poster: seriesData.poster && seriesData.poster !== 'N/A' ? seriesData.poster : '{{ url_for('static', filename='images/no_poster.png') }}', // Save series poster
+                    timestamp: timestampToSave // Save the timestamp (likely the initial one loaded or 0)
+                     // Note: Real-time timestamp updates are NOT possible here with standard Vidsrc iframe.
+                };
+                currentEpisodeKey = itemKey; // Store the key of the currently playing episode
+
+                try {
+                    localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
+                    console.log(`Saved episode S${season}E${episode} state for series ${seriesImdbId} to localStorage (timestamp: ${timestampToSave}).`);
+
+                     // Optional: Update the timestamp display
+                     if (currentEpisodeTimestampDiv) {
+                         currentEpisodeTimestampDiv.textContent = `שמירה: S${season}E${episode} @ ${formatTime(timestampToSave)}`;
+                         currentEpisodeTimestampDiv.style.display = 'block';
+                     }
+
+                } catch (e) {
+                    console.error("Error saving continue watching data to localStorage:", e);
+                }
+            }
+
+             // Function to remove the current episode from localStorage
+             function removeContinueWatchingState(season, episode) {
+                 if (!userId || !seriesData || !seriesData.imdbID || !season || !episode) {
+                      console.log("Cannot remove continue watching state: User not logged in or missing data.");
+                      return;
+                 }
+                 const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
+                  if (continueWatchingItems[itemKey]) {
+                       delete continueWatchingItems[itemKey];
+                       try {
+                            localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
+                            console.log(`Removed episode ${itemKey} from continue watching.`);
+                            if(currentEpisodeKey === itemKey) {
+                                 currentEpisodeKey = null; // Clear current key if removed
+                                 currentEpisodeTimestampDiv.style.display = 'none';
+                            }
+                       } catch (e) {
+                           console.error("Error removing continue watching data from localStorage:", e);
+                       }
+                  }
+             }
+
+            // Handle episode item click - This is where the iframe is created/updated
+            function handleEpisodeClick(event) {
+                const clickedItem = event.currentTarget;
+                const season = parseInt(clickedItem.dataset.season, 10); // Get season number as integer
+                const episode = parseInt(clickedItem.dataset.episode, 10); // Get episode number as integer
+
+                 if (isNaN(season) || isNaN(episode) || season < 1 || episode < 1) {
+                      console.error("Invalid season or episode number from clicked item data.");
+                      return;
+                 }
+
+                // Remove 'selected' class from previous items
+                episodeListUl.querySelectorAll('.episode-item').forEach(item => item.classList.remove('selected'));
+                // Add 'selected' class to the clicked item
+                clickedItem.classList.add('selected');
+
+                 // Stop any previous save timer (if implemented) - currently not saving real-time
+                 // if (saveTimer) clearInterval(saveTimer);
+
+                 // --- Update URL with Season and Episode Numbers ---
+                 if (seriesImdbId && season && episode) {
+                      // Check localStorage for a saved timestamp for THIS specific episode
+                      const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
+                      const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
+                       console.log(`Timestamp loaded from localStorage for S${season}E${episode}: ${savedEpisodeTimestamp}`);
+
+
+                     // Construct the new URL using series ID, season, episode, and loaded timestamp
+                     const newUrl = `/series/${seriesImdbId}/${season}/${episode}${savedEpisodeTimestamp > 0 ? '#timestamp=' + savedEpisodeTimestamp : ''}`;
+                     // Use replaceState to change the URL without adding a history entry
+                     history.replaceState(null, '', newUrl);
+                      console.log(`URL updated to: ${newUrl}`);
+
+                      // Update current episode tracking variables
+                     currentSeason = season;
+                     currentEpisode = episode;
+                      // Save the state immediately upon clicking/starting a new episode
+                      // This saves the *episode identity* and the timestamp it *started* with (from localStorage or 0)
+                     saveContinueWatchingState(currentSeason, currentEpisode, savedEpisodeTimestamp);
+
+                 } else {
+                      console.warn("Cannot update URL or save state, missing series IMDb ID, season, or episode number.");
+                      // Clear current episode tracking if data is invalid
+                     currentSeason = null;
+                     currentEpisode = null;
+                     currentEpisodeKey = null;
+                     currentEpisodeTimestampDiv.style.style = 'none';
+                 }
+
+
+                // Clear previous embed content and hide message
+                episodeEmbedContainer.innerHTML = '';
+                hideEmbedMessage();
+
+
+                // Validate data before creating iframe
+                if (seriesImdbId && season && episode && seriesImdbId.startsWith('tt')) { // Basic check for series IMDb ID format and number existence
+                     console.log(`Attempting to embed S${season}E${episode} for series ${seriesImdbId} using vidsrc.`);
+
+                    const iframe = document.createElement('iframe');
+                    // Vidsrc URL for TV shows using series ID, season, and episode numbers
+                    // Use the timestamp from the URL hash which was set above by history.replaceState
+                    // or was present on initial load.
+                    const vidsrcUrl = `https://vidsrc.to/embed/tv/${seriesImdbId}/${season}/${episode}${window.location.hash}`;
+                     console.log(`Constructed Vidsrc URL for embed: ${vidsrcUrl}`);
+
+
+                    iframe.src = vidsrcUrl;
+                    iframe.allowFullscreen = true;
+                    iframe.setAttribute("allow", "autoplay"); // Request autoplay permission
+
+                    // Clear container and append iframe
+                    episodeEmbedContainer.innerHTML = '';
+                    episodeEmbedContainer.appendChild(iframe);
+
+                     // Optional: Re-start a save timer here if you implement simulated saving
+                     // For now, we just save the initial timestamp on click/load.
+                     // saveTimer = setInterval(() => {
+                     //     // This function body CANNOT get actual iframe time due to cross-origin.
+                     //     // It would only save the initial timestamp or a value derived from page load time, which is inaccurate.
+                     //     // Example (inaccurate): saveContinueWatchingState(currentSeason, currentEpisode, someCalculatedTime);
+                     //      console.log("Save timer fired (no real timestamp saved).");
+                     // }, 10000); // Save every 10 seconds (inaccurately)
+
+
+                } else {
+                     console.warn(`Missing series IMDb ID (${seriesImdbId}), season (${season}), or episode (${episode}) or invalid format. Cannot embed.`);
+                     showEmbedMessage('וידאו אינו זמין עבור פרק זה (חסרים נתוני ID או עונה/פרק).');
+                }
+            }
 
             // Function to populate the episode list for a selected season
-            function populateEpisodes(seasonNumber) {
+            function populateEpisodes(seasonNumber, episodeToSelect = null) {
                 episodeListUl.innerHTML = ''; // Clear current episodes
                  // episodeListUl.classList.add('loading'); // Optional: Add a loading class
 
@@ -356,7 +582,7 @@
                 if (seasonData && seasonData.Episodes && typeof seasonData.Episodes === 'object') {
                     const episodes = seasonData.Episodes;
                     // Get episode numbers (keys of the Episodes object), convert to numbers, sort
-                    const episodeNumbers = Object.keys(episodes).map(Number).sort((a, b) => a - b);
+                    const episodeNumbers = Object.keys(episodes).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b); // Added filter for NaN
 
                     if (episodeNumbers.length > 0) {
                         episodeNumbers.forEach(episodeNum => {
@@ -365,10 +591,8 @@
                             if (episode && typeof episode === 'object') {
                                 const li = document.createElement('li');
                                 li.classList.add('episode-item');
-                                // Store season, and episode numbers
                                  li.dataset.season = seasonNumber; // Store season number
                                  li.dataset.episode = episodeNum; // Store episode number
-                                 // Optionally store episode title or imdbID if needed later, but not strictly for Vidsrc URL
 
                                 li.innerHTML = `<span class="episode-number">${episodeNum}.</span> <span class="episode-title">${episode.title || 'פרק ללא כותרת'}</span>`;
                                 li.addEventListener('click', handleEpisodeClick);
@@ -377,65 +601,32 @@
                                  console.warn(`Skipping invalid episode data for S${seasonNumber}E${episodeNum}`);
                             }
                         });
-                         // episodeListUl.classList.remove('loading');
+
+                         // If an episode number was provided to select, find it and click it
+                         if (episodeToSelect !== null) {
+                              setTimeout(() => { // Small delay to ensure elements are in DOM
+                                 const targetEpisodeItem = episodeListUl.querySelector(`.episode-item[data-season='${seasonNumber}'][data-episode='${episodeToSelect}']`);
+                                 if (targetEpisodeItem) {
+                                      console.log(`Found S${seasonNumber}E${episodeToSelect} list item for auto-selection. Clicking.`);
+                                     targetEpisodeItem.click();
+                                 } else {
+                                     console.warn(`Episode S${seasonNumber}E${episodeToSelect} list item not found after populating season ${seasonNumber}. Cannot auto-select.`);
+                                      // If target episode from URL is not found in the list, maybe select the first one?
+                                      // Or leave it unselected and show a message? Let's show a message.
+                                      showEmbedMessage(`הפרק S${seasonNumber}E${episodeToSelect} לא נמצא. אנא בחר פרק אחר.`);
+                                 }
+                              }, 50);
+                         }
+
                     } else {
                          episodeListUl.innerHTML = '<li class="placeholder-episode">אין פרקים זמינים לעונה זו.</li>';
-                          // episodeListUl.classList.remove('loading');
+                          console.warn(`No episode data found for Season ${seasonNumber}`);
                     }
                 } else {
                     episodeListUl.innerHTML = '<li class="placeholder-episode">אין פרקים זמינים לעונה זו.</li>';
                      console.warn(`No episode data found for Season ${seasonNumber}`);
-                      // episodeListUl.classList.remove('loading');
                 }
-            }
-
-            // Handle episode item click - This is where the iframe is created/updated
-            function handleEpisodeClick(event) {
-                const clickedItem = event.currentTarget;
-                const season = clickedItem.dataset.season; // Get season number
-                const episode = clickedItem.dataset.episode; // Get episode number
-
-                // Remove 'selected' class from previous items
-                episodeListUl.querySelectorAll('.episode-item').forEach(item => item.classList.remove('selected'));
-                // Add 'selected' class to the clicked item
-                clickedItem.classList.add('selected');
-
-                 // --- Update URL with Season and Episode Numbers ---
-                 if (seriesImdbId && season && episode) {
-                     // Construct the new URL using series ID, season, and episode numbers
-                     const newUrl = `/series/${seriesImdbId}/${season}/${episode}`;
-                     // Use replaceState to change the URL without adding a history entry
-                     history.replaceState(null, '', newUrl);
-                      console.log(`URL updated to: ${newUrl}`);
-                 } else {
-                      console.warn("Cannot update URL, missing series IMDb ID, season, or episode number.");
-                 }
-
-
-                // Clear previous embed content and hide message
-                episodeEmbedContainer.innerHTML = '';
-                hideEmbedMessage();
-
-                // Validate seriesImdbId, season, and episode numbers before creating iframe
-                if (seriesImdbId && season && episode && seriesImdbId.startsWith('tt')) { // Basic check for series IMDb ID format and number existence
-                     console.log(`Attempting to embed S${season}E${episode} for series ${seriesImdbId} using vidsrc.`);
-
-                    const iframe = document.createElement('iframe');
-                    // Vidsrc URL for TV shows using series ID, season, and episode numbers
-                    iframe.src = `https://vidsrc.to/embed/tv/${seriesImdbId}/${season}/${episode}`;
-                    iframe.allowFullscreen = true;
-                    iframe.setAttribute("allow", "autoplay"); // Request autoplay permission
-
-                    // Clear container and append iframe
-                    episodeEmbedContainer.innerHTML = '';
-                    episodeEmbedContainer.appendChild(iframe);
-
-
-                } else {
-                     console.warn(`Missing series IMDb ID (${seriesImdbId}), season (${season}), or episode (${episode}) or invalid format. Cannot embed.`);
-                     // Show "No video available" message
-                     showEmbedMessage('וידאו אינו זמין עבור פרק זה (חסרים נתוני ID או עונה/פרק).');
-                }
+                 // episodeListUl.classList.remove('loading');
             }
 
             // Handle season select change
@@ -443,32 +634,25 @@
                 seasonSelect.addEventListener('change', function() {
                     const selectedSeason = parseInt(this.value, 10); // Parse to integer
 
+                    // Stop any existing timer if changing season
+                    // if (saveTimer) clearInterval(saveTimer);
+
                     // Clear embed area and show default message when season changes
                     showEmbedMessage('אנא בחר פרק כדי לצפות.');
+
+                     // Clear current episode tracking variables
+                     currentSeason = null;
+                     currentEpisode = null;
+                     currentEpisodeKey = null;
+                     currentEpisodeTimestampDiv.style.display = 'none';
+
 
                      // Remove 'selected' class from any previously selected episode
                      episodeListUl.querySelectorAll('.episode-item').forEach(item => item.classList.remove('selected'));
 
                     if (!isNaN(selectedSeason) && selectedSeason >= 1) {
-                        populateEpisodes(selectedSeason);
-                         // --- Auto-select the first episode of the new season if available ---
-                        // Need a slight delay to ensure episodes are rendered after populateEpisodes
-                         setTimeout(() => {
-                             const firstEpisodeItem = episodeListUl.querySelector('.episode-item');
-                             if(firstEpisodeItem) {
-                                  console.log(`Auto-clicking first episode S${selectedSeason}E${firstEpisodeItem.dataset.episode} after season change.`);
-                                  firstEpisodeItem.click(); // Simulate click to select and embed/play
-                             } else {
-                                 // No episodes found for the selected season - update message
-                                  console.warn(`No episodes found for season ${selectedSeason} after population.`);
-                                   showEmbedMessage('אין פרקים זמינים לעונה זו.');
-                                    // Reset URL to base series URL if no episodes found
-                                     if (seriesImdbId) {
-                                         history.replaceState(null, '', `/series/${seriesImdbId}`);
-                                          console.log(`No episodes found, URL reset to: /series/${seriesImdbId}`);
-                                     }
-                             }
-                         }, 50); // Short delay to allow DOM update
+                        // Populate episodes for the selected season, and attempt to auto-select the first one
+                        populateEpisodes(selectedSeason, 1); // Attempt to select episode 1
                     } else {
                         // No season selected (e.g., back to '-- בחר עונה --')
                         episodeListUl.innerHTML = '<li class="placeholder-episode">-- בחר עונה תחילה --</li>';
@@ -482,93 +666,131 @@
                 });
             }
 
+             // Save the state when the user leaves the page (unloads the tab/window)
+             window.addEventListener('beforeunload', () => {
+                  // if (saveTimer) clearInterval(saveTimer); // Stop timer if it was running
+                  console.log(`Page unload event for series ${seriesImdbId}.`);
+                  // The last saved state (on episode click/load) is the most recent we have.
+                  // Real-time saving requires access to player.currentTime, which is not possible here.
+                  // No extra action needed here for saving with the current implementation.
+             });
+
 
             // Initial setup on page load
-            populateSeasons();
+            loadContinueWatchingData(); // Load existing CW data
+            populateSeasons(); // Populate the season dropdown
 
-            // Delay the rest of the auto-selection logic to allow season dropdown to render
-             setTimeout(() => {
+            // Auto-select season and episode from URL hash or default
+             setTimeout(() => { // Small delay to ensure seasons are populated
                  if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
-                      // Get season numbers from the keys of the Seasons object, convert to numbers, sort
-                      const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).sort((a, b) => a - b);
+                      const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b);
 
                       if (seasonNumbers.length > 0) {
-                          let targetEpisodeInfo = null;
+                           let targetSeasonNum = null;
+                           let targetEpisodeNum = null;
+                           let initialTimestamp = initialTimestampFromUrl; // Start with timestamp from URL hash
 
-                          // 1. Check if season/episode numbers are in URL and find its data
+                          // 1. Prioritize season/episode from URL path
                           if (initialSeasonFromUrl !== null && initialEpisodeFromUrl !== null) {
-                               console.log(`Attempting to find episode at S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL.`);
+                               console.log(`Attempting to auto-select S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL path.`);
                                const foundEpisodeInfo = findEpisodeByNumbers(initialSeasonFromUrl, initialEpisodeFromUrl);
                                if (foundEpisodeInfo) {
-                                   console.log(`Found episode at S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL.`);
-                                   targetEpisodeInfo = foundEpisodeInfo;
+                                   targetSeasonNum = initialSeasonFromUrl;
+                                   targetEpisodeNum = initialEpisodeFromUrl;
+                                   console.log(`Found episode data for S${targetSeasonNum}E${targetEpisodeNum}.`);
+                                    // If episode found by URL path, check localStorage for its specific timestamp
+                                    const itemKey = `series_${seriesImdbId}_S${targetSeasonNum}E${targetEpisodeNum}`;
+                                    const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
+
+                                    // If URL hash had a timestamp, it takes precedence. Otherwise, use the one from localStorage.
+                                    if (initialTimestampFromUrl === 0 && savedEpisodeTimestamp > 0) {
+                                         initialTimestamp = savedEpisodeTimestamp;
+                                         console.log(`No timestamp in URL hash, using saved timestamp from localStorage: ${initialTimestamp} seconds.`);
+                                    } else if (initialTimestampFromUrl > 0) {
+                                         console.log(`Using timestamp from URL hash (${initialTimestampFromUrl}), ignoring localStorage saved timestamp (${savedEpisodeTimestamp}).`);
+                                    } else {
+                                         console.log("No timestamp in URL hash or localStorage for this episode.");
+                                    }
+
                                } else {
-                                   console.warn(`Episode at S${initialSeasonFromUrl}E${initialEpisodeFromUrl} not found in series data.`);
+                                   console.warn(`Episode S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL path not found in series data.`);
                                }
                           }
 
-                          // 2. If no URL numbers found or episode not found by numbers, fall back to the first episode of the first season
-                          if (!targetEpisodeInfo) {
+                          // 2. If no URL path numbers or episode not found by path, fall back to the first episode of the first season
+                          if (targetSeasonNum === null || targetEpisodeNum === null) {
                                console.log("Falling back to selecting the first available season/episode.");
                                const firstSeasonNum = seasonNumbers[0];
                                // Get episode numbers for the first season, convert to numbers, sort, take the first one
-                               const firstEpisodeNum = Object.keys(seriesData.Seasons[firstSeasonNum]?.Episodes || {}).map(Number).sort((a, b) => a - b)[0];
+                               const episodesInFirstSeason = seriesData.Seasons[firstSeasonNum]?.Episodes || {};
+                               const firstEpisodeNum = Object.keys(episodesInFirstSeason).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b)[0];
 
                                if (firstSeasonNum !== undefined && firstEpisodeNum !== undefined) {
-                                    // Use findEpisodeByNumbers to retrieve the episode data
-                                    targetEpisodeInfo = findEpisodeByNumbers(firstSeasonNum, firstEpisodeNum);
-                                     if (!targetEpisodeInfo) {
-                                          console.warn(`First episode data at S${firstSeasonNum}E${firstEpisodeNum} is invalid.`);
+                                    // Check if episode data exists for the first episode
+                                    const firstEpisodeInfo = findEpisodeByNumbers(firstSeasonNum, firstEpisodeNum);
+                                     if (firstEpisodeInfo) {
+                                         targetSeasonNum = firstSeasonNum;
+                                         targetEpisodeNum = firstEpisodeNum;
+                                         console.log(`Defaulting to first episode S${targetSeasonNum}E${targetEpisodeNum}.`);
+
+                                         // If defaulting, check localStorage for this first episode's timestamp
+                                         const itemKey = `series_${seriesImdbId}_S${targetSeasonNum}E${targetEpisodeNum}`;
+                                         const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
+
+                                         // If URL hash had a timestamp, it takes precedence. Otherwise, use the one from localStorage.
+                                         if (initialTimestampFromUrl === 0 && savedEpisodeTimestamp > 0) {
+                                              initialTimestamp = savedEpisodeTimestamp;
+                                              console.log(`No timestamp in URL hash, using saved timestamp from localStorage for default episode: ${initialTimestamp} seconds.`);
+                                         } else if (initialTimestampFromUrl > 0) {
+                                              console.log(`Using timestamp from URL hash (${initialTimestampFromUrl}), ignoring localStorage saved timestamp (${savedEpisodeTimestamp}) for default episode.`);
+                                         } else {
+                                              console.log("No timestamp in URL hash or localStorage for default episode.");
+                                         }
+
+                                         // Update URL to the first episode's numbers and the determined timestamp if we are defaulting
+                                          if (seriesImdbId) {
+                                              const newUrl = `/series/${seriesImdbId}/${targetSeasonNum}/${targetEpisodeNum}${initialTimestamp > 0 ? '#timestamp=' + initialTimestamp : ''}`;
+                                              history.replaceState(null, '', newUrl);
+                                               console.log(`Defaulting to first episode, URL updated to: ${newUrl}`);
+                                          }
+
                                      } else {
-                                         // Update URL to the first episode's numbers if we are defaulting AND if series ID exists
-                                          // The URL format should match the route: /series/series_id/season/episode
-                                           if (seriesImdbId) { // Don't update URL if seriesImdbId is missing
-                                               const newUrl = `/series/${seriesImdbId}/${targetEpisodeInfo.season}/${targetEpisodeInfo.episode}`;
-                                               history.replaceState(null, '', newUrl);
-                                                console.log(`Defaulting to first episode, URL updated to: ${newUrl}`);
-                                           }
+                                          console.warn(`First episode data at S${firstSeasonNum}E${firstEpisodeNum} is invalid.`);
+                                          showEmbedMessage('שגיאה: לא ניתן לטעון את הפרק הראשון.');
                                      }
                                } else {
                                     console.warn("No episodes found in the first available season.");
+                                    showEmbedMessage('אין פרקים זמינים לסדרה זו.');
                                }
                           }
 
                           // 3. If a target episode was determined, select the season and then click the episode item
-                          if (targetEpisodeInfo) {
+                          if (targetSeasonNum !== null && targetEpisodeNum !== null) {
                                 // Set the season dropdown value
-                                console.log(`Setting season select to ${targetEpisodeInfo.season}`);
+                                console.log(`Setting season select to ${targetSeasonNum}`);
                                 // Set the value as string because option values are strings
-                                seasonSelect.value = targetEpisodeInfo.season.toString();
+                                seasonSelect.value = targetSeasonNum.toString();
 
-                                // Populate episodes for this season
-                                populateEpisodes(targetEpisodeInfo.season);
+                                // Populate episodes for this season, and attempt to select the target episode
+                                populateEpisodes(targetSeasonNum, targetEpisodeNum);
 
-                                // Wait briefly for episodes to render, then try to find and click the specified episode list item
-                                setTimeout(() => {
-                                     // Find the LI element for this specific episode number AND season
-                                     const targetEpisodeItem = episodeListUl.querySelector(`.episode-item[data-season='${targetEpisodeInfo.season}'][data-episode='${targetEpisodeInfo.episode}']`);
-                                     if (targetEpisodeItem) {
-                                          console.log(`Found S${targetEpisodeInfo.season}E${targetEpisodeInfo.episode} element in list. Clicking.`);
-                                          targetEpisodeItem.click(); // Simulate click to select and play via handleEpisodeClick
-                                     } else {
-                                          console.error(`Target episode S${targetEpisodeInfo.season}E${targetEpisodeInfo.episode} list item not found after populating. Cannot auto-play.`);
-                                          // Show message indicating failure to auto-play
-                                          showEmbedMessage('הפרק לא נמצא ברשימה לאחר הטעינה. אנא בחר ידנית.');
-                                     }
-                                }, 100); // Short delay
+                                // The populateEpisodes function with the episodeToSelect parameter
+                                // will handle finding and clicking the specific list item after population.
 
                           } else {
                                console.warn("No playable episode found for auto-selection after checking URL and defaults.");
-                                // Message is already set by populateSeasons or remains "select episode"
+                                // Message is already set by populateSeasons or falls through to default
+                                showEmbedMessage(seasonNumbers.length > 0 ? 'אנא בחר עונה ופרק כדי לצפות.' : 'אין עונות זמינות עבור סדרה זו.');
                           }
 
                       } else {
                            console.warn("No seasons found in series data for auto-selection after initial populate.");
                             // Message is already set by populateSeasons
+                             showEmbedMessage('אין עונות זמינות עבור סדרה זו.');
                       }
                   } else {
                        console.warn("No series data or seasons structure found for auto-selection after initial populate.");
-                        // Message is already set by populateSeasons
+                       showEmbedMessage('נתוני סדרה אינם זמינים.');
                   }
              }, 50); // Delay initial auto-selection slightly
 
@@ -578,28 +800,7 @@
             // it populates episodes for the new season and auto-selects/plays the *first* episode of that season.
 
 
-            // --- Optional: Loading Spinner JS ---
-            // If you added a spinner HTML block above, paste the JS below
-            // document.addEventListener('DOMContentLoaded', function() {
-            //     const spinner = document.getElementById('loading-spinner');
-            //     if (spinner) {
-            //          setTimeout(() => { spinner.classList.add('hidden'); }, 300);
-            //          spinner.addEventListener('transitionend', function handler(event) {
-            //               if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
-            //                   spinner.style.display = 'none';
-            //                   spinner.removeEventListener('transitionend', handler);
-            //               }
-            //          });
-            //          setTimeout(() => { // Fallback
-            //               if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
-            //                    spinner.style.display = 'none';
-            //               }
-            //           }, 300 + 100);
-            //     }
-            // });
-
-
-            // --- Search JS ---
+            // --- Search JS --- (Same as movie.html)
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                searchInput.addEventListener('keypress', function(event) {
@@ -613,8 +814,12 @@
                    }
                });
                // Optional: Implement button click for search
-               // const searchButton = document.querySelector('.search-container button');
-               // if(searchButton) { searchButton.addEventListener('click', function() { ... }); }
+               document.querySelector('.search-container button').addEventListener('click', function() {
+                   const term = searchInput.value.trim();
+                   if (term) {
+                       window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(term)}`;
+                   }
+               });
             }
 
 
