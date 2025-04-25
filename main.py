@@ -9,6 +9,7 @@ from authlib.integrations.flask_client import OAuth
 import firebase_admin
 from firebase_admin import credentials, db
 import logging # Import logging for better error handling
+import threading
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
