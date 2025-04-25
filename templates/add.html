@@ -129,7 +129,8 @@
             </div>
             {% endfor %}
         </div>
-        {% endif %}
+        {% endif %} {# <-- Corrected syntax #}
+
     {% endwith %}
 
     <main class="container main-content">
@@ -487,7 +488,7 @@
 
             const initialChecked = document.querySelector('input[name="content_type"]:checked');
             if (initialChecked) {
-                showFormSection(initialChecked.value);
+                showFormSection(initiallyCheckedType.value);
             } else {
                  // Default to movie if nothing is checked on load
                  const defaultMovieRadio = document.getElementById('type_movie');
