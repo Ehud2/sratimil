@@ -11,9 +11,6 @@ from firebase_admin import credentials, db
 import logging # Import logging for better error handling
 import threading
 import time
-import sys # Import sys to use stderr
-# Removed typing.Union as get_movie_trailer_link returns str or None
-from youtube_search import YoutubeSearch # Import the new library
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -207,7 +204,7 @@ def load_movie_details(imdb_id):
         return movie_details
     except Exception as e:
         logging.error(f"Error loading movie details for ID {imdb_id}: {e}", exc_info=True)
-        return {} # Return empty dict on error
+        return None
 
 
 def categorize_content(movies_data, series_data):
@@ -381,48 +378,6 @@ def get_omdb_details_api(imdb_id, season=None, episode=None):
         return {'Response': 'False', 'Error': f'Request Error: {e}'}
 
 
-# --- YouTube Search Function for Trailers ---
-def get_movie_trailer_link(movie_title: str) -> str or None:
-    """
-    Searches YouTube for a movie trailer link based on the movie title.
-
-    Args:
-        movie_title: The title of the movie (string).
-
-    Returns:
-        A string containing the YouTube URL of the first trailer found,
-        or None if no trailer is found or an error occurs.
-    """
-    if not movie_title:
-        logging.warning("Trailer search: Movie title cannot be empty.")
-        return None
-
-    search_query = f"{movie_title} trailer official" # Added "official" for potentially better results
-
-    try:
-        # Use YoutubeSearch. max_results=1 to get only the first result.
-        results_list = YoutubeSearch(search_query, max_results=1).to_dict()
-
-        if results_list and isinstance(results_list, list) and len(results_list) > 0:
-            first_video = results_list[0]
-            video_id = first_video.get('id')
-
-            if video_id:
-                youtube_url = f"https://www.youtube.com/watch?v={video_id}"
-                logging.info(f"Found YouTube trailer for '{movie_title}': {youtube_url}")
-                return youtube_url
-            else:
-                logging.warning(f"Trailer search: Found video result for '{search_query}' but no ID.")
-                return None
-        else:
-            logging.info(f"Trailer search: No YouTube results found for '{search_query}'.")
-            return None
-
-    except Exception as e:
-        logging.error(f"An error occurred while searching for trailer for '{movie_title}': {e}", exc_info=True)
-        return None
-
-
 # --- API Routes for Frontend OMDB Search (Used by add.html) ---
 @app.route('/api/search_omdb')
 def api_search_omdb():
@@ -477,62 +432,6 @@ def api_get_omdb_details():
         error_message = details.get('Error', 'Details not found or API error') if isinstance(details, dict) else 'Details not found or API error'
         return jsonify({"Error": error_message}), 404
 
-# --- Updated API route for getting a trailer URL ---
-@app.route('/api/get_trailer/<string:imdb_id>')
-def api_get_trailer(imdb_id):
-    """
-    Fetches the YouTube trailer URL and basic movie details for a given IMDb ID.
-    Looks up movie details (especially title) from Firebase, then searches YouTube by title.
-    Returns JSON: {'trailer_url': '...', 'title': '...', 'poster': '...', 'imdb_id': '...'} or {'error': '...'}
-    """
-    # Validate IMDb ID format before querying
-    if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
-         logging.warning(f"API get_trailer called with invalid IMDb ID format: {imdb_id}")
-         return jsonify({"error": "Invalid IMDb ID format"}), 400
-
-    # Fetch movie details from Firebase to get the title
-    movie_details = load_movie_details(imdb_id)
-
-    if not movie_details or movie_details.get('type') != 'movie':
-         logging.warning(f"Movie details not found in Firebase or is not a movie for IMDb ID: {imdb_id}")
-         return jsonify({
-             "imdb_id": imdb_id,
-             "trailer_url": None,
-             "title": "סרט לא נמצא בבסיס הנתונים",
-             "poster": "N/A",
-             "error": "פרטי סרט לא נמצאו בבסיס הנתונים"
-         }), 404 # Return 404 Not Found if the movie isn't in your DB
-
-    movie_title = movie_details.get('title')
-    movie_poster = movie_details.get('poster', 'N/A') # Get poster for the response
-
-    if not movie_title:
-        logging.warning(f"Movie found in Firebase ({imdb_id}) but has no title.")
-        return jsonify({
-             "imdb_id": imdb_id,
-             "trailer_url": None,
-             "title": "סרט ללא כותרת",
-             "poster": movie_poster,
-             "error": "לסרט אין כותרת בבסיס הנתונים"
-         }), 404
-
-    # Use the new function to get the trailer link based on title
-    trailer_url = get_movie_trailer_link(movie_title)
-
-    response_data = {
-        "imdb_id": imdb_id,
-        "trailer_url": trailer_url,
-        "title": movie_title,
-        "poster": movie_poster # Include poster in the response
-    }
-
-    if not trailer_url:
-         response_data["error"] = "טריילר לא נמצא ביוטיוב"
-         # Return 404 if no trailer found, but include movie details
-         return jsonify(response_data), 404
-
-    return jsonify(response_data)
-
 
 # --- Authentication Routes ---
 @app.route('/auth/google')
@@ -582,6 +481,17 @@ def google_callback():
 def logout():
     user_email = session.get('user', {}).get('email', 'anonymous')
     session.pop('user', None)
+    # --- Frontend: Clear local storage for 'continueWatching' on logout ---
+    # This cannot be done directly from Python. You would need to add
+    # JavaScript on the index page or a dedicated logout page that clears localStorage.
+    # For this example, we won't add a separate logout page, but keep in mind
+    # localStorage persists even after server-side session pop. Clearing
+    # localStorage on successful login is another option, or tying localStorage
+    # key to user ID, but the request asked for local storage *like session*,
+    # implying simple localStorage. A simple way is to clear on the client side
+    # when the logout action is confirmed (e.g., on page load after logout).
+    # Adding a flash message indicates successful logout, and the JS below
+    # checks for the user being None to determine if they are logged out.
     logging.info(f"User {user_email} logged out.")
     flash('התנתקת בהצלחה.', 'info')
     # Redirecting back to index. The index page JS will handle the logged-out state.
@@ -601,15 +511,15 @@ def index():
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
+    # Pass the list of admin emails to the template if needed (though index.html might not use it)
+    # If admin status is only checked server-side, passing the list isn't strictly necessary here.
+    # However, keeping it consistent with previous logic of passing *something* related to admin.
 
-    # Pass the user object, categorized data, AND all movies data to the template.
-    # The 'all_movies_list' is needed client-side for the random trailer selection.
-    all_movies_list = list(movies_data.values()) # Convert dict values to a list
-
+    # Pass the user object and categorized data to the template.
+    # The 'continue watching' logic is handled client-side using localStorage.
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories, # All categoried content for display and JS lookup
-                           all_movies_list=all_movies_list, # Pass list of all movies for trailer/search
                            current_year=current_year,
                            user=user,
                            admin_emails=ADMIN_EMAILS # Pass the list of admin emails
