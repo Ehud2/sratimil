@@ -11,6 +11,8 @@ from firebase_admin import credentials, db
 import logging # Import logging for better error handling
 import threading
 import time
+import sys # Import sys for KinoCheck function
+from typing import Union # Import Union for KinoCheck function
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -377,6 +379,58 @@ def get_omdb_details_api(imdb_id, season=None, episode=None):
         logging.error(f"Error calling OMDB details API for ID {imdb_id} (Season {season}, Episode {episode}): {e}", exc_info=True)
         return {'Response': 'False', 'Error': f'Request Error: {e}'}
 
+# --- KinoCheck API for Trailers ---
+KINOCHECK_BASE_URL = 'https://api.kinocheck.com/'
+
+def get_youtube_trailer_url(imdb_id: str, language: str = 'en') -> Union[str, None]:
+    """
+    מאחזר את קישור הטריילר ביוטיוב עבור ID נתון של IMDB באמצעות KinoCheck API.
+
+    Args:
+        imdb_id: ה-ID של IMDB של הסרט (לדוגמה, 'tt4154796').
+        language: השפה המועדפת לטריילר ('en' או 'de'). ברירת המחדל היא 'en'.
+
+    Returns:
+        הכתובת של הטריילר ביוטיוב, או None אם לא נמצא או אירעה שגיאה.
+    """
+    endpoint = f"{KINOCHECK_BASE_URL}/trailers"
+    params = {
+        'imdb_id': imdb_id,
+        'categories': 'Trailer', # מבקש במפורש רק טריילרים
+        'language': language     # מציין שפה מועדפת
+    }
+
+    logging.info(f"Attempting to retrieve trailer for IMDb ID: {imdb_id} in language: {language}")
+
+    try:
+        response = requests.get(endpoint, params=params, timeout=5) # Added timeout
+        response.raise_for_status() # Raises HTTPError for bad responses
+
+        trailer_data = response.json()
+
+        if trailer_data and isinstance(trailer_data, list):
+             # Find the first item with a youtube_video_id
+             first_trailer = next((item for item in trailer_data if item.get('youtube_video_id')), None)
+
+             if first_trailer:
+                 youtube_video_id = first_trailer.get('youtube_video_id')
+                 youtube_url = f"https://www.youtube.com/watch?v={youtube_video_id}"
+                 logging.info(f"Successfully retrieved trailer URL for {imdb_id}: {youtube_url}")
+                 return youtube_url
+             else:
+                  logging.warning(f"No youtube_video_id found in results for IMDb ID {imdb_id}.")
+                  return None
+        else:
+             logging.info(f"No trailer results found for IMDb ID {imdb_id} with specified criteria.")
+             return None
+
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error requesting KinoCheck API for {imdb_id}: {e}", exc_info=True)
+        return None
+    except Exception as e:
+        logging.error(f"Unexpected error during KinoCheck API call for {imdb_id}: {e}", exc_info=True)
+        return None
 
 # --- API Routes for Frontend OMDB Search (Used by add.html) ---
 @app.route('/api/search_omdb')
@@ -432,6 +486,64 @@ def api_get_omdb_details():
         error_message = details.get('Error', 'Details not found or API error') if isinstance(details, dict) else 'Details not found or API error'
         return jsonify({"Error": error_message}), 404
 
+# --- New API route for getting a trailer URL ---
+@app.route('/api/get_trailer/<string:imdb_id>')
+def api_get_trailer(imdb_id):
+    """
+    Fetches the YouTube trailer URL and basic movie details for a given IMDb ID.
+    Returns JSON: {'trailer_url': '...', 'title': '...', 'poster': '...'} or {'error': '...'}
+    """
+    # Validate IMDb ID format before querying
+    if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
+         logging.warning(f"API get_trailer called with invalid IMDb ID format: {imdb_id}")
+         return jsonify({"error": "Invalid IMDb ID format"}), 400
+
+    # Attempt to get the trailer URL (try English first)
+    trailer_url = get_youtube_trailer_url(imdb_id, language='en')
+
+    # If no English trailer found, try German (as per original function, though only 'en' was used in example)
+    # if not trailer_url:
+    #     logging.info(f"No English trailer found for {imdb_id}. Trying German.")
+    #     trailer_url = get_youtube_trailer_url(imdb_id, language='de') # Example fallback
+
+    # Fetch basic movie details from Firebase or OMDB (Firebase preferred if exists)
+    # We need title and poster for the trailer display.
+    movie_details = load_movie_details(imdb_id)
+
+    if not movie_details:
+        # If not in Firebase, try OMDB (though OMDB details are usually fetched on add)
+        omdb_details = get_omdb_details_api(imdb_id)
+        if omdb_details and omdb_details.get('Response') == 'True' and omdb_details.get('Type', '').lower() == 'movie':
+             movie_details = {
+                 'title': omdb_details.get('Title', 'כותרת לא ידועה'),
+                 'poster': omdb_details.get('Poster', 'N/A'),
+                 'imdbID': omdb_details.get('imdbID', imdb_id) # Ensure imdbID is present
+             }
+             logging.info(f"Fetched movie details for {imdb_id} from OMDB for trailer API.")
+        else:
+             logging.warning(f"Could not get movie details for IMDb ID {imdb_id} for trailer API.")
+             # Even if no trailer, return the movie ID so JS can handle the 'not found' state
+             return jsonify({
+                 "imdb_id": imdb_id,
+                 "trailer_url": None,
+                 "title": "סרט לא ידוע",
+                 "poster": "N/A",
+                 "error": "פרטי סרט או טריילר לא נמצאו"
+             }), 404
+
+
+    response_data = {
+        "imdb_id": imdb_id,
+        "trailer_url": trailer_url,
+        "title": movie_details.get('title', 'כותרת לא ידועה'),
+        "poster": movie_details.get('poster', 'N/A')
+    }
+
+    if not trailer_url:
+         response_data["error"] = "טריילר לא נמצא"
+
+    return jsonify(response_data)
+
 
 # --- Authentication Routes ---
 @app.route('/auth/google')
@@ -481,17 +593,6 @@ def google_callback():
 def logout():
     user_email = session.get('user', {}).get('email', 'anonymous')
     session.pop('user', None)
-    # --- Frontend: Clear local storage for 'continueWatching' on logout ---
-    # This cannot be done directly from Python. You would need to add
-    # JavaScript on the index page or a dedicated logout page that clears localStorage.
-    # For this example, we won't add a separate logout page, but keep in mind
-    # localStorage persists even after server-side session pop. Clearing
-    # localStorage on successful login is another option, or tying localStorage
-    # key to user ID, but the request asked for local storage *like session*,
-    # implying simple localStorage. A simple way is to clear on the client side
-    # when the logout action is confirmed (e.g., on page load after logout).
-    # Adding a flash message indicates successful logout, and the JS below
-    # checks for the user being None to determine if they are logged out.
     logging.info(f"User {user_email} logged out.")
     flash('התנתקת בהצלחה.', 'info')
     # Redirecting back to index. The index page JS will handle the logged-out state.
@@ -511,15 +612,15 @@ def index():
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
-    # Pass the list of admin emails to the template if needed (though index.html might not use it)
-    # If admin status is only checked server-side, passing the list isn't strictly necessary here.
-    # However, keeping it consistent with previous logic of passing *something* related to admin.
 
-    # Pass the user object and categorized data to the template.
-    # The 'continue watching' logic is handled client-side using localStorage.
+    # Pass the user object, categorized data, AND all movies data to the template.
+    # The 'all_movies_list' is needed client-side for the random trailer selection.
+    all_movies_list = list(movies_data.values()) # Convert dict values to a list
+
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories, # All categoried content for display and JS lookup
+                           all_movies_list=all_movies_list, # Pass list of all movies for trailer/search
                            current_year=current_year,
                            user=user,
                            admin_emails=ADMIN_EMAILS # Pass the list of admin emails
