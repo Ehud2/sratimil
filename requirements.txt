@@ -4,3 +4,4 @@ Authlib
 Flask-Login
 requests
 firebase_admin
+flask_socketio
