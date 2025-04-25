@@ -3,12 +3,12 @@ import traceback
 import os
 import requests
 import json
-import re # Import re for regex validation
+import re
 from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
 import firebase_admin
 from firebase_admin import credentials, db
-import logging # Import logging for better error handling
+import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -31,8 +31,8 @@ app.config['GOOGLE_DISCOVERY_URL'] = (
 # Replace with your actual OMDB API key from environment variables
 OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # THIS IS A SECRET! MUST BE IN ENV VAR!
 
-# List of admin emails # <-- CHANGED LINE
-ADMIN_EMAILS = ['ehudverbin@gmail.com', 'guykresco@gmail.com'] # <-- CHANGED LINE
+# List of admin emails
+ADMIN_EMAILS = ['ehudverbin@gmail.com', 'guykresco@gmail.com']
 
 
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31)
@@ -308,7 +308,7 @@ def search_omdb_api(search_term, content_type):
         return []
 
 def get_omdb_details_api(imdb_id):
-    """Gets full details for a specific IMDb ID from OMDB."""
+    """Gets full details for a specific IMDb ID from OMDB (for movie/series main details)."""
     if not OMDB_API_KEY or OMDB_API_KEY == 'YOUR_OMDB_API_KEY':
          logging.warning("OMDB_API_KEY is not set.")
          return None
@@ -330,6 +330,43 @@ def get_omdb_details_api(imdb_id):
     except requests.exceptions.RequestException as e:
         logging.error(f"Error calling OMDB details API for ID {imdb_id}: {e}", exc_info=True)
         return None
+
+# NEW: Function to get episode details from OMDB
+def get_omdb_episode_details(series_imdb_id, season_num, episode_num):
+    """Gets details for a specific episode from OMDB."""
+    if not OMDB_API_KEY or OMDB_API_KEY == 'YOUR_OMDB_API_KEY':
+        logging.warning("OMDB_API_KEY is not set.")
+        return None # Or return { 'Title': 'שם פרק לא זמין' }
+
+    # Validate inputs
+    if not series_imdb_id or not isinstance(season_num, int) or season_num < 1 or \
+       not isinstance(episode_num, int) or episode_num < 1:
+        logging.warning(f"Invalid inputs for get_omdb_episode_details: series_id={series_imdb_id}, season={season_num}, episode={episode_num}")
+        return None # Or return { 'Title': 'שם פרק לא תקין' }
+
+    params = {
+        'apikey': OMDB_API_KEY,
+        'i': series_imdb_id, # Use series ID
+        'Season': season_num, # Specify season number
+        'Episode': episode_num # Specify episode number
+    }
+    try:
+        logging.info(f"Fetching OMDB episode details for series '{series_imdb_id}', S{season_num}E{episode_num}...")
+        response = requests.get(OMDB_BASE_URL, params=params, timeout=10)
+        response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
+        data = response.json()
+        if data.get('Response') == 'True':
+             # OMDB returns details for *the episode* when Season/Episode params are used
+             logging.info(f"Successfully fetched OMDB episode details for S{season_num}E{episode_num} of '{series_imdb_id}'. Title: '{data.get('Title')}'")
+             return data # This data includes 'Title', 'Released', 'imdbRating', 'imdbID' (for episode) etc.
+        else:
+             # OMDB might return Response False if the episode doesn't exist or API fails
+             logging.warning(f"OMDB episode details not found for series '{series_imdb_id}', S{season_num}E{episode_num}: {data.get('Error', 'Unknown error')}")
+             return None
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error calling OMDB episode details API for series '{series_imdb_id}', S{season_num}E{episode_num}: {e}", exc_info=True)
+        return None
+
 
 # --- API Routes for Frontend OMDB Search (Used by add.html) ---
 @app.route('/api/search_omdb')
@@ -364,6 +401,7 @@ def api_get_omdb_details():
         logging.warning("API get details called with missing IMDb ID.")
         return jsonify({"Error": "Missing IMDb ID"}), 400
 
+    # This function is used for getting *main* movie/series details
     details = get_omdb_details_api(imdb_id)
     if details:
         # Return the raw details object from OMDB
@@ -469,7 +507,6 @@ def index():
 def movie_details(imdb_id):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    # admin_email = ADMIN_EMAIL # Pass admin email to movie page for nav link # <-- REMOVED
 
     # Validate IMDb ID format before querying
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
@@ -498,48 +535,42 @@ def movie_details(imdb_id):
                            admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
-# --- Route for Single Series Page (NEW) ---
+# --- Route for Single Series Page ---
 # Base series page
 @app.route('/series/<imdb_id>')
 # Series page with specific season and episode number
-@app.route('/series/<imdb_id>/<int:season_number>/<int:episode_number>') # <-- CHANGED LINE
-def series_details(imdb_id, season_number=None, episode_number=None): # <-- Keep parameters with defaults
+@app.route('/series/<imdb_id>/<int:season_number>/<int:episode_number>')
+def series_details(imdb_id, season_number=None, episode_number=None):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    # admin_email = ADMIN_EMAIL # <-- REMOVED
 
     # Validate Series IMDb ID format
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
         logging.warning(f"Attempted to access series page with invalid Series IMDb ID format: {imdb_id}")
         abort(404)
 
-    # Validate Season/Episode Numbers if provided (Flask <int:> handles non-integers,
-    # but we can add checks for non-positive if needed, though JS also validates >=1)
-    if season_number is not None and (season_number < 1):
+    # Validate Season/Episode Numbers if provided
+    if season_number is not None and season_number < 1:
         logging.warning(f"Attempted to access series page with invalid season number ({season_number}) for series {imdb_id}")
-        # Option: abort(404) or proceed and let JS handle finding nothing for that number
-        # Let's let JS handle it for flexibility.
-        pass # Continue loading the page
+        # Let JS handle finding no season/episode if number is invalid but URL path is valid
+        pass
 
-    if episode_number is not None and (episode_number < 1):
+    if episode_number is not None and episode_number < 1:
         logging.warning(f"Attempted to access series page with invalid episode number ({episode_number}) for series {imdb_id}")
-        # Option: abort(404) or proceed
-        pass # Continue loading the page
+        # Let JS handle finding no season/episode
+        pass
 
 
     # Load full series details from Firebase (including Seasons/Episodes)
     series = load_full_series_details(imdb_id)
 
     # Check if found and if it's a series type
-    # Handle potential old data without 'type' gracefully by checking existence
     if not series or (series.get('type') not in [None, 'series'] and series.get('type') != 'series'):
         logging.warning(f"Series details not found or is not of type 'series' for ID: {imdb_id}")
         abort(404)
 
     # Pass the full series object to the template.
-    # The season_number and episode_number from the URL are *not* explicitly
-    # passed as template variables here, because the JavaScript reads them
-    # directly from window.location.pathname on page load.
+    # The season_number and episode_number from the URL are read directly by JavaScript.
     return render_template('series.html',
                            series=series, # Pass the full series data
                            user=user,
@@ -552,7 +583,7 @@ def series_details(imdb_id, season_number=None, episode_number=None): # <-- Keep
 def add_content():
     user = session.get('user')
     # Basic admin check: Check if the user's email is in the list of ADMIN_EMAILS
-    if not user or user.get('email') not in ADMIN_EMAILS: # <-- CHANGED LINE
+    if not user or user.get('email') not in ADMIN_EMAILS:
         logging.warning(f"Unauthorized access attempt to /add by {user.get('email') if user else 'anonymous'}")
         abort(403)
 
@@ -567,16 +598,15 @@ def add_content():
             if content_type == 'movie':
                 # Get form data for movie
                 imdb_id = request.form.get('movie_imdb_id', '').strip()
-                # REMOVED: video_url = request.form.get('movie_video_url', '').strip() # Input removed
-                category = request.form.get('movie_category', 'ללא') # Get category from form
+                category = request.form.get('movie_category', 'ללא')
 
                 # Validate required fields for movie
-                # video_url is no longer required from form
                 if not imdb_id:
                     flash('שגיאה: שדה חובה (IMDb ID) חסר עבור סרט.', 'error')
                     return redirect(url_for('add_content'))
 
-                if not imdb_id.startswith('tt') or len(imdb_id) < 7:
+                imdb_id_pattern = re.compile(r'^tt\d{7,}$')
+                if not imdb_id_pattern.match(imdb_id):
                      flash('שגיאה: פורמט IMDb ID לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
 
@@ -584,14 +614,14 @@ def add_content():
                 omdb_details = get_omdb_details_api(imdb_id)
 
                 # Check if OMDB details were found and if the type is actually a movie
-                if not omdb_details or omdb_details.get('Type', '').lower() != 'movie': # Case-insensitive check
+                if not omdb_details or omdb_details.get('Type', '').lower() != 'movie':
                      flash(f'שגיאה: לא נמצאו פרטי סרט תקינים עבור IMDb ID "{imdb_id}" ב-OMDB.', 'error')
                      logging.warning(f"OMDB details not found or type is not 'movie' for ID {imdb_id}. OMDB Response: {omdb_details}")
                      return redirect(url_for('add_content'))
 
                 # Construct movie data from OMDB details and form data
                 movie_data = {
-                    'imdbID': omdb_details.get('imdbID', imdb_id), # Use fetched ID if available
+                    'imdbID': omdb_details.get('imdbID', imdb_id),
                     'title': omdb_details.get('Title', 'Untitled'),
                     'year': omdb_details.get('Year', 'N/A'),
                     'rated': omdb_details.get('Rated', 'N/A'),
@@ -605,54 +635,64 @@ def add_content():
                     'language': omdb_details.get('Language', 'N/A'),
                     'country': omdb_details.get('Country', 'N/A'),
                     'awards': omdb_details.get('Awards', 'N/A'),
-                    'poster': omdb_details.get('Poster', 'N/A'), # Use 'N/A' instead of default image if not found
-                    'ratings': omdb_details.get('Ratings', []), # List of rating objects
+                    'poster': omdb_details.get('Poster', 'N/A'),
+                    'ratings': omdb_details.get('Ratings', []),
                     'metascore': omdb_details.get('Metascore', 'N/A'),
                     'imdbRating': omdb_details.get('imdbRating', 'N/A'),
                     'imdbVotes': omdb_details.get('imdbVotes', 'N/A'),
-                    'type': 'movie', # Explicitly set type as 'movie'
+                    'type': 'movie',
                     'dvd': omdb_details.get('DVD', 'N/A'),
                     'boxoffice': omdb_details.get('BoxOffice', 'N/A'),
                     'production': omdb_details.get('Production', 'N/A'),
                     'website': omdb_details.get('Website', 'N/A'),
-                    # REMOVED: 'video_url': video_url, # From form (input removed)
-                    'category': category # From form
+                    # 'video_url' would need to be added via a different mechanism
+                    'category': category
                 }
 
                 # Save movie data to Firebase under /Movies/{imdb_id}
-                # This assumes the video URL will be added by a different mechanism
-                # or is not needed in this specific data structure.
                 ref = db.reference(f'/Movies/{imdb_id}')
-                ref.set(movie_data)
-                logging.info(f"Movie '{movie_data['title']}' ({imdb_id}) added to Firebase (without video URL from form).")
+                ref.set(movie_data) # Use set to overwrite if re-adding, simpler for movies
+                logging.info(f"Movie '{movie_data['title']}' ({imdb_id}) added to Firebase.")
                 flash(f'סרט "{movie_data["title"]}" נוסף בהצלחה!', 'success')
 
             elif content_type == 'series':
                 # Get form data for series
-                imdb_id = request.form.get('series_imdb_id', '').strip()
-                category = request.form.get('series_category', 'ללא') # Get category for series
+                series_imdb_id = request.form.get('series_imdb_id', '').strip()
+                category = request.form.get('series_category', 'ללא')
+                total_seasons_str = request.form.get('series_total_seasons', '0').strip() # Get total seasons
 
                  # Validate required fields for series
-                if not imdb_id:
-                    flash('שגיאה: שדה חובה (IMDb ID) חסר עבור סדרה.', 'error')
+                if not series_imdb_id or not total_seasons_str:
+                    flash('שגיאה: שדות חובה (IMDb ID, סה"כ עונות) חסרים עבור סדרה.', 'error')
                     return redirect(url_for('add_content'))
 
-                if not imdb_id.startswith('tt') or len(imdb_id) < 7:
+                imdb_id_pattern = re.compile(r'^tt\d{7,}$')
+                if not imdb_id_pattern.match(series_imdb_id):
                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
 
-                # Fetch full details from OMDB server-side using the IMDb ID
-                omdb_details = get_omdb_details_api(imdb_id)
+                try:
+                    total_seasons = int(total_seasons_str)
+                    if total_seasons < 1:
+                         flash('שגיאה: סה"כ עונות חייב להיות מספר חיובי.', 'error')
+                         return redirect(url_for('add_content'))
+                except ValueError:
+                    flash('שגיאה: סה"כ עונות חייב להיות מספר תקין.', 'error')
+                    return redirect(url_for('add_content'))
+
+
+                # Fetch main series details from OMDB server-side using the IMDb ID
+                omdb_details = get_omdb_details_api(series_imdb_id)
 
                 # Also explicitly check the type from OMDB response
-                if not omdb_details or omdb_details.get('Type', '').lower() != 'series': # Case-insensitive check
-                     flash(f'שגיאה: לא נמצאו פרטים לסדרה או שה-ID אינו של סדרה עבור "{imdb_id}" ב-OMDB.', 'error')
-                     logging.warning(f"OMDB details not found or type is not 'series' for ID {imdb_id}. OMDB Response: {omdb_details}")
+                if not omdb_details or omdb_details.get('Type', '').lower() != 'series':
+                     flash(f'שגיאה: לא נמצאו פרטים לסדרה או שה-ID אינו של סדרה עבור "{series_imdb_id}" ב-OMDB.', 'error')
+                     logging.warning(f"OMDB details not found or type is not 'series' for ID {series_imdb_id}. OMDB Response: {omdb_details}")
                      return redirect(url_for('add_content'))
 
-                 # Construct series data from OMDB details and form data
+                 # Construct initial series data from OMDB details and form data
                 series_data = {
-                    'imdbID': omdb_details.get('imdbID', imdb_id),
+                    'imdbID': omdb_details.get('imdbID', series_imdb_id),
                     'title': omdb_details.get('Title', 'Untitled Series'),
                     'year': omdb_details.get('Year', 'N/A'), # This might be a range (e.g., 2008–2013)
                     'rated': omdb_details.get('Rated', 'N/A'),
@@ -666,48 +706,101 @@ def add_content():
                     'language': omdb_details.get('Language', 'N/A'),
                     'country': omdb_details.get('Country', 'N/A'),
                     'awards': omdb_details.get('Awards', 'N/A'),
-                    'poster': omdb_details.get('Poster', 'N/A'), # Use 'N/A' instead of default image if not found
+                    'poster': omdb_details.get('Poster', 'N/A'),
                     'ratings': omdb_details.get('Ratings', []),
                     'metascore': omdb_details.get('Metascore', 'N/A'),
                     'imdbRating': omdb_details.get('imdbRating', 'N/A'),
                     'imdbVotes': omdb_details.get('imdbVotes', 'N/A'),
-                    'type': 'series', # Explicitly set type as 'series'
-                    'totalSeasons': omdb_details.get('totalSeasons', 'N/A'), # Specific to series
-                    'category': category # From form
+                    'type': 'series',
+                    'totalSeasons': omdb_details.get('totalSeasons', str(total_seasons)), # Use OMDB's total or the user's input
+                    'category': category
                  }
 
+                # Use update for the main series details to preserve existing season/episode data
+                main_series_ref = db.reference(f'/Series/{series_imdb_id}')
+                main_series_ref.update(series_data)
+                logging.info(f"Series '{series_data['title']}' ({series_imdb_id}) main details added/updated in Firebase.")
 
-                # Save series data to Firebase under /Series/{imdb_id}
-                # Use update instead of set to preserve existing Seasons/Episodes
-                ref = db.reference(f'/Series/{imdb_id}')
-                ref.update(series_data)
-                logging.info(f"Series '{series_data['title']}' ({imdb_id}) added/updated in Firebase.")
-                flash(f'סדרה "{series_data["title"]}" נוספה/עודכנה בהצלחה!', 'success')
+
+                # --- Add Seasons and Episodes based on form input ---
+                seasons_data_to_save = {} # Dict to hold structure for seasons/episodes
+
+                for season_num in range(1, total_seasons + 1):
+                     episodes_in_season_key = f'episodes_in_season_{season_num}'
+                     episodes_in_season_str = request.form.get(episodes_in_season_key, '0').strip()
+
+                     try:
+                          num_episodes = int(episodes_in_season_str)
+                          if num_episodes < 0: # Allow 0 episodes in a season if needed
+                               raise ValueError("Number of episodes must be non-negative")
+                     except ValueError:
+                          flash(f'שגיאה: מספר פרקים לעונה {season_num} חייב להיות מספר תקין.', 'error')
+                          # Decide how to handle this - stop processing? Skip season? Let's stop for now.
+                          return redirect(url_for('add_content'))
+
+                     logging.info(f"Processing Season {season_num} with {num_episodes} episodes.")
+
+                     if num_episodes > 0:
+                          episodes_for_season = {}
+                          for episode_num in range(1, num_episodes + 1):
+                               # Fetch episode title from OMDB using series ID, season, and episode numbers
+                               episode_omdb_details = get_omdb_episode_details(series_imdb_id, season_num, episode_num)
+
+                               episode_title = 'פרק ללא כותרת' # Default title
+                               if episode_omdb_details and episode_omdb_details.get('Response') == 'True':
+                                     episode_title = episode_omdb_details.get('Title', 'פרק ללא כותרת')
+                               else:
+                                    logging.warning(f"Could not fetch title for S{season_num}E{episode_num} of '{series_imdb_id}' from OMDB. Using default title.")
+
+
+                               # Construct episode data
+                               episode_data = {
+                                   'title': episode_title,
+                                   'season_number': season_num, # Store season number explicitly
+                                   'episode_number': episode_num # Store episode number explicitly
+                                    # Note: 'video_url' is not included here; it must be added separately/manually to Firebase
+                               }
+                               # Store episode data using episode_number as the key
+                               episodes_for_season[str(episode_num)] = episode_data
+
+
+                          # Store the episodes list under the season number key
+                          # Use string keys for Firebase paths
+                          seasons_data_to_save[str(season_num)] = {'Episodes': episodes_for_season}
+
+                # Save all fetched season/episode data to Firebase in one go using update
+                # This will add new seasons/episodes or update existing ones.
+                if seasons_data_to_save:
+                     seasons_ref = db.reference(f'/Series/{series_imdb_id}/Seasons')
+                     seasons_ref.update(seasons_data_to_save)
+                     logging.info(f"Season and episode structure added/updated for series '{series_imdb_id}'.")
+                else:
+                     logging.info(f"No seasons or episodes to add for series '{series_imdb_id}'.")
+
+
+                flash(f'סדרה "{series_data["title"]}" והעונות/פרקים שלה נוספו/עודכנו בהצלחה!', 'success')
 
 
             elif content_type == 'episode':
                  # Get form data for episode
                  series_imdb_id_select = request.form.get('episode_series_id')
                  manual_series_imdb_id = request.form.get('manual_episode_series_id', '').strip()
-                 episode_imdb_id = request.form.get('episode_imdb_id', '').strip() # Get the episode IMDb ID
+                 # REMOVED: episode_imdb_id = request.form.get('episode_imdb_id', '').strip() # REMOVED INPUT
                  episode_title = request.form.get('episode_title', '').strip()
                  season_number_str = request.form.get('episode_season', '').strip()
                  episode_number_str = request.form.get('episode_number', '').strip()
-                 # REMOVED: video_url = request.form.get('episode_video_url', '').strip() # Input removed
+                 # REMOVED: video_url = request.form.get('episode_video_url', '').strip() # REMOVED INPUT
 
                  # Determine the series IMDb ID
                  series_imdb_id = manual_series_imdb_id if series_imdb_id_select == 'manual' else series_imdb_id_select
 
-                 # Validate required fields for episode (excluding video_url)
-                 if not series_imdb_id or not episode_imdb_id or not episode_title or not season_number_str or not episode_number_str:
-                      # This check is also done client-side, but good to have server-side too
+                 # Validate required fields for episode (excluding video_url and episode_imdb_id)
+                 if not series_imdb_id or not episode_title or not season_number_str or not episode_number_str:
                       missing = []
                       if not series_imdb_id: missing.append('סדרה')
-                      if not episode_imdb_id: missing.append('IMDb ID של הפרק')
                       if not episode_title: missing.append('כותרת פרק')
                       if not season_number_str: missing.append('מספר עונה')
                       if not episode_number_str: missing.append('מספר פרק')
-                      # Removed the video URL missing field check
                       flash(f'שגיאה: שדות חובה חסרים: {", ".join(missing)}.', 'error')
                       return redirect(url_for('add_content'))
 
@@ -721,51 +814,30 @@ def add_content():
                      flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים.', 'error')
                      return redirect(url_for('add_content'))
 
-                 # Validate IMDb ID formats
-                 imdb_id_pattern = re.compile(r'^tt\d{7,}$') # Use regex for pattern validation
+                 # Validate Series IMDb ID format
+                 imdb_id_pattern = re.compile(r'^tt\d{7,}$')
                  if not imdb_id_pattern.match(series_imdb_id):
                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
-                 if not imdb_id_pattern.match(episode_imdb_id):
-                      flash('שגיאה: פורמט IMDb ID של הפרק לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
-                      return redirect(url_for('add_content'))
 
-
-                 # Check if the parent series exists (Optional but good practice)
-                 # series_ref = db.reference(f'/Series/{series_imdb_id}')
-                 # series_exists = series_ref.get() is not None
-                 # if not series_exists:
-                 #      logging.warning(f'Parent series with IMDb ID "{series_imdb_id}" not found for episode. Episode will be added anyway.')
-                 #      flash(f'אזהרה: הסדרה עם IMDb ID "{series_imdb_id}" אינה קיימת במסד הנתונים. הפרק יתווסף, אך ייתכן שתצטרך להוסיף את פרטי הסדרה בנפרד.', 'warning')
-
-
-                 # Construct episode data (without video_url from form)
+                 # Construct episode data (without episode_imdb_id and video_url)
                  episode_data = {
-                     'episode_imdb_id': episode_imdb_id, # Store the episode IMDb ID
                      'title': episode_title,
-                     # REMOVED: 'video_url': video_url, # Not from form anymore
-                     'episode_number': episode_number, # Store episode number explicitly
-                     'season_number': season_number # Store season number explicitly (optional, but good for structure)
-                     # Note: video_url MUST exist in Firebase for playback, but this form no longer adds it.
-                     # 'duration': 'N/A'
+                     'episode_number': episode_number,
+                     'season_number': season_number
+                     # 'video_url' would need to be added via a different mechanism
                  }
 
-                 # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season}/Episodes/{episode_number}
-                 # We use episode_number as the key within the Episodes node for the season,
-                 # as it fits the common structure for episode lists (1, 2, 3...).
-                 # The episode_imdb_id is stored *within* the episode's data.
+                 # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}
+                 # Use update here to preserve any existing data like 'video_url'
                  ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}')
-                 # Use update instead of set here, in case a video_url was added manually or elsewhere previously
-                 # Using set would overwrite any existing video_url. Using update preserves it.
                  ref.update(episode_data)
-                 logging.info(f"Episode S{season_number}E{episode_number} (IMDb ID: {episode_imdb_id}, Title: '{episode_title}') added/updated in series {series_imdb_id}.")
+                 logging.info(f"Episode S{season_number}E{episode_number} (Title: '{episode_title}') added/updated in series {series_imdb_id}.")
                  flash(f'פרק "{episode_title}" (עונה {season_number}, פרק {episode_number}) נוסף/עודכן בהצלחה לסדרה!', 'success')
-
 
             else:
                  flash('סוג תוכן לא ידוע.', 'warning')
                  logging.warning(f"Received unknown content type: {content_type}")
-
 
         except Exception as e:
              logging.error(f"Error processing add content POST: {e}", exc_info=True)
@@ -785,21 +857,13 @@ def add_content():
                            )
 
 
-
 @app.route('/movies')
 def all_movies():
     """Displays all movies from Firebase in a grid."""
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    # admin_email = ADMIN_EMAIL # <-- REMOVED
 
-    # Load ALL movies from Firebase
-    # load_movies_data() already returns a dictionary {imdbID: details}
-    # with 'type: movie' added, which is what we need.
     all_movies_data = load_movies_data()
-
-    # No categorization needed for this page, just pass the dictionary
-    # The template will iterate through this dictionary.
 
     logging.info(f"Rendering all_movies page with {len(all_movies_data)} movies.")
 
@@ -811,18 +875,13 @@ def all_movies():
                            )
 
 
-
-
 @app.route('/series') # Define the new route
 def all_series():
     """Displays all series from Firebase in a grid."""
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    # admin_email = ADMIN_EMAIL # <-- REMOVED
 
     # Use the existing function that loads basic series data for display
-    # load_series_data_for_index() already returns {imdbID: basic_details}
-    # with 'type: series' added, which is perfect for the grid.
     all_series_data = load_series_data_for_index()
 
     # Log how many series were loaded
@@ -862,13 +921,8 @@ def internal_server_error(e):
 
 
 if __name__ == '__main__':
-    # Ensure Firebase is initialized before running the app
-    # The try/except block with _apps check handles reloader
-    # Also check if initialization actually succeeded before running
     if firebase_admin._apps:
         port = int(os.environ.get('PORT', 5000))
-        # debug=True should only be used in development
         app.run(host='0.0.0.0', port=port, debug=True)
     else:
         logging.error("Application not started because Firebase initialization failed.")
-        # You might want to sys.exit(1) here in a real application
