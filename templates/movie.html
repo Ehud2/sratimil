@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>צפייה בסרט - סינמה פריים</title>
+    <title>צפייה בסרט - {{ movie.title or 'סינמה פריים' }}</title> {# Use movie title #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,6 +32,13 @@
             text-align: center;
             margin-top: 20px;
         }
+        /* Style for the timestamp display (optional) */
+        #current-timestamp {
+             margin-top: 10px;
+             text-align: center;
+             color: #ccc;
+             font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -57,7 +64,7 @@
                 </a>
             {% else %}
                 <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                    <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
+                    <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy"> {# Reverted to local image #}
                 </a>
             {% endif %}
         </div>
@@ -66,17 +73,20 @@
 </header>
 
 <main class="container movie-details-page">
-    <h1 id="movie-title">צפייה בסרט</h1>
+    <h1 id="movie-title">{{ movie.title or 'צפייה בסרט' }}</h1> {# Use movie title #}
 
     <div class="movie-grid">
         <div class="movie-poster">
-            <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="פוסטר הסרט" loading="lazy">
+            <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר הסרט' }}" loading="lazy"> {# Use movie title for alt text #}
         </div>
 
         <div class="movie-info">
             <div class="vidsrc-embed-container" id="embed-container">
                 <!-- יוזן על ידי JS -->
             </div>
+            {# Optional: Add a div to display current timestamp (debug/info) #}
+             <div id="current-timestamp" style="display: none;"></div>
+
 
             <div class="movie-details-list">
                 <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
@@ -88,6 +98,7 @@
             </div>
 
             <div class="movie-actions">
+                 {# TODO: Implement add to list functionality #}
                 <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button>
             </div>
         </div>
@@ -101,37 +112,201 @@
 </footer>
 
 <script>
-    // חיפוש
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality (same as index.html, navigate back to index with search term)
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const term = this.value.trim();
+                    if (term) {
+                        window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                    }
+                }
+            });
+             // Optional: search button click
+             document.querySelector('.search-container button').addEventListener('click', function() {
+                 const term = searchInput.value.trim();
+                 if (term) {
+                      window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                 }
+             });
+        }
+
+        // --- Continue Watching Tracking & Vidsrc Embed ---
+        const user = {{ user | tojson }}; // Pass user object from Flask
+        const movieData = {{ movie | tojson }}; // Pass movie object from Flask
+        const embedContainer = document.getElementById('embed-container');
+        const currentTimestampDiv = document.getElementById('current-timestamp'); // Optional display
+
+        if (movieData && movieData.imdbID) {
+            const imdbId = movieData.imdbID;
+            const movieType = 'movie'; // Explicitly set type
+
+            // Check if user is logged in to enable tracking
+            if (user && user.google_id) {
+                const userId = user.google_id;
+                const localStorageKey = `continueWatching_${userId}`;
+                const itemKey = `movie_${imdbId}`; // Unique key for this movie
+
+                let continueWatchingItems = {};
+                let savedTimestamp = 0; // Default timestamp
+
+                // Load existing continue watching data from localStorage
+                try {
+                    const storedData = localStorage.getItem(localStorageKey);
+                    if (storedData) {
+                        continueWatchingItems = JSON.parse(storedData) || {};
+                        // Check if this movie is already in the list and get its timestamp
+                        if (continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number') {
+                            savedTimestamp = continueWatchingItems[itemKey].timestamp;
+                             console.log(`Loaded saved timestamp for movie ${imdbId}: ${savedTimestamp} seconds.`);
+                        } else {
+                             console.log(`No saved timestamp found for movie ${imdbId}. Starting from 0.`);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error loading continue watching data from localStorage:", e);
+                     continueWatchingItems = {}; // Reset on error
+                }
+
+                // Function to save the current item's details to localStorage
+                // Note: Timestamp saving is unreliable with Vidsrc due to cross-origin restrictions.
+                // We'll save the *item* and the timestamp we *started* with.
+                function saveContinueWatchingState(timestampToSave = savedTimestamp) {
+                    // Ensure we have basic movie data
+                    if (!movieData || !movieData.imdbID) {
+                         console.error("Cannot save continue watching state: Missing movie data.");
+                         return;
+                    }
+                    // Create or update the item entry
+                    continueWatchingItems[itemKey] = {
+                        id: imdbId,
+                        type: movieType,
+                        title: movieData.title || 'כותרת לא ידועה',
+                        poster: movieData.poster && movieData.poster !== 'N/A' ? movieData.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
+                        timestamp: timestampToSave // Save the timestamp (likely the initial one loaded or 0)
+                        // Note: Real-time timestamp updates are NOT possible here with standard Vidsrc iframe.
+                        // This timestamp reflects the STARTING point if loaded from CW, or 0 if first time/direct access.
+                    };
+
+                    try {
+                        localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
+                        console.log(`Saved movie ${imdbId} state to localStorage (timestamp: ${timestampToSave}).`);
+                         // Optional: Update the timestamp display
+                         if (currentTimestampDiv) {
+                              // Format timestamp for display (HH:MM:SS)
+                               const formatTime = (seconds) => {
+                                    const h = Math.floor(seconds / 3600);
+                                    const m = Math.floor((seconds % 3600) / 60);
+                                    const s = Math.floor(seconds % 60);
+                                    return [h, m, s]
+                                        .map(v => v < 10 ? '0' + v : v)
+                                        .filter((v, i) => v !== '00' || i > 0)
+                                        .join(':');
+                               };
+                              currentTimestampDiv.textContent = `שמירה: ${formatTime(timestampToSave)}`;
+                              currentTimestampDiv.style.display = 'block';
+                         }
+
+                    } catch (e) {
+                        console.error("Error saving continue watching data to localStorage:", e);
+                    }
+                }
+
+                // Check URL hash for initial timestamp
+                const urlHash = window.location.hash;
+                if (urlHash.startsWith('#timestamp=')) {
+                    const hashTimestamp = parseInt(urlHash.substring('#timestamp='.length), 10);
+                    if (!isNaN(hashTimestamp) && hashTimestamp >= 0) {
+                        savedTimestamp = hashTimestamp; // Use timestamp from URL hash if valid
+                         console.log(`Overriding saved timestamp with value from URL hash: ${savedTimestamp} seconds.`);
+                    }
+                } else {
+                     console.log("No #timestamp hash found in URL.");
+                }
+
+
+                // Construct the Vidsrc URL with the potentially loaded timestamp
+                const vidsrcUrl = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}${savedTimestamp > 0 ? '#timestamp=' + savedTimestamp : ''}`;
+                 console.log(`Constructed Vidsrc URL: ${vidsrcUrl}`);
+
+
+                // Embed the iframe
+                const iframe = document.createElement('iframe');
+                iframe.src = vidsrcUrl; // Use the URL with timestamp
+                iframe.allowFullscreen = true;
+                iframe.setAttribute("allow", "autoplay");
+                embedContainer.appendChild(iframe);
+
+                // Save the initial state when the page loads (or reloads from CW)
+                 // This marks the item as "started" or updates its last known start time
+                 saveContinueWatchingState(savedTimestamp);
+
+                 // Optional: Attempt to periodically save a placeholder timestamp or 0
+                 // NOTE: This interval CANNOT get the actual player time.
+                 // It just re-saves the initial timestamp or 0 periodically.
+                 // This part is largely ineffective for real progress tracking with Vidsrc.
+                 // Removing the interval as it gives a false sense of saving real progress.
+                 // The key saving happens on page load (marking as started/revisited).
+
+                 // Save the current state when the user leaves the page
+                 window.addEventListener('beforeunload', () => {
+                      // saveContinueWatchingState(savedTimestamp); // Save the initial timestamp one last time (redundant but harmless)
+                      console.log(`Page unload event for movie ${imdbId}.`);
+                       // Real-time saving requires access to player.currentTime, which is not possible here.
+                 });
+
+
+            } else {
+                 // User not logged in, just embed the iframe without tracking
+                 console.log("User not logged in. Continue Watching tracking disabled.");
+                 if (/^tt\d{7,}$/.test(imdbId)) {
+                     const iframe = document.createElement('iframe');
+                     iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`; // No timestamp for non-logged-in users
+                     iframe.allowFullscreen = true;
+                     iframe.setAttribute("allow", "autoplay");
+                     embedContainer.appendChild(iframe);
+                 } else {
+                      const message = document.createElement('div');
+                      message.className = 'no-video-message';
+                      message.textContent = 'וידאו אינו זמין עבור תוכן זה.';
+                      embedContainer.appendChild(message);
+                 }
+            }
+
+        } else {
+             console.error("Movie data or IMDb ID not found. Cannot embed video.");
+             const message = document.createElement('div');
+             message.className = 'no-video-message';
+             message.textContent = 'פרטי סרט חסרים או לא תקינים.';
+             embedContainer.appendChild(message);
+        }
+
+    }); // End DOMContentLoaded
+
+     // Search functionality (same as index.html, navigate back to index with search term) - outside DOMContentLoaded for access
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
+                event.preventDefault();
                 const term = this.value.trim();
                 if (term) {
                     window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
                 }
             }
         });
+         // Optional: search button click
+        document.querySelector('.search-container button').addEventListener('click', function() {
+             const term = searchInput.value.trim();
+             if (term) {
+                  window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+             }
+         });
     }
 
-    // הטמעת הסרט מ vidsrc לפי imdb_id מה-URL
-    const pathParts = window.location.pathname.split('/');
-    const imdbId = pathParts[pathParts.length - 1];
-
-    const embedContainer = document.getElementById('embed-container');
-
-    if (/^tt\d{7,8}$/.test(imdbId)) {
-        const iframe = document.createElement('iframe');
-        iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
-        iframe.allowFullscreen = true;
-        iframe.setAttribute("allow", "autoplay");
-        embedContainer.appendChild(iframe);
-    } else {
-        const message = document.createElement('div');
-        message.className = 'no-video-message';
-        message.textContent = 'וידאו אינו זמין עבור תוכן זה.';
-        embedContainer.appendChild(message);
-    }
 </script>
 
 </body>
