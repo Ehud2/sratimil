@@ -983,6 +983,48 @@ def all_series():
                            )
 
 
+WEBSITE_URL = "https://moviesil.onrender.com/"  # כתובת האתר שלך
+INTERVAL_MINUTES = 4  # זמן בין בקשות בשביל לשמור על האתר ער (בדקות)
+
+def keep_website_alive(url, interval_minutes):
+    """
+    שולח בקשת HTTP לכתובת ה-URL כל פרק זמן מוגדר כדי למנוע כיבוי.
+    """
+    interval_seconds = interval_minutes * 60
+    print(f"[*] החל תהליך רקע לשמירה על האתר {url} פעיל. שליחת בקשה כל {interval_minutes} דקות.")
+    while True:
+        time.sleep(interval_seconds) # המתן את פרק הזמן המוגדר
+        try:
+            # שלח בקשת GET פשוטה
+            response = requests.get(url)
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # בדוק את קוד הסטטוס של התגובה
+            if response.status_code == 200:
+                print(f"[{current_time}] בקשת 'Keep-Alive' ל- {url} הצליחה. סטטוס: {response.status_code}")
+            else:
+                print(f"[{current_time}] בקשת 'Keep-Alive' ל- {url} נכשלה או החזירה סטטוס שאינו 200. סטטוס: {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            # טיפול בשגיאות שקשורות לבקשה (למשל, בעיות רשת)
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{current_time}] שגיאה בבקשת 'Keep-Alive' ל- {url}: {e}")
+        except Exception as e:
+            # טיפול בשגיאות אחרות בלתי צפויות
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{current_time}] שגיאה בלתי צפויה בתהליך 'Keep-Alive' ל- {url}: {e}")
+
+# --- הוסף את הקוד הבא בחלק הראשי של הסקריפט שלך, לפני שהשרת מתחיל לרוץ ---
+
+# יצירת אובייקט Thread
+# daemon=True גורם ל-thread להיסגר אוטומטית כשהתוכנית הראשית נסגרת
+keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_URL, INTERVAL_MINUTES), daemon=True)
+
+# התחלת ה-thread
+keep_alive_thread.start()
+
+
+
 # --- Error Handlers ---
 @app.errorhandler(403)
 def forbidden(e):
