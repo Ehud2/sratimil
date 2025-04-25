@@ -311,19 +311,22 @@ def get_omdb_details_api(imdb_id, season=None, episode=None):
     """
     Gets full details for a specific IMDb ID from OMDB.
     If season and episode are provided, gets details for a specific episode of a series.
+    If only season is provided (and imdb_id is series ID), gets details for that season (list of episodes).
     """
     if not OMDB_API_KEY or OMDB_API_KEY == 'YOUR_OMDB_API_KEY':
          logging.warning("OMDB_API_KEY is not set.")
          return None
     params = {
         'apikey': OMDB_API_KEY,
-        'i': imdb_id, # This is the SERIES IMDb ID when getting episode details
-        'plot': 'full' # Request full plot for main details
+        'i': imdb_id, # This is the SERIES IMDb ID when getting episode/season details
     }
     if season is not None:
         params['Season'] = season
     if episode is not None:
         params['Episode'] = episode
+    else: # If only season is requested (or neither), request full plot for main details
+         params['plot'] = 'full'
+
 
     try:
         response = requests.get(OMDB_BASE_URL, params=params, timeout=10)
@@ -340,21 +343,36 @@ def get_omdb_details_api(imdb_id, season=None, episode=None):
                  else:
                       # This might happen if the season/episode doesn't exist for the series
                       logging.warning(f"OMDB episode details response does not match request for Series ID '{imdb_id}', S{season}E{episode}. Response: {data}")
-                      return None # Indicate specific episode not found
+                      # Return an empty-like response or None to signal not found/match
+                      return {'Response': 'False', 'Error': 'Episode data mismatch or not found'} # Return a dict with Response=False
+            elif season is not None and episode is None:
+                 # This is a request for a specific season's episodes list
+                 # OMDB season response contains 'Season', 'Episodes' (a list), 'Response'
+                 if data.get('Response') == 'True' and data.get('Season') == str(season):
+                      logging.info(f"Successfully fetched OMDB season details for Series ID '{imdb_id}', Season {season}. Found {len(data.get('Episodes', []))} episodes.")
+                      return data
+                 else:
+                     logging.warning(f"OMDB season details response does not match request for Series ID '{imdb_id}', Season {season}. Response: {data}")
+                     return {'Response': 'False', 'Error': 'Season data mismatch or not found'} # Return a dict with Response=False
             else:
-                # It's a main movie/series details request
+                # It's a main movie/series details request (season and episode are None)
                 logging.info(f"Successfully fetched OMDB main details for ID '{imdb_id}'. Type: {data.get('Type')}")
                 return data
         else:
-             # Check if error is due to episode not found
+             # Handle OMDB Response 'False' case for any request type
+             error_message = data.get('Error', 'Unknown error from OMDB')
              if season is not None and episode is not None:
-                  logging.info(f"OMDB episode not found for Series ID '{imdb_id}', S{season}E{episode}: {data.get('Error', 'Unknown error')}")
+                  logging.info(f"OMDB episode not found for Series ID '{imdb_id}', S{season}E{episode}: {error_message}")
+             elif season is not None:
+                 logging.info(f"OMDB season data not found for Series ID '{imdb_id}', Season {season}: {error_message}")
              else:
-                  logging.info(f"OMDB main details not found for ID '{imdb_id}': {data.get('Error', 'Unknown error')}")
-             return None
+                  logging.info(f"OMDB main details not found for ID '{imdb_id}': {error_message}")
+             return {'Response': 'False', 'Error': error_message} # Return a dict with Response=False
     except requests.exceptions.RequestException as e:
+        # Handle network or request errors
         logging.error(f"Error calling OMDB details API for ID {imdb_id} (Season {season}, Episode {episode}): {e}", exc_info=True)
-        return None
+        return {'Response': 'False', 'Error': f'Request Error: {e}'}
+
 
 # --- API Routes for Frontend OMDB Search (Used by add.html) ---
 @app.route('/api/search_omdb')
@@ -399,14 +417,16 @@ def api_get_omdb_details():
         logging.warning(f"API get details called with non-integer season/episode: season={season}, episode={episode}")
         return jsonify({"Error": "Invalid season or episode number"}), 400
 
-
+    # Call the unified get_omdb_details_api function
     details = get_omdb_details_api(imdb_id, season_int, episode_int)
-    if details:
+
+    if details and details.get('Response') == 'True':
         # Return the raw details object from OMDB
         return jsonify(details)
     else:
-        # Return 404 if details (or specific episode) not found
-        return jsonify({"Error": "Details not found or API error"}), 404
+        # Return 404 if details (or specific episode/season) not found or API error
+        error_message = details.get('Error', 'Details not found or API error') if isinstance(details, dict) else 'Details not found or API error'
+        return jsonify({"Error": error_message}), 404
 
 
 # --- Authentication Routes ---
@@ -607,7 +627,7 @@ def add_content():
                     return redirect(url_for('add_content'))
 
                 imdb_id_pattern = re.compile(r'^tt\d{7,}$')
-                if not imdb_id_pattern.match(imdb_id): # Corrected variable name (was imdb_imdb_id in previous version)
+                if not imdb_id_pattern.match(imdb_id):
                      flash('שגיאה: פורמט IMDb ID לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
 
@@ -616,8 +636,9 @@ def add_content():
                 omdb_details = get_omdb_details_api(imdb_id)
 
                 # Check if OMDB details were found and if the type is actually a movie
-                if not omdb_details or omdb_details.get('Type', '').lower() != 'movie': # Case-insensitive check
-                     flash(f'שגיאה: לא נמצאו פרטי סרט תקינים עבור IMDb ID "{imdb_id}" ב-OMDB.', 'error')
+                if not omdb_details or omdb_details.get('Response') == 'False' or omdb_details.get('Type', '').lower() != 'movie': # Case-insensitive check
+                     error_msg = omdb_details.get('Error', 'Details not found or API error') if isinstance(omdb_details, dict) else 'Details not found or API error'
+                     flash(f'שגיאה: לא נמצאו פרטי סרט תקינים עבור IMDb ID "{imdb_id}" ב-OMDB. {error_msg}', 'error')
                      logging.warning(f"OMDB details not found or type is not 'movie' for ID {imdb_id}. OMDB Response: {omdb_details}")
                      return redirect(url_for('add_content'))
 
@@ -658,14 +679,13 @@ def add_content():
                 flash(f'סרט "{movie_data["title"]}" נוסף בהצלחה!', 'success')
 
             elif content_type == 'series':
-                 # Get form data for series (main details, total seasons, episodes per season)
+                 # Get form data for series (main details, series_imdb_id from search selection)
                  series_imdb_id = request.form.get('series_imdb_id', '').strip() # From OMDB search selection
                  category = request.form.get('series_category', 'ללא') # Get category for series
-                 total_seasons_str = request.form.get('total_seasons', '').strip()
 
                  # Validate required fields for main series
-                 if not series_imdb_id or not total_seasons_str:
-                     flash('שגיאה: שדות חובה עבור סדרה (IMDb ID, סה"כ עונות) חסרים.', 'error')
+                 if not series_imdb_id:
+                     flash('שגיאה: שדה חובה עבור סדרה (IMDb ID) חסר.', 'error')
                      return redirect(url_for('add_content'))
 
                  imdb_id_pattern = re.compile(r'^tt\d{7,}$')
@@ -674,22 +694,27 @@ def add_content():
                      return redirect(url_for('add_content'))
 
 
-                 try:
-                     total_seasons = int(total_seasons_str)
-                     if total_seasons < 1:
-                         raise ValueError("Total seasons must be positive")
-                 except ValueError:
-                     flash('שגיאה: סה"כ עונות חייב להיות מספר שלם חיובי.', 'error')
-                     return redirect(url_for('add_content'))
-
                  # Fetch main series details from OMDB server-side
                  omdb_details = get_omdb_details_api(series_imdb_id)
 
                  # Check if OMDB details were found and if the type is actually a series
-                 if not omdb_details or omdb_details.get('Type', '').lower() != 'series':
-                      flash(f'שגיאה: לא נמצאו פרטים לסדרה או שה-ID אינו של סדרה עבור "{series_imdb_id}" ב-OMDB.', 'error')
+                 if not omdb_details or omdb_details.get('Response') == 'False' or omdb_details.get('Type', '').lower() != 'series':
+                      error_msg = omdb_details.get('Error', 'Details not found or API error') if isinstance(omdb_details, dict) else 'Details not found or API error'
+                      flash(f'שגיאה: לא נמצאו פרטים לסדרה או שה-ID אינו של סדרה עבור "{series_imdb_id}" ב-OMDB. {error_msg}', 'error')
                       logging.warning(f"OMDB details not found or type is not 'series' for ID {series_imdb_id}. OMDB Response: {omdb_details}")
                       return redirect(url_for('add_content'))
+
+                 # Extract total seasons from OMDB details, default to 1 if missing/invalid
+                 try:
+                     total_seasons_str = omdb_details.get('totalSeasons', '1')
+                     total_seasons = int(total_seasons_str)
+                     if total_seasons < 1:
+                          logging.warning(f"OMDB returned invalid totalSeasons ({total_seasons_str}) for {series_imdb_id}. Defaulting to 1.")
+                          total_seasons = 1
+                 except ValueError:
+                      logging.warning(f"OMDB returned non-integer totalSeasons ({total_seasons_str}) for {series_imdb_id}. Defaulting to 1.")
+                      total_seasons = 1
+
 
                  # Construct base series data from OMDB details and form data
                  series_data = {
@@ -713,84 +738,87 @@ def add_content():
                     'imdbRating': omdb_details.get('imdbRating', 'N/A'),
                     'imdbVotes': omdb_details.get('imdbVotes', 'N/A'),
                     'type': 'series',
-                    'totalSeasons': omdb_details.get('totalSeasons', total_seasons_str), # Use OMDB totalSeasons if available, else form input
+                    'totalSeasons': total_seasons_str, # Store the string from OMDB or default '1'
                     'category': category
                  }
 
-                 # Build the Seasons/Episodes structure
+                 # Build the Seasons/Episodes structure by fetching season data from OMDB
                  seasons_data = {}
-                 all_episodes_added = True
+                 all_episodes_fetched_successfully = True # Flag to track if all episode fetches worked
+
                  for season_num in range(1, total_seasons + 1):
-                     num_episodes_key = f'num_episodes_season_{season_num}'
-                     num_episodes_str = request.form.get(num_episodes_key, '').strip()
+                     # Fetch details for the specific season to get the episode list
+                     season_details_from_omdb = get_omdb_details_api(series_imdb_id, season=season_num)
 
-                     try:
-                         num_episodes = int(num_episodes_str)
-                         if num_episodes < 0: # Allow 0 episodes for an upcoming season? Or enforce >= 1? Let's enforce >=0
-                             raise ValueError("Number of episodes cannot be negative")
-                     except ValueError:
-                          flash(f'שגיאה: מספר הפרקים עבור עונה {season_num} חייב להיות מספר שלם תקין.', 'error')
-                          return redirect(url_for('add_content'))
+                     if season_details_from_omdb and season_details_from_omdb.get('Response') == 'True' and season_details_from_omdb.get('Episodes'):
+                          episodes_list_for_season = season_details_from_omdb.get('Episodes', [])
+                          episodes_data = {}
+                          num_episodes_in_season = len(episodes_list_for_season)
+                          logging.info(f"Fetched {num_episodes_in_season} episodes for S{season_num} from OMDB for series {series_imdb_id}.")
 
-                     episodes_data = {}
-                     for episode_num in range(1, num_episodes + 1):
-                         # Fetch episode details from OMDB using series ID, season, and episode numbers
-                         episode_details = get_omdb_details_api(series_imdb_id, season=season_num, episode=episode_num)
+                          # OMDB season response gives a list of episodes, each with its 'Episode', 'Title', 'imdbID' etc.
+                          for episode_detail in episodes_list_for_season:
+                               try:
+                                   episode_num_str = episode_detail.get('Episode')
+                                   episode_num = int(episode_num_str) if episode_num_str else None
 
-                         # Determine the episode's IMDb ID and Title to save
-                         episode_imdb_id_to_save = None
-                         episode_title_to_save = f'פרק {episode_num}' # Default title
+                                   if episode_num is not None and episode_num >= 1:
+                                        episode_imdb_id_to_save = episode_detail.get('imdbID', f'tt_placeholder_{series_imdb_id}_s{season_num}e{episode_num}')
+                                        episode_title_to_save = episode_detail.get('Title', f'פרק {episode_num}')
 
-                         if episode_details and episode_details.get('Response') == 'True':
-                             # Use fetched details, provide placeholders if missing
-                             episode_imdb_id_to_save = episode_details.get('imdbID')
-                             episode_title_to_save = episode_details.get('Title', f'פרק {episode_num} (מ-OMDb)')
-                             logging.info(f"Fetched OMDB details for S{season_num}E{episode_num} ({series_imdb_id}). Title: '{episode_title_to_save}', Episode IMDb ID: {episode_imdb_id_to_save}")
-                         else:
-                             # If OMDB fails for an episode, log a warning, add a placeholder, and mark failure
-                             logging.warning(f"Failed to fetch OMDB details for S{season_num}E{episode_num} ({series_imdb_id}). OMDB error: {episode_details.get('Error', 'Unknown Error')}. Adding placeholder.")
-                             # Use placeholder ID if OMDB fails to provide one
-                             episode_imdb_id_to_save = f'tt_placeholder_{series_imdb_id}_s{season_num}e{episode_num}'
-                             all_episodes_added = False # Mark that not all episodes were added with full OMDB data
-
-                         # Ensure we have at least a placeholder ID
-                         if not episode_imdb_id_to_save:
-                             episode_imdb_id_to_save = f'tt_fallback_{series_imdb_id}_s{season_num}e{episode_num}'
-                             logging.warning(f"No episode IMDb ID available from OMDB or placeholder logic. Using fallback placeholder: {episode_imdb_id_to_save}")
+                                        episodes_data[str(episode_num)] = { # Use episode number as the key
+                                            'episode_imdb_id': episode_imdb_id_to_save,
+                                            'title': episode_title_to_save,
+                                            'season_number': season_num, # Store season number explicitly
+                                            'episode_number': episode_num, # Store episode number explicitly
+                                            'video_url': '', # Placeholder: Video URL must be added separately per episode
+                                            # Optionally add other episode details from OMDB if available and desired
+                                            # e.g., 'Released': episode_detail.get('Released'), 'Plot': episode_detail.get('Plot') # Plot is often short in season response
+                                        }
+                                        # logging.debug(f"Processing S{season_num}E{episode_num} ({series_imdb_id}): IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_title_to_save}'")
+                                   else:
+                                       logging.warning(f"Skipping episode data with invalid number or missing data in OMDB Season {season_num} response for {series_imdb_id}: {episode_detail}")
+                                       all_episodes_fetched_successfully = False # Mark failure if an episode within a season is malformed
 
 
-                         episodes_data[str(episode_num)] = { # Use episode number as the key
-                                 'episode_imdb_id': episode_imdb_id_to_save,
-                                 'title': episode_title_to_save,
-                                 'season_number': season_num,
-                                 'episode_number': episode_num,
-                                 'video_url': '' # Placeholder: Video URL must be added separately per episode
-                                 # Add other episode details if available from OMDB, e.g., Released, Plot, imdbRating etc.
-                             }
+                               except ValueError:
+                                    logging.warning(f"Could not parse episode number from OMDB Season {season_num} response for {series_imdb_id}: {episode_detail.get('Episode')}. Skipping episode.")
+                                    all_episodes_fetched_successfully = False # Mark failure
+                               except Exception as e:
+                                   logging.error(f"Unexpected error processing episode data for S{season_num} in {series_imdb_id}: {e}", exc_info=True)
+                                   all_episodes_fetched_successfully = False
 
 
-                     if episodes_data: # Only add season node if it has episodes
-                         seasons_data[str(season_num)] = {
-                             'Episodes': episodes_data
-                         }
+                          if episodes_data: # Only add season node if episodes were successfully processed for it
+                              seasons_data[str(season_num)] = {
+                                  'Episodes': episodes_data
+                              }
+                          else:
+                              logging.warning(f"No valid episode data found in OMDB response for Season {season_num} of series {series_imdb_id}. Season might not be added.")
+                              all_episodes_fetched_successfully = False
+
+                     else:
+                         error_msg = season_details_from_omdb.get('Error', 'Unknown Error') if isinstance(season_details_from_omdb, dict) else 'Unknown Error'
+                         logging.warning(f"Failed to fetch OMDB season details or found no episodes for Season {season_num} of series {series_imdb_id}. OMDB Error: {error_msg}. Season will not be added.")
+                         all_episodes_fetched_successfully = False # Mark failure
 
                  # Add the Seasons structure to the main series data
                  if seasons_data:
                       series_data['Seasons'] = seasons_data
                  else:
-                     logging.warning(f"No seasons or episodes added for series {series_imdb_id}.")
-                     # Optionally flash a warning if no episodes were processed
+                     logging.warning(f"No seasons or episodes were successfully added for series {series_imdb_id} based on OMDB data.")
+                     # Flash a warning if no episodes were processed at all
 
 
                  # Save series data (including Seasons/Episodes) to Firebase under /Series/{imdb_id}
                  # Use update instead of set to potentially preserve manual video_urls if re-adding
                  ref = db.reference(f'/Series/{series_imdb_id}')
                  ref.update(series_data)
-                 logging.info(f"Series '{series_data['title']}' ({series_imdb_id}) added/updated in Firebase with {len(seasons_data)} seasons.")
+                 logging.info(f"Series '{series_data.get('title', series_imdb_id)}' ({series_imdb_id}) added/updated in Firebase with {len(seasons_data)} seasons.")
 
-                 flash_message = f'סדרה "{series_data["title"]}" נוספה/עודכנה בהצלחה!'
-                 if not all_episodes_added:
-                      flash_message += ' אזהרה: לא ניתן היה להשיג פרטים עבור כל הפרקים מ-OMDb. בדוק את הפרטים שנוספו.'
+                 flash_message = f'סדרה "{series_data.get("title", series_imdb_id)}" נוספה/עודכנה בהצלחה!'
+                 if not all_episodes_fetched_successfully:
+                      flash_message += ' אזהרה: לא ניתן היה להשיג פרטים עבור כל הפרקים/עונות מ-OMDb. בדוק את הנתונים שנוספו.'
                       flash(flash_message, 'warning')
                  else:
                       flash(flash_message, 'success')
@@ -847,7 +875,9 @@ def add_content():
                           episode_title_to_save = episode_details_from_omdb.get('Title', f'פרק {episode_number} (מ-OMDb)')
                       logging.info(f"Fetched OMDB details for episode {series_imdb_id} S{season_number}E{episode_number}. Episode IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_details_from_omdb.get('Title')}'")
                  else:
-                     logging.warning(f"Failed to fetch OMDB details for episode {series_imdb_id} S{season_number}E{episode_number}. OMDB Error: {episode_details_from_omdb.get('Error', 'Unknown Error')}. Proceeding with form data and placeholder ID.")
+                     # Check if episode_details_from_omdb is a dictionary with an error message
+                     error_msg = episode_details_from_omdb.get('Error', 'Unknown Error') if isinstance(episode_details_from_omdb, dict) else 'Unknown Error'
+                     logging.warning(f"Failed to fetch OMDB details for episode {series_imdb_id} S{season_number}E{episode_number}. OMDB Error: {error_msg}. Proceeding with form data and placeholder ID.")
                      # Use placeholder ID if OMDB fails to provide one
                      episode_imdb_id_to_save = f'tt_placeholder_{series_imdb_id}_s{season_number}e{episode_number}'
                      # If OMDB fetch failed and user didn't provide a title, use a generic placeholder title
