@@ -20,7 +20,7 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                <img src="data:image/png;base64,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" alt="Profile picture">
+                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Profile picture"> {# Changed from base64 to local file #}
             {% endif %}
         </div>
         <p>טוען סינמה פריים...</p>
@@ -39,7 +39,7 @@
                 <a href="{{ url_for('index') }}">בית</a>
                 <a href="{{ url_for('all_movies') }}">סרטים</a>
                 <a href="{{ url_for('all_series') }}">סדרות</a>
-                {% if user and user.email in admin_emails %} {# Changed condition to check if user.email is IN the list admin_emails #}
+                {% if user and user.email in admin_emails %}
                     <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
                 {% endif %}
             </nav>
@@ -51,8 +51,6 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# As requested, replacing the base64 image data with placeholder text #}
-                         {# NOTE: This will break the image display. Replace with a valid image URL or base64 data for production. #}
                          {# Reverting to a default placeholder image URL that exists #}
                          <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy">
                     </a>
@@ -82,6 +80,16 @@
             <p>מה נראה היום?</p>
         </div>
 
+        {# The "Continue Watching" section will be added here by JavaScript if applicable #}
+        <section id="continueWatchingSection" class="category-section" style="display: none;">
+            <h2>המשך צפייה</h2>
+            <div class="item-row" id="continueWatchingRow">
+                {# Items will be populated here by JavaScript #}
+            </div>
+             <div id="noContinueWatchingMessage" style="display: none; color: #aaa; text-align: center; padding: 20px;">אין פריטים ברשימת 'המשך צפייה'.</div>
+        </section>
+
+
         {% for category_name, items_in_category in categories.items() %}
             {% if items_in_category %}
                 <section class="category-section">
@@ -90,8 +98,8 @@
                         {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
-                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link">
-                                <div class="item-card" data-title="{{ item.title.lower() }}" data-id="{{ item.id }}" data-type="{{ item.type }}" tabindex="0">
+                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.title.lower() }}"> {# Added catalog-item class and data attributes for search #}
+                                <div class="item-card" tabindex="0"> {# Moved data-title/id/type to the link #}
                                     <div class="card-image-container">
                                         {# Use item.poster, fall back to default if N/A or empty #}
                                         <img src="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.title }}" loading="lazy">
@@ -106,9 +114,10 @@
                                             <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
                                             <h3 class="card-title">{{ item.title }}</h3>
                                             <div class="card-actions">
-                                                <button aria-label="Add to list" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
+                                                {# Added data attributes for JS to identify the item for adding/removing from lists #}
+                                                <button aria-label="Add to list" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.title }}" data-poster="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
                                                  {# The info button might also link to the movie/series page #}
-                                                <button class="info-button" aria-label="More info"><i class="fas fa-info-circle"></i></button> {# This button will also follow the card link #}
+                                                <button class="info-button" aria-label="More info" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
                                             </div>
                                         </div>
                                     </div>
@@ -127,8 +136,6 @@
             <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
         </div>
     </footer>
-
-    {# --- No modal HTML needed anymore --- #}
 
     <script>
         // JavaScript to hide the loading spinner once the page is loaded
@@ -172,30 +179,246 @@
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
-                    // Select the anchor tag wrappers now
-                    const itemCardLinks = document.querySelectorAll('.item-card-link');
+                    // Select only the items within the main categories, not Continue Watching
+                    const itemCardLinks = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Target catalog items
                     let anyVisible = false;
                     itemCardLinks.forEach(link => {
-                         // Get the data-title from the .item-card *inside* the link
-                        const card = link.querySelector('.item-card');
-                        if (card) {
-                             const title = card.dataset.title || ''; // Use data-title attribute
+                         // Use data-title directly from the link
+                         const title = link.dataset.title || '';
 
-                             if (title.includes(searchTerm)) {
-                                 link.style.display = ''; // Show the link (and thus the card)
-                                 anyVisible = true;
-                             } else {
-                                 link.style.display = 'none'; // Hide the link (and thus the card)
-                             }
-                        }
+                         if (title.includes(searchTerm)) {
+                             link.style.display = ''; // Show the link (and thus the card)
+                             anyVisible = true;
+                         } else {
+                             link.style.display = 'none'; // Hide the link (and thus the card)
+                         }
                     });
                      const noResultsMessage = document.getElementById('noResultsMessage');
                      if (noResultsMessage) {
                           noResultsMessage.style.display = anyVisible ? 'none' : 'block';
                      }
                 });
+
+                // Handle search button click
+                document.querySelector('.search-container button').addEventListener('click', function() {
+                     const searchTerm = searchInput.value.trim();
+                     // The input listener already handles filtering as typing occurs.
+                     // If you want a full page search results page on button click,
+                     // you would modify this to redirect, similar to the Enter key logic.
+                     // For now, the button click does nothing extra besides triggering the input event.
+                });
+
+                // Handle Enter key on search input
+                searchInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault(); // Prevent form submission if search was inside a form
+                        // The 'input' listener handles the filtering in real-time.
+                        // If you want 'Enter' to trigger a *different* action (like a full page search result),
+                        // you'd put that logic here instead of just preventing default.
+                        // For now, 'Enter' just confirms the current filter.
+                    }
+                });
+
+
             } else {
                  console.warn("Search input #searchInput not found.");
+            }
+
+
+            // --- Continue Watching Functionality (Client-Side) ---
+            const user = {{ user | tojson }}; // Pass user object from Flask
+            const continueWatchingSection = document.getElementById('continueWatchingSection');
+            const continueWatchingRow = document.getElementById('continueWatchingRow');
+            const noContinueWatchingMessage = document.getElementById('noContinueWatchingMessage');
+
+            if (user && user.google_id) {
+                const userId = user.google_id;
+                const localStorageKey = `continueWatching_${userId}`;
+
+                try {
+                    const storedData = localStorage.getItem(localStorageKey);
+                    let continueWatchingItems = {};
+
+                    if (storedData) {
+                        try {
+                             continueWatchingItems = JSON.parse(storedData);
+                              // Ensure it's an object, default to empty if parsing fails or results in non-object
+                              if (typeof continueWatchingItems !== 'object' || continueWatchingItems === null) {
+                                  console.warn("localStorage data for continue watching is not an object. Resetting.");
+                                   continueWatchingItems = {};
+                              }
+                        } catch (parseError) {
+                             console.error("Error parsing continue watching data from localStorage:", parseError);
+                             continueWatchingItems = {}; // Reset on parse error
+                        }
+                    }
+
+                    // Convert object values into an array for easier iteration/sorting if needed
+                    const itemsArray = Object.values(continueWatchingItems);
+
+                    if (itemsArray.length > 0) {
+                        // Sort items if desired (e.g., by last watched time - though we aren't saving that accurately yet)
+                        // For now, display in the order they were added/updated in the object (less predictable)
+                        // Or sort by title, or add a 'lastWatchedTimestamp' field when saving.
+                        // Let's add a simple sort by item title for now.
+                        itemsArray.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+
+                        itemsArray.forEach(item => {
+                            const itemLink = document.createElement('a');
+                            let href = '#'; // Default fallback
+                            let titleText = item.title || 'פריט לא ידוע';
+                            let subtitleText = ''; // For series episode info
+
+                            // Construct the correct URL and subtitle based on item type
+                            if (item.type === 'movie') {
+                                 // Link to movie page, add timestamp hash if available (even if it's 0)
+                                href = `{{ url_for('movie_details', imdb_id='') }}${item.id}#timestamp=${item.timestamp || 0}`;
+                                subtitleText = 'סרט';
+                            } else if (item.type === 'series' && item.season && item.episode) {
+                                 // Link to series page with season/episode, add timestamp hash
+                                href = `{{ url_for('series_details', imdb_id='', season_number=0, episode_number=0) }}`
+                                     .replace('/0/0', `/${item.season}/${item.episode}`) // Replace placeholders
+                                     + `#timestamp=${item.timestamp || 0}`;
+                                subtitleText = `עונה ${item.season}, פרק ${item.episode}`;
+                                // For series, maybe show episode title if available, or main series title + episode info
+                                if (item.episode_title) {
+                                    titleText = item.episode_title; // Show episode title
+                                    subtitleText = `${item.title || 'סדרה לא ידועה'} - עונה ${item.season}, פרק ${item.episode}`; // Show series title + episode info below
+                                } else {
+                                     // If no episode title, show series title and episode info
+                                    titleText = item.title || 'סדרה לא ידועה';
+                                    subtitleText = `עונה ${item.season}, פרק ${item.episode}`;
+                                }
+
+                            } else {
+                                 console.warn("Skipping invalid item in continue watching:", item);
+                                 return; // Skip this item
+                            }
+
+                            itemLink.href = href;
+                            itemLink.classList.add('item-card-link');
+                             // Use a different class for CW items if needed for styling/selection
+                             itemLink.classList.add('continue-watching-item');
+
+                            // Create the item card structure
+                            const itemCard = document.createElement('div');
+                            itemCard.classList.add('item-card');
+                            itemCard.setAttribute('tabindex', '0'); // Make it focusable
+
+                            const imageContainer = document.createElement('div');
+                            imageContainer.classList.add('card-image-container');
+
+                            const img = document.createElement('img');
+                            img.src = item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}';
+                            img.alt = titleText;
+                            img.setAttribute('loading', 'lazy');
+
+                            const overlay = document.createElement('div');
+                            overlay.classList.add('card-overlay');
+
+                             // Play button inside overlay (clicking card/link already plays)
+                             const playButton = document.createElement('button');
+                             playButton.classList.add('play-button');
+                             playButton.setAttribute('aria-label', `המשך צפייה ב${titleText}`);
+                             playButton.innerHTML = '<i class="fas fa-play"></i>';
+                             // Prevent play button click from interfering with link click (optional, but good practice)
+                             playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+
+
+                            const titleElement = document.createElement('h3');
+                            titleElement.classList.add('card-title');
+                            titleElement.textContent = titleText;
+
+                             const subtitleElement = document.createElement('p'); // Add subtitle for series episode info
+                             subtitleElement.classList.add('card-subtitle'); // Define this class in CSS
+                             subtitleElement.textContent = subtitleText;
+                             subtitleElement.style.fontSize = '0.8em'; // Smaller font for subtitle
+                             subtitleElement.style.color = '#ccc'; // Lighter color
+                             subtitleElement.style.marginTop = '5px';
+
+
+                             const actionsDiv = document.createElement('div');
+                             actionsDiv.classList.add('card-actions');
+                             // Optional: Add a "Remove from list" button
+                             const removeButton = document.createElement('button');
+                              removeButton.classList.add('remove-from-cw-button'); // Define this class in CSS
+                              removeButton.setAttribute('aria-label', `הסר מ'המשך צפייה'`);
+                              removeButton.innerHTML = '<i class="fas fa-times"></i>'; // Use a close/times icon
+                              removeButton.addEventListener('click', (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation(); // Prevent link click
+
+                                   // Get the unique key for this item
+                                   let itemKey = null;
+                                   if (item.type === 'movie') {
+                                       itemKey = `movie_${item.id}`;
+                                   } else if (item.type === 'series' && item.season && item.episode) {
+                                       itemKey = `series_${item.id}_S${item.season}E${item.episode}`;
+                                   }
+
+                                  if (itemKey && continueWatchingItems[itemKey]) {
+                                       delete continueWatchingItems[itemKey]; // Remove from the object
+                                       localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems)); // Save back to localStorage
+                                       itemLink.remove(); // Remove the item's link element from the DOM
+                                       console.log(`Removed item ${itemKey} from continue watching.`);
+
+                                       // If the last item was removed, hide the section
+                                       if (Object.keys(continueWatchingItems).length === 0) {
+                                           continueWatchingSection.style.display = 'none';
+                                            noContinueWatchingMessage.style.display = 'block'; // Show empty message
+                                       }
+                                  }
+                              });
+                             actionsDiv.appendChild(removeButton);
+
+
+                            // Assemble the card structure
+                            imageContainer.appendChild(img);
+                             overlay.appendChild(playButton); // Add play button to overlay
+                            overlay.appendChild(titleElement);
+                             overlay.appendChild(subtitleElement); // Add subtitle to overlay
+                            overlay.appendChild(actionsDiv); // Add actions to overlay
+                            imageContainer.appendChild(overlay); // Overlay goes inside image container
+                            itemCard.appendChild(imageContainer); // Image container goes inside card
+
+                            // Append the card to the link
+                            itemLink.appendChild(itemCard);
+
+                            // Append the link (containing the card) to the row
+                            continueWatchingRow.appendChild(itemLink);
+                        });
+
+                        // Show the continue watching section if there are items
+                        if (itemsArray.length > 0) {
+                             continueWatchingSection.style.display = 'block';
+                              noContinueWatchingMessage.style.display = 'none'; // Hide empty message
+                        } else {
+                             continueWatchingSection.style.display = 'block'; // Show the section title even if empty? User asked not to show unless *has content*. Let's hide section entirely if empty.
+                              continueWatchingSection.style.display = 'none';
+                              // Or show the empty message? Let's show the section but with an empty message if no items after load/sort
+                              // continueWatchingSection.style.display = 'block'; // Show the section title
+                              // noContinueWatchingMessage.style.display = 'block'; // Show empty message inside the section
+                               console.log("Continue Watching list is empty.");
+                        }
+
+
+                    } else {
+                        console.log("No continue watching data found for this user.");
+                         // Hide the section if no data
+                         continueWatchingSection.style.display = 'none';
+                    }
+
+                } catch (e) {
+                    console.error("Error loading or displaying continue watching data:", e);
+                    // Hide the section on error
+                    continueWatchingSection.style.display = 'none';
+                }
+
+            } else {
+                console.log("User not logged in. Continue Watching hidden.");
+                 // Hide the section if user is not logged in
+                 continueWatchingSection.style.display = 'none';
             }
 
 
