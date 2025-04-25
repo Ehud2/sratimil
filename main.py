@@ -3,12 +3,14 @@ import traceback
 import os
 import requests
 import json
-import re # Import re for regex validation
+import re
+import urllib.parse # Import urllib for URL encoding/decoding
 from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
 import firebase_admin
 from firebase_admin import credentials, db
-import logging # Import logging for better error handling
+import logging
+from flask_socketio import SocketIO, emit, join_room, leave_room # Import SocketIO components
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -34,6 +36,10 @@ OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # THIS IS A SECRET! MU
 # List of admin emails
 ADMIN_EMAILS = ['ehudverbin@gmail.com', 'guykresco@gmail.com']
 
+# Configure SocketIO
+# async_mode can be 'eventlet', 'gevent', 'threading'. 'threading' is simplest for basic apps.
+# Use message_queue for horizontal scaling if needed.
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading') # Allow connections from any origin (adjust as needed)
 
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31)
 
@@ -59,14 +65,10 @@ FIREBASE_DATABASE_URL = os.environ.get('FIREBASE_DATABASE_URL', 'https://superno
 
 # Initialize Firebase Admin SDK
 try:
-    # Check if app is already initialized (prevents errors in debug/reloader mode)
     if not firebase_admin._apps:
-        # Check if the service account file exists
         if not os.path.exists(FIREBASE_SERVICE_ACCOUNT_KEY_PATH):
             logging.error(f"Firebase service account key file not found at {FIREBASE_SERVICE_ACCOUNT_KEY_PATH}")
-            # You might want to exit or raise an exception here in production
-            # For now, just log and continue (will likely fail Firebase ops later)
-            cred = None # Set cred to None so initialization fails
+            cred = None
         else:
             cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
 
@@ -81,7 +83,260 @@ try:
         logging.info("Firebase already initialized.")
 except Exception as e:
     logging.error(f"Error initializing Firebase: {e}", exc_info=True)
-    # Handle error - maybe abort app startup or provide a fallback
+
+
+# --- SocketIO User Mapping ---
+# A simple in-memory mapping of user email to SocketIO session ID (sid)
+# This is basic and won't scale across multiple server processes without a message queue.
+# Assumes one tab per user or the last connected tab wins.
+email_to_sid = {}
+sid_to_email = {}
+
+@socketio.on('connect')
+def handle_connect():
+    user = session.get('user')
+    if user and user.get('email'):
+        email = user['email']
+        sid = request.sid
+        logging.info(f"Socket connected: {sid}, User: {email}")
+        # Store the mapping. Overwrite if user connects from a new tab/device.
+        email_to_sid[email] = sid
+        sid_to_email[sid] = email
+    else:
+        logging.info(f"Socket connected: {request.sid}, User: Anonymous")
+        # Anonymous users won't be mapped
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    sid = request.sid
+    email = sid_to_email.pop(sid, None) # Remove from sid_to_email
+    if email:
+        # Check if this sid was the *currently* mapped sid for this email
+        if email_to_sid.get(email) == sid:
+            # If so, remove the email mapping. Otherwise, it means the user
+            # connected from a new tab and already overwrote the mapping.
+            del email_to_sid[email]
+            logging.info(f"Socket disconnected: {sid}, User: {email}")
+        else:
+             logging.info(f"Socket disconnected: {sid}, User: {email} (was already replaced by new connection)")
+    else:
+        logging.info(f"Socket disconnected: {sid}, User: Anonymous")
+
+
+# --- SocketIO Invitation Events ---
+@socketio.on('send_invitation')
+def handle_send_invitation(data):
+    sender_email = sid_to_email.get(request.sid)
+    if not sender_email:
+        emit('invitation_error', {'message': 'אתה לא מחובר כדי לשלוח הזמנה.'})
+        logging.warning("Attempted to send invitation without logged-in user.")
+        return
+
+    receiver_email = data.get('receiver_email')
+    movie_imdb_id = data.get('movie_imdb_id')
+    movie_title = data.get('movie_title')
+
+    if not receiver_email or not movie_imdb_id or not movie_title:
+        emit('invitation_error', {'message': 'חסרים פרטי הזמנה (מקבל, סרט).'})
+        logging.warning(f"Missing invitation details from sender {sender_email}: {data}")
+        return
+
+    if sender_email == receiver_email:
+         emit('invitation_error', {'message': 'אי אפשר להזמין את עצמך.'})
+         logging.warning(f"Sender {sender_email} attempted to invite themselves.")
+         return
+
+    logging.info(f"User {sender_email} sending invitation for movie {movie_imdb_id} to {receiver_email}")
+
+    # Check if the receiver is currently online and connected via SocketIO
+    receiver_sid = email_to_sid.get(receiver_email)
+
+    # Save invitation to Firebase (optional, but good for persistence/history)
+    # Use a unique key based on sender, receiver, movie for easy lookup/update
+    invitation_key = f"{sender_email.replace('.', '_')}_{receiver_email.replace('.', '_')}_{movie_imdb_id}"
+    invitation_ref = db.reference(f'/invitations/{invitation_key}')
+
+    # Check if a pending invitation already exists
+    existing_invitation = invitation_ref.get()
+    if existing_invitation and existing_invitation.get('status') == 'pending':
+         emit('invitation_error', {'message': 'הזמנה למשתמש זה כבר נשלחה עבור הסרט הזה וממתינה לתשובה.'})
+         logging.info(f"Duplicate pending invitation detected from {sender_email} to {receiver_email} for {movie_imdb_id}")
+         return # Don't send again if pending
+
+    invitation_data = {
+        'sender_email': sender_email,
+        'receiver_email': receiver_email,
+        'movie_imdb_id': movie_imdb_id,
+        'movie_title': movie_title,
+        'status': 'pending',
+        'timestamp': datetime.datetime.utcnow().isoformat()
+    }
+
+    try:
+        invitation_ref.set(invitation_data)
+        logging.info(f"Invitation saved to Firebase: {invitation_key}")
+
+        if receiver_sid:
+            logging.info(f"Receiver {receiver_email} is online, emitting new_invitation event to sid {receiver_sid}")
+            # Emit event to the specific receiver's socket
+            emit('new_invitation', invitation_data, room=receiver_sid)
+            emit('invitation_sent_success', {'message': f'הזמנה נשלחה בהצלחה למשתמש {receiver_email}.', 'receiver_online': True})
+        else:
+            logging.info(f"Receiver {receiver_email} is offline. Invitation saved to Firebase.")
+            emit('invitation_sent_success', {'message': f'הזמנה נשמרה עבור {receiver_email}. הוא יראה אותה כשיתחבר.', 'receiver_online': False}) # Message indicates offline
+            # Note: For offline users to see invites later, the client on index/other pages
+            # would need to check Firebase for pending invites on load. This is not implemented here.
+
+
+    except Exception as e:
+        logging.error(f"Error saving invitation {invitation_key} to Firebase: {e}", exc_info=True)
+        emit('invitation_error', {'message': 'אירעה שגיאה בשליחת ההזמנה.'})
+
+
+@socketio.on('accept_invitation')
+def handle_accept_invitation(data):
+    receiver_email = sid_to_email.get(request.sid)
+    if not receiver_email:
+        emit('invitation_error', {'message': 'שגיאה בקבלת ההזמנה: אימייל משתמש לא נמצא.'})
+        logging.warning("Attempted to accept invitation without logged-in user.")
+        return
+
+    sender_email = data.get('sender_email')
+    movie_imdb_id = data.get('movie_imdb_id')
+
+    if not sender_email or not movie_imdb_id:
+        emit('invitation_error', {'message': 'שגיאה בקבלת ההזמנה: חסרים פרטים.'})
+        logging.warning(f"Missing details when accepting invitation by {receiver_email}: {data}")
+        return
+
+    logging.info(f"User {receiver_email} accepting invitation from {sender_email} for movie {movie_imdb_id}")
+
+    invitation_key = f"{sender_email.replace('.', '_')}_{receiver_email.replace('.', '_')}_{movie_imdb_id}"
+    invitation_ref = db.reference(f'/invitations/{invitation_key}')
+
+    try:
+        invitation_data = invitation_ref.get()
+
+        if not invitation_data or invitation_data.get('status') != 'pending':
+            emit('invitation_error', {'message': 'הזמנה לא נמצאה או כבר טופלה.'})
+            logging.warning(f"Invitation not found or not pending for key {invitation_key} when {receiver_email} tried to accept.")
+            return
+
+        # Update status in Firebase
+        invitation_ref.update({'status': 'accepted', 'accepted_timestamp': datetime.datetime.utcnow().isoformat()})
+        logging.info(f"Invitation {invitation_key} status updated to 'accepted'.")
+
+        # Get sender's current sid
+        sender_sid = email_to_sid.get(sender_email)
+
+        # Encode emails for URL
+        encoded_sender_email = urllib.parse.quote_plus(sender_email)
+        encoded_receiver_email = urllib.parse.quote_plus(receiver_email)
+        watch_together_url = url_for('watch_together',
+                                     imdb_id=movie_imdb_id,
+                                     sender_email=encoded_sender_email,
+                                     receiver_email=encoded_receiver_email)
+
+        # Emit event to both sender and receiver to redirect them
+        if sender_sid:
+            emit('invitation_accepted', {'url': watch_together_url}, room=sender_sid)
+            logging.info(f"Emitted invitation_accepted to sender {sender_email} (sid {sender_sid})")
+        else:
+             logging.warning(f"Sender {sender_email} is offline, cannot emit invitation_accepted for key {invitation_key}.")
+             # Maybe flash a message on next login for the sender? Out of scope for this request.
+
+        # Emit to the receiver who just accepted (using their current sid)
+        emit('invitation_accepted', {'url': watch_together_url}, room=request.sid)
+        logging.info(f"Emitted invitation_accepted to receiver {receiver_email} (sid {request.sid})")
+
+    except Exception as e:
+        logging.error(f"Error accepting invitation {invitation_key}: {e}", exc_info=True)
+        emit('invitation_error', {'message': 'אירעה שגיאה בקבלת ההזמנה.'})
+
+
+@socketio.on('decline_invitation')
+def handle_decline_invitation(data):
+    receiver_email = sid_to_email.get(request.sid)
+    if not receiver_email:
+        emit('invitation_error', {'message': 'שגיאה בדחיית ההזמנה: אימייל משתמש לא נמצא.'})
+        logging.warning("Attempted to decline invitation without logged-in user.")
+        return
+
+    sender_email = data.get('sender_email')
+    movie_imdb_id = data.get('movie_imdb_id')
+
+    if not sender_email or not movie_imdb_id:
+        emit('invitation_error', {'message': 'שגיאה בדחיית ההזמנה: חסרים פרטים.'})
+        logging.warning(f"Missing details when declining invitation by {receiver_email}: {data}")
+        return
+
+    logging.info(f"User {receiver_email} declining invitation from {sender_email} for movie {movie_imdb_id}")
+
+    invitation_key = f"{sender_email.replace('.', '_')}_{receiver_email.replace('.', '_')}_{movie_imdb_id}"
+    invitation_ref = db.reference(f'/invitations/{invitation_key}')
+
+    try:
+        invitation_data = invitation_ref.get()
+
+        if not invitation_data or invitation_data.get('status') != 'pending':
+            # Could be already accepted/declined or not found. Just log.
+            logging.warning(f"Invitation not found or not pending for key {invitation_key} when {receiver_email} tried to decline.")
+            # Don't emit an error to the receiver, just let them dismiss the UI
+            return
+
+        # Update status in Firebase
+        invitation_ref.update({'status': 'declined', 'declined_timestamp': datetime.datetime.utcnow().isoformat()})
+        logging.info(f"Invitation {invitation_key} status updated to 'declined'.")
+
+        # Notify the sender that the invitation was declined
+        sender_sid = email_to_sid.get(sender_email)
+        if sender_sid:
+            emit('invitation_declined', {'receiver_email': receiver_email, 'movie_title': invitation_data.get('movie_title', 'הסרט')}, room=sender_sid)
+            logging.info(f"Emitted invitation_declined to sender {sender_email} (sid {sender_sid})")
+        else:
+             logging.warning(f"Sender {sender_email} is offline, cannot notify of declined invitation {invitation_key}.")
+
+    except Exception as e:
+        logging.error(f"Error declining invitation {invitation_key}: {e}", exc_info=True)
+        # Could emit an error back to the receiver if crucial, but dismissing the UI is usually enough.
+
+
+# --- SocketIO Playback Control Events (PLACEHOLDERS - Will NOT CONTROL Vidsrc) ---
+# These events are sent *between* the sender and receiver via the server,
+# but the client-side JS *cannot* apply them to the Vidsrc iframe.
+# This is included structure-wise but functionally limited by the video source.
+
+@socketio.on('playback_command')
+def handle_playback_command(data):
+    sender_email = sid_to_email.get(request.sid)
+    # Data should include movie_imdb_id, receiver_email, command (e.g., 'play', 'pause', 'seek'), value (e.g., timestamp)
+    receiver_email = data.get('receiver_email')
+    movie_imdb_id = data.get('movie_imdb_id')
+    command = data.get('command')
+    value = data.get('value') # e.g., time in seconds for 'seek'
+
+    if not sender_email or not receiver_email or not movie_imdb_id or not command:
+         logging.warning(f"Incomplete playback command received from {sender_email}: {data}")
+         return
+
+    # Ensure the sender is actually the designated sender for this watch session
+    # This requires checking the active watch session state.
+    # A simple way for *this specific request* is to assume the sender in the URL
+    # of watch-together.html is the controller and they are emitting this.
+    # A more robust way would involve managing 'rooms' in SocketIO for each session.
+    # For this example, we'll just check if the sender matches the expected sender email in the event data.
+    # This is still not fully secure or robust for multiple sessions.
+
+    # Check if the receiver is online
+    receiver_sid = email_to_sid.get(receiver_email)
+
+    if receiver_sid:
+        logging.info(f"Forwarding playback command '{command}' ({value}) for {movie_imdb_id} from {sender_email} to {receiver_email} (sid {receiver_sid})")
+        # Emit the command to the specific receiver's socket
+        emit('receive_playback_command', {'command': command, 'value': value}, room=receiver_sid)
+    else:
+        logging.warning(f"Attempted to forward playback command '{command}' to offline receiver {receiver_email}.")
+        # Could emit a message back to the sender saying the receiver is offline.
 
 
 # --- Categories ---
@@ -466,6 +721,32 @@ def google_callback():
         session.permanent = True
         logging.info(f"User {user_data.get('email')} logged in successfully.")
         flash('התחברת בהצלחה!', 'success')
+
+        # --- Check for pending invitations for this user on successful login ---
+        # This is a basic check. A more robust system would handle this via SocketIO
+        # or check on page load for *any* page. This check is minimal.
+        try:
+            pending_invites_ref = db.reference('/invitations').order_by_child('receiver_email').equal_to(user_data['email']).get()
+            if pending_invites_ref:
+                # Filter for status 'pending' and potentially recent invites
+                 pending_invites = {key: inv for key, inv in pending_invites_ref.items() if inv.get('status') == 'pending'}
+                 if pending_invites:
+                     # Store pending invites in session or use a flash message
+                     # Using session for demo, could be complex with multiple invites
+                     first_invite_key = list(pending_invites.keys())[0]
+                     first_invite = pending_invites[first_invite_key]
+                     flash(f"יש לך הזמנה לצפייה מ{first_invite.get('sender_email')} לסרט '{first_invite.get('movie_title')}'. אנא עבור לדף הסרט כדי לקבל/לדחות.", 'info')
+                     logging.info(f"User {user_data['email']} has {len(pending_invites)} pending invites.")
+                 else:
+                     logging.info(f"User {user_data['email']} has no pending invites.")
+            else:
+                 logging.info(f"No invites found for user {user_data['email']} in Firebase.")
+        except Exception as e:
+            logging.error(f"Error checking for pending invites for user {user_data['email']}: {e}", exc_info=True)
+            flash('אירעה שגיאה בבדיקת הזמנות ממתינות.', 'warning')
+        # --- End Check for pending invitations ---
+
+
         return redirect(url_for('index'))
 
     except Exception as e:
@@ -477,20 +758,15 @@ def google_callback():
 def logout():
     user_email = session.get('user', {}).get('email', 'anonymous')
     session.pop('user', None)
-    # --- Frontend: Clear local storage for 'continueWatching' on logout ---
-    # This cannot be done directly from Python. You would need to add
-    # JavaScript on the index page or a dedicated logout page that clears localStorage.
-    # For this example, we won't add a separate logout page, but keep in mind
-    # localStorage persists even after server-side session pop. Clearing
-    # localStorage on successful login is another option, or tying localStorage
-    # key to user ID, but the request asked for local storage *like session*,
-    # implying simple localStorage. A simple way is to clear on the client side
-    # when the logout action is confirmed (e.g., on page load after logout).
-    # Adding a flash message indicates successful logout, and the JS below
-    # checks for the user being None to determine if they are logged out.
+    # When a user logs out, remove their SocketIO mapping if it exists
+    sid = email_to_sid.pop(user_email, None)
+    if sid and sid_to_email.get(sid) == user_email:
+         del sid_to_email[sid]
+         logging.info(f"Removed SocketIO mapping for logged out user {user_email} (sid {sid})")
+
+
     logging.info(f"User {user_email} logged out.")
     flash('התנתקת בהצלחה.', 'info')
-    # Redirecting back to index. The index page JS will handle the logged-out state.
     return redirect(url_for('index'))
 
 # --- Main Routes ---
@@ -507,12 +783,7 @@ def index():
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
-    # Pass the list of admin emails to the template if needed (though index.html might not use it)
-    # If admin status is only checked server-side, passing the list isn't strictly necessary here.
-    # However, keeping it consistent with previous logic of passing *something* related to admin.
 
-    # Pass the user object and categorized data to the template.
-    # The 'continue watching' logic is handled client-side using localStorage.
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories, # All categoried content for display and JS lookup
@@ -526,33 +797,47 @@ def index():
 def movie_details(imdb_id):
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-    # admin_email = ADMIN_EMAIL # Pass admin email to movie page for nav link # <-- REMOVED
 
     # Validate IMDb ID format before querying
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
          logging.warning(f"Attempted to access movie page with invalid IMDb ID format: {imdb_id}")
-         abort(404) # Or redirect to error page
+         abort(404)
 
     # Load movie details from Firebase
     movie = load_movie_details(imdb_id)
 
-    # Check if found and if it's a movie type (assuming /Movies only contains movies or add type check)
-    # Add explicit type check from loaded data if available
-    if not movie or (movie.get('type') not in [None, 'movie'] and movie.get('type') != 'movie'): # Handle potential old data without 'type'
+    if not movie or (movie.get('type') not in [None, 'movie'] and movie.get('type') != 'movie'):
         logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}")
-        # If not found or not a movie type, show 404 or specific error page
         abort(404)
 
-    # Render the movie details page
-    # NOTE: The video player and timestamp logic is expected in movie.html's JS.
-    # The video URL is assumed to be stored as movie['video_url'] in Firebase,
-    # even though the add form no longer accepts input for it.
-    # This route does NOT require a video_url to exist in Firebase.
+    # Check for pending invitations specifically for *this* movie for the logged-in user
+    pending_invite = None
+    if user and user.get('email'):
+        try:
+            invitation_key_prefix = f"{user['email'].replace('.', '_')}_" # Receiver prefix
+            invitations_ref = db.reference('/invitations')
+            # Firebase doesn't allow querying by partial key, need to fetch and filter
+            all_invites = invitations_ref.get()
+            if all_invites:
+                 # Find invites where this user is the receiver, status is pending, and it's for this movie
+                 for key, invite in all_invites.items():
+                      if invite.get('receiver_email') == user['email'] and \
+                         invite.get('status') == 'pending' and \
+                         invite.get('movie_imdb_id') == imdb_id:
+                            pending_invite = invite # Found a pending invite for this movie
+                            logging.info(f"Found pending invitation for user {user['email']} for movie {imdb_id}")
+                            break # Found one, no need to search further
+        except Exception as e:
+            logging.error(f"Error checking for pending invites for movie {imdb_id} for user {user['email']}: {e}", exc_info=True)
+            pending_invite = None # Ensure it's None on error
+
+
     return render_template('movie.html',
                            movie=movie, # movie object should contain video_url if needed for playback
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           pending_invite=pending_invite # Pass pending invite data
                            )
 
 # --- Route for Single Series Page ---
@@ -573,28 +858,21 @@ def series_details(imdb_id, season_number=None, episode_number=None):
     # but we can add checks for non-positive if needed, though JS also validates >=1)
     if season_number is not None and (season_number < 1):
         logging.warning(f"Attempted to access series page with invalid season number ({season_number}) for series {imdb_id}")
-        # Let JS handle it for flexibility.
         pass # Continue loading the page
 
     if episode_number is not None and (episode_number < 1):
         logging.warning(f"Attempted to access series page with invalid episode number ({episode_number}) for series {imdb_id}")
-        # Let JS handle it for flexibility.
         pass # Continue loading the page
-
 
     # Load full series details from Firebase (including Seasons/Episodes)
     series = load_full_series_details(imdb_id)
 
     # Check if found and if it's a series type
-    # Handle potential old data without 'type' gracefully by checking existence
     if not series or (series.get('type') not in [None, 'series'] and series.get('type') != 'series'):
         logging.warning(f"Series details not found or is not of type 'series' for ID: {imdb_id}")
         abort(404)
 
     # Pass the full series object to the template.
-    # The season_number and episode_number from the URL are *not* explicitly
-    # passed as template variables here, because the JavaScript reads them
-    # directly from window.location.pathname on page load.
     return render_template('series.html',
                            series=series, # Pass the full series data
                            user=user,
@@ -617,11 +895,9 @@ def add_content():
 
         try:
             if content_type == 'movie':
-                # Get form data for movie
                 imdb_id = request.form.get('movie_imdb_id', '').strip()
-                category = request.form.get('movie_category', 'ללא') # Get category from form
+                category = request.form.get('movie_category', 'ללא')
 
-                # Validate required fields for movie
                 if not imdb_id:
                     flash('שגיאה: שדה חובה (IMDb ID) חסר עבור סרט.', 'error')
                     return redirect(url_for('add_content'))
@@ -631,20 +907,16 @@ def add_content():
                      flash('שגיאה: פורמט IMDb ID לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
 
-
-                # Fetch full details from OMDB server-side using the IMDb ID
                 omdb_details = get_omdb_details_api(imdb_id)
 
-                # Check if OMDB details were found and if the type is actually a movie
-                if not omdb_details or omdb_details.get('Response') == 'False' or omdb_details.get('Type', '').lower() != 'movie': # Case-insensitive check
+                if not omdb_details or omdb_details.get('Response') == 'False' or omdb_details.get('Type', '').lower() != 'movie':
                      error_msg = omdb_details.get('Error', 'Details not found or API error') if isinstance(omdb_details, dict) else 'Details not found or API error'
                      flash(f'שגיאה: לא נמצאו פרטי סרט תקינים עבור IMDb ID "{imdb_id}" ב-OMDB. {error_msg}', 'error')
                      logging.warning(f"OMDB details not found or type is not 'movie' for ID {imdb_id}. OMDB Response: {omdb_details}")
                      return redirect(url_for('add_content'))
 
-                # Construct movie data from OMDB details and form data
                 movie_data = {
-                    'imdbID': omdb_details.get('imdbID', imdb_id), # Use fetched ID if available
+                    'imdbID': omdb_details.get('imdbID', imdb_id),
                     'title': omdb_details.get('Title', 'Untitled'),
                     'year': omdb_details.get('Year', 'N/A'),
                     'rated': omdb_details.get('Rated', 'N/A'),
@@ -658,32 +930,29 @@ def add_content():
                     'language': omdb_details.get('Language', 'N/A'),
                     'country': omdb_details.get('Country', 'N/A'),
                     'awards': omdb_details.get('Awards', 'N/A'),
-                    'poster': omdb_details.get('Poster', 'N/A'), # Use 'N/A' instead of default image if not found
-                    'ratings': omdb_details.get('Ratings', []), # List of rating objects
+                    'poster': omdb_details.get('Poster', 'N/A'),
+                    'ratings': omdb_details.get('Ratings', []),
                     'metascore': omdb_details.get('Metascore', 'N/A'),
                     'imdbRating': omdb_details.get('imdbRating', 'N/A'),
                     'imdbVotes': omdb_details.get('imdbVotes', 'N/A'),
-                    'type': 'movie', # Explicitly set type as 'movie'
+                    'type': 'movie',
                     'dvd': omdb_details.get('DVD', 'N/A'),
                     'boxoffice': omdb_details.get('BoxOffice', 'N/A'),
                     'production': omdb_details.get('Production', 'N/A'),
                     'website': omdb_details.get('Website', 'N/A'),
-                    'video_url': '', # Placeholder: Video URL must be added separately
-                    'category': category # From form
+                    'video_url': '', # Still empty placeholder, not from form
+                    'category': category
                 }
 
-                # Save movie data to Firebase under /Movies/{imdb_id}
                 ref = db.reference(f'/Movies/{imdb_id}')
                 ref.set(movie_data)
                 logging.info(f"Movie '{movie_data['title']}' ({imdb_id}) added to Firebase.")
                 flash(f'סרט "{movie_data["title"]}" נוסף בהצלחה!', 'success')
 
             elif content_type == 'series':
-                 # Get form data for series (main details, series_imdb_id from search selection)
-                 series_imdb_id = request.form.get('series_imdb_id', '').strip() # From OMDB search selection
-                 category = request.form.get('series_category', 'ללא') # Get category for series
+                 series_imdb_id = request.form.get('series_imdb_id', '').strip()
+                 category = request.form.get('series_category', 'ללא')
 
-                 # Validate required fields for main series
                  if not series_imdb_id:
                      flash('שגיאה: שדה חובה עבור סדרה (IMDb ID) חסר.', 'error')
                      return redirect(url_for('add_content'))
@@ -694,17 +963,14 @@ def add_content():
                      return redirect(url_for('add_content'))
 
 
-                 # Fetch main series details from OMDB server-side
                  omdb_details = get_omdb_details_api(series_imdb_id)
 
-                 # Check if OMDB details were found and if the type is actually a series
                  if not omdb_details or omdb_details.get('Response') == 'False' or omdb_details.get('Type', '').lower() != 'series':
                       error_msg = omdb_details.get('Error', 'Details not found or API error') if isinstance(omdb_details, dict) else 'Details not found or API error'
                       flash(f'שגיאה: לא נמצאו פרטים לסדרה או שה-ID אינו של סדרה עבור "{series_imdb_id}" ב-OMDB. {error_msg}', 'error')
                       logging.warning(f"OMDB details not found or type is not 'series' for ID {series_imdb_id}. OMDB Response: {omdb_details}")
                       return redirect(url_for('add_content'))
 
-                 # Extract total seasons from OMDB details, default to 1 if missing/invalid
                  try:
                      total_seasons_str = omdb_details.get('totalSeasons', '1')
                      total_seasons = int(total_seasons_str)
@@ -716,14 +982,13 @@ def add_content():
                       total_seasons = 1
 
 
-                 # Construct base series data from OMDB details and form data
                  series_data = {
                     'imdbID': omdb_details.get('imdbID', series_imdb_id),
                     'title': omdb_details.get('Title', 'Untitled Series'),
-                    'year': omdb_details.get('Year', 'N/A'), # This might be a range (e.g., 2008–2013)
+                    'year': omdb_details.get('Year', 'N/A'),
                     'rated': omdb_details.get('Rated', 'N/A'),
                     'released': omdb_details.get('Released', 'N/A'),
-                    'runtime': omdb_details.get('Runtime', 'N/A'), # Runtime per episode/total? OMDB is inconsistent.
+                    'runtime': omdb_details.get('Runtime', 'N/A'),
                     'genre': omdb_details.get('Genre', 'N/A'),
                     'director': omdb_details.get('Director', 'N/A'),
                     'writer': omdb_details.get('Writer', 'N/A'),
@@ -738,16 +1003,14 @@ def add_content():
                     'imdbRating': omdb_details.get('imdbRating', 'N/A'),
                     'imdbVotes': omdb_details.get('imdbVotes', 'N/A'),
                     'type': 'series',
-                    'totalSeasons': total_seasons_str, # Store the string from OMDB or default '1'
+                    'totalSeasons': total_seasons_str,
                     'category': category
                  }
 
-                 # Build the Seasons/Episodes structure by fetching season data from OMDB
                  seasons_data = {}
-                 all_episodes_fetched_successfully = True # Flag to track if all episode fetches worked
+                 all_episodes_fetched_successfully = True
 
                  for season_num in range(1, total_seasons + 1):
-                     # Fetch details for the specific season to get the episode list
                      season_details_from_omdb = get_omdb_details_api(series_imdb_id, season=season_num)
 
                      if season_details_from_omdb and season_details_from_omdb.get('Response') == 'True' and season_details_from_omdb.get('Episodes'):
@@ -756,7 +1019,6 @@ def add_content():
                           num_episodes_in_season = len(episodes_list_for_season)
                           logging.info(f"Fetched {num_episodes_in_season} episodes for S{season_num} from OMDB for series {series_imdb_id}.")
 
-                          # OMDB season response gives a list of episodes, each with its 'Episode', 'Title', 'imdbID' etc.
                           for episode_detail in episodes_list_for_season:
                                try:
                                    episode_num_str = episode_detail.get('Episode')
@@ -766,30 +1028,27 @@ def add_content():
                                         episode_imdb_id_to_save = episode_detail.get('imdbID', f'tt_placeholder_{series_imdb_id}_s{season_num}e{episode_num}')
                                         episode_title_to_save = episode_detail.get('Title', f'פרק {episode_num}')
 
-                                        episodes_data[str(episode_num)] = { # Use episode number as the key
+                                        episodes_data[str(episode_num)] = {
                                             'episode_imdb_id': episode_imdb_id_to_save,
                                             'title': episode_title_to_save,
-                                            'season_number': season_num, # Store season number explicitly
-                                            'episode_number': episode_num, # Store episode number explicitly
-                                            'video_url': '', # Placeholder: Video URL must be added separately per episode
-                                            # Optionally add other episode details from OMDB if available and desired
-                                            # e.g., 'Released': episode_detail.get('Released'), 'Plot': episode_detail.get('Plot') # Plot is often short in season response
+                                            'season_number': season_num,
+                                            'episode_number': episode_num,
+                                            'video_url': '', # Still empty placeholder
                                         }
-                                        # logging.debug(f"Processing S{season_num}E{episode_num} ({series_imdb_id}): IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_title_to_save}'")
                                    else:
                                        logging.warning(f"Skipping episode data with invalid number or missing data in OMDB Season {season_num} response for {series_imdb_id}: {episode_detail}")
-                                       all_episodes_fetched_successfully = False # Mark failure if an episode within a season is malformed
+                                       all_episodes_fetched_successfully = False
 
 
                                except ValueError:
                                     logging.warning(f"Could not parse episode number from OMDB Season {season_num} response for {series_imdb_id}: {episode_detail.get('Episode')}. Skipping episode.")
-                                    all_episodes_fetched_successfully = False # Mark failure
+                                    all_episodes_fetched_successfully = False
                                except Exception as e:
                                    logging.error(f"Unexpected error processing episode data for S{season_num} in {series_imdb_id}: {e}", exc_info=True)
                                    all_episodes_fetched_successfully = False
 
 
-                          if episodes_data: # Only add season node if episodes were successfully processed for it
+                          if episodes_data:
                               seasons_data[str(season_num)] = {
                                   'Episodes': episodes_data
                               }
@@ -800,18 +1059,13 @@ def add_content():
                      else:
                          error_msg = season_details_from_omdb.get('Error', 'Unknown Error') if isinstance(season_details_from_omdb, dict) else 'Unknown Error'
                          logging.warning(f"Failed to fetch OMDB season details or found no episodes for Season {season_num} of series {series_imdb_id}. OMDB Error: {error_msg}. Season will not be added.")
-                         all_episodes_fetched_successfully = False # Mark failure
+                         all_episodes_fetched_successfully = False
 
-                 # Add the Seasons structure to the main series data
                  if seasons_data:
                       series_data['Seasons'] = seasons_data
                  else:
                      logging.warning(f"No seasons or episodes were successfully added for series {series_imdb_id} based on OMDB data.")
-                     # Flash a warning if no episodes were processed at all
 
-
-                 # Save series data (including Seasons/Episodes) to Firebase under /Series/{imdb_id}
-                 # Use update instead of set to potentially preserve manual video_urls if re-adding
                  ref = db.reference(f'/Series/{series_imdb_id}')
                  ref.update(series_data)
                  logging.info(f"Series '{series_data.get('title', series_imdb_id)}' ({series_imdb_id}) added/updated in Firebase with {len(seasons_data)} seasons.")
@@ -824,19 +1078,14 @@ def add_content():
                       flash(flash_message, 'success')
 
             elif content_type == 'episode':
-                 # Get form data for episode
                  series_imdb_id_select = request.form.get('episode_series_id')
                  manual_series_imdb_id = request.form.get('manual_episode_series_id', '').strip()
-                 episode_title_form = request.form.get('episode_title', '').strip() # Get title from form (user override)
+                 episode_title_form = request.form.get('episode_title', '').strip()
                  season_number_str = request.form.get('episode_season', '').strip()
                  episode_number_str = request.form.get('episode_number', '').strip()
-                 # video_url = request.form.get('episode_video_url', '').strip() # REMOVED INPUT
 
-                 # Determine the series IMDb ID
                  series_imdb_id = manual_series_imdb_id if series_imdb_id_select == 'manual' else series_imdb_id_select
 
-                 # Validate required fields for episode (excluding episode_imdb_id and video_url)
-                 # Title is now optional from form, but we need season, episode, and series ID
                  if not series_imdb_id or not season_number_str or not episode_number_str:
                       missing = []
                       if not series_imdb_id: missing.append('סדרה')
@@ -845,7 +1094,6 @@ def add_content():
                       flash(f'שגיאה: שדות חובה חסרים: {", ".join(missing)}.', 'error')
                       return redirect(url_for('add_content'))
 
-                 # Validate season and episode numbers
                  try:
                      season_number = int(season_number_str)
                      episode_number = int(episode_number_str)
@@ -855,52 +1103,40 @@ def add_content():
                      flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים.', 'error')
                      return redirect(url_for('add_content'))
 
-                 # Validate Series IMDb ID format
                  imdb_id_pattern = re.compile(r'^tt\d{7,}$')
                  if not imdb_id_pattern.match(series_imdb_id):
                      flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error')
                      return redirect(url_for('add_content'))
 
-                 # Fetch episode details from OMDB using the Series ID, Season, and Episode numbers
                  episode_details_from_omdb = get_omdb_details_api(series_imdb_id, season=season_number, episode=episode_number)
 
-                 # Determine the episode's IMDb ID and Title to save
                  episode_imdb_id_to_save = None
-                 episode_title_to_save = episode_title_form # Use form title if provided
+                 episode_title_to_save = episode_title_form
 
                  if episode_details_from_omdb and episode_details_from_omdb.get('Response') == 'True':
                       episode_imdb_id_to_save = episode_details_from_omdb.get('imdbID')
-                      # If form title is empty, use OMDB title
                       if not episode_title_form:
                           episode_title_to_save = episode_details_from_omdb.get('Title', f'פרק {episode_number} (מ-OMDb)')
                       logging.info(f"Fetched OMDB details for episode {series_imdb_id} S{season_number}E{episode_number}. Episode IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_details_from_omdb.get('Title')}'")
                  else:
-                     # Check if episode_details_from_omdb is a dictionary with an error message
                      error_msg = episode_details_from_omdb.get('Error', 'Unknown Error') if isinstance(episode_details_from_omdb, dict) else 'Unknown Error'
                      logging.warning(f"Failed to fetch OMDB details for episode {series_imdb_id} S{season_number}E{episode_number}. OMDB Error: {error_msg}. Proceeding with form data and placeholder ID.")
-                     # Use placeholder ID if OMDB fails to provide one
                      episode_imdb_id_to_save = f'tt_placeholder_{series_imdb_id}_s{season_number}e{episode_number}'
-                     # If OMDB fetch failed and user didn't provide a title, use a generic placeholder title
                      if not episode_title_form:
                          episode_title_to_save = f'פרק {episode_number} (לא נמצא שם ב-OMDb)'
 
-
-                 # Ensure we have at least a placeholder ID even if OMDB fetch failed AND fallback placeholder logic had an issue (highly unlikely)
                  if not episode_imdb_id_to_save:
                      episode_imdb_id_to_save = f'tt_fallback_{series_imdb_id}_s{season_number}e{episode_number}'
                      logging.error(f"Critical: No episode IMDb ID could be determined for {series_imdb_id} S{season_number}E{episode_number}. Using double-fallback placeholder.")
 
-                 # Construct episode data (without video_url from form, but setting it to empty)
                  episode_data = {
-                     'episode_imdb_id': episode_imdb_id_to_save, # Store the fetched/placeholder episode IMDb ID
-                     'title': episode_title_to_save, # Use user's title or fetched title
-                     'video_url': '', # Placeholder: Video URL must be added separately
+                     'episode_imdb_id': episode_imdb_id_to_save,
+                     'title': episode_title_to_save,
+                     'video_url': '',
                      'episode_number': episode_number,
                      'season_number': season_number
                  }
 
-                 # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}
-                 # Use update instead of set to preserve existing video_url if it was added manually before
                  ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}')
                  ref.update(episode_data)
                  logging.info(f"Episode S{season_number}E{episode_number} (IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_data['title']}') added/updated in series {series_imdb_id}.")
@@ -916,21 +1152,17 @@ def add_content():
              logging.error(f"Error processing add content POST: {e}", exc_info=True)
              flash('אירעה שגיאה בעת שמירת התוכן.', 'error')
 
-        # Always redirect back to the add page after POST, regardless of success/error
         return redirect(url_for('add_content'))
 
-    # GET request: Render the add content form
-    # Load series from Firebase for episode form dropdown on GET request
     available_series = load_series_list_for_add_page()
 
     return render_template('add.html',
                            user=user,
-                           categories=[c for c in CATEGORIES if c != 'ללא'], # Categories excluding 'ללא' for movie/series dropdown
+                           categories=[c for c in CATEGORIES if c != 'ללא'],
                            available_series=available_series,
                            current_year=datetime.datetime.utcnow().year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS
                            )
-
 
 
 @app.route('/movies')
@@ -938,47 +1170,79 @@ def all_movies():
     """Displays all movies from Firebase in a grid."""
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-
-    # Load ALL movies from Firebase
-    # load_movies_data() already returns a dictionary {imdbID: details}
-    # with 'type: movie' added, which is what we need.
     all_movies_data = load_movies_data()
-
-    # No categorization needed for this page, just pass the dictionary
-    # The template will iterate through this dictionary.
-
     logging.info(f"Rendering all_movies page with {len(all_movies_data)} movies.")
-
     return render_template('movies.html',
-                           movies=all_movies_data, # Pass all movies
+                           movies=all_movies_data,
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS
                            )
 
 
-
-
-@app.route('/series') # Define the new route
+@app.route('/series')
 def all_series():
     """Displays all series from Firebase in a grid."""
     user = session.get('user')
     current_year = datetime.datetime.utcnow().year
-
-    # Use the existing function that loads basic series data for display
-    # load_series_data_for_index() already returns {imdbID: basic_details}
-    # with 'type: series' added, which is perfect for the grid.
     all_series_data = load_series_data_for_index()
-
-    # Log how many series were loaded
     logging.info(f"Rendering all_series page with {len(all_series_data)} series.")
-
-    # Render the new template, passing the series data
     return render_template('SeriesTV.html',
-                           series=all_series_data, # Pass series data to the template
+                           series=all_series_data,
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS
+                           )
+
+# --- New Watch Together Route ---
+@app.route('/watch-together/<imdb_id>/<sender_email_encoded>/<receiver_email_encoded>')
+def watch_together(imdb_id, sender_email_encoded, receiver_email_encoded):
+    user = session.get('user')
+    current_year = datetime.datetime.utcnow().year
+
+    # Ensure user is logged in
+    if not user or not user.get('email'):
+         flash('יש להתחבר כדי לצפות יחד בסרט.', 'warning')
+         return redirect(url_for('google_login')) # Or redirect to index/login page
+
+    # Decode emails
+    try:
+        sender_email = urllib.parse.unquote_plus(sender_email_encoded)
+        receiver_email = urllib.parse.unquote_plus(receiver_email_encoded)
+    except Exception as e:
+         logging.error(f"Failed to decode emails in watch-together URL: {e}", exc_info=True)
+         abort(400) # Bad request if emails are not decodeable
+
+    # Check if the logged-in user is either the sender or the receiver for this session
+    logged_in_email = user['email']
+    if logged_in_email != sender_email and logged_in_email != receiver_email:
+        logging.warning(f"Unauthorized access attempt to watch-together session for {sender_email}/{receiver_email} by user {logged_in_email}")
+        flash('אין לך הרשאה לצפות בסרט זה יחד עם משתמשים אלו.', 'error')
+        return redirect(url_for('index')) # Or a specific error page
+
+    # Load movie details (same as movie_details route)
+    if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
+         logging.warning(f"Attempted to access watch-together page with invalid IMDb ID format: {imdb_id}")
+         abort(404)
+
+    movie = load_movie_details(imdb_id)
+
+    if not movie or (movie.get('type') not in [None, 'movie'] and movie.get('type') != 'movie'):
+        logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id} for watch-together session.")
+        abort(404)
+
+    # Determine if the current user is the controller (the sender)
+    is_controller = (logged_in_email == sender_email)
+
+    # Render the new watch-together template
+    return render_template('watch-together.html',
+                           movie=movie,
+                           user=user, # The logged-in user
+                           sender_email=sender_email,
+                           receiver_email=receiver_email,
+                           is_controller=is_controller, # Boolean flag for JS
+                           current_year=current_year,
+                           admin_emails=ADMIN_EMAILS
                            )
 
 
@@ -1007,30 +1271,21 @@ def internal_server_error(e):
 
 
 if __name__ == '__main__':
-    # Ensure Firebase is initialized before running the app
-    # The try/except block with _apps check handles reloader
-    # Also check if initialization actually succeeded before running
     if firebase_admin._apps:
-        # Check if Firebase creds were successfully loaded
-        # This check firebase_admin._apps['[DEFAULT]'].options.get('credential') is more robust
-        # than just checking if firebase_admin._apps is not empty, as initialization might
-        # have failed without raising an immediate exception if cred was None.
         try:
-            # Attempt to access the default app's options. This will raise an exception if not initialized correctly.
              default_app_creds = firebase_admin._apps['[DEFAULT]'].options.get('credential')
              if default_app_creds is not None:
                 logging.info("Firebase default app credential check passed.")
                 port = int(os.environ.get('PORT', 5000))
+                # Use socketio.run instead of app.run
                 # debug=True should only be used in development
-                app.run(host='0.0.0.0', port=port, debug=True)
+                socketio.run(app, host='0.0.0.0', port=port, debug=True)
              else:
                  logging.error("Application not started: Firebase default app credential is None.")
         except KeyError:
-            # If firebase_admin._apps['[DEFAULT]'] doesn't exist, it wasn't initialized correctly.
             logging.error("Application not started: Firebase default app was not initialized.")
         except Exception as e:
              logging.error(f"Application not started: Unexpected error during Firebase check: {e}", exc_info=True)
 
     else:
         logging.error("Application not started because Firebase initialization failed.")
-        # You might want to sys.exit(1) here in a real application
