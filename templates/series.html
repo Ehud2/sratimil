@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -325,8 +326,12 @@
             // Function to populate the season dropdown
             function populateSeasons() {
                 if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
-                    // Get season numbers from the keys of the Seasons object, convert to numbers, sort
-                    const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b); // Added filter for NaN
+                    // Get season numbers from the keys of the Seasons object, convert to numbers,
+                    // filter out NaN and numbers less than 1, then sort.
+                    const seasonNumbers = Object.keys(seriesData.Seasons)
+                                                .map(Number)
+                                                .filter(num => !isNaN(num) && num >= 1) // <-- Added '&& num >= 1' here
+                                                .sort((a, b) => a - b);
 
                     // Always add the default option first
                     seasonSelect.innerHTML = '<option value="">-- בחר עונה --</option>';
@@ -340,7 +345,7 @@
                         });
                          seasonSelect.disabled = false; // Enable select if seasons are available
                     } else {
-                         console.warn("No season data found for this series in the data structure.");
+                         console.warn("No season data (>=1) found for this series in the data structure.");
                          const option = document.createElement('option');
                          option.value = "";
                          option.textContent = "-- אין עונות זמינות --";
