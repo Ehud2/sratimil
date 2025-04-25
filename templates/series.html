@@ -110,9 +110,9 @@
 
             <nav class="main-nav">
                 <a href="{{ url_for('index') }}">בית</a>
-                <a href="#">סרטים</a> {# TODO #}
-                <a href="#">סדרות</a> {# TODO #}
-                {% if user and user.email in admin_emails %} {# Changed condition to check if user.email is IN the list admin_emails #}
+                <a href="{{ url_for('all_movies') }}">סרטים</a>
+                <a href="{{ url_for('all_series') }}">סדרות</a>
+                {% if user and user.email in admin_emails %}
                     <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
                 {% endif %}
             </nav>
@@ -124,8 +124,7 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Reverting to a default placeholder image URL that exists #}
-                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
+                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Placeholder replaced #}
                     </a>
                 {% endif %}
             </div>
@@ -144,7 +143,7 @@
             </div>
             {% endfor %}
         </div>
-        {% endif %}
+        {% endif >
     {% endwith %}
 
     <main class="container series-details-page">
@@ -265,9 +264,11 @@
 
                  const seasonData = seriesData.Seasons[seasonNum];
                  if (seasonData && seasonData.Episodes && typeof seasonData.Episodes === 'object') {
+                      // Access episode directly using the episode number key
                       const episode = seasonData.Episodes[episodeNum];
-                      if (episode && typeof episode === 'object' && episode.episode_imdb_id) { // Ensure episode_imdb_id exists
-                           // Found the episode! Return its data including IMDb ID
+                       // Ensure episode data exists and is an object
+                      if (episode && typeof episode === 'object') { // Removed check for episode_imdb_id here
+                           // Found the episode! Return its data
                            return {
                                season: seasonNum,
                                episode: episodeNum,
@@ -275,13 +276,14 @@
                            };
                       }
                  }
-                 return null; // Episode not found or missing episode_imdb_id
+                 return null; // Episode not found
              }
 
 
             // Function to populate the season dropdown
             function populateSeasons() {
                 if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
+                    // Get season numbers from the keys of the Seasons object, convert to numbers, sort
                     const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).sort((a, b) => a - b);
 
                     // Always add the default option first
@@ -324,14 +326,22 @@
 
              // Helper to show message in the embed container and clear content
              function showEmbedMessage(messageText) {
-                  episodeEmbedContainer.innerHTML = ''; // Clear any previous iframe/content
+                  // Clear any previous iframe/content but keep the message div structure
+                  episodeEmbedContainer.querySelectorAll('iframe').forEach(iframe => iframe.remove());
+                  // Ensure the message div is present and update its text
+                   if (!embedMessageDiv) { // Should not happen with the static HTML, but safety check
+                       console.error("Embed message div not found!");
+                       return;
+                   }
                   embedMessageDiv.textContent = messageText;
-                  embedMessageDiv.style.display = 'block'; // Show the message
+                  embedMessageDiv.style.display = 'flex'; // Use flex to center
              }
 
              // Helper to hide message
              function hideEmbedMessage() {
-                  embedMessageDiv.style.display = 'none';
+                  if (embedMessageDiv) {
+                      embedMessageDiv.style.display = 'none';
+                  }
              }
 
 
@@ -350,19 +360,20 @@
                     if (episodeNumbers.length > 0) {
                         episodeNumbers.forEach(episodeNum => {
                             const episode = episodes[episodeNum];
-                            if (episode && typeof episode === 'object' && episode.episode_imdb_id) { // Ensure episode_imdb_id exists
+                            // Ensure episode data is an object
+                            if (episode && typeof episode === 'object') {
                                 const li = document.createElement('li');
                                 li.classList.add('episode-item');
-                                // Store episode IMDb ID, season, and episode numbers
-                                 li.dataset.episodeImdbId = episode.episode_imdb_id; // Store the episode IMDb ID
+                                // Store season, and episode numbers
                                  li.dataset.season = seasonNumber; // Store season number
                                  li.dataset.episode = episodeNum; // Store episode number
+                                 // Optionally store episode title or imdbID if needed later, but not strictly for Vidsrc URL
 
                                 li.innerHTML = `<span class="episode-number">${episodeNum}.</span> <span class="episode-title">${episode.title || 'פרק ללא כותרת'}</span>`;
                                 li.addEventListener('click', handleEpisodeClick);
                                 episodeListUl.appendChild(li);
                             } else {
-                                 console.warn(`Skipping invalid episode data or missing episode_imdb_id for S${seasonNumber}E${episodeNum}`);
+                                 console.warn(`Skipping invalid episode data for S${seasonNumber}E${episodeNum}`);
                             }
                         });
                          // episodeListUl.classList.remove('loading');
@@ -380,7 +391,6 @@
             // Handle episode item click - This is where the iframe is created/updated
             function handleEpisodeClick(event) {
                 const clickedItem = event.currentTarget;
-                // const episodeImdbId = clickedItem.dataset.episodeImdbId; // Get episode IMDb ID (not needed for Vidsrc embed in new format)
                 const season = clickedItem.dataset.season; // Get season number
                 const episode = clickedItem.dataset.episode; // Get episode number
 
@@ -407,17 +417,18 @@
 
                 // Validate seriesImdbId, season, and episode numbers before creating iframe
                 if (seriesImdbId && season && episode && seriesImdbId.startsWith('tt')) { // Basic check for series IMDb ID format and number existence
-                     console.log(`Attempting to embed S${season}E${episode} for series ${seriesImdbId} using vidsrc with S/E format.`);
+                     console.log(`Attempting to embed S${season}E${episode} for series ${seriesImdbId} using vidsrc.`);
 
                     const iframe = document.createElement('iframe');
-                    // --- MODIFIED LINE ---
                     // Vidsrc URL for TV shows using series ID, season, and episode numbers
                     iframe.src = `https://vidsrc.to/embed/tv/${seriesImdbId}/${season}/${episode}`;
-                    // --- END MODIFIED LINE ---
                     iframe.allowFullscreen = true;
                     iframe.setAttribute("allow", "autoplay"); // Request autoplay permission
 
+                    // Clear container and append iframe
+                    episodeEmbedContainer.innerHTML = '';
                     episodeEmbedContainer.appendChild(iframe);
+
 
                 } else {
                      console.warn(`Missing series IMDb ID (${seriesImdbId}), season (${season}), or episode (${episode}) or invalid format. Cannot embed.`);
@@ -477,6 +488,7 @@
             // Delay the rest of the auto-selection logic to allow season dropdown to render
              setTimeout(() => {
                  if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
+                      // Get season numbers from the keys of the Seasons object, convert to numbers, sort
                       const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).sort((a, b) => a - b);
 
                       if (seasonNumbers.length > 0) {
@@ -498,13 +510,14 @@
                           if (!targetEpisodeInfo) {
                                console.log("Falling back to selecting the first available season/episode.");
                                const firstSeasonNum = seasonNumbers[0];
+                               // Get episode numbers for the first season, convert to numbers, sort, take the first one
                                const firstEpisodeNum = Object.keys(seriesData.Seasons[firstSeasonNum]?.Episodes || {}).map(Number).sort((a, b) => a - b)[0];
 
                                if (firstSeasonNum !== undefined && firstEpisodeNum !== undefined) {
-                                    // Use findEpisodeByNumbers to retrieve the episode data including its IMDb ID
+                                    // Use findEpisodeByNumbers to retrieve the episode data
                                     targetEpisodeInfo = findEpisodeByNumbers(firstSeasonNum, firstEpisodeNum);
                                      if (!targetEpisodeInfo) {
-                                          console.warn(`First episode data at S${firstSeasonNum}E${firstEpisodeNum} is invalid or missing IMDb ID.`);
+                                          console.warn(`First episode data at S${firstSeasonNum}E${firstEpisodeNum} is invalid.`);
                                      } else {
                                          // Update URL to the first episode's numbers if we are defaulting AND if series ID exists
                                           // The URL format should match the route: /series/series_id/season/episode
@@ -523,7 +536,8 @@
                           if (targetEpisodeInfo) {
                                 // Set the season dropdown value
                                 console.log(`Setting season select to ${targetEpisodeInfo.season}`);
-                                seasonSelect.value = targetEpisodeInfo.season;
+                                // Set the value as string because option values are strings
+                                seasonSelect.value = targetEpisodeInfo.season.toString();
 
                                 // Populate episodes for this season
                                 populateEpisodes(targetEpisodeInfo.season);
@@ -531,7 +545,6 @@
                                 // Wait briefly for episodes to render, then try to find and click the specified episode list item
                                 setTimeout(() => {
                                      // Find the LI element for this specific episode number AND season
-                                     // Note: We are selecting based on season and episode number, not episode IMDb ID
                                      const targetEpisodeItem = episodeListUl.querySelector(`.episode-item[data-season='${targetEpisodeInfo.season}'][data-episode='${targetEpisodeInfo.episode}']`);
                                      if (targetEpisodeItem) {
                                           console.log(`Found S${targetEpisodeInfo.season}E${targetEpisodeInfo.episode} element in list. Clicking.`);
@@ -559,49 +572,9 @@
              }, 50); // Delay initial auto-selection slightly
 
 
-            // Attach seasonSelect change listener AFTER the initial auto-selection logic
-            // This listener's behavior remains the same: populate and auto-select the *first* episode
-            // of the newly selected season when the *user* manually changes the dropdown.
-            if (seasonSelect) {
-                seasonSelect.addEventListener('change', function() {
-                    const selectedSeason = parseInt(this.value, 10); // Parse to integer
-
-                    // Clear embed area and show default message when season changes
-                    showEmbedMessage('אנא בחר פרק כדי לצפות.');
-
-                     // Remove 'selected' class from any previously selected episode
-                     episodeListUl.querySelectorAll('.episode-item').forEach(item => item.classList.remove('selected'));
-
-                    if (!isNaN(selectedSeason) && selectedSeason >= 1) {
-                        populateEpisodes(selectedSeason);
-                         // --- Auto-select the first episode of the new season if available ---
-                         setTimeout(() => {
-                             const firstEpisodeItem = episodeListUl.querySelector('.episode-item');
-                             if(firstEpisodeItem) {
-                                  console.log(`Auto-clicking first episode S${selectedSeason}E${firstEpisodeItem.dataset.episode} after manual season change.`);
-                                  firstEpisodeItem.click(); // Simulate click to select and embed/play
-                             } else {
-                                  console.warn(`No episodes found for season ${selectedSeason} after manual season change population.`);
-                                   showEmbedMessage('אין פרקים זמינים לעונה זו.');
-                                    // Reset URL to base series URL if no episodes found
-                                     if (seriesImdbId) {
-                                         history.replaceState(null, '', `/series/${seriesImdbId}`);
-                                          console.log(`No episodes found, URL reset to: /series/${seriesImdbId}`);
-                                     }
-                             }
-                         }, 50); // Short delay
-                    } else {
-                        // No season selected (e.g., back to '-- בחר עונה --')
-                        episodeListUl.innerHTML = '<li class="placeholder-episode">-- בחר עונה תחילה --</li>';
-                         // Message is already set by showEmbedMessage above
-                         // Reset URL to base series URL
-                         if (seriesImdbId) {
-                             history.replaceState(null, '', `/series/${seriesImdbId}`);
-                              console.log(`Season select cleared, URL reset to: /series/${seriesImdbId}`);
-                         }
-                    }
-                });
-            }
+            // The seasonSelect change listener remains after the initial auto-selection.
+            // Its behavior is correct: when the user manually changes the dropdown,
+            // it populates episodes for the new season and auto-selects/plays the *first* episode of that season.
 
 
             // --- Optional: Loading Spinner JS ---
