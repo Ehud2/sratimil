@@ -720,7 +720,7 @@
                           // 2. If no URL path numbers or episode not found by path, fall back to the first episode of the first season
                           if (targetSeasonNum === null || targetEpisodeNum === null) {
                                console.log("Falling back to selecting the first available season/episode.");
-                               const firstSeasonNum = seasonNumbers[0];
+                               const firstSeasonNum = seasonNumbers[1];
                                // Get episode numbers for the first season, convert to numbers, sort, take the first one
                                const episodesInFirstSeason = seriesData.Seasons[firstSeasonNum]?.Episodes || {};
                                const firstEpisodeNum = Object.keys(episodesInFirstSeason).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b)[0];
