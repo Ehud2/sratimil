@@ -125,22 +125,11 @@ img { max-width: 100%; height: auto; display: block; }
     flex-grow: 1;
 }
 
-/* Grid for the top section (Greeting + Trailer) */
-.top-section-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Two columns */
-    gap: 30px; /* Space between greeting and trailer */
-    margin-bottom: 40px;
-    align-items: start; /* Align items to the top */
-}
-
-/* Ensure greeting stays in its column */
 .page-greeting {
-    grid-column: 2 / 3; /* Place in the right column (second column) */
-    margin-bottom: 0; /* Removed bottom margin as grid handles spacing */
-    padding-left: 10px; /* Keep original padding */
-    border-right: 4px solid var(--primary-accent-color); /* Keep original border */
-    padding-right: 20px; /* Keep original padding */
+    margin-bottom: 45px;
+    padding-left: 10px;
+    border-right: 4px solid var(--primary-accent-color);
+    padding-right: 20px;
 }
 .page-greeting h1 {
     font-family: var(--font-heading);
@@ -153,135 +142,6 @@ img { max-width: 100%; height: auto; display: block; }
     font-size: 1.1em;
     color: var(--text-color);
 }
-
-
-/* Trailer Section Styles */
-.trailer-section {
-    grid-column: 1 / 2; /* Place in the left column (first column) */
-    position: relative;
-    /* Adjust height/aspect ratio as needed */
-    width: 100%; /* Take full width of the column */
-    padding-top: 56.25%; /* 16:9 aspect ratio (9 / 16 * 100) */
-    background-color: #000; /* Black background */
-    border-radius: var(--border-radius-md);
-    overflow: hidden;
-    box-shadow: 0 8px 20px var(--shadow-color);
-    margin-bottom: 0; /* Remove bottom margin, gap handles it */
-    border: 1px solid rgba(69, 162, 158, 0.3);
-}
-
-.trailer-player-container {
-     position: absolute;
-     top: 0;
-     left: 0;
-     width: 100%;
-     height: 100%;
-     /* Ensure the container itself is relative for overlay positioning */
-     position: relative;
-}
-
-
-/* YouTube player iframe styles */
-#trailerPlayer {
-     position: absolute;
-     top: 0;
-     left: 0;
-     width: 100%;
-     height: 100%;
-     z-index: 1; /* Below controls/overlay */
-}
-
-/* Overlay to hide controls and add custom elements */
-.trailer-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2; /* Above player */
-    pointer-events: none; /* Allow clicks to pass through by default */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* Push top controls up, progress overlay down */
-    background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.6) 100%);
-}
-
-/* Container for top controls and title */
-.trailer-controls.top-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    pointer-events: auto; /* Make controls clickable */
-    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); /* Gradient fade */
-}
-
-.trailer-navigation {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.trailer-control-button {
-    background: none;
-    border: none;
-    color: var(--text-heading-color);
-    font-size: 1.2em;
-    cursor: pointer;
-    padding: 5px;
-    transition: color var(--transition-fast), transform var(--transition-fast);
-}
-
-.trailer-control-button:hover {
-    color: var(--primary-accent-color);
-    transform: scale(1.1);
-}
-
-.trailer-title {
-    font-family: var(--font-body); /* Use Assistant for text */
-    font-size: 1em;
-    color: var(--text-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px; /* Limit title width */
-    direction: rtl; /* Ensure title is RTL */
-}
-
-.open-movie-button {
-    background-color: rgba(102, 252, 241, 0.2);
-    color: var(--primary-accent-color);
-    border: 1px solid var(--primary-accent-color);
-    padding: 5px 10px;
-    border-radius: var(--border-radius-sm);
-    font-size: 0.9em;
-    transition: background-color var(--transition-fast), color var(--transition-fast);
-    pointer-events: auto; /* Make clickable */
-}
-.open-movie-button:hover {
-    background-color: var(--primary-accent-color);
-    color: var(--bg-secondary);
-}
-
-/* Overlay for progress bar */
-.trailer-progress-overlay {
-    width: 100%;
-    height: 30px; /* Height to cover the bottom part including progress bar */
-    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); /* Gradient fade */
-    pointer-events: none; /* Allow clicks to pass through */
-    margin-top: auto; /* Push to the bottom */
-}
-
-#noTrailersMessage {
-     grid-column: 1 / 2; /* Place in the left column */
-     text-align: center;
-     padding: 20px;
-     background-color: var(--bg-secondary);
-     border-radius: var(--border-radius-md);
-     margin-top: 20px; /* Space below the grid row */
-     border: 1px solid rgba(69, 162, 158, 0.2);
-}
-
 
 .category-section {
     margin-bottom: 60px;
@@ -305,22 +165,12 @@ img { max-width: 100%; height: auto; display: block; }
 .item-row::before { right: 0; background: linear-gradient(to left, var(--bg-color), transparent); }
 .item-row::after { left: 0; background: linear-gradient(to right, var(--bg-color), transparent); }
 
-.item-card-link.catalog-item { /* Target catalog items explicitly */
-    text-decoration: none; /* Remove underline */
-    color: inherit; /* Inherit color from parent (not the link default) */
-    display: block; /* Make the link block level to contain the card */
-    width: var(--card-width); /* Set width on the link */
-    flex-shrink: 0; /* Ensure it doesn't shrink */
-    scroll-snap-align: start; /* Align for scrolling */
-}
-
 .item-card {
-    background-color: var(--card-bg-color); border-radius: var(--border-radius-md); width: 100%; /* Take 100% of parent link width */
-    position: relative; overflow: hidden; transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    box-shadow: 0 8px 20px var(--shadow-color); cursor: pointer; /* Cursor on the card div */
+    background-color: var(--card-bg-color); border-radius: var(--border-radius-md); width: var(--card-width); flex-shrink: 0;
+    scroll-snap-align: start; position: relative; overflow: hidden; transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+    box-shadow: 0 8px 20px var(--shadow-color); cursor: pointer;
 }
 .item-card:hover, .item-card:focus-within { transform: scale(1.05) translateY(-8px); box-shadow: 0 15px 35px var(--shadow-color); z-index: 10; outline: none; }
-
 
 .card-image-container {
     width: 100%; height: var(--card-height); position: relative; overflow: hidden; border-radius: var(--border-radius-md);
@@ -748,24 +598,4 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .error-container a:hover {
     background-color: var(--primary-accent-color);
-}
-
-/* Responsive adjustments for the top section grid */
-@media (max-width: 992px) {
-    .top-section-grid {
-        grid-template-columns: 1fr; /* Stack columns on smaller screens */
-        gap: 20px; /* Reduce gap */
-    }
-    .page-greeting {
-        grid-column: 1 / 2; /* Place greeting in the first column (now stacked) */
-        padding-right: 10px; /* Adjust padding for RTL when stacked */
-        border-right: none; /* Remove right border */
-        border-left: 4px solid var(--primary-accent-color); /* Add left border for visual separation */
-        padding-left: 20px; /* Add left padding */
-         margin-bottom: 20px; /* Add space below greeting when stacked */
-    }
-     .trailer-section {
-         grid-column: 1 / 2; /* Place trailer in the first column (now stacked) */
-          margin-bottom: 20px; /* Add space below trailer when stacked */
-     }
 }
