@@ -39,6 +39,84 @@
              color: #ccc;
              font-size: 14px;
         }
+
+        /* --- Added Styles for Invitation Modal/Notification --- */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #2a394f; /* Dark background */
+            color: var(--text-color);
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 25px;
+            border: 1px solid #555;
+            border-radius: 10px;
+            width: 80%; /* Could be more responsive */
+            max-width: 400px; /* Max width */
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .modal-content h3 {
+            color: var(--primary-accent-color);
+            margin-bottom: 15px;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-buttons .accept-button {
+            background-color: #4CAF50; /* Green */
+            color: white;
+        }
+
+        .modal-buttons .accept-button:hover {
+            background-color: #45a049;
+        }
+
+        .modal-buttons .decline-button {
+            background-color: #f44336; /* Red */
+            color: white;
+        }
+
+        .modal-buttons .decline-button:hover {
+            background-color: #da190b;
+        }
+
+        /* Flash messages styling (optional, usually in style.css) */
+        .flash-messages {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .flash-messages li {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .flash-messages .success { background-color: #4CAF50; color: white; }
+        .flash-messages .error { background-color: #f44336; color: white; }
+        .flash-messages .warning { background-color: #ff9800; color: white; }
+        .flash-messages .info { background-color: #2196F3; color: white; }
+
     </style>
 </head>
 <body>
@@ -75,6 +153,19 @@
 <main class="container movie-details-page">
     <h1 id="movie-title">{{ movie.title or 'צפייה בסרט' }}</h1> {# Use movie title #}
 
+     <div class="flash-messages">
+         {% with messages = get_flashed_messages(with_categories=true) %}
+             {% if messages %}
+                 <ul class="flash-messages">
+                     {% for category, message in messages %}
+                         <li class="{{ category }}">{{ message }}</li>
+                     {% endfor %}
+                 </ul>
+             {% endif %}
+         {% endwith %}
+     </div>
+
+
     <div class="movie-grid">
         <div class="movie-poster">
             <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר הסרט' }}" loading="lazy"> {# Use movie title for alt text #}
@@ -98,6 +189,10 @@
             </div>
 
             <div class="movie-actions">
+                 {# Display "Watch Together" button only if user is logged in #}
+                 {% if user %}
+                    <button class="watch-together-button"><i class="fas fa-users"></i> הזמנה לצפייה יחד</button>
+                 {% endif %}
                  {# TODO: Implement add to list functionality #}
                 <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button>
             </div>
@@ -105,12 +200,26 @@
     </div>
 </main>
 
+{# --- Invitation Modal Structure --- #}
+<div id="invitationModal" class="modal">
+  <div class="modal-content">
+    <h3 id="invitationMessage"></h3>
+    <div class="modal-buttons">
+      <button class="accept-button">אשר</button>
+      <button class="decline-button">דחה</button>
+    </div>
+  </div>
+</div>
+{# --- End Invitation Modal Structure --- #}
+
+
 <footer class="site-footer-bottom">
     <div class="container">
         <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
     </div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script> {# Add SocketIO client library #}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Search functionality (same as index.html, navigate back to index with search term)
@@ -172,32 +281,24 @@
                 }
 
                 // Function to save the current item's details to localStorage
-                // Note: Timestamp saving is unreliable with Vidsrc due to cross-origin restrictions.
-                // We'll save the *item* and the timestamp we *started* with.
                 function saveContinueWatchingState(timestampToSave = savedTimestamp) {
-                    // Ensure we have basic movie data
                     if (!movieData || !movieData.imdbID) {
                          console.error("Cannot save continue watching state: Missing movie data.");
                          return;
                     }
-                    // Create or update the item entry
                     continueWatchingItems[itemKey] = {
                         id: imdbId,
                         type: movieType,
                         title: movieData.title || 'כותרת לא ידועה',
                         poster: movieData.poster && movieData.poster !== 'N/A' ? movieData.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
                         timestamp: timestampToSave // Save the timestamp (likely the initial one loaded or 0)
-                        // Note: Real-time timestamp updates are NOT possible here with standard Vidsrc iframe.
-                        // This timestamp reflects the STARTING point if loaded from CW, or 0 if first time/direct access.
                     };
 
                     try {
                         localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
                         console.log(`Saved movie ${imdbId} state to localStorage (timestamp: ${timestampToSave}).`);
-                         // Optional: Update the timestamp display
                          if (currentTimestampDiv) {
-                              // Format timestamp for display (HH:MM:SS)
-                               const formatTime = (seconds) => {
+                              const formatTime = (seconds) => {
                                     const h = Math.floor(seconds / 3600);
                                     const m = Math.floor((seconds % 3600) / 60);
                                     const s = Math.floor(seconds % 60);
@@ -217,11 +318,13 @@
 
                 // Check URL hash for initial timestamp
                 const urlHash = window.location.hash;
+                let initialTimestampFromHash = 0;
                 if (urlHash.startsWith('#timestamp=')) {
                     const hashTimestamp = parseInt(urlHash.substring('#timestamp='.length), 10);
                     if (!isNaN(hashTimestamp) && hashTimestamp >= 0) {
-                        savedTimestamp = hashTimestamp; // Use timestamp from URL hash if valid
-                         console.log(`Overriding saved timestamp with value from URL hash: ${savedTimestamp} seconds.`);
+                        initialTimestampFromHash = hashTimestamp;
+                         console.log(`Overriding saved timestamp with value from URL hash: ${initialTimestampFromHash} seconds.`);
+                         savedTimestamp = initialTimestampFromHash; // Update savedTimestamp for saving logic
                     }
                 } else {
                      console.log("No #timestamp hash found in URL.");
@@ -235,27 +338,22 @@
 
                 // Embed the iframe
                 const iframe = document.createElement('iframe');
-                iframe.src = vidsrcUrl; // Use the URL with timestamp
+                iframe.src = vidsrcUrl;
                 iframe.allowFullscreen = true;
                 iframe.setAttribute("allow", "autoplay");
+                // Add an ID or class to the iframe if you want to style it further
+                // iframe.id = 'vidsrc-movie-iframe';
                 embedContainer.appendChild(iframe);
 
                 // Save the initial state when the page loads (or reloads from CW)
-                 // This marks the item as "started" or updates its last known start time
                  saveContinueWatchingState(savedTimestamp);
 
-                 // Optional: Attempt to periodically save a placeholder timestamp or 0
-                 // NOTE: This interval CANNOT get the actual player time.
-                 // It just re-saves the initial timestamp or 0 periodically.
-                 // This part is largely ineffective for real progress tracking with Vidsrc.
-                 // Removing the interval as it gives a false sense of saving real progress.
-                 // The key saving happens on page load (marking as started/revisited).
+                 // No real-time saving interval possible with Vidsrc.
 
-                 // Save the current state when the user leaves the page
+                 // Save the current state when the user leaves the page (saves the initial timestamp)
                  window.addEventListener('beforeunload', () => {
-                      // saveContinueWatchingState(savedTimestamp); // Save the initial timestamp one last time (redundant but harmless)
+                      // saveContinueWatchingState(savedTimestamp); // Redundant due to initial save but harmless
                       console.log(`Page unload event for movie ${imdbId}.`);
-                       // Real-time saving requires access to player.currentTime, which is not possible here.
                  });
 
 
@@ -283,6 +381,119 @@
              message.textContent = 'פרטי סרט חסרים או לא תקינים.';
              embedContainer.appendChild(message);
         }
+
+        // --- Watch Together Invitation Logic ---
+        const watchTogetherButton = document.querySelector('.watch-together-button');
+        const invitationModal = document.getElementById('invitationModal');
+        const invitationMessage = document.getElementById('invitationMessage');
+        const acceptButton = invitationModal.querySelector('.accept-button');
+        const declineButton = invitationModal.querySelector('.decline-button');
+
+        let currentInvitationData = null; // To hold the details of the invitation shown in the modal
+
+        // Socket.IO setup
+        // By default, it connects to the same host/port that served the page.
+        // Make sure your server is running with socketio.run()
+        const socket = io(); // Connect to Socket.IO
+
+        socket.on('connect', function() {
+            console.log('Socket.IO connected!');
+             // If user is logged in, this triggers the server-side connect handler
+             // which associates the socket ID with the user's email.
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Socket.IO disconnected!');
+        });
+
+        socket.on('invitation_sent_success', function(data) {
+            console.log('Invitation sent success:', data);
+            alert(data.message); // Use a simple alert for now, consider a nicer notification
+        });
+
+        socket.on('invitation_error', function(data) {
+            console.error('Invitation error:', data);
+            alert('שגיאה בהזמנה: ' + data.message); // Use a simple alert
+        });
+
+        socket.on('new_invitation', function(data) {
+            console.log('Received new invitation:', data);
+            currentInvitationData = data; // Store the invite data
+            // Display the modal
+            invitationMessage.textContent = `קיבלת הזמנה לצפייה בסרט "${data.movie_title}" מ${data.sender_email}.`;
+            invitationModal.style.display = 'block';
+        });
+
+         // Listen for invitation acceptance redirection signal
+         socket.on('invitation_accepted', function(data) {
+             console.log('Invitation accepted, redirecting...', data);
+             // Redirect to the watch together page
+             window.location.href = data.url;
+         });
+
+         // Listen for invitation declined signal (sent back to the sender)
+         socket.on('invitation_declined', function(data) {
+              console.log('Invitation declined by receiver:', data);
+              alert(`${data.receiver_email} דחה את ההזמנה שלך לצפייה בסרט "${data.movie_title}".`); // Notify sender
+         });
+
+
+        // --- Handle Watch Together Button Click (Sender side) ---
+        if (watchTogetherButton && user) { // Button exists and user is logged in
+            watchTogetherButton.addEventListener('click', function() {
+                const receiverEmail = prompt("הזמן משתמש לצפייה יחד. הזן את האימייל של המשתמש:")
+                if (receiverEmail) {
+                    // Basic email format validation (more robust validation should be on server)
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(receiverEmail)) {
+                        alert("פורמט אימייל לא תקין.");
+                        return;
+                    }
+
+                    // Emit the invitation event
+                    socket.emit('send_invitation', {
+                        receiver_email: receiverEmail,
+                        movie_imdb_id: movieData.imdbID,
+                        movie_title: movieData.title // Include title for the notification message
+                    });
+                }
+            });
+        }
+
+        // --- Handle Invitation Modal Buttons (Receiver side) ---
+        acceptButton.addEventListener('click', function() {
+            if (currentInvitationData) {
+                socket.emit('accept_invitation', {
+                    sender_email: currentInvitationData.sender_email,
+                    movie_imdb_id: currentInvitationData.movie_imdb_id
+                });
+                invitationModal.style.display = 'none'; // Hide modal after action
+                currentInvitationData = null; // Clear current invite data
+            }
+        });
+
+        declineButton.addEventListener('click', function() {
+            if (currentInvitationData) {
+                socket.emit('decline_invitation', {
+                    sender_email: currentInvitationData.sender_email,
+                    movie_imdb_id: currentInvitationData.movie_imdb_id
+                });
+                invitationModal.style.display = 'none'; // Hide modal after action
+                currentInvitationData = null; // Clear current invite data
+            }
+        });
+
+         // Check if there's a pending invite passed from Flask (e.g., on initial page load after login)
+         const pendingInviteData = {{ pending_invite | tojson }};
+         if (pendingInviteData && pendingInviteData.sender_email && pendingInviteData.movie_imdb_id) {
+              console.log("Displaying pending invitation from Flask:", pendingInviteData);
+              currentInvitationData = pendingInviteData;
+              invitationMessage.textContent = `קיבלת הזמנה לצפייה בסרט "${pendingInviteData.movie_title}" מ${pendingInviteData.sender_email}.`;
+              invitationModal.style.display = 'block';
+              // Note: This doesn't use the SocketIO 'new_invitation' event directly,
+              // it displays the invite found on the server-side page render.
+         }
+
 
     }); // End DOMContentLoaded
 
