@@ -1,4 +1,3 @@
-```python
 import datetime
 import traceback
 import os
