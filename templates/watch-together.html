@@ -1,0 +1,331 @@
+<!-- watch-together.html -->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>צפייה יחד בסרט - {{ movie.title or 'סינמה פריים' }}</title> {# Use movie title #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}"> {# Include movie.css for basic styles #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/watch-together.css') }}"> {# Add specific watch-together styles #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        .vidsrc-embed-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            margin-bottom: 20px;
+        }
+        .vidsrc-embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .no-video-message {
+            color: #ff4c4c;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        /* Style for the timestamp display (optional) */
+        #current-timestamp {
+             margin-top: 10px;
+             text-align: center;
+             color: #ccc;
+             font-size: 14px;
+        }
+
+        /* --- Styles for Control Buttons (Placeholder) --- */
+        .playback-controls {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .playback-controls button {
+             padding: 10px 20px;
+             margin: 0 10px;
+             background-color: var(--primary-accent-color);
+             color: var(--bg-color);
+             border: none;
+             border-radius: var(--border-radius-md);
+             cursor: pointer;
+             font-size: 1.1em;
+             transition: background-color var(--transition-fast);
+        }
+
+        .playback-controls button:hover {
+            background-color: var(--secondary-accent-color);
+        }
+
+        .playback-controls button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+    </style>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="container header-content">
+        <div class="search-container">
+            <input type="search" id="searchInput" placeholder="חיפוש...">
+            <button aria-label="Search"><i class="fas fa-search"></i></button>
+        </div>
+        <nav class="main-nav">
+            <a href="{{ url_for('index') }}">בית</a>
+            <a href="{{ url_for('all_movies') }}">סרטים</a>
+            <a href="{{ url_for('all_series') }}">סדרות</a>
+            {% if user and user.email in admin_emails %}
+                <a href="{{ url_for('add_content') }}">הוספת תוכן</a>
+            {% endif %}
+        </nav>
+        <div class="auth-container">
+            {% if user %}
+                <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
+                    <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
+                </a>
+            {% else %}
+                <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
+                    <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy">
+                </a>
+            {% endif %}
+        </div>
+        <div class="header-spacer"></div>
+    </div>
+</header>
+
+<main class="container movie-details-page watch-together-page"> {# Added a class for potential specific styling #}
+    <h1>צפייה יחד: {{ movie.title or 'סרט' }}</h1> {# Use movie title #}
+    <p style="text-align: center; margin-bottom: 20px;">
+        צופים יחד: {{ sender_email }} (שולח/שולטת) ו-{{ receiver_email }} (מקבל/צופה)
+    </p>
+
+    <div class="movie-grid"> {# Using movie-grid structure from movie.css #}
+        <div class="movie-poster"> {# Poster still shown but maybe less prominent #}
+            <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר הסרט' }}" loading="lazy">
+        </div>
+
+        <div class="movie-info"> {# Using movie-info structure #}
+            <div class="vidsrc-embed-container" id="embed-container">
+                <!-- יוזן על ידי JS -->
+            </div>
+            {# Optional: Add a div to display current timestamp (debug/info) #}
+            <div id="current-timestamp" style="display: none;"></div>
+
+
+            {# --- Playback Controls (Only for Controller) --- #}
+            {% if is_controller %}
+            <div class="playback-controls">
+                <p style="text-align: center; margin-bottom: 10px; color: var(--primary-accent-color);">
+                    אתה שולט בנגן (הערה: שליטה מרחוק על Vidsrc אינה נתמכת טכנית בדרך כלל).
+                </p>
+                <button id="playPauseBtn"><i class="fas fa-play"></i>/ <i class="fas fa-pause"></i> הפעל/השהה (נסה)</button>
+                <button id="seekBackwardBtn"><i class="fas fa-backward"></i> 10 שניות אחורה</button>
+                <button id="seekForwardBtn"><i class="fas fa-forward"></i> 10 שניות קדימה</button>
+                 {# Note: These buttons emit events, but the receiver's iframe player cannot be controlled directly. #}
+                 {# You might want to add an actual chat box here for manual coordination. #}
+            </div>
+            {% else %}
+             <p style="text-align: center; margin-bottom: 20px; color: #aaa;">
+                 אתה צופה בסרט. {{ sender_email }} שולט/ת בנגן (הערה: ייתכן שיהיה צורך להפעיל/להשהות ידנית).
+             </p>
+            {% endif %}
+             {# --- End Playback Controls --- #}
+
+
+            <div class="movie-details-list"> {# Using movie-details-list structure #}
+                <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
+                <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
+                <p><strong>אורך:</strong> {{ movie.runtime or 'לא זמין' }}</p>
+                <p><strong>תאריך יציאה:</strong> {{ movie.year or 'לא זמין' }}</p>
+                <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
+                <p><strong>דירוג:</strong> {{ movie.imdbRating or 'לא זמין' }}</p>
+            </div>
+
+            {# Actions like "Add to List" are less relevant on a watch-together page, could remove #}
+            <div class="movie-actions" style="display: none;">
+                 {# <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> #}
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer-bottom">
+    <div class="container">
+        <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
+    </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script> {# Add SocketIO client library #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality (same as other pages)
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const term = this.value.trim();
+                    if (term) {
+                        window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                    }
+                }
+            });
+             document.querySelector('.search-container button').addEventListener('click', function() {
+                 const term = searchInput.value.trim();
+                 if (term) {
+                      window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                 }
+             });
+        }
+
+        // --- Watch Together Playback Control Logic ---
+        const user = {{ user | tojson }}; // Logged-in user
+        const isController = {{ is_controller | tojson }}; // Boolean flag from Flask
+        const senderEmail = "{{ sender_email | safe }}"; // Sender email from URL (decoded by Flask)
+        const receiverEmail = "{{ receiver_email | safe }}"; // Receiver email from URL (decoded by Flask)
+        const movieData = {{ movie | tojson }}; // Movie data from Flask
+        const embedContainer = document.getElementById('embed-container');
+        const currentTimestampDiv = document.getElementById('current-timestamp'); // Optional display
+
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const seekBackwardBtn = document.getElementById('seekBackwardBtn');
+        const seekForwardBtn = document.getElementById('seekForwardBtn');
+
+        // Socket.IO setup
+        const socket = io(); // Connect to Socket.IO
+
+        socket.on('connect', function() {
+            console.log('Socket.IO connected to watch together session.');
+             // Optional: Join a specific room for this session if using rooms
+             // socket.emit('join_watch_session', { sessionId: '...' }); // Need a unique session ID
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Socket.IO disconnected from watch together session.');
+        });
+
+        // --- Embed Vidsrc ---
+        if (movieData && movieData.imdbID) {
+            const imdbId = movieData.imdbID;
+             // NOTE: Timestamp from continue watching is NOT used here for simplicity.
+             // A real system would need to sync initial time or start at 0.
+            const vidsrcUrl = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
+            console.log(`Constructed Vidsrc URL for watch together: ${vidsrcUrl}`);
+
+            const iframe = document.createElement('iframe');
+            iframe.src = vidsrcUrl;
+            iframe.allowFullscreen = true;
+            iframe.setAttribute("allow", "autoplay");
+            embedContainer.appendChild(iframe);
+
+             // IMPORTANT LIMITATION NOTE:
+             // Due to Same-Origin Policy, JavaScript on THIS page CANNOT control the video
+             // playback (play, pause, seek) inside the Vidsrc iframe directly.
+             // The buttons below will *emit* events via SocketIO, but the receiving side's
+             // JS will NOT be able to apply those commands to their iframe player.
+             console.warn("Same-Origin Policy prevents direct control of Vidsrc iframe. Playback synchronization is NOT possible with this setup.");
+
+        } else {
+             console.error("Movie data or IMDb ID not found. Cannot embed video.");
+             const message = document.createElement('div');
+             message.className = 'no-video-message';
+             message.textContent = 'פרטי סרט חסרים או לא תקינים.';
+             embedContainer.appendChild(message);
+        }
+
+
+        // --- Playback Control Event Handling (Limited Functionality) ---
+        if (isController) {
+            // Controller: Send commands on button clicks
+            if(playPauseBtn) {
+                playPauseBtn.addEventListener('click', function() {
+                    console.log("Controller clicked Play/Pause. Emitting command (limited functionality).");
+                    socket.emit('playback_command', {
+                        receiver_email: receiverEmail, // Target the other user
+                        movie_imdb_id: movieData.imdbID,
+                        command: 'toggle_play_pause'
+                         // No reliable way to get/send current time from Vidsrc
+                    });
+                });
+            }
+             if(seekBackwardBtn) {
+                 seekBackwardBtn.addEventListener('click', function() {
+                     console.log("Controller clicked Seek Backward. Emitting command (limited functionality).");
+                     socket.emit('playback_command', {
+                         receiver_email: receiverEmail,
+                         movie_imdb_id: movieData.imdbID,
+                         command: 'seek_backward',
+                         value: 10 // seconds
+                     });
+                 });
+             }
+             if(seekForwardBtn) {
+                 seekForwardBtn.addEventListener('click', function() {
+                     console.log("Controller clicked Seek Forward. Emitting command (limited functionality).");
+                     socket.emit('playback_command', {
+                         receiver_email: receiverEmail,
+                         movie_imdb_id: movieData.imdbID,
+                         command: 'seek_forward',
+                         value: 10 // seconds
+                     });
+                 });
+             }
+
+
+        } else {
+            // Viewer: Receive commands (but cannot apply to Vidsrc iframe)
+            socket.on('receive_playback_command', function(data) {
+                console.log('Viewer received playback command:', data.command, data.value);
+                // **** CRITICAL LIMITATION ****
+                // The code below is what you *would* do if you could control the video player iframe.
+                // However, due to Same-Origin Policy and Vidsrc not providing an API, this WILL NOT WORK.
+                const videoIframe = embedContainer.querySelector('iframe');
+                 if (videoIframe) {
+                     console.warn("Attempting to apply playback command to Vidsrc iframe. This is expected to FAIL due to Same-Origin Policy.");
+                     // You CANNOT call methods like videoIframe.contentWindow.postMessage()
+                     // with messages that Vidsrc understands, or access videoIframe.contentWindow.document.querySelector('video')
+                     // to control the video element directly.
+                     // The line below is purely illustrative of the *attempted* action, not functional.
+                     // videoIframe.contentWindow.postMessage({ command: data.command, value: data.value }, '*'); // Example, won't work
+                 }
+                 // Maybe notify the user?
+                 alert(`התקבלה פקודת נגן מ${senderEmail}: ${data.command}. ייתכן שיהיה צורך להפעיל/להשהות ידנית.`);
+
+            });
+        }
+
+    }); // End DOMContentLoaded
+
+     // Search functionality (same as other pages) - outside DOMContentLoaded for access
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const term = this.value.trim();
+                if (term) {
+                    window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                }
+            }
+        });
+         document.querySelector('.search-container button').addEventListener('click', function() {
+             const term = searchInput.value.trim();
+             if (term) {
+                  window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+             }
+         });
+    }
+
+</script>
+
+</body>
+</html>
