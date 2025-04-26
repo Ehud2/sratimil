@@ -11,6 +11,53 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     {# Included loading spinner styles directly in style.css #}
+
+     <style>
+        /* Optional: Add CSS for the drag-to-scroll functionality */
+        .item-row {
+            /* Ensures the row can be scrolled horizontally */
+            overflow-x: auto;
+            white-space: nowrap; /* Prevents items from wrapping */
+            scrollbar-width: thin; /* Make scrollbar thinner (Firefox) */
+            scrollbar-color: var(--secondary-color) var(--bg-color); /* Customize scrollbar colors (Firefox) */
+            -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS */
+            cursor: grab; /* Default cursor for draggable area */
+        }
+
+        /* Customize scrollbar appearance (Chrome, Edge, Safari) */
+        .item-row::-webkit-scrollbar {
+            height: 8px; /* Height for horizontal scrollbar */
+        }
+
+        .item-row::-webkit-scrollbar-track {
+            background: var(--bg-color); /* Background of the scrollbar track */
+            border-radius: 10px;
+        }
+
+        .item-row::-webkit-scrollbar-thumb {
+            background-color: var(--secondary-color); /* Color of the scrollbar thumb */
+            border-radius: 10px;
+             border: 2px solid var(--bg-color); /* Padding around thumb */
+        }
+
+        /* Cursor feedback when dragging */
+        .item-row.dragging {
+             cursor: grabbing;
+             /* Prevent text selection while dragging */
+             user-select: none;
+             -webkit-user-select: none; /* Safari */
+             -ms-user-select: none; /* IE 10+ */
+        }
+
+        .item-row .item-card-link {
+            /* Ensure cards are inline-block to stay in a row */
+            display: inline-block;
+            vertical-align: top; /* Align items to the top */
+        }
+
+
+    </style>
+
 </head>
 <body>
     <!-- Loading Spinner -->
@@ -20,7 +67,8 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
+                {# Use url_for for a local file #}
+                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="User profile picture"> {# Changed from base64 to local file #}
             {% endif %}
         </div>
         <p>טוען סינמה פריים...</p>
@@ -53,7 +101,7 @@
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
                          {# Replace the base64 string with your desired image URL or placeholder #}
-                         <img src="Imageurlhere" alt="Sign in with Google" loading="lazy">
+                         <img src="{{ url_for('static', filename='images/google_signin.png') }}" alt="Sign in with Google" loading="lazy"> {# Using a placeholder local image #}
                     </a>
                 {% endif %}
             </div>
@@ -95,7 +143,7 @@
             {% if items_in_category %}
                 <section class="category-section">
                     <h2>{{ category_name }}</h2>
-                    <div class="item-row">
+                    <div class="item-row"> {# This is the element the drag-to-scroll JS will target #}
                         {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
@@ -175,7 +223,6 @@
 
 
             // --- Search Filter Functionality ---
-            // Example search filter (assuming this was in your script.js and moved here):
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
@@ -227,11 +274,15 @@
 
 
             // --- Continue Watching Functionality (Client-Side) ---
-            const user = {{ user | tojson }}; // Pass user object from Flask
+            // Ensure user object is available and is not null/undefined.
+            // Use a safe default like an empty object if user is not defined (e.g., when not logged in)
+            const user = {{ user | tojson | safe }}; // Pass user object from Flask
+
 
             // Corrected URL generation - get base paths and append dynamically in JS
-            const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id='') }}"; // Gets /movie/
-            const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id='') }}"; // Gets /series/
+            // Using a dummy ID (0) to ensure the URL structure is correct before appending
+            const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id=0).replace('0', '') }}"; // Gets /movie/
+            const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id=0, season=0, episode=0).replace('/0/0/0', '') }}"; // Gets /series/
 
 
             const continueWatchingSection = document.getElementById('continueWatchingSection');
@@ -263,12 +314,15 @@
 
                     // --- Helper to determine season/episode, preferring latest_* ---
                     function getEpisodeInfo(item) {
-                         const season = item.latest_season || item.season;
-                         const episode = item.latest_episode || item.episode;
+                         // Prioritize latest_* properties if they exist (new format)
+                         const season = item.latest_season !== undefined ? item.latest_season : item.season;
+                         const episode = item.latest_episode !== undefined ? item.latest_episode : item.episode;
+
                          // Return as numbers if possible, default to 0 if not valid
                          const seasonNum = season ? parseInt(season, 10) : 0;
                          const episodeNum = episode ? parseInt(episode, 10) : 0;
 
+                         // Basic validation for numbers greater than 0
                          if (isNaN(seasonNum) || isNaN(episodeNum) || seasonNum < 1 || episodeNum < 1) {
                               return null; // Invalid episode info
                          }
@@ -286,17 +340,22 @@
                         }
 
                         // Determine canonical key (movie_id or series_id)
+                        // This key will be the same regardless of episode for a series
                         const canonicalKey = `${item.type}_${item.id}`;
 
                         if (item.type === 'movie') {
-                             // For movies, just add/overwrite. The key is already unique per movie.
+                             // For movies, just add/overwrite. The key is already unique per movie ID.
+                            // Ensure timestamp is a number, defaulting to 0
+                            const timestamp = typeof item.timestamp === 'number' ? item.timestamp : 0;
+
                             uniqueValidItemsMap.set(canonicalKey, {
                                 id: item.id,
                                 type: 'movie',
                                 title: item.title,
                                 poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
-                                timestamp: typeof item.timestamp === 'number' ? item.timestamp : 0, // Ensure timestamp is a number
+                                timestamp: timestamp,
                                 // Add other movie details needed for the card if any beyond title/poster
+                                // Example: maybe progress if you track that for movies
                             });
 
                         } else if (item.type === 'series') {
@@ -309,26 +368,30 @@
                                  return; // Skip this item if episode info is missing or invalid
                             }
 
-                             const seasonNum = episodeInfo.season;
-                             const episodeNum = episodeInfo.episode;
-                             const timestamp = typeof item.timestamp === 'number' ? item.timestamp : 0;
+                            const seasonNum = episodeInfo.season;
+                            const episodeNum = episodeInfo.episode;
+                             // Ensure timestamp is a number, defaulting to 0
+                            const timestamp = typeof item.timestamp === 'number' ? item.timestamp : 0;
 
 
                             // Check if we already have an entry for this series ID in the map
                             if (uniqueValidItemsMap.has(canonicalKey)) {
                                 const existingItem = uniqueValidItemsMap.get(canonicalKey);
-                                // Get episode info for the item currently in the map
-                                const existingEpisodeInfo = getEpisodeInfo(existingItem); // Should use latest_* from map item
+                                // Get episode info for the item currently in the map (should be using latest_* format)
+                                const existingEpisodeInfo = getEpisodeInfo(existingItem);
                                 const existingSeason = existingEpisodeInfo ? existingEpisodeInfo.season : 0; // Default to 0 if no info
                                 const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0; // Default to 0 if no info
 
-
                                 // Compare the current episode with the one already in the map
                                 // Keep the one with the later season, or later episode if seasons are the same
+                                // Also consider updating the timestamp if the current item's timestamp is more recent,
+                                // even if the episode number isn't higher (e.g., re-watching an episode).
+                                // However, the primary goal is to show the *latest watched episode*.
+                                // Let's prioritize episode number for the 'latest' designation.
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
                                      // The current item represents a *later* episode for this series
                                      console.log(`CW: Updating series ${item.id} to S${seasonNum}E${episodeNum} (was S${existingSeason}E${existingEpisode}).`);
-                                    // Update the map entry with the later episode details
+                                    // Update the map entry with the later episode details and its timestamp
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
@@ -336,12 +399,16 @@
                                         poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
                                         latest_season: seasonNum, // Store as latest_* in the canonical format
                                         latest_episode: episodeNum, // Store as latest_* in the canonical format
-                                         // Use the timestamp from the *latest* episode found, even if it's from an old entry format
-                                        timestamp: timestamp,
-                                        // Add other series details needed for the card if any beyond title/poster
+                                        timestamp: timestamp, // Use the timestamp from this specific item
+                                        // Add other series details needed for the card
                                     });
+                                } else if (seasonNum === existingSeason && episodeNum === existingEpisode && timestamp > existingItem.timestamp) {
+                                     // If it's the same episode but the current item has a more recent timestamp, update the timestamp
+                                      console.log(`CW: Updating timestamp for S${seasonNum}E${episodeNum} series ${item.id} (more recent watch).`);
+                                      existingItem.timestamp = timestamp; // Update only the timestamp of the existing map entry
+                                      uniqueValidItemsMap.set(canonicalKey, existingItem); // Put the updated item back in the map
                                 } else {
-                                    // The existing item in the map is already the latest or equal. Do nothing.
+                                    // The existing item in the map is already the latest episode or the same episode with an equal/later timestamp. Do nothing.
                                      // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E${episodeNum}.`); // Debug log
                                 }
                             } else {
@@ -355,7 +422,7 @@
                                     latest_season: seasonNum, // Store as latest_*
                                     latest_episode: episodeNum, // Store as latest_*
                                      timestamp: timestamp, // Store timestamp
-                                    // Add other series details needed for the card if any beyond title/poster
+                                    // Add other series details needed for the card
                                 });
                             }
 
@@ -367,11 +434,23 @@
                     });
 
                     // --- Convert map values to an array for display and optionally save cleaned data ---
-                    const validItemsToDisplay = Array.from(uniqueValidItemsMap.values());
+                    let validItemsToDisplay = Array.from(uniqueValidItemsMap.values());
+
+                    // Sort items - by timestamp descending (most recently watched first), then title
+                    validItemsToDisplay.sort((a, b) => {
+                         // Sort by timestamp (most recent first)
+                         if (b.timestamp !== a.timestamp) {
+                              return b.timestamp - a.timestamp;
+                         }
+                         // If timestamps are the same, sort by title alphabetically
+                         return (a.title || '').localeCompare(b.title || '');
+                    });
+
 
                     // Optional: Save the cleaned, consolidated data back to localStorage
                     // This effectively migrates old per-episode data to the new per-series-latest format over time.
                     // By converting the Map back to an object, keys like series_ttXXXXXXX_SxE are automatically discarded.
+                    // The data saved back to localStorage will only contain the latest_season/latest_episode and timestamp for series.
                     const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap); // Convert Map back to object
                     try {
                          localStorage.setItem(localStorageKey, JSON.stringify(cleanedContinueWatchingItems));
@@ -382,51 +461,49 @@
 
 
                     // --- Display the items ---
-                    if (validItemsToDisplay.length > 0) {
-                        // Sort items if desired (e.g., by title)
-                        validItemsToDisplay.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                    // Clear existing items in the row before adding the updated list
+                    continueWatchingRow.innerHTML = '';
 
+                    if (validItemsToDisplay.length > 0) {
                         validItemsToDisplay.forEach(item => {
                             const itemLink = document.createElement('a');
                             let href = '#'; // Default fallback
                             let titleText = item.title || 'פריט לא ידוע';
                             let subtitleText = ''; // For series episode info
 
-                            // Construct the correct URL and subtitle based on item type (using canonical format)
-                            if (item.type === 'movie') {
-                                 // Use the movie base URL and append IMDb ID
-                                 href = `${movieDetailsBaseUrl}${item.id}`;
-                                 // Add timestamp hash if available (even if it's 0)
-                                 if (item.timestamp && item.timestamp > 0) {
-                                     href += `#timestamp=${item.timestamp}`;
-                                 } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
-                                      href += `#timestamp=0`;
-                                 }
-                                 subtitleText = 'סרט';
-                            } else if (item.type === 'series' && item.id && item.latest_season && item.latest_episode) {
-                                 // Use the series base URL and append IMDb ID, season, episode
-                                 href = `${seriesDetailsBaseUrl}${item.id}/${item.latest_season}/${item.latest_episode}`;
+                             // Construct the correct URL and subtitle based on item type (using canonical format)
+                             if (item.type === 'movie' && item.id) {
+                                  // Use the movie base URL and append IMDb ID
+                                  href = `${movieDetailsBaseUrl}${item.id}`;
+                                  // Add timestamp hash if available (even if it's 0). Only add if timestamp is a non-negative number.
+                                  if (typeof item.timestamp === 'number' && item.timestamp >= 0) {
+                                       href += `#timestamp=${Math.floor(item.timestamp)}`; // Use floor to ensure integer timestamp
+                                  }
+                                  subtitleText = 'סרט';
+                             } else if (item.type === 'series' && item.id && item.latest_season >= 1 && item.latest_episode >= 1) {
+                                  // Use the series base URL and append IMDb ID, season, episode
+                                  href = `${seriesDetailsBaseUrl}${item.id}/${item.latest_season}/${item.latest_episode}`;
 
-                                 // Add timestamp hash if available (even if it's 0)
-                                 if (item.timestamp && item.timestamp > 0) {
-                                     href += `#timestamp=${item.timestamp}`;
-                                 } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
-                                     href += `#timestamp=0`;
-                                 }
+                                  // Add timestamp hash if available (even if it's 0). Only add if timestamp is a non-negative number.
+                                  if (typeof item.timestamp === 'number' && item.timestamp >= 0) {
+                                      href += `#timestamp=${Math.floor(item.timestamp)}`; // Use floor to ensure integer timestamp
+                                  }
 
-                                 // Display series title as main title and latest episode info as subtitle
-                                 titleText = item.title || 'סדרה לא ידועה';
-                                 subtitleText = `עונה ${item.latest_season}, פרק ${item.latest_episode}`;
+                                  // Display series title as main title and latest episode info as subtitle
+                                  titleText = item.title || 'סדרה לא ידועה';
+                                  subtitleText = `עונה ${item.latest_season}, פרק ${item.latest_episode}`;
 
-                            } else {
-                                 // This case should not be reached if processing logic is correct, but defensive check.
-                                 console.warn("CW: Displaying invalid or incomplete item after processing:", item);
-                                 return; // Skip this item
-                            }
+                             } else {
+                                  // This case should not be reached if processing logic is correct, but defensive check.
+                                  console.warn("CW: Skipping display of invalid or incomplete item:", item);
+                                  return; // Skip this item
+                             }
+
 
                             itemLink.href = href;
                             itemLink.classList.add('item-card-link');
-                            itemLink.classList.add('continue-watching-item');
+                            itemLink.classList.add('continue-watching-item'); // Add class for specific CW styling if needed
+
 
                             // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
@@ -444,11 +521,13 @@
                             const overlay = document.createElement('div');
                             overlay.classList.add('card-overlay');
 
+                             // The play button will navigate when the link is clicked
                              const playButton = document.createElement('button');
                              playButton.classList.add('play-button');
                              playButton.setAttribute('aria-label', `המשך צפייה ב${titleText}`);
                              playButton.innerHTML = '<i class="fas fa-play"></i>';
-                             playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+                             // Prevent default button click behavior but allow the link click
+                             playButton.addEventListener('click', (e) => { /* e.preventDefault(); e.stopPropagation(); */ });
 
 
                             const titleElement = document.createElement('h3');
@@ -470,15 +549,17 @@
                               removeButton.classList.add('remove-from-cw-button');
                               removeButton.setAttribute('aria-label', `הסר מ'המשך צפייה'`);
                               removeButton.innerHTML = '<i class="fas fa-times"></i>';
+                              // Add event listener to the remove button
                               removeButton.addEventListener('click', (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
+                                  e.preventDefault(); // Prevent link click
+                                  e.stopPropagation(); // Prevent link click and card click
 
                                    // Get the canonical key for this item to remove from the map
                                    const itemKeyToRemove = `${item.type}_${item.id}`;
 
                                    if (uniqueValidItemsMap.has(itemKeyToRemove)) {
                                         uniqueValidItemsMap.delete(itemKeyToRemove); // Remove from the map
+
                                         try {
                                              // Save the *current state of the map* back to localStorage
                                              // This is the cleaned state, so old keys won't be added back.
@@ -486,7 +567,7 @@
                                              itemLink.remove(); // Remove the element from the DOM
                                              console.log(`CW: Removed item ${itemKeyToRemove} from continue watching.`);
 
-                                             // Check if the section should be hidden
+                                             // Check if the section should be hidden after removal
                                              if (uniqueValidItemsMap.size === 0) {
                                                  continueWatchingSection.style.display = 'none';
                                                   noContinueWatchingMessage.style.display = 'block';
@@ -548,6 +629,138 @@
                  noContinueWatchingMessage.style.display = 'none'; // Hide empty message too if not logged in
             }
 
+
+            // --- Drag-to-Scroll Functionality for Item Rows ---
+            const itemRows = document.querySelectorAll('.item-row');
+
+            itemRows.forEach(row => {
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+
+                row.addEventListener('mousedown', (e) => {
+                     // Only start dragging if the left mouse button is pressed (button 0)
+                    if (e.button !== 0) return;
+
+                    isDown = true;
+                    row.classList.add('dragging'); // Add class for cursor feedback
+                    startX = e.pageX - row.offsetLeft; // Get mouse starting position relative to the row
+                    scrollLeft = row.scrollLeft; // Get the current scroll position
+
+                    // Add a listener to the *window* for mouseup and mousemove *while* dragging
+                    // This prevents issues if the mouse leaves the row while dragging
+                    window.addEventListener('mousemove', mouseMoveHandler);
+                    window.addEventListener('mouseup', mouseUpHandler);
+                });
+
+                const mouseMoveHandler = (e) => {
+                    if (!isDown) return; // Stop if not dragging
+                    e.preventDefault(); // Prevent text selection, image dragging, etc.
+
+                    const x = e.pageX - row.offsetLeft; // Get current mouse position relative to the row
+                    const walk = (x - startX); // Calculate how far the mouse moved
+
+                    // Update the scroll position. Scroll left is decreased when dragging right (positive walk).
+                    // In RTL, dragging right scrolls left. So, `scrollLeft - walk` for LTR would be `scrollLeft + walk` for RTL.
+                    // However, the browser handles RTL scrolling direction automatically.
+                    // `scrollLeft` is the distance from the right edge in RTL.
+                    //Dragging right increases `x`, so `x - startX` is positive.
+                    //To scroll right (increase `scrollLeft` from the right edge), we need to add the walk.
+                    //BUT, the browser's `scrollLeft` in RTL *is* the distance from the left edge, despite `dir="rtl"`.
+                    //So dragging right (positive `walk`) should increase `scrollLeft`. The calculation is `scrollLeft - walk` which is standard LTR.
+                    //Let's test this... Yes, `scrollLeft - walk` is correct for both LTR and RTL browsers.
+                    row.scrollLeft = scrollLeft - walk;
+                };
+
+                 const mouseUpHandler = () => {
+                    isDown = false;
+                    row.classList.remove('dragging'); // Remove class
+                    // Remove the global listeners once dragging stops
+                    window.removeEventListener('mousemove', mouseMoveHandler);
+                    window.removeEventListener('mouseup', mouseUpHandler);
+                 };
+
+                // Add a listener to the *row* for mouseleave to handle cases where the mouse leaves the element
+                 // This one is separate from the global handlers and just resets the state if the mouse leaves *without* mouseup
+                row.addEventListener('mouseleave', () => {
+                     // If mouseleave happens *while* dragging, stop dragging but *keep* the global handlers
+                     // until mouseup occurs, or simply stop dragging and remove global handlers immediately.
+                     // Removing global handlers immediately is simpler and generally fine.
+                    if (isDown) {
+                       isDown = false;
+                       row.classList.remove('dragging');
+                       window.removeEventListener('mousemove', mouseMoveHandler);
+                       window.removeEventListener('mouseup', mouseUpHandler);
+                       console.log("Dragging stopped due to mouseleave"); // Debug log
+                    }
+                });
+
+                 // Important: Add a click handler to prevent item clicks immediately after dragging
+                 // This listens for clicks on the row itself (or its children).
+                 // We check if the row was marked as 'dragging' immediately before the click.
+                 // We add a small delay to allow the click event to finish propagating after mouseup.
+                 row.addEventListener('click', (e) => {
+                    // Check if the row was dragging recently. A common threshold is 100-300ms.
+                    // Instead of a direct class check which might be removed too quickly,
+                    // we can check the mouse movement distance. If it moved significantly, it was a drag.
+                    // A simpler approach is to temporarily prevent clicks after mouseup.
+                    // Let's add a small timeout after mouseup during which clicks are ignored on the row/items.
+                    // This requires a flag managed by mouseup. Let's refine the mouseup handler.
+                 }, true); // Use capture phase to intercept clicks early
+
+
+                 // Refined mouseUpHandler to manage click prevention
+                 const mouseUpHandlerWithClickPrevention = (e) => {
+                     if (!isDown) return; // Ensure it was actually down
+
+                     isDown = false;
+                     row.classList.remove('dragging');
+                     window.removeEventListener('mousemove', mouseMoveHandler);
+                     window.removeEventListener('mouseup', mouseUpHandlerWithClickPrevention); // Note the handler name change
+
+                     // Check if a significant drag occurred by comparing the startX and current mouse position
+                     const draggedDistance = Math.abs(e.pageX - (startX + row.offsetLeft)); // Compare current pageX with the pageX where the drag started
+                     const minDragDistance = 5; // Minimum pixel distance to consider it a drag vs a click attempt
+
+                     if (draggedDistance > minDragDistance) {
+                          // If it was a drag, prevent the default action (which might be the link click)
+                          console.log(`CW: Detected drag of ${draggedDistance}px. Preventing click.`);
+                           // Add a short timeout to prevent the *next* potential click event from firing on an item
+                           // This timeout prevents accidental navigation when the user releases the mouse after dragging.
+                          let preventClickTimeout = setTimeout(() => {
+                              row.dataset.preventClick = 'false';
+                              console.log("CW: Click prevention timeout ended.");
+                          }, 50); // Small delay (e.g., 50ms)
+
+                          // Set a flag on the element that the click listener can check
+                           row.dataset.preventClick = 'true';
+                     } else {
+                          // If it wasn't a drag (just a click), ensure the flag is off
+                           row.dataset.preventClick = 'false';
+                     }
+                 };
+
+                 // Re-attach the mouseup listener using the refined handler
+                 row.removeEventListener('mouseup', mouseUpHandler); // Remove the old one if it exists
+                 window.addEventListener('mouseup', mouseUpHandlerWithClickPrevention); // Add the new one
+
+
+                 // Add a click handler to intercept clicks on children (item links)
+                 // This handler checks the preventClick flag set by the mouseup handler.
+                 row.addEventListener('click', (e) => {
+                     // Check the flag set by the mouseup handler
+                     if (row.dataset.preventClick === 'true') {
+                         console.log("CW: Preventing click because it was a drag.");
+                         e.preventDefault(); // Prevent navigation
+                         e.stopPropagation(); // Stop event propagation
+                     }
+                      // Reset the flag immediately after checking, just in case
+                      // (though the timeout in mouseUpHandler also handles this)
+                     row.dataset.preventClick = 'false'; // Ensure it's false for subsequent clicks
+                 }, true); // Use capture phase to catch clicks on children links before they navigate
+
+
+            }); // End forEach row
 
         }); // End DOMContentLoaded
 
