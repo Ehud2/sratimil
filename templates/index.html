@@ -11,26 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     {# Included loading spinner styles directly in style.css #}
-    <style>
-        /* Add cursor styles for drag-to-scroll */
-        .item-row {
-            cursor: grab; /* Indicate it's draggable */
-            user-select: none; /* Prevent text selection while dragging */
-            /* Optional: Hide scrollbar if desired, relies on existing overflow-x: auto */
-             /* overflow-x: auto; - Already exists, keep it */
-             /* -ms-overflow-style: none;  IE and Edge */
-             /* scrollbar-width: none;  Firefox */
-        }
-
-        .item-row.dragging {
-            cursor: grabbing; /* Indicate it's being dragged */
-        }
-
-        /* Optional: Hide scrollbar for webkit browsers */
-        /* .item-row::-webkit-scrollbar {
-            display: none;
-        } */
-    </style>
 </head>
 <body>
     <!-- Loading Spinner -->
@@ -40,7 +20,7 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
+                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
             {% endif %}
         </div>
         <p>טוען סינמה פריים...</p>
@@ -115,7 +95,7 @@
             {% if items_in_category %}
                 <section class="category-section">
                     <h2>{{ category_name }}</h2>
-                    <div class="item-row"> {# This is the element we will make draggable #}
+                    <div class="item-row">
                         {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
@@ -567,191 +547,6 @@
                  continueWatchingSection.style.display = 'none';
                  noContinueWatchingMessage.style.display = 'none'; // Hide empty message too if not logged in
             }
-
-
-            // --- Drag-to-Scroll Functionality ---
-            const itemRows = document.querySelectorAll('.item-row');
-
-            // State variables for dragging
-            let activeRow = null;
-            let startX = 0;         // Mouse X position when press starts
-            let scrollLeft = 0;     // Scroll position of the container when press starts
-            let isDraggingContent = false; // Flag to indicate a drag (vs. a simple click) has occurred
-            const dragThreshold = 10; // Pixels threshold before drag mode activates
-            let velocity = 0;       // For inertia scrolling
-            let lastMouseX = 0;
-            let lastTime = 0;
-            let rafId = null;       // For requestAnimationFrame
-
-            // Function to handle inertia animation
-            function animateScroll() {
-                if (!activeRow || Math.abs(velocity) < 0.5) { // Stop if velocity is too low
-                    if(activeRow) activeRow.velocity = 0;
-                    rafId = null;
-                    return;
-                }
-
-                activeRow.scrollLeft -= velocity; // Apply velocity
-                velocity *= 0.9; // Apply friction (adjust for desired feel)
-
-                rafId = requestAnimationFrame(animateScroll);
-            }
-
-
-            itemRows.forEach(row => {
-                // Mouse Down: Start the drag
-                row.addEventListener('mousedown', (e) => {
-                    // Only allow left mouse button drag (button 0)
-                    if (e.button !== 0) return;
-
-                    activeRow = row;
-                    // Prevent default text selection or image dragging
-                    e.preventDefault();
-
-                    // Store initial mouse position and scroll position
-                    startX = e.pageX - row.offsetLeft;
-                    scrollLeft = row.scrollLeft;
-                    isDraggingContent = false; // Reset drag flag
-
-                    // Reset velocity and tracking for inertia calculation
-                    velocity = 0;
-                    lastMouseX = e.pageX;
-                    lastTime = Date.now();
-
-                    // Clear any ongoing inertia animation
-                    cancelAnimationFrame(rafId);
-                     row.classList.add('grabbing'); // Visual feedback
-                });
-
-                // Mouse Leave: Treat like mouse up if dragging started in this row
-                row.addEventListener('mouseleave', () => {
-                    if (activeRow === row && row.classList.contains('dragging')) {
-                         // If leaving while dragging, simulate mouse up to start inertia
-                         // Mouseup listener on document will handle the rest
-                         // Setting activeRow to null is handled by the document mouseup
-                    }
-                     // If mouse leaves while only 'grabbing' but not 'dragging', release grabbing state
-                     if (activeRow === row && row.classList.contains('grabbing') && !row.classList.contains('dragging')) {
-                         activeRow.classList.remove('grabbing');
-                         activeRow = null; // Release active row if no drag happened
-                     }
-                });
-            });
-
-            // Mouse Move: Handle the drag logic
-            document.addEventListener('mousemove', (e) => {
-                if (!activeRow) return; // Do nothing if not dragging any row
-
-                // Prevent default behavior like text selection while dragging
-                e.preventDefault();
-
-                const x = e.pageX - activeRow.offsetLeft;
-                const walk = (x - startX); // Distance mouse has moved horizontally
-
-                // Check if threshold is met to activate drag mode
-                const moveDistance = Math.sqrt(Math.pow(e.pageX - lastMouseX, 2) + Math.pow(e.pageY - (lastMouseX / (e.pageX - lastMouseX) * (e.pageY - lastMouseX) + e.pageY), 2)); // Simple distance calc
-                // Let's use distance from initial click point (startX, initial scrollLeft)
-                 const currentTotalScrolled = activeRow.scrollLeft - scrollLeft;
-                 const initialMouseDiff = startX - (scrollLeft + activeRow.offsetLeft); // Pos of startX relative to viewport left
-
-                 // A simpler check: has the horizontal scroll position changed significantly?
-                 // Or even simpler: has the mouse moved more than the threshold *after* mousedown?
-                 const totalMoveSinceMousedown = Math.abs(e.pageX - (startX + activeRow.offsetLeft)); // This is not correct.
-                 // Let's use the mouse position relative to the initial click position
-                 const distance = Math.sqrt(
-                     Math.pow(e.pageX - lastMouseX, 2) + // Use lastMouseX as reference for current small movement
-                     Math.pow(e.pageY - e.pageY, 2) // Ignore vertical movement for threshold? No, use actual distance
-                 );
-
-                // Correct threshold check: compare current mouse position to the mouse position when mousedown occurred
-                // We need to store mousedown clientX/Y as well. Let's add them to the activeRow temporarily.
-                if (!activeRow.mouseDownClientX) { // Store on first mousemove if not already
-                     activeRow.mouseDownClientX = e.clientX;
-                     activeRow.mouseDownClientY = e.clientY;
-                }
-                const distFromInitialClick = Math.sqrt(
-                    Math.pow(e.clientX - activeRow.mouseDownClientX, 2) +
-                    Math.pow(e.clientY - activeRow.mouseDownClientY, 2)
-                );
-
-
-                 // Activate dragging mode if threshold is exceeded and not already dragging
-                 if (distFromInitialClick > dragThreshold && !isDraggingContent) {
-                     isDraggingContent = true;
-                     activeRow.classList.remove('grabbing');
-                     activeRow.classList.add('dragging');
-                 }
-
-                // Perform scrolling only if dragging mode is active
-                if (isDraggingContent) {
-                     // Calculate scroll amount based on mouse movement since the last mousemove event
-                     const scrollAmount = e.pageX - lastMouseX; // Scroll amount is difference in mouse position
-
-                     // Apply the scroll. We subtract because moving mouse right scrolls content left.
-                     activeRow.scrollLeft -= scrollAmount;
-
-                     // Update velocity based on instantaneous movement for inertia
-                     const currentTime = Date.now();
-                     const timeDelta = currentTime - lastTime;
-                     if (timeDelta > 0) {
-                         // Velocity is pixels per millisecond, scale up for a better feel
-                          velocity = scrollAmount / timeDelta * 100; // Adjust 100 multiplier as needed
-                     }
-
-                     // Update last position and time for next velocity calculation
-                     lastMouseX = e.pageX;
-                     lastTime = currentTime;
-
-                } else {
-                    // If threshold not met yet, just update velocity tracking without scrolling
-                    lastMouseX = e.pageX;
-                    lastTime = Date.now();
-                }
-
-
-            });
-
-            // Mouse Up: Stop the drag and start inertia if needed
-            document.addEventListener('mouseup', () => {
-                if (!activeRow) return; // Do nothing if no row was active
-
-                activeRow.classList.remove('grabbing');
-                activeRow.classList.remove('dragging');
-
-                 // Clear temporary mousedown client positions
-                 activeRow.mouseDownClientX = null;
-                 activeRow.mouseDownClientY = null;
-
-
-                // Start inertia animation if there's enough velocity
-                // Use the velocity calculated from the very last mousemove event
-                 if (Math.abs(velocity) > 5) { // Start inertia if velocity is significant (adjust 5 threshold)
-                    rafId = requestAnimationFrame(animateScroll);
-                 } else {
-                     velocity = 0; // Stop immediately if velocity is low
-                 }
-
-
-                // Reset active row state *after* checking velocity and starting inertia
-                // The click prevention listener (below) will check the `isDraggingContent` flag
-                // before allowing the click event that fires *after* mouseup.
-                 // The flag is reset by the click listener.
-                 activeRow = null; // Release the reference
-            });
-
-            // Prevent clicks on items if a drag happened
-            // This listener runs in the capturing phase (true) to intercept clicks before they reach the links/buttons
-            document.addEventListener('click', (e) => {
-                // If `isDraggingContent` is true, it means the mouseup was part of a drag sequence.
-                // Prevent the default click action and stop propagation.
-                if (isDraggingContent) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    isDraggingContent = false; // Reset the flag after preventing the click
-                    console.log("Prevented click after drag."); // Debug log
-                }
-                 // If isDraggingContent is false, allow the click to proceed normally.
-            }, true); // Use capturing phase
 
 
         }); // End DOMContentLoaded
