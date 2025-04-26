@@ -11,6 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     {# Included loading spinner styles directly in style.css #}
+
+    <!-- 1. Add YouTube Iframe Player API script -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
     <!-- Loading Spinner -->
@@ -20,7 +23,7 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
+                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
             {% endif %}
         </div>
         <p>טוען סינמה פריים...</p>
@@ -51,8 +54,7 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Reverting to a default placeholder image URL that exists #}
-                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
+                         <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -75,10 +77,36 @@
     {% endwith %}
 
     <main class="container main-content">
-        <div class="page-greeting">
-            <h1>{{ greeting }}!</h1>
-            <p>מה נראה היום?</p>
+        <!-- 2. Wrap Greeting and new Trailer section in a flex container -->
+        <div class="greeting-trailer-row">
+             <div class="page-greeting">
+                 <h1>{{ greeting }}!</h1>
+                 <p>מה נראה היום?</p>
+             </div>
+
+             <!-- 3. Add the Featured Trailer Section -->
+             <section id="featuredTrailerSection" class="featured-trailer-container" style="display: none;">
+                 <div class="trailer-header">
+                     <h2 id="trailerMovieTitle">טוען טריילר...</h2>
+                     <div class="trailer-controls">
+                         <button id="prevTrailerButton" aria-label="טריילר קודם" disabled><i class="fas fa-arrow-left"></i></button>
+                         <button id="nextTrailerButton" aria-label="טריילר הבא"><i class="fas fa-arrow-right"></i></button>
+                          <button id="muteTrailerButton" aria-label="השתק"><i class="fas fa-volume-up"></i></button> {# Initial state: unmuted #}
+                     </div>
+                 </div>
+                 <div id="trailerPlayer" class="video-wrapper">
+                      {# The YouTube iframe will be inserted here by JavaScript #}
+                      <div id="trailerPlayerPlaceholder" class="player-placeholder">
+                           <p>טוען טריילר...</p>
+                            {# You could add a small spinner here if desired #}
+                       </div>
+                 </div>
+                  <div id="trailerError" class="trailer-message" style="display: none; color: #aaa; text-align: center; padding: 20px;">לא נמצא טריילר זמין כעת.</div>
+                   <div id="trailerEmpty" class="trailer-message" style="display: none; color: #aaa; text-align: center; padding: 20px;">אין סרטים זמינים להצגת טריילרים.</div>
+             </section>
         </div>
+        <!-- End of greeting-trailer-row -->
+
 
         {# The "Continue Watching" section will be added here by JavaScript if applicable #}
         <section id="continueWatchingSection" class="category-section" style="display: none;">
@@ -111,7 +139,7 @@
                                         {% endif %}
                                         <div class="card-overlay">
                                              {# The play button now also links to the movie/series page #}
-                                            <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
+                                            <button class="play-button" aria-label="Play {{ item.title }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-play"></i></button>
                                             <h3 class="card-title">{{ item.title }}</h3>
                                             <div class="card-actions">
                                                 {# Added data attributes for JS to identify the item for adding/removing from lists #}
@@ -174,7 +202,6 @@
 
 
             // --- Search Filter Functionality ---
-            // Example search filter (assuming this was in your script.js and moved here):
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
@@ -199,26 +226,16 @@
                      }
                 });
 
-                // Handle search button click
                 document.querySelector('.search-container button').addEventListener('click', function() {
-                     const searchTerm = searchInput.value.trim();
-                     // The input listener already handles filtering as typing occurs.
-                     // If you want a full page search results page on button click,
-                     // you would modify this to redirect, similar to the Enter key logic.
-                     // For now, the button click does nothing extra besides triggering the input event.
+                     // Filtering happens on input, button just acts as a visual cue
                 });
 
-                // Handle Enter key on search input
                 searchInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
-                        event.preventDefault(); // Prevent form submission if search was inside a form
-                        // The 'input' listener handles the filtering in real-time.
-                        // If you want 'Enter' to trigger a *different* action (like a full page search result),
-                        // you'd put that logic here instead of just preventing default.
-                        // For now, 'Enter' just confirms the current filter.
+                        event.preventDefault();
+                        // Filtering already happens on input
                     }
                 });
-
 
             } else {
                  console.warn("Search input #searchInput not found.");
@@ -341,7 +358,7 @@
                                     });
                                 } else {
                                     // The existing item in the map is already the latest or equal. Do nothing.
-                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E${episodeNum}.`); // Debug log
+                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E{episodeNum}.`); // Debug log
                                 }
                             } else {
                                 // No entry for this series yet, add this one (converted to canonical format)
@@ -550,8 +567,327 @@
 
         }); // End DOMContentLoaded
 
-        {# If you have a separate static/js/script.js, link it here AFTER this script block #}
-        {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
+
+        // --- Featured Trailer Functionality (Client-Side) ---
+
+        // 4. Define the global YouTube Iframe Player API ready function
+        let player; // Variable to hold the YouTube player instance
+        const allMoviesList = {{ all_movies_list | tojson }}; // Get the list of all movies passed from Flask
+        let playableMovies = []; // Filtered list of movies with potentially valid IMDb IDs
+        let trailerHistory = []; // Array to store IMDb IDs of displayed trailers
+        let currentTrailerIndex = -1; // Index in the history array
+
+        const trailerSection = document.getElementById('featuredTrailerSection');
+        const trailerTitleElement = document.getElementById('trailerMovieTitle');
+        const trailerPlayerDiv = document.getElementById('trailerPlayer');
+        const trailerPlayerPlaceholder = document.getElementById('trailerPlayerPlaceholder');
+        const prevTrailerButton = document.getElementById('prevTrailerButton');
+        const nextTrailerButton = document.getElementById('nextTrailerButton');
+        const muteTrailerButton = document.getElementById('muteTrailerButton');
+        const trailerErrorDiv = document.getElementById('trailerError');
+        const trailerEmptyDiv = document.getElementById('trailerEmpty');
+
+        function onYouTubeIframeAPIReady() {
+            console.log("YouTube Iframe API is ready.");
+            initializeTrailerPlayer();
+        }
+
+        function initializeTrailerPlayer() {
+             // Filter movies to include only those with valid-looking IMDb IDs (tt followed by digits)
+             playableMovies = allMoviesList.filter(movie => movie.id && /^tt\d{7,}$/.test(movie.id));
+
+             if (playableMovies.length === 0) {
+                 console.warn("No playable movies found for trailer feature.");
+                 trailerSection.style.display = 'block'; // Still show the section container
+                 trailerTitleElement.textContent = 'אין טריילרים זמינים';
+                 trailerPlayerDiv.style.display = 'none'; // Hide player container
+                 trailerErrorDiv.style.display = 'none'; // Hide error
+                 trailerEmptyDiv.style.display = 'block'; // Show empty message
+                 prevTrailerButton.style.display = 'none';
+                 nextTrailerButton.style.display = 'none';
+                 muteTrailerButton.style.display = 'none';
+                 return;
+             }
+
+            // Create the YouTube player instance
+            player = new YT.Player('trailerPlayer', { // Use the div ID
+                videoId: '', // Start with an empty video ID, will load one later
+                playerVars: {
+                    'autoplay': 0, // Don't autoplay immediately on player load
+                    'controls': 1, // Show controls
+                    'rel': 0, // Don't show related videos at the end
+                    'modestbranding': 1, // Less obtrusive branding
+                    'origin': window.location.origin // Required for API control
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                     'onError': onPlayerError // Handle player errors
+                }
+            });
+
+            // Show the trailer section container
+            trailerSection.style.display = 'block';
+            trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder once player is created
+            trailerPlayerDiv.style.display = 'block'; // Ensure player div is visible
+
+
+        }
+
+        function onPlayerReady(event) {
+             console.log("YouTube Player is ready.");
+             // Load the first random trailer once the player is ready
+             loadRandomTrailer('random');
+
+             // Add event listeners to buttons
+             prevTrailerButton.addEventListener('click', () => loadRandomTrailer('prev'));
+             nextTrailerButton.addEventListener('click', () => loadRandomTrailer('next'));
+             muteTrailerButton.addEventListener('click', toggleMute);
+        }
+
+        function onPlayerStateChange(event) {
+            // Check if the video ended
+            if (event.data === YT.PlayerState.ENDED) {
+                console.log("Trailer ended. Loading next random trailer.");
+                loadRandomTrailer('next'); // Load the next trailer automatically
+            }
+            // Check if the video is playing to hide potential error message
+            if (event.data === YT.PlayerState.PLAYING) {
+                 trailerErrorDiv.style.display = 'none'; // Hide error message if playing
+            }
+        }
+
+        function onPlayerError(event) {
+             console.error("YouTube Player error:", event);
+              // Display an error message
+              trailerTitleElement.textContent = 'שגיאת נגן טריילר';
+              trailerErrorDiv.textContent = `אירעה שגיאה בנגן (קוד: ${event.data}). מנסה טריילר אחר...`;
+              trailerErrorDiv.style.display = 'block';
+
+             // Try loading the next trailer automatically after a short delay
+             setTimeout(() => {
+                  loadRandomTrailer('next');
+             }, 3000); // Wait 3 seconds before trying the next one
+        }
+
+
+        async function loadRandomTrailer(direction = 'random') {
+             console.log(`Loading trailer: direction='${direction}'`);
+
+             trailerTitleElement.textContent = 'טוען טריילר...';
+             trailerPlayerDiv.style.display = 'none'; // Hide player while loading
+             trailerPlayerPlaceholder.style.display = 'flex'; // Show loading placeholder
+             trailerErrorDiv.style.display = 'none'; // Hide any previous error message
+
+
+            let selectedMovie = null;
+            let selectedMovieIndexInPlayableList = -1;
+            const historyLimit = 20; // Limit history size
+
+             if (playableMovies.length === 0) {
+                 console.warn("Cannot load trailer: No playable movies available.");
+                 trailerTitleElement.textContent = 'אין טריילרים זמינים';
+                 trailerEmptyDiv.style.display = 'block';
+                 prevTrailerButton.disabled = true;
+                 nextTrailerButton.disabled = true;
+                 muteTrailerButton.disabled = true;
+                 trailerPlayerPlaceholder.style.display = 'none';
+                 return;
+             }
+
+
+            if (direction === 'prev') {
+                if (currentTrailerIndex > 0) {
+                    currentTrailerIndex--;
+                    const imdbId = trailerHistory[currentTrailerIndex];
+                     selectedMovie = playableMovies.find(m => m.id === imdbId);
+                     if (!selectedMovie) { // Fallback if movie removed?
+                         console.warn(`Movie ID ${imdbId} from history not found in playable list. Trying random.`);
+                         loadRandomTrailer('random'); // Try random if history entry is bad
+                         return;
+                     }
+                     console.log(`Selected previous movie from history: ${selectedMovie.title} (${selectedMovie.id})`);
+                } else {
+                    console.log("Already at the beginning of trailer history.");
+                    prevTrailerButton.disabled = true;
+                    // Stay on current trailer
+                    trailerTitleElement.textContent = trailerHistory[currentTrailerIndex] ?
+                                                     (playableMovies.find(m => m.id === trailerHistory[currentTrailerIndex])?.title || 'טריילר') : 'טריילר';
+                    trailerPlayerDiv.style.display = 'block';
+                    trailerPlayerPlaceholder.style.display = 'none';
+                    updateButtonStates(); // Ensure buttons are correct
+                    return; // Stop here if cannot go back
+                }
+            } else if (direction === 'next') {
+                 if (currentTrailerIndex < trailerHistory.length - 1) {
+                     currentTrailerIndex++;
+                      const imdbId = trailerHistory[currentTrailerIndex];
+                      selectedMovie = playableMovies.find(m => m.id === imdbId);
+                       if (!selectedMovie) { // Fallback if movie removed?
+                          console.warn(`Movie ID ${imdbId} from history not found in playable list. Trying random.`);
+                          loadRandomTrailer('random'); // Try random if history entry is bad
+                          return;
+                      }
+                      console.log(`Selected next movie from history: ${selectedMovie.title} (${selectedMovie.id})`);
+                 } else {
+                     // Generate a new random one if at the end of history
+                     console.log("At end of history or first load. Generating new random trailer.");
+                     selectedMovie = pickRandomMovie(playableMovies, trailerHistory[currentTrailerIndex]?.id); // Avoid immediate repeat
+                     if (!selectedMovie) {
+                         console.error("Failed to pick a random movie.");
+                         trailerTitleElement.textContent = 'שגיאה בבחירת סרט';
+                         trailerErrorDiv.textContent = 'אירעה שגיאה בבחירת סרט להצגת טריילר.';
+                         trailerErrorDiv.style.display = 'block';
+                         trailerPlayerPlaceholder.style.display = 'none';
+                         updateButtonStates();
+                         return;
+                     }
+                     trailerHistory.push(selectedMovie.id);
+                     currentTrailerIndex = trailerHistory.length - 1;
+
+                     // Trim history if it exceeds limit
+                    if (trailerHistory.length > historyLimit) {
+                         trailerHistory.shift(); // Remove the oldest entry
+                         currentTrailerIndex--; // Adjust index as elements were removed from the start
+                         console.log(`Trimmed trailer history to ${historyLimit} items.`);
+                    }
+                     console.log(`Generated new random movie: ${selectedMovie.title} (${selectedMovie.id})`);
+                 }
+            } else { // direction === 'random' (initial load or explicit random request)
+                 selectedMovie = pickRandomMovie(playableMovies); // Pick a random one
+                 if (!selectedMovie) {
+                     console.error("Failed to pick initial random movie.");
+                     trailerTitleElement.textContent = 'שגיאה בבחירת סרט';
+                     trailerErrorDiv.textContent = 'אירעה שגיאה בבחירת סרט להצגת טריילר.';
+                     trailerErrorDiv.style.display = 'block';
+                     trailerPlayerPlaceholder.style.display = 'none';
+                     updateButtonStates();
+                     return;
+                 }
+                 trailerHistory = [selectedMovie.id]; // Start a new history
+                 currentTrailerIndex = 0;
+                 console.log(`Initial random movie: ${selectedMovie.title} (${selectedMovie.id})`);
+            }
+
+
+            if (!selectedMovie || !selectedMovie.id) {
+                console.error("No movie selected to load trailer.");
+                trailerTitleElement.textContent = 'שגיאה בבחירת סרט';
+                trailerErrorDiv.textContent = 'לא ניתן לבחור סרט להצגת טריילר.';
+                trailerErrorDiv.style.display = 'block';
+                trailerPlayerPlaceholder.style.display = 'none';
+                updateButtonStates();
+                return;
+            }
+
+            // Fetch trailer URL
+            try {
+                const response = await fetch(`/api/get_trailer/${selectedMovie.id}`);
+                const data = await response.json();
+
+                if (response.ok && data.trailer_url) {
+                    const youtubeUrl = data.trailer_url;
+                    console.log(`Fetched trailer URL: ${youtubeUrl}`);
+                    // Extract video ID from YouTube URL
+                    const urlParams = new URLSearchParams(new URL(youtubeUrl).search);
+                    const videoId = urlParams.get('v');
+
+                    if (videoId) {
+                        // Load and play the video using the YouTube API
+                        if (player && player.loadVideoById) {
+                             player.loadVideoById(videoId); // Loads and plays
+                            trailerTitleElement.textContent = selectedMovie.title;
+                            trailerPlayerDiv.style.display = 'block'; // Show player
+                            trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder
+                            trailerErrorDiv.style.display = 'none'; // Hide error
+                             trailerEmptyDiv.style.display = 'none'; // Hide empty
+
+                        } else {
+                             console.error("YouTube Player object not available or loadVideoById method missing.");
+                             trailerTitleElement.textContent = 'שגיאת נגן';
+                             trailerErrorDiv.textContent = 'אירעה שגיאה בהפעלת הנגן.';
+                             trailerErrorDiv.style.display = 'block';
+                             trailerPlayerPlaceholder.style.display = 'none';
+                             // Attempt to load next trailer on player error
+                             setTimeout(() => loadRandomTrailer('next'), 3000);
+                        }
+                    } else {
+                        console.warn(`No video ID found in trailer URL: ${youtubeUrl}`);
+                        handleTrailerError(selectedMovie.id, `כתובת טריילר לא תקינה: ${youtubeUrl}`);
+                    }
+
+                } else {
+                    console.warn(`Trailer not found for IMDb ID ${selectedMovie.id}. API response: ${data.error || response.status}`);
+                    handleTrailerError(selectedMovie.id, data.error || 'טריילר לא נמצא.');
+                }
+            } catch (error) {
+                console.error(`Error fetching trailer for ${selectedMovie.id}:`, error);
+                handleTrailerError(selectedMovie.id, `שגיאה ברשת או בשרת: ${error.message}`);
+            } finally {
+                updateButtonStates(); // Update button states after attempt
+            }
+        }
+
+        function handleTrailerError(imdbId, message) {
+             console.log(`Handling trailer error for ${imdbId}. Message: ${message}`);
+             trailerTitleElement.textContent = 'שגיאה';
+             trailerErrorDiv.textContent = message + ' מנסה טריילר אחר...';
+             trailerErrorDiv.style.display = 'block';
+             trailerPlayerDiv.style.display = 'none'; // Hide player
+             trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder
+
+             // Automatically try the next trailer after a delay
+             setTimeout(() => {
+                 loadRandomTrailer('next');
+             }, 3000); // Wait 3 seconds before trying the next one
+             updateButtonStates();
+        }
+
+
+        function pickRandomMovie(moviesList, excludeImdbId = null) {
+            if (!moviesList || moviesList.length === 0) return null;
+
+            const availableMovies = moviesList.filter(movie => movie.id !== excludeImdbId);
+            if (availableMovies.length === 0) {
+                 // If only the excluded movie is available, return it
+                 if (moviesList.length === 1 && moviesList[0].id === excludeImdbId) {
+                     return moviesList[0];
+                 }
+                 // Otherwise, no other options
+                 console.warn("No available movies to pick a random one from after exclusion.");
+                 return null;
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableMovies.length);
+            return availableMovies[randomIndex];
+        }
+
+        function updateButtonStates() {
+            prevTrailerButton.disabled = currentTrailerIndex <= 0;
+            // Next button is never truly disabled because we generate new random ones
+            nextTrailerButton.disabled = false; // Always allow 'next'
+            muteTrailerButton.disabled = !player || !player.getIframe(); // Disable if player not ready
+        }
+
+        function toggleMute() {
+            if (!player || !player.isMuted) return; // Check if player and method exist
+
+            if (player.isMuted()) {
+                player.unMute();
+                muteTrailerButton.innerHTML = '<i class="fas fa-volume-up"></i>';
+                muteTrailerButton.setAttribute('aria-label', 'השתק');
+                console.log("Trailer unmuted.");
+            } else {
+                player.mute();
+                muteTrailerButton.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                 muteTrailerButton.setAttribute('aria-label', 'בטל השתקה');
+                 console.log("Trailer muted.");
+            }
+        }
+
+         // The YouTube API will call onYouTubeIframeAPIReady when it's ready.
+         // The initialization logic starts there.
+
     </script>
 </body>
 </html>
