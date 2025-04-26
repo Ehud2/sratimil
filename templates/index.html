@@ -78,9 +78,14 @@
 
     <main class="container main-content">
         <!-- Wrap Greeting and new Trailer section in a flex container -->
-        <!-- Removed flex-direction: row-reverse to achieve greeting on the right (in RTL) -->
+        <!-- Changed flex-direction back to row for RTL: greeting left, trailer right -->
         <div class="greeting-trailer-row">
-             <!-- 3. Add the Featured Trailer Section - Placed BEFORE greeting to appear on the LEFT in LTR, thus RIGHT in RTL -->
+             <div class="page-greeting">
+                 <h1>{{ greeting }}!</h1>
+                 <p>מה נראה היום?</p>
+             </div>
+
+             <!-- Add the Featured Trailer Section -->
              <section id="featuredTrailerSection" class="featured-trailer-container" style="display: none;">
                  <div class="trailer-header">
                      <h2 id="trailerMovieTitle">טוען טריילר...</h2>
@@ -96,16 +101,13 @@
                            <p>טוען טריילר...</p>
                             {# You could add a small spinner here if desired #}
                        </div>
+                       {# Optional: Add an image placeholder for when no video is loaded #}
+                        <img id="trailerPosterPlaceholder" src="{{ url_for('static', filename='images/no_poster.png') }}" alt="No poster available" class="poster-placeholder" style="display: none;">
                  </div>
-                  <div id="trailerError" class="trailer-message" style="display: none; color: #aaa; text-align: center; padding: 20px;">לא נמצא טריילר זמין עבור סרט זה. מנסה סרט אחר...</div>
-                   <div id="trailerEmpty" class="trailer-message" style="display: none; color: #aaa; text-align: center; padding: 20px;">אין סרטים זמינים להצגת טריילרים.</div>
-                    <div id="trailerNotFoundAll" class="trailer-message" style="display: none; color: #aaa; text-align: center; padding: 20px;">לא נמצאו טריילרים זמינים עבור הסרטים באתר כרגע.</div>
+                  <div id="trailerError" class="trailer-message" style="display: none; color: #ff4d4d; font-weight: bold;"></div>
+                   <div id="trailerEmpty" class="trailer-message" style="display: none; color: #aaa;">אין סרטים זמינים להצגת טריילרים.</div>
+                    <div id="trailerNoTrailerFound" class="trailer-message" style="display: none; color: #aaa;">לא נמצא טריילר זמין עבור סרט זה. מנסה סרט אחר...</div>
              </section>
-
-             <div class="page-greeting">
-                 <h1>{{ greeting }}!</h1>
-                 <p>מה נראה היום?</p>
-             </div>
         </div>
         <!-- End of greeting-trailer-row -->
 
@@ -172,34 +174,28 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOMContentLoaded fired."); // Debug log
             const spinner = document.getElementById('loading-spinner');
-            // Delay before making spinner invisible (matches CSS transition duration)
-            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+            const visualHideDelay = 200;
 
             if (spinner) {
-                 console.log("Spinner element found, attempting to hide."); // Debug log
-                 // Step 1: Start the visual hiding transition (opacity/visibility)
+                 console.log("Spinner element found, attempting to hide.");
                  spinner.classList.add('hidden');
 
-                // Use transitionend for reliable removal from layout after animation
                 spinner.addEventListener('transitionend', function handler(event) {
-                     // Ensure this handler only runs once for opacity transition
                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                          spinner.style.display = 'none';
                          console.log("Spinner hidden via transitionend.");
-                         // Remove this listener to prevent it from firing on future transitions
                          spinner.removeEventListener('transitionend', handler);
                      }
                 });
 
-                 // Fallback timeout in case transitionend doesn't fire for some reason
                  setTimeout(() => {
                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
                           spinner.style.display = 'none';
-                          console.log("Spinner hidden via timeout fallback."); // Debug log
+                          console.log("Spinner hidden via timeout fallback.");
                      }
-                 }, visualHideDelay + 100); // Wait a bit longer than the transition
+                 }, visualHideDelay + 100);
             } else {
-                console.warn("Spinner element #loading-spinner not found."); // Debug log
+                console.warn("Spinner element #loading-spinner not found.");
             }
 
 
@@ -209,17 +205,16 @@
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
                     // Select only the items within the main categories, not Continue Watching
-                    const itemCardLinks = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Target catalog items
+                    const itemCardLinks = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item');
                     let anyVisible = false;
                     itemCardLinks.forEach(link => {
-                         // Use data-title directly from the link
                          const title = link.dataset.title || '';
 
                          if (title.includes(searchTerm)) {
-                             link.style.display = ''; // Show the link (and thus the card)
+                             link.style.display = '';
                              anyVisible = true;
                          } else {
-                             link.style.display = 'none'; // Hide the link (and thus the card)
+                             link.style.display = 'none';
                          }
                     });
                      const noResultsMessage = document.getElementById('noResultsMessage');
@@ -229,13 +224,11 @@
                 });
 
                 document.querySelector('.search-container button').addEventListener('click', function() {
-                     // Filtering happens on input, button just acts as a visual cue
                 });
 
                 searchInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
                         event.preventDefault();
-                        // Filtering already happens on input
                     }
                 });
 
@@ -268,7 +261,6 @@
                     if (storedData) {
                         try {
                              continueWatchingItems = JSON.parse(storedData) || {};
-                              // Ensure it's an object, default to empty if parsing fails or results in non-object
                               if (typeof continueWatchingItems !== 'object' || continueWatchingItems === null) {
                                   console.warn("CW: localStorage data is not an object. Resetting.");
                                    continueWatchingItems = {};
@@ -279,52 +271,42 @@
                         }
                     }
 
-                    // --- Helper to determine season/episode, preferring latest_* ---
                     function getEpisodeInfo(item) {
                          const season = item.latest_season || item.season;
                          const episode = item.latest_episode || item.episode;
-                         // Return as numbers if possible, default to 0 if not valid
                          const seasonNum = season ? parseInt(season, 10) : 0;
                          const episodeNum = episode ? parseInt(episode, 10) : 0;
 
                          if (isNaN(seasonNum) || isNaN(episodeNum) || seasonNum < 1 || episodeNum < 1) {
-                              return null; // Invalid episode info
+                              return null;
                          }
                          return { season: seasonNum, episode: episodeNum };
                     }
 
 
-                    // --- Process and Consolidate Items ---
-                    // Iterate through all items found in localStorage (both old and new formats)
                     Object.values(continueWatchingItems).forEach(item => {
-                        // Basic validation: must be an object and have id, type, and title
                         if (!item || typeof item !== 'object' || !item.id || !item.type || !item.title) {
                             console.warn("CW: Skipping invalid item (missing basics):", item);
-                            return; // Skip this item
+                            return;
                         }
 
-                        // Determine canonical key (movie_id or series_id)
                         const canonicalKey = `${item.type}_${item.id}`;
 
                         if (item.type === 'movie') {
-                             // For movies, just add/overwrite. The key is already unique per movie.
                             uniqueValidItemsMap.set(canonicalKey, {
                                 id: item.id,
                                 type: 'movie',
                                 title: item.title,
                                 poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
-                                timestamp: typeof item.timestamp === 'number' ? item.timestamp : 0, // Ensure timestamp is a number
-                                // Add other movie details needed for the card if any beyond title/poster
+                                timestamp: typeof item.timestamp === 'number' ? item.timestamp : 0,
                             });
 
                         } else if (item.type === 'series') {
-                            // For series, get episode info (prefers latest_*)
                             const episodeInfo = getEpisodeInfo(item);
 
-                            // Check if we have valid season and episode numbers from either format
                             if (!episodeInfo) {
                                  console.warn("CW: Skipping series item missing valid season/episode data:", item);
-                                 return; // Skip this item if episode info is missing or invalid
+                                 return;
                             }
 
                              const seasonNum = episodeInfo.season;
@@ -332,65 +314,44 @@
                              const timestamp = typeof item.timestamp === 'number' ? item.timestamp : 0;
 
 
-                            // Check if we already have an entry for this series ID in the map
                             if (uniqueValidItemsMap.has(canonicalKey)) {
                                 const existingItem = uniqueValidItemsMap.get(canonicalKey);
-                                // Get episode info for the item currently in the map
-                                const existingEpisodeInfo = getEpisodeInfo(existingItem); // Should use latest_* from map item
-                                const existingSeason = existingEpisodeInfo ? existingEpisodeInfo.season : 0; // Default to 0 if no info
-                                const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0; // Default to 0 if no info
+                                const existingEpisodeInfo = getEpisodeInfo(existingItem);
+                                const existingSeason = existingEpisodeInfo ? existingEpisodeInfo.season : 0;
+                                const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0;
 
-
-                                // Compare the current episode with the one already in the map
-                                // Keep the one with the later season, or later episode if seasons are the same
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
-                                     // The current item represents a *later* episode for this series
-                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E${episodeNum} (was S${existingSeason}E${existingEpisode}).`);
-                                    // Update the map entry with the later episode details
-                                    uniqueValidItemsMap.set(canonicalKey, {
+                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
                                         title: item.title,
                                         poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
-                                        latest_season: seasonNum, // Store as latest_* in the canonical format
-                                        latest_episode: episodeNum, // Store as latest_* in the canonical format
-                                         // Use the timestamp from the *latest* episode found, even if it's from an old entry format
-                                        timestamp: timestamp,
-                                        // Add other series details needed for the card if any beyond title/poster
+                                        latest_season: seasonNum,
+                                        latest_episode: episodeNum,
+                                         timestamp: timestamp,
                                     });
-                                } else {
-                                    // The existing item in the map is already the latest or equal. Do nothing.
-                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E{episodeNum}.`); // Debug log
                                 }
                             } else {
-                                // No entry for this series yet, add this one (converted to canonical format)
-                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E{episodeNum}.`);
                                 uniqueValidItemsMap.set(canonicalKey, {
                                     id: item.id,
                                     type: 'series',
                                     title: item.title,
                                     poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
-                                    latest_season: seasonNum, // Store as latest_*
-                                    latest_episode: episodeNum, // Store as latest_*
-                                     timestamp: timestamp, // Store timestamp
-                                    // Add other series details needed for the card if any beyond title/poster
+                                    latest_season: seasonNum,
+                                    latest_episode: episodeNum,
+                                     timestamp: timestamp,
                                 });
                             }
 
                         } else {
-                            // Item has an unknown type, skip
                             console.warn("CW: Skipping item with unknown type:", item);
-                            return; // Skip this item
+                            return;
                         }
                     });
 
-                    // --- Convert map values to an array for display and optionally save cleaned data ---
                     const validItemsToDisplay = Array.from(uniqueValidItemsMap.values());
 
-                    // Optional: Save the cleaned, consolidated data back to localStorage
-                    // This effectively migrates old per-episode data to the new per-series-latest format over time.
-                    // By converting the Map back to an object, keys like series_ttXXXXXXX_SxE are automatically discarded.
-                    const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap); // Convert Map back to object
+                    const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap);
                     try {
                          localStorage.setItem(localStorageKey, JSON.stringify(cleanedContinueWatchingItems));
                          console.log(`CW: Saved cleaned continue watching data to localStorage.`);
@@ -399,54 +360,44 @@
                     }
 
 
-                    // --- Display the items ---
                     if (validItemsToDisplay.length > 0) {
-                        // Sort items if desired (e.g., by title)
                         validItemsToDisplay.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
 
                         validItemsToDisplay.forEach(item => {
                             const itemLink = document.createElement('a');
-                            let href = '#'; // Default fallback
+                            let href = '#';
                             let titleText = item.title || 'פריט לא ידוע';
-                            let subtitleText = ''; // For series episode info
+                            let subtitleText = '';
 
-                            // Construct the correct URL and subtitle based on item type (using canonical format)
                             if (item.type === 'movie') {
-                                 // Use the movie base URL and append IMDb ID
                                  href = `${movieDetailsBaseUrl}${item.id}`;
-                                 // Add timestamp hash if available (even if it's 0)
                                  if (item.timestamp && item.timestamp > 0) {
                                      href += `#timestamp=${item.timestamp}`;
-                                 } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
+                                 } else if (item.timestamp === 0) {
                                       href += `#timestamp=0`;
                                  }
                                  subtitleText = 'סרט';
                             } else if (item.type === 'series' && item.id && item.latest_season && item.latest_episode) {
-                                 // Use the series base URL and append IMDb ID, season, episode
                                  href = `${seriesDetailsBaseUrl}${item.id}/${item.latest_season}/${item.latest_episode}`;
 
-                                 // Add timestamp hash if available (even if it's 0)
                                  if (item.timestamp && item.timestamp > 0) {
                                      href += `#timestamp=${item.timestamp}`;
-                                 } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
+                                 } else if (item.timestamp === 0) {
                                      href += `#timestamp=0`;
                                  }
 
-                                 // Display series title as main title and latest episode info as subtitle
                                  titleText = item.title || 'סדרה לא ידועה';
                                  subtitleText = `עונה ${item.latest_season}, פרק ${item.latest_episode}`;
 
                             } else {
-                                 // This case should not be reached if processing logic is correct, but defensive check.
                                  console.warn("CW: Displaying invalid or incomplete item after processing:", item);
-                                 return; // Skip this item
+                                 return;
                             }
 
                             itemLink.href = href;
                             itemLink.classList.add('item-card-link');
                             itemLink.classList.add('continue-watching-item');
 
-                            // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
                             itemCard.classList.add('item-card');
                             itemCard.setAttribute('tabindex', '0');
@@ -492,19 +443,15 @@
                                   e.preventDefault();
                                   e.stopPropagation();
 
-                                   // Get the canonical key for this item to remove from the map
                                    const itemKeyToRemove = `${item.type}_${item.id}`;
 
                                    if (uniqueValidItemsMap.has(itemKeyToRemove)) {
-                                        uniqueValidItemsMap.delete(itemKeyToRemove); // Remove from the map
+                                        uniqueValidItemsMap.delete(itemKeyToRemove);
                                         try {
-                                             // Save the *current state of the map* back to localStorage
-                                             // This is the cleaned state, so old keys won't be added back.
                                              localStorage.setItem(localStorageKey, JSON.stringify(Object.fromEntries(uniqueValidItemsMap)));
-                                             itemLink.remove(); // Remove the element from the DOM
+                                             itemLink.remove();
                                              console.log(`CW: Removed item ${itemKeyToRemove} from continue watching.`);
 
-                                             // Check if the section should be hidden
                                              if (uniqueValidItemsMap.size === 0) {
                                                  continueWatchingSection.style.display = 'none';
                                                   noContinueWatchingMessage.style.display = 'block';
@@ -514,9 +461,6 @@
                                             console.error("CW: Error saving continue watching data after removing item:", e);
                                         }
                                    } else {
-                                       // This case should not happen if the display logic is correct,
-                                       // but if the item somehow exists in the DOM but not the map,
-                                       // it means something is out of sync. Log a warning.
                                         console.warn("CW: Item element in DOM not found in uniqueValidItemsMap:", itemKeyToRemove, item);
                                    }
                               });
@@ -536,7 +480,6 @@
                             continueWatchingRow.appendChild(itemLink);
                         });
 
-                        // Show/hide sections based on uniqueValidItemsMap size
                          if (uniqueValidItemsMap.size > 0) {
                              continueWatchingSection.style.display = 'block';
                              noContinueWatchingMessage.style.display = 'none';
@@ -555,15 +498,14 @@
 
                 } catch (e) {
                     console.error("CW: Error loading, processing or displaying continue watching data:", e);
-                    // Hide the section on error
                     continueWatchingSection.style.display = 'none';
-                    noContinueWatchingMessage.style.display = 'block'; // Show empty message on error
+                    noContinueWatchingMessage.style.display = 'block';
                 }
 
             } else {
                 console.log("CW: User not logged in. Continue Watching hidden.");
                  continueWatchingSection.style.display = 'none';
-                 noContinueWatchingMessage.style.display = 'none'; // Hide empty message too if not logged in
+                 noContinueWatchingMessage.style.display = 'none';
             }
 
 
@@ -572,58 +514,65 @@
 
         // --- Featured Trailer Functionality (Client-Side) ---
 
-        let player; // Variable to hold the YouTube player instance
-        // Get the list of all movies passed from Flask.
-        // Filter to include only those with valid-looking IMDb IDs (tt followed by digits)
-        const allPlayableMovies = {{ all_movies_list | tojson }}.filter(movie => movie.id && /^tt\d{7,}$/.test(movie.id));
-        let trailerHistory = []; // Array to store IMDb IDs of displayed trailers
+        let player;
+        // Get the list of all movies passed from Flask
+        const allMoviesList = {{ all_movies_list | tojson }};
+        // Filter movies to include only those with valid-looking IMDb IDs (tt followed by digits)
+        // This list will be used for picking *potential* candidates
+        let candidateMovies = allMoviesList.filter(movie => movie.id && /^tt\d{7,}$/.test(movie.id));
+
+        let trailerHistory = []; // Array to store IMDb IDs of SUCCESSFULLY loaded trailers
         let currentTrailerIndex = -1; // Index in the history array
         const historyLimit = 20; // Limit history size
-        const maxTrailerFetchAttempts = 10; // Max attempts to find a trailer for a new random movie
 
         const trailerSection = document.getElementById('featuredTrailerSection');
         const trailerTitleElement = document.getElementById('trailerMovieTitle');
         const trailerPlayerDiv = document.getElementById('trailerPlayer');
         const trailerPlayerPlaceholder = document.getElementById('trailerPlayerPlaceholder');
+        const trailerPosterPlaceholder = document.getElementById('trailerPosterPlaceholder'); // New poster placeholder
         const prevTrailerButton = document.getElementById('prevTrailerButton');
         const nextTrailerButton = document.getElementById('nextTrailerButton');
         const muteTrailerButton = document.getElementById('muteTrailerButton');
-        const trailerErrorDiv = document.getElementById('trailerError'); // For single movie error
-        const trailerEmptyDiv = document.getElementById('trailerEmpty'); // If no movies at all
-        const trailerNotFoundAllDiv = document.getElementById('trailerNotFoundAll'); // If cannot find trailer after multiple attempts
+        const trailerErrorDiv = document.getElementById('trailerError');
+        const trailerEmptyDiv = document.getElementById('trailerEmpty');
+        const trailerNoTrailerFoundDiv = document.getElementById('trailerNoTrailerFound'); // New message for no trailer found for a specific movie
 
 
+        // Global function required by YouTube Iframe Player API
         function onYouTubeIframeAPIReady() {
             console.log("YouTube Iframe API is ready.");
             initializeTrailerPlayer();
         }
 
         function initializeTrailerPlayer() {
-             if (allPlayableMovies.length === 0) {
-                 console.warn("No playable movies found for trailer feature.");
-                 trailerSection.style.display = 'block'; // Still show the section container
-                 trailerTitleElement.textContent = 'אין טריילרים זמינים';
-                 trailerPlayerDiv.style.display = 'none'; // Hide player container
-                 trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder
-                 trailerErrorDiv.style.display = 'none'; // Hide error
-                 trailerEmptyDiv.style.display = 'block'; // Show empty message
-                 trailerNotFoundAllDiv.style.display = 'none'; // Hide other error
-                 prevTrailerButton.style.display = 'none';
-                 nextTrailerButton.style.display = 'none';
-                 muteTrailerButton.style.display = 'none';
-                 return;
-             }
+            if (candidateMovies.length === 0) {
+                console.warn("No candidate movies with valid IMDb IDs found for trailer feature.");
+                trailerSection.style.display = 'block';
+                trailerTitleElement.textContent = 'אין טריילרים זמינים';
+                trailerPlayerDiv.style.display = 'none';
+                trailerPlayerPlaceholder.style.display = 'none';
+                trailerErrorDiv.style.display = 'none';
+                trailerNoTrailerFoundDiv.style.display = 'none';
+                trailerEmptyDiv.style.display = 'block'; // Show empty message
+                // Hide buttons
+                prevTrailerButton.style.display = 'none';
+                nextTrailerButton.style.display = 'none';
+                muteTrailerButton.style.display = 'none';
+                // Show poster placeholder
+                trailerPosterPlaceholder.style.display = 'block';
+                 trailerPosterPlaceholder.src = '{{ url_for('static', filename='images/no_poster.png') }}';
+                return;
+            }
 
-            // Create the YouTube player instance - it will be created but won't have a video loaded yet
-            player = new YT.Player('trailerPlayer', { // Use the div ID
+            // Create the YouTube player instance inside the designated div
+            player = new YT.Player('trailerPlayer', {
                 videoId: '', // Start with an empty video ID
                 playerVars: {
-                    'autoplay': 0,
-                    'controls': 1,
-                    'rel': 0,
-                    'modestbranding': 1,
-                    'origin': window.location.origin,
-                    'disablekb': 1 // Disable keyboard controls to prevent unexpected behaviour
+                    'autoplay': 0, // Don't autoplay immediately
+                    'controls': 1, // Show controls
+                    'rel': 0, // Don't show related videos
+                    'modestbranding': 1, // Less obtrusive branding
+                    'origin': window.location.origin // Required for API control
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -632,266 +581,228 @@
                 }
             });
 
-            // Show the trailer section container immediately while we find the first trailer
-            trailerSection.style.display = 'block';
-            trailerPlayerPlaceholder.style.display = 'flex'; // Show loading placeholder initially
-            trailerPlayerDiv.style.display = 'none'; // Hide player until video is loaded
-
+             // Show the main trailer section container
+             trailerSection.style.display = 'block';
+             // The player div is initially in the HTML, placeholder is shown by default
+             trailerPlayerPlaceholder.style.display = 'flex'; // Ensure placeholder is visible initially
+             trailerPlayerDiv.style.display = 'block'; // Ensure container for iframe is block
+             trailerPosterPlaceholder.style.display = 'none'; // Hide poster placeholder initially
+             trailerErrorDiv.style.display = 'none';
+             trailerEmptyDiv.style.display = 'none';
+             trailerNoTrailerFoundDiv.style.display = 'none';
         }
 
         function onPlayerReady(event) {
-             console.log("YouTube Player is ready.");
-             // Start the process of finding and loading the first random trailer
-             findAndLoadTrailer('random');
+            console.log("YouTube Player is ready.");
+             // Load the first random trailer that is found
+            attemptLoadInitialTrailer();
 
-             // Add event listeners to buttons
-             prevTrailerButton.addEventListener('click', () => loadTrailerFromHistory('prev'));
-             nextTrailerButton.addEventListener('click', () => loadTrailerFromHistory('next'));
-             muteTrailerButton.addEventListener('click', toggleMute);
+            // Add event listeners to buttons
+            prevTrailerButton.addEventListener('click', loadPrevTrailer);
+            nextTrailerButton.addEventListener('click', loadNextTrailer);
+            muteTrailerButton.addEventListener('click', toggleMute);
         }
 
         function onPlayerStateChange(event) {
             // Check if the video ended
             if (event.data === YT.PlayerState.ENDED) {
                 console.log("Trailer ended. Loading next random trailer.");
-                loadTrailerFromHistory('next'); // Load the next trailer automatically
+                loadNextTrailer(); // Load the next trailer automatically
             }
-            // Check if the video is playing to hide potential error message
-             if (event.data === YT.PlayerState.PLAYING) {
-                trailerErrorDiv.style.display = 'none'; // Hide specific trailer error
-                trailerNotFoundAllDiv.style.display = 'none'; // Hide general error
-             }
+            // Check if the video is playing to hide potential error messages
+            if (event.data === YT.PlayerState.PLAYING) {
+                 trailerErrorDiv.style.display = 'none';
+                 trailerNoTrailerFoundDiv.style.display = 'none';
+            }
         }
 
         function onPlayerError(event) {
              console.error("YouTube Player error:", event);
-             // Display an error message
-             trailerTitleElement.textContent = 'שגיאת נגן';
-             trailerErrorDiv.textContent = `אירעה שגיאה בנגן (קוד: ${event.data}). מנסה טריילר אחר...`;
-             trailerErrorDiv.style.display = 'block';
-             trailerPlayerDiv.style.display = 'none'; // Hide player
-             trailerPlayerPlaceholder.style.display = 'none'; // Ensure placeholder is hidden
+             showTrailerMessage('שגיאת נגן', `אירעה שגיאה בנגן (קוד: ${event.data}). מנסה טריילר אחר...`, 'error');
 
              // Try loading the next trailer automatically after a short delay
              setTimeout(() => {
-                 loadTrailerFromHistory('next');
+                  loadNextTrailer();
              }, 3000); // Wait 3 seconds before trying the next one
         }
 
-        /**
-         * Picks a random movie from the list, tries to fetch its trailer.
-         * If found, loads it. If not, tries again with a different movie (up to max attempts).
-         * @param {number} attempts - Current attempt count (for recursion).
-         */
-        async function findAndLoadTrailer(attempts = 0) {
-            console.log(`Finding and loading trailer (Attempt ${attempts + 1})...`);
 
-             // Show loading state
-            trailerTitleElement.textContent = 'טוען טריילר...';
-            trailerPlayerDiv.style.display = 'none';
-            trailerPlayerPlaceholder.style.display = 'flex';
-            trailerErrorDiv.style.display = 'none';
-            trailerNotFoundAllDiv.style.display = 'none';
+        async function fetchAndLoadSpecificTrailer(imdbId) {
+            console.log(`Attempting to fetch and load trailer for ID: ${imdbId}`);
 
-            if (attempts >= maxTrailerFetchAttempts) {
-                console.warn(`Max attempts (${maxTrailerFetchAttempts}) reached. Could not find a trailer.`);
-                trailerTitleElement.textContent = 'שגיאה';
-                trailerNotFoundAllDiv.textContent = 'לא נמצאו טריילרים זמינים עבור הסרטים באתר לאחר מספר ניסיונות.';
-                trailerNotFoundAllDiv.style.display = 'block';
-                trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder
-                updateButtonStates();
-                return; // Stop trying
-            }
+            showLoadingState();
 
-            // Pick a random movie that is NOT the last one we tried (if any)
-            const lastTriedImdbId = trailerHistory[currentTrailerIndex] || null;
-            const selectedMovie = pickRandomMovie(allPlayableMovies, lastTriedImdbId);
-
-            if (!selectedMovie) {
-                 console.error("Failed to pick a random movie from the list.");
-                 trailerTitleElement.textContent = 'שגיאה';
-                 trailerNotFoundAllDiv.textContent = 'אירעה שגיאה בבחירת סרט להצגת טריילר.';
-                 trailerNotFoundAllDiv.style.display = 'block';
-                 trailerPlayerPlaceholder.style.display = 'none';
-                 updateButtonStates();
-                 return;
-            }
-             console.log(`Attempting to fetch trailer for: ${selectedMovie.title} (${selectedMovie.id})`);
-
-            // Fetch trailer URL for the selected movie
             try {
-                const response = await fetch(`/api/get_trailer/${selectedMovie.id}`);
+                const response = await fetch(`/api/get_trailer/${imdbId}`);
                 const data = await response.json();
 
                 if (response.ok && data.trailer_url) {
                     const youtubeUrl = data.trailer_url;
-                    console.log(`Successfully fetched trailer URL: ${youtubeUrl}`);
-
-                    // Extract video ID from YouTube URL
-                    const url = new URL(youtubeUrl);
-                    const videoId = url.searchParams.get('v');
+                    console.log(`Fetched trailer URL: ${youtubeUrl}`);
+                    const urlParams = new URLSearchParams(new URL(youtubeUrl).search);
+                    const videoId = urlParams.get('v');
 
                     if (videoId) {
-                         // Found a valid trailer! Add to history and load player.
-                        trailerHistory.push(selectedMovie.id);
-                        currentTrailerIndex = trailerHistory.length - 1;
+                        // Find the movie title from our candidate list (or use a placeholder)
+                        const movie = candidateMovies.find(m => m.id === imdbId);
+                        trailerTitleElement.textContent = movie ? movie.title : 'טריילר';
 
-                         // Trim history if it exceeds limit
-                        if (trailerHistory.length > historyLimit) {
-                            trailerHistory.shift(); // Remove the oldest entry from the front
-                            currentTrailerIndex--; // Adjust index as elements were removed from the start
-                             console.log(`Trimmed trailer history to ${historyLimit} items.`);
-                        }
-
-                         // Load and play the video using the YouTube API
+                        // Load and play the video
                         if (player && player.loadVideoById) {
-                             console.log(`Loading video ID: ${videoId}`);
                              player.loadVideoById(videoId); // Loads and plays
-                             trailerTitleElement.textContent = selectedMovie.title;
-                             trailerPlayerDiv.style.display = 'block'; // Show player
-                             trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder
-                             trailerErrorDiv.style.display = 'none'; // Hide error
-                             trailerEmptyDiv.style.display = 'none'; // Hide empty
-                             trailerNotFoundAllDiv.style.display = 'none'; // Hide overall not found
-
+                             showPlayerState(); // Show the player, hide placeholders/messages
+                             console.log(`Successfully loaded trailer for ${imdbId}`);
+                             return true; // Indicate success
                         } else {
-                            console.error("YouTube Player object not available or loadVideoById method missing.");
-                             handleTrailerError('שגיאת נגן פנימית.');
+                             console.error("YouTube Player object not available or loadVideoById method missing.");
+                             showTrailerMessage('שגיאת נגן', 'אירעה שגיאה בהפעלת הנגן.', 'error');
+                             return false; // Indicate failure
                         }
                     } else {
-                         console.warn(`No video ID found in trailer URL: ${youtubeUrl}. Trying another movie.`);
-                         // If URL is weird but API call was okay, still treat as not found for this movie
-                         findAndLoadTrailer(attempts + 1); // Try fetching for another movie
+                        console.warn(`No video ID found in trailer URL: ${youtubeUrl} for ${imdbId}`);
+                        // Don't show general error, just return false. Specific "No Trailer" message handled by caller.
+                        return false; // Indicate failure
                     }
 
                 } else {
-                     // API returned error or no trailer found for this specific ID
-                     const errorMsg = data.error || 'טריילר לא נמצא.';
-                     console.warn(`Trailer not found for IMDb ID ${selectedMovie.id}: ${errorMsg}. Trying another movie.`);
-                     findAndLoadTrailer(attempts + 1); // Try fetching for another movie
+                    console.warn(`Trailer not found for IMDb ID ${imdbId}. API response: ${data.error || response.status}`);
+                     // Don't show general error, just return false. Specific "No Trailer" message handled by caller.
+                    return false; // Indicate failure
                 }
             } catch (error) {
-                // Network or server error during fetch
-                console.error(`Error fetching trailer for ${selectedMovie.id} (Attempt ${attempts + 1}):`, error);
-                findAndLoadTrailer(attempts + 1); // Try fetching for another movie
+                console.error(`Error fetching trailer for ${imdbId}:`, error);
+                showTrailerMessage('שגיאה ברשת או בשרת', `שגיאה: ${error.message}`, 'error');
+                return false; // Indicate failure
             } finally {
-                 // Update button states after an attempt (whether successful or not)
-                updateButtonStates();
+                 // Update button states after attempt (even if failed)
+                 updateButtonStates();
             }
         }
 
+        // Attempt to load the first trailer, retrying if initial picks don't have trailers
+        async function attemptLoadInitialTrailer(attempt = 0) {
+             const maxAttempts = 10; // Limit how many movies we try initially
 
-        /**
-         * Loads a trailer from the history stack based on direction ('prev', 'next').
-         * If 'next' is requested at the end of history, it calls findAndLoadTrailer.
-         * @param {string} direction - 'prev' or 'next'.
-         */
-        function loadTrailerFromHistory(direction = 'next') {
-             console.log(`Loading trailer from history: direction='${direction}'`);
+             if (attempt >= maxAttempts) {
+                 console.warn(`Failed to find a playable trailer after ${maxAttempts} attempts.`);
+                 showTrailerMessage('לא נמצאו טריילרים', 'לא הצלחנו למצוא טריילר זמין מבין הסרטים.', 'error');
+                 showPosterPlaceholder(); // Show poster if no trailer loaded
+                 prevTrailerButton.disabled = true;
+                 nextTrailerButton.disabled = true;
+                 return;
+             }
 
-             trailerErrorDiv.style.display = 'none'; // Hide specific trailer error
-             trailerNotFoundAllDiv.style.display = 'none'; // Hide general error
+             const randomMovie = pickRandomMovie(candidateMovies);
+             if (!randomMovie) {
+                 console.error("No random movie could be picked.");
+                 showTrailerMessage('שגיאה', 'אירעה שגיאה בבחירת סרט.', 'error');
+                 showPosterPlaceholder();
+                 prevTrailerButton.disabled = true;
+                 nextTrailerButton.disabled = true;
+                 return;
+             }
 
-            if (direction === 'prev') {
-                if (currentTrailerIndex > 0) {
-                    currentTrailerIndex--;
-                    const imdbId = trailerHistory[currentTrailerIndex];
-                    const selectedMovie = allPlayableMovies.find(m => m.id === imdbId);
-                    if (selectedMovie) {
-                        console.log(`Loading previous trailer from history: ${selectedMovie.title} (${selectedMovie.id})`);
-                        // Fetch the trailer URL again (it should be cached/fast if recently fetched)
-                        // Or, if you stored the videoId in history, use that directly
-                        // For simplicity and robustness against history issues, re-fetching seems safer.
-                        fetchAndLoadSpecificTrailer(selectedMovie.id, selectedMovie.title);
-                    } else {
-                         console.warn(`Movie ID ${imdbId} from history not found in current playable list. Skipping.`);
-                         // If history item is invalid, try going back again or go random?
-                         // Let's try going back again.
-                         loadTrailerFromHistory('prev');
-                    }
-                } else {
-                    console.log("Already at the beginning of trailer history.");
-                    // Stay on current trailer and ensure buttons are correct
-                    updateButtonStates();
-                }
-            } else { // direction === 'next' or any other value defaults to next
-                 if (currentTrailerIndex < trailerHistory.length - 1) {
-                     currentTrailerIndex++;
-                     const imdbId = trailerHistory[currentTrailerIndex];
-                     const selectedMovie = allPlayableMovies.find(m => m.id === imdbId);
-                      if (selectedMovie) {
-                          console.log(`Loading next trailer from history: ${selectedMovie.title} (${selectedMovie.id})`);
-                           fetchAndLoadSpecificTrailer(selectedMovie.id, selectedMovie.title);
-                      } else {
-                          console.warn(`Movie ID ${imdbId} from history not found in current playable list. Skipping.`);
-                           loadTrailerFromHistory('next');
-                      }
-                 } else {
-                     // At end of history, find a new random trailer that HAS one
-                     console.log("At end of history. Finding a new random trailer...");
-                     findAndLoadTrailer(); // Start the process to find a trailer for a new random movie
-                 }
-            }
-             updateButtonStates(); // Update button states after the action attempt
-        }
+             const success = await fetchAndLoadSpecificTrailer(randomMovie.id);
 
-
-        /**
-         * Fetches the trailer URL for a specific IMDb ID and loads it into the player.
-         * Used by history navigation. Assumes the ID is valid.
-         * @param {string} imdbId - The IMDb ID of the movie.
-         * @param {string} movieTitle - The title of the movie (for display).
-         */
-        async function fetchAndLoadSpecificTrailer(imdbId, movieTitle) {
-             trailerTitleElement.textContent = `טוען טריילר ל-${movieTitle}...`;
-             trailerPlayerDiv.style.display = 'none'; // Hide player while loading
-             trailerPlayerPlaceholder.style.display = 'flex'; // Show loading placeholder
-             trailerErrorDiv.style.display = 'none'; // Hide any previous error message
-             trailerNotFoundAllDiv.style.display = 'none'; // Hide general error
-
-             try {
-                 const response = await fetch(`/api/get_trailer/${imdbId}`);
-                 const data = await response.json();
-
-                 if (response.ok && data.trailer_url) {
-                     const youtubeUrl = data.trailer_url;
-                      const url = new URL(youtubeUrl);
-                     const videoId = url.searchParams.get('v');
-
-                     if (videoId) {
-                         console.log(`Loading specific video ID: ${videoId}`);
-                         player.loadVideoById(videoId); // Loads and plays
-                         trailerTitleElement.textContent = movieTitle;
-                         trailerPlayerDiv.style.display = 'block'; // Show player
-                         trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder
-                     } else {
-                         console.warn(`No video ID found in specific trailer URL: ${youtubeUrl}`);
-                         handleTrailerError('כתובת טריילר לא תקינה.');
-                     }
-                 } else {
-                     console.warn(`Specific trailer not found for IMDb ID ${imdbId}. API response: ${data.error || response.status}`);
-                      handleTrailerError(`טריילר לא נמצא עבור "${movieTitle}".`);
-                 }
-             } catch (error) {
-                 console.error(`Error fetching specific trailer for ${imdbId}:`, error);
-                  handleTrailerError(`שגיאה ברשת או בשרת בעת טעינת טריילר עבור "${movieTitle}".`);
-             } finally {
-                  updateButtonStates(); // Ensure buttons are correct
+             if (success) {
+                 // Successfully found and loaded a trailer. Initialize history.
+                 trailerHistory = [randomMovie.id];
+                 currentTrailerIndex = 0;
+                 console.log(`Successfully loaded initial trailer for ${randomMovie.id}. History initialized.`);
+                 updateButtonStates();
+             } else {
+                 // Failed to find a trailer for this movie. Try again with a new random pick.
+                 console.log(`No trailer found for ${randomMovie.id}. Attempting next random movie (Attempt ${attempt + 1}).`);
+                 attemptLoadInitialTrailer(attempt + 1); // Recursive call
              }
         }
 
 
-        function handleTrailerError(message) {
-             console.log(`Handling trailer error: ${message}`);
-             trailerTitleElement.textContent = 'שגיאה';
-             trailerErrorDiv.textContent = message;
-             trailerErrorDiv.style.display = 'block';
-             trailerPlayerDiv.style.display = 'none'; // Hide player
-             trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder
-              trailerNotFoundAllDiv.style.display = 'none'; // Hide general error
+        // Load the next trailer in history, or a new random one if at the end
+        async function loadNextTrailer(attempt = 0) {
+             const maxAttempts = 5; // Limit how many new random movies to try if at history end
 
-             // Note: Automatic retry on error is handled by onPlayerError or findAndLoadTrailer recursion.
-             updateButtonStates();
+             if (currentTrailerIndex < trailerHistory.length - 1) {
+                 // Load from history
+                 currentTrailerIndex++;
+                 const imdbId = trailerHistory[currentTrailerIndex];
+                  console.log(`Loading next trailer from history: ${imdbId}`);
+                 const success = await fetchAndLoadSpecificTrailer(imdbId);
+                 // If loading from history unexpectedly fails, we should probably stay on the error state
+                 // or maybe jump back? For now, just log the error and the error message is shown by fetchAndLoadSpecificTrailer
+                 if (!success) {
+                      console.error(`Failed to reload trailer from history for ${imdbId}.`);
+                     // Keep currentTrailerIndex as is, the error message is displayed
+                     // Maybe jump back to the last successful index?
+                     // Let's simply log and the error message handles the visual feedback.
+                 }
+                 updateButtonStates();
+
+             } else {
+                 // At the end of history, need a new random one
+                 if (attempt >= maxAttempts) {
+                     console.warn(`Failed to find a new playable trailer after ${maxAttempts} random attempts.`);
+                     showTrailerMessage('אין טריילרים נוספים', 'לא הצלחנו למצוא טריילר חדש זמין.', 'error');
+                     showPosterPlaceholder(); // Show poster if no trailer loaded
+                     updateButtonStates();
+                     return;
+                 }
+
+                 console.log(`Generating new random trailer (Attempt ${attempt + 1})...`);
+                  // Pick a random movie, excluding the one currently displayed if possible
+                 const currentImdbId = trailerHistory.length > 0 ? trailerHistory[currentTrailerIndex] : null;
+                 const randomMovie = pickRandomMovie(candidateMovies, currentImdbId);
+
+                 if (!randomMovie) {
+                      console.warn("No random movie could be picked for next trailer.");
+                       showTrailerMessage('שגיאה', 'לא ניתן לבחור סרט חדש.', 'error');
+                        showPosterPlaceholder();
+                       updateButtonStates();
+                       return;
+                 }
+
+                 const success = await fetchAndLoadSpecificTrailer(randomMovie.id);
+
+                 if (success) {
+                      // Successfully found and loaded a NEW random trailer. Add to history.
+                      trailerHistory.push(randomMovie.id);
+                      currentTrailerIndex++;
+                      // Trim history if it exceeds limit
+                      if (trailerHistory.length > historyLimit) {
+                           trailerHistory.shift(); // Remove the oldest entry
+                           currentTrailerIndex--; // Adjust index as elements were removed from the start
+                           console.log(`Trimmed trailer history to ${historyLimit} items.`);
+                      }
+                      console.log(`Successfully loaded new random trailer for ${randomMovie.id}. History updated.`);
+                      updateButtonStates();
+
+                 } else {
+                      // Failed to find a trailer for this new random movie. Try again.
+                      console.log(`No trailer found for new random movie ${randomMovie.id}. Attempting another random movie (Attempt ${attempt + 1}).`);
+                       // Show a specific "No Trailer Found" message briefly
+                       showTrailerMessage('אין טריילר', 'לא נמצא טריילר עבור הסרט הזה. מנסה סרט אחר...', 'noTrailerFound');
+                      loadNextTrailer(attempt + 1); // Recursive call for next random attempt
+                 }
+             }
+        }
+
+        // Load the previous trailer from history
+        async function loadPrevTrailer() {
+            if (currentTrailerIndex > 0) {
+                currentTrailerIndex--;
+                const imdbId = trailerHistory[currentTrailerIndex];
+                console.log(`Loading previous trailer from history: ${imdbId}`);
+                const success = await fetchAndLoadSpecificTrailer(imdbId);
+                // If loading from history unexpectedly fails, log it. Error message is shown by fetchAndLoadSpecificTrailer.
+                if (!success) {
+                     console.error(`Failed to reload trailer from history for ${imdbId}.`);
+                     // Stay on current index, the error message is displayed
+                }
+                updateButtonStates();
+            } else {
+                console.log("Already at the beginning of trailer history.");
+                updateButtonStates(); // Ensure button is disabled
+            }
         }
 
 
@@ -900,11 +811,14 @@
 
             const availableMovies = moviesList.filter(movie => movie.id !== excludeImdbId);
             if (availableMovies.length === 0) {
-                 // If only the excluded movie is available, return it
+                 // If only the excluded movie is available, return it if we didn't exclude it
                  if (moviesList.length === 1 && moviesList[0].id === excludeImdbId) {
+                     // This shouldn't happen if excludeImdbId was the only one and was excluded
+                     // But if the excludeImdbId was NOT excluded (e.g., only one movie total)
+                     // and we were asked to pick another, return the only one.
                      return moviesList[0];
                  }
-                 // Otherwise, no other options
+                 // No other movies available to pick from
                  console.warn("No available movies to pick a random one from after exclusion.");
                  return null;
             }
@@ -914,17 +828,17 @@
         }
 
         function updateButtonStates() {
-            prevTrailerButton.disabled = currentTrailerIndex <= 0;
-            // Next button is never truly disabled because we generate new random ones at the end of history
-            nextTrailerButton.disabled = false; // Always allow 'next'
-            muteTrailerButton.disabled = !player || !player.getIframe(); // Disable if player not ready
+             // Disable previous if at the first item in history (index 0)
+             prevTrailerButton.disabled = currentTrailerIndex <= 0;
+             // Enable next if there are items after the current one in history OR if we haven't reached max history size yet (allowing new random)
+             // Simplified: next button is always enabled if there are candidate movies
+             nextTrailerButton.disabled = candidateMovies.length === 0; // Only disabled if no movies at all
+            // Mute button disabled if player object isn't ready
+             muteTrailerButton.disabled = !player || !player.getIframe;
         }
 
         function toggleMute() {
-            if (!player || typeof player.isMuted !== 'function') { // Check if player and method exist
-                 console.warn("YouTube Player or mute method not available.");
-                 return;
-            }
+            if (!player || !player.isMuted) return; // Check if player and method exist
 
             if (player.isMuted()) {
                 player.unMute();
@@ -938,6 +852,68 @@
                  console.log("Trailer muted.");
             }
         }
+
+        // Helper to manage message display
+        function showTrailerMessage(title, message, type = 'info') {
+             trailerTitleElement.textContent = title;
+             // Hide all messages first
+             trailerErrorDiv.style.display = 'none';
+             trailerEmptyDiv.style.display = 'none';
+             trailerNoTrailerFoundDiv.style.display = 'none';
+
+             // Show the relevant message
+             if (type === 'error') {
+                 trailerErrorDiv.textContent = message;
+                 trailerErrorDiv.style.display = 'block';
+             } else if (type === 'empty') {
+                  trailerEmptyDiv.textContent = message;
+                  trailerEmptyDiv.style.display = 'block';
+             } else if (type === 'noTrailerFound') {
+                  trailerNoTrailerFoundDiv.textContent = message;
+                  trailerNoTrailerFoundDiv.style.display = 'block';
+                   // Auto-hide "No Trailer Found" message after a few seconds
+                   setTimeout(() => { trailerNoTrailerFoundDiv.style.display = 'none'; }, 3000);
+             }
+             // For 'info' or other types, only the title might be updated, no specific message div shown.
+        }
+
+        // Helper to manage display state (player vs placeholder)
+        function showLoadingState() {
+             trailerPlayerDiv.style.display = 'block'; // Keep player container visible
+             if (player && player.stopVideo) player.stopVideo(); // Stop current video if any
+             trailerPlayerPlaceholder.style.display = 'flex'; // Show placeholder
+             trailerPosterPlaceholder.style.display = 'none'; // Hide poster
+             trailerErrorDiv.style.display = 'none'; // Hide messages
+             trailerEmptyDiv.style.display = 'none';
+             trailerNoTrailerFoundDiv.style.display = 'none';
+             trailerTitleElement.textContent = 'טוען טריילר...'; // Set loading title
+        }
+
+        function showPlayerState() {
+             trailerPlayerDiv.style.display = 'block'; // Ensure player container visible
+             trailerPlayerPlaceholder.style.display = 'none'; // Hide placeholder
+             trailerPosterPlaceholder.style.display = 'none'; // Hide poster
+             trailerErrorDiv.style.display = 'none'; // Hide messages
+             trailerEmptyDiv.style.display = 'none';
+             trailerNoTrailerFoundDiv.style.display = 'none';
+            // Title is set by fetchAndLoadSpecificTrailer
+        }
+
+         function showPosterPlaceholder() {
+             trailerPlayerDiv.style.display = 'block'; // Keep container visible for layout
+             if (player && player.stopVideo) player.stopVideo(); // Stop video
+             trailerPlayerPlaceholder.style.display = 'none'; // Hide player/placeholder
+             // Set poster source - fetch from candidateMovies if available, otherwise default
+             const currentMovieId = trailerHistory.length > 0 ? trailerHistory[currentTrailerIndex] : null;
+             const movieWithPoster = currentMovieId ? candidateMovies.find(m => m.id === currentMovieId) : null;
+             trailerPosterPlaceholder.src = movieWithPoster && movieWithPoster.poster && movieWithPoster.poster !== 'N/A' ? movieWithPoster.poster : '{{ url_for('static', filename='images/no_poster.png') }}';
+             trailerPosterPlaceholder.style.display = 'block'; // Show poster
+             trailerErrorDiv.style.display = 'none'; // Hide messages
+             trailerEmptyDiv.style.display = 'none';
+             trailerNoTrailerFoundDiv.style.display = 'none';
+             // Title is set by the calling function (error/no trailer)
+         }
+
 
          // The YouTube API will call onYouTubeIframeAPIReady when it's ready.
          // The initialization logic starts there.
