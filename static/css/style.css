@@ -130,7 +130,7 @@ img { max-width: 100%; height: auto; display: block; }
     display: flex;
     /* On RTL, this positions greeting right, trailer container left */
     flex-direction: row-reverse; /* Place greeting on the right, trailer container on the left */
-    align-items: flex-start; /* Align items to the top */
+    /* align-items: flex-start; /* Removed to allow margin-top to work relative to the flex line top */
     gap: var(--container-padding); /* Space between greeting and trailer */
     margin-bottom: 60px; /* Space below this row */
     flex-wrap: wrap; /* Allow wrapping on smaller screens */
@@ -141,13 +141,15 @@ img { max-width: 100%; height: auto; display: block; }
     margin-bottom: 0; /* Remove bottom margin if used in flex container */
     flex-shrink: 0;
      width: auto; /* Allow it to take content width */
+     /* Added align-self to keep it aligned to the top */
+     align-self: flex-start;
 }
 
 #featuredTrailerSection {
     flex-grow: 1; /* Allow trailer section to take remaining space */
     min-width: 320px; /* Ensure it doesn't get too small */
-    /* *** CHANGE HERE: Reduced max-width from 900px to 500px *** */
-    max-width: 500px; /* Optional: Prevent it from getting too wide if the screen is huge */
+    /* Max-width controls the overall size of the trailer box */
+    max-width: 500px; /* Adjusted max-width to make it smaller */
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
@@ -155,6 +157,10 @@ img { max-width: 100%; height: auto; display: block; }
     padding: 20px;
     display: flex; /* Use flex for internal layout */
     flex-direction: column;
+    /* *** CHANGE HERE: Add margin-top to push it down *** */
+    margin-top: 30px; /* Adjust this value to move the box down */
+    /* Ensure it aligns to the start vertically */
+    align-self: flex-start;
 }
 
 .trailer-header {
@@ -754,10 +760,13 @@ img { max-width: 100%; height: auto; display: block; }
     .page-greeting {
          margin-bottom: 30px; /* Add back some space below greeting when stacked */
          padding-right: 15px; /* Adjust padding if needed */
+         align-self: stretch; /* Allow greeting to stretch when stacked */
     }
     #featuredTrailerSection {
         max-width: 100%; /* Allow trailer section to take full width when stacked */
         min-width: unset; /* Remove min-width */
+        margin-top: 30px; /* Keep margin-top when stacked */
+        align-self: stretch; /* Allow trailer section to stretch when stacked */
     }
      #trailerMovieTitle {
          font-size: 1.2em; /* Slightly smaller title on smaller screens */
