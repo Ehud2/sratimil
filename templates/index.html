@@ -602,15 +602,16 @@
 
         // This function is called automatically by the YouTube Iframe Player API when it's ready
         function onYouTubeIframeAPIReady() {
-            console.log("YouTube Iframe API is ready.");
+            console.log("YouTube Iframe API is ready."); // Debug log
             // Initiate loading the first trailer
             loadTrailer(true); // Load the initial random trailer
         }
 
         // Function to load a specific trailer by its data object
         function loadTrailerData(trailerData) {
+            console.log("loadTrailerData called with:", trailerData); // Debug log
             if (!trailerData || !trailerData.trailer_url) {
-                console.error("Invalid trailer data provided:", trailerData);
+                console.error("Invalid trailer data provided to loadTrailerData:", trailerData); // Debug log
                  showTrailerError("שגיאה: נתוני טריילר חסרים או לא תקינים.");
                 return;
             }
@@ -619,10 +620,11 @@
             const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
             if (!videoId) {
-                console.error("Could not extract YouTube video ID from URL:", trailerData.trailer_url);
+                console.error("Could not extract YouTube video ID from URL:", trailerData.trailer_url); // Debug log
                  showTrailerError("שגיאה: לא ניתן להפעיל את הטריילר (פורמט קישור לא תקין).");
                 return;
             }
+            console.log("Extracted video ID:", videoId); // Debug log
 
             // Update UI elements
             trailerTitleElement.textContent = trailerData.title || "טריילר מומלץ";
@@ -630,10 +632,12 @@
                  // Construct the movie URL using the imdbID from the trailer data
                  window.location.href = `{{ url_for('movie_details', imdb_id='') }}${trailerData.imdbID}`;
             };
+             console.log("UI elements updated."); // Debug log
 
 
             if (!player) {
                 // Create the YouTube player for the first time
+                console.log("Creating new YouTube player..."); // Debug log
                 player = new YT.Player('trailer-player', {
                     videoId: videoId,
                     playerVars: {
@@ -654,59 +658,69 @@
                         'onError': onPlayerError
                     }
                 });
-                console.log("YouTube player initialized.");
+                console.log("YouTube player initialization requested."); // Debug log
 
             } else {
                 // Player already exists, load the new video
+                console.log(`Player exists, loading new video: ${videoId}`); // Debug log
                 player.loadVideoById(videoId);
-                console.log(`Loading new video: ${videoId}`);
+                console.log(`loadVideoById called for ${videoId}`); // Debug log
             }
 
              // After loading/creating player, ensure mute state is applied
              if (isMuted) {
-                 player.mute();
+                 if (player && typeof player.mute === 'function') player.mute(); // Check if player and function exist
              } else {
-                 player.unMute();
+                 if (player && typeof player.unMute === 'function') player.unMute(); // Check if player and function exist
              }
+             console.log("Mute state applied to player."); // Debug log
+
 
              // Show content, hide loading/error
-            trailerLoadingDiv.style.display = 'none';
-            trailerErrorDiv.style.display = 'none';
-            trailerContentDiv.style.display = 'block';
+            showTrailerContent(); // Show the main content container
+             console.log("trailerContentDiv shown."); // Debug log
+
 
              updateNavButtonStates(); // Update button states after loading
+             console.log("Navigation button states updated."); // Debug log
 
         }
 
         // Function to load the next/previous/initial trailer
         async function loadTrailer(isInitial = false) {
+            console.log(`loadTrailer called (isInitial: ${isInitial}, currentHistoryIndex: ${currentHistoryIndex})`); // Debug log
             showTrailerLoading(); // Show loading indicator
 
             let trailerData = null;
 
             if (isInitial || currentHistoryIndex === trailerHistory.length - 1) {
                  // Load a NEW random trailer (initial load or after reaching end of history)
-                 console.log("Fetching new random trailer...");
+                 console.log("Fetching new random trailer from API..."); // Debug log
                  const excludeIds = trailerHistory.map(item => item.imdbID).join(','); // Exclude already seen IDs
+                 console.log("Excluding IDs:", excludeIds); // Debug log
                  try {
                      const response = await fetch(`/api/random_trailer?exclude_ids=${excludeIds}`);
+                     console.log("Fetch response received. Status:", response.status); // Debug log
                      if (!response.ok) {
                          const errorData = await response.json();
+                         console.error("API fetch failed:", errorData.error || `HTTP error! status: ${response.status}`); // Debug log
                          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                      }
                      const data = await response.json();
+                     console.log("API response data:", data); // Debug log
                      if (data && data.imdbID && data.trailer_url) {
                           trailerData = data;
                           // Add to history and update index
                           trailerHistory.push(trailerData);
                           currentHistoryIndex = trailerHistory.length - 1;
-                          console.log(`Fetched and added trailer to history. New index: ${currentHistoryIndex}`);
+                          console.log(`Fetched and added trailer to history. New index: ${currentHistoryIndex}`); // Debug log
                      } else {
+                          console.error("API response data is missing required fields (imdbID, trailer_url).", data); // Debug log
                          throw new Error("Invalid data format from API.");
                      }
 
                  } catch (error) {
-                     console.error("Error fetching random trailer:", error);
+                     console.error("Error fetching random trailer:", error); // Debug log
                      showTrailerError("אירעה שגיאה בטעינת הטריילר. נסה שוב מאוחר יותר.");
                      trailerData = null; // Ensure trailerData is null on error
                  }
@@ -714,13 +728,14 @@
             } else {
                  // Load trailer from history (next or previous)
                  const nextIndex = currentHistoryIndex + 1;
+                 console.log("Attempting to load trailer from history. Next index:", nextIndex); // Debug log
                  if (nextIndex >= 0 && nextIndex < trailerHistory.length) {
                       currentHistoryIndex = nextIndex;
                       trailerData = trailerHistory[currentHistoryIndex];
-                      console.log(`Loading trailer from history at index: ${currentHistoryIndex}`);
+                      console.log(`Loading trailer from history at index: ${currentHistoryIndex}`, trailerData); // Debug log
                  } else {
                       // This case should ideally not happen with correct button state management
-                      console.warn("Attempted to load trailer from invalid history index during 'next'.");
+                      console.warn("Attempted to load trailer from invalid history index during 'next'. currentHistoryIndex:", currentHistoryIndex, "History length:", trailerHistory.length); // Debug log
                        showTrailerError("שגיאה פנימית בניווט טריילרים.");
                        trailerData = null;
                  }
@@ -731,31 +746,30 @@
                  loadTrailerData(trailerData); // Load the video into the player
             } else {
                 // If no trailer data was successfully loaded (either fetch failed or history lookup failed)
-                 if (trailerHistory.length > 0) {
+                 console.warn("No trailerData available after loadTrailer logic."); // Debug log
+                 if (trailerHistory.length > 0 && currentHistoryIndex >= 0 && currentHistoryIndex < trailerHistory.length) {
                      // If history exists but loading the next one failed, maybe revert to the last valid one
-                      if (currentHistoryIndex < 0) currentHistoryIndex = 0; // Prevent negative index
-                     trailerData = trailerHistory[currentHistoryIndex]; // Try to load the current one from history
-                     console.warn("Failed to load requested trailer, attempting to revert to current history index:", currentHistoryIndex);
-                     if (trailerData) {
-                         loadTrailerData(trailerData);
-                     } else {
-                          showTrailerError("שגיאה בטעינת הטריילר. אין טריילרים בהיסטוריה זמינים.");
-                     }
+                     console.warn("Attempting to revert to current valid history item:", trailerHistory[currentHistoryIndex]); // Debug log
+                     loadTrailerData(trailerHistory[currentHistoryIndex]); // Try to load the current one from history
                  } else {
                      // No history, and fetch failed. Error already shown.
-                      showTrailerError("אירעה שגיאה בטעינת הטריילר הראשון.");
+                      console.error("No history available and initial/next fetch failed."); // Debug log
+                      showTrailerError("אירעה שגיאה בטעינת הטריילר הראשון או הבא. אין טריילרים זמינים.");
                  }
             }
         }
 
         // Function to load the previous trailer from history
          function loadPreviousTrailer() {
+             console.log("loadPreviousTrailer called. currentHistoryIndex:", currentHistoryIndex); // Debug log
              if (currentHistoryIndex > 0) {
                   showTrailerLoading(); // Show loading indicator
                   currentHistoryIndex--;
                   const trailerData = trailerHistory[currentHistoryIndex];
-                  console.log(`Loading previous trailer from history at index: ${currentHistoryIndex}`);
+                  console.log(`Loading previous trailer from history at index: ${currentHistoryIndex}`, trailerData); // Debug log
                   loadTrailerData(trailerData);
+             } else {
+                 console.warn("Attempted to load previous trailer when not available (currentHistoryIndex <= 0)."); // Debug log
              }
              // Button should be disabled if currentHistoryIndex is 0 or less
          }
@@ -763,21 +777,25 @@
 
         // Function to update the state of the navigation buttons
         function updateNavButtonStates() {
+             console.log("Updating nav button states. currentHistoryIndex:", currentHistoryIndex, "History length:", trailerHistory.length); // Debug log
              // Previous button is enabled only if there's an item before the current one in history
              prevTrailerBtn.disabled = currentHistoryIndex <= 0;
 
              // Next button is always enabled (either loads from history or fetches new random)
              nextTrailerBtn.disabled = false;
+             console.log(`Prev disabled: ${prevTrailerBtn.disabled}, Next disabled: ${nextTrailerBtn.disabled}`); // Debug log
         }
 
         // Functions to manage loading/error states
         function showTrailerLoading() {
+             console.log("Showing trailer loading."); // Debug log
              trailerLoadingDiv.style.display = 'block';
              trailerErrorDiv.style.display = 'none';
              trailerContentDiv.style.display = 'none';
         }
 
         function showTrailerError(message = "שגיאה בטעינת טריילר.") {
+             console.log("Showing trailer error:", message); // Debug log
              trailerLoadingDiv.style.display = 'none';
              trailerErrorDiv.style.display = 'block';
              trailerErrorDiv.textContent = message; // Display the specific error message
@@ -791,6 +809,7 @@
         }
 
         function showTrailerContent() {
+             console.log("Showing trailer content."); // Debug log
              trailerLoadingDiv.style.display = 'none';
              trailerErrorDiv.style.display = 'none';
              trailerContentDiv.style.display = 'block';
@@ -805,15 +824,16 @@
 
         // Event handlers for the YouTube player
         function onPlayerReady(event) {
-            console.log("YouTube player is ready.");
-            // Optional: Mute/Unmute logic can go here on initial load if not using playerVars mute
-            if (isMuted) {
-                 event.target.mute();
-            } else {
-                 event.target.unMute();
-            }
-
-             showTrailerContent(); // Show the content once player is ready
+            console.log("YouTube player is ready (onPlayerReady event)."); // Debug log
+            // The actual UI content should be shown when data is loaded, not just player ready.
+            // This function is mainly for interacting with the player API once it's initialized.
+            // Mute/Unmute logic is already applied in loadTrailerData, but can be double-checked here.
+             if (isMuted) {
+                  event.target.mute();
+             } else {
+                  event.target.unMute();
+             }
+             // showTrailerContent(); // Moved showing content to loadTrailerData after mute state
         }
 
         function onPlayerStateChange(event) {
@@ -822,9 +842,9 @@
             // State 2: Paused
             // State 3: Buffering
             // State 5: Cued
-            console.log("Player state changed:", event.data);
+            console.log("Player state changed (onPlayerStateChange event):", event.data); // Debug log
             if (event.data === YT.PlayerState.ENDED) {
-                console.log("Trailer ended, loading next.");
+                console.log("Trailer ended, loading next."); // Debug log
                 loadTrailer(); // Load the next trailer when the current one ends
             }
              // Note: Default player controls are hidden, so user cannot manually seek/pause/etc.
@@ -832,7 +852,7 @@
         }
 
         function onPlayerError(event) {
-             console.error("YouTube player error:", event.data);
+             console.error("YouTube player error (onPlayerError event):", event.data); // Debug log
              let errorMessage = "אירעה שגיאת נגן (קוד: " + event.data + ").";
              switch (event.data) {
                  case 2: errorMessage = "בקשת וידאו לא תקינה או פרמטרים שגויים."; break;
@@ -850,34 +870,42 @@
 
         // Add event listeners to the custom buttons
         muteButton.addEventListener('click', () => {
-            if (!player) return; // Do nothing if player isn't ready
+            console.log("Mute button clicked. isMuted:", isMuted); // Debug log
+            if (!player || typeof player.mute !== 'function') {
+                console.warn("Mute button clicked but player not ready or mute function not available."); // Debug log
+                return; // Do nothing if player isn't ready or API not fully loaded
+            }
 
             if (isMuted) {
                 player.unMute();
                 muteButton.innerHTML = '<i class="fas fa-volume-up"></i>'; // Change icon to volume up
                 muteButton.setAttribute('aria-label', 'השתק');
                 isMuted = false;
-                console.log("Player unmuted.");
+                console.log("Player unmuted."); // Debug log
             } else {
                 player.mute();
                  muteButton.innerHTML = '<i class="fas fa-volume-mute"></i>'; // Change icon to volume mute
                  muteButton.setAttribute('aria-label', 'הפעל קול');
                 isMuted = true;
-                console.log("Player muted.");
+                console.log("Player muted."); // Debug log
             }
         });
 
         nextTrailerBtn.addEventListener('click', () => {
+             console.log("Next button clicked."); // Debug log
              loadTrailer(); // This function handles loading from history or fetching new
         });
 
         prevTrailerBtn.addEventListener('click', () => {
+            console.log("Previous button clicked."); // Debug log
             loadPreviousTrailer(); // Loads from history only
         });
 
 
         // Initial state for buttons
-        updateNavButtonStates();
+        updateNavButtonStates(); // Set initial state on page load
+        console.log("Initial nav button states set."); // Debug log
+
 
         // Optional: Clear the history if the user logs out or navigates significantly?
         // For this implementation, history is just for the current page session.
