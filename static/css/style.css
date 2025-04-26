@@ -125,23 +125,163 @@ img { max-width: 100%; height: auto; display: block; }
     flex-grow: 1;
 }
 
+/* New flex container for greeting and trailer */
+.greeting-trailer-row {
+    display: flex;
+    /* On RTL, this positions greeting right, trailer container left */
+    flex-direction: row-reverse; /* Place greeting on the right, trailer container on the left */
+    align-items: flex-start; /* Align items to the top */
+    gap: var(--container-padding); /* Space between greeting and trailer */
+    margin-bottom: 60px; /* Space below this row */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
 .page-greeting {
-    margin-bottom: 45px;
-    padding-left: 10px;
-    border-right: 4px solid var(--primary-accent-color);
-    padding-right: 20px;
+    /* Keep existing styles */
+    margin-bottom: 0; /* Remove bottom margin if used in flex container */
+    flex-shrink: 0;
+     width: auto; /* Allow it to take content width */
 }
-.page-greeting h1 {
+
+#featuredTrailerSection {
+    flex-grow: 1; /* Allow trailer section to take remaining space */
+    min-width: 320px; /* Ensure it doesn't get too small */
+    max-width: 900px; /* Optional: Prevent it from getting too wide if the screen is huge */
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 5px 15px var(--shadow-color);
+    padding: 20px;
+    display: flex; /* Use flex for internal layout */
+    flex-direction: column;
+}
+
+.trailer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+#trailerMovieTitle {
     font-family: var(--font-heading);
-    font-size: 2.4em;
-    font-weight: 700;
+    font-size: 1.4em;
+    font-weight: 600;
     color: var(--text-heading-color);
-    margin-bottom: 5px;
+    margin: 0; /* Remove default h2 margin */
+    flex-grow: 1; /* Allow title to take space */
+    margin-left: 15px; /* Space between title and controls */
+    overflow: hidden; /* Prevent overflow */
+    text-overflow: ellipsis; /* Add ellipsis */
+    white-space: nowrap; /* Keep title on a single line */
 }
-.page-greeting p {
+
+.trailer-controls {
+    display: flex;
+    gap: 10px; /* Space between buttons */
+    flex-shrink: 0; /* Prevent controls from shrinking */
+}
+
+.trailer-controls button {
+    background-color: rgba(69, 162, 158, 0.3);
+    border: 1px solid var(--primary-accent-color);
+    color: var(--primary-accent-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.trailer-controls button:hover:not(:disabled) {
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+}
+
+.trailer-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Wrapper for the video player to maintain aspect ratio */
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio (9 / 16 * 100) */
+    background-color: #000; /* Black background behind video */
+    border-radius: var(--border-radius-sm);
+    overflow: hidden; /* Ensure iframe stays within bounds */
+    min-height: 200px; /* Minimum height even if flex logic is odd */
+}
+
+/* The specific div that the YouTube API will target and replace */
+#trailerPlayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+     z-index: 0; /* Ensure player is below placeholder */
+     /* Add temporary outline for debugging positioning if needed */
+     /* outline: 2px dashed red; */
+}
+
+/* Style for the actual iframe inserted by YouTube API */
+#trailerPlayer iframe {
+    width: 100%;
+    height: 100%;
+    display: block; /* Ensure it behaves like a block element */
+    border: none;
+}
+
+
+.player-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
+    color: #fff;
+    display: flex; /* Use flex for centering content */
+    flex-direction: column; /* Stack spinner and text */
+    justify-content: center;
+    align-items: center;
+    z-index: 1; /* Ensure placeholder is above the player */
     font-size: 1.1em;
-    color: var(--text-color);
+     /* Temporary outline */
+    /* outline: 2px dashed yellow; */
 }
+.player-placeholder p {
+    margin-top: 10px; /* Space below spinner */
+    margin-bottom: 0;
+}
+
+/* Small spinner for the placeholder */
+.small-spinner {
+    border: 4px solid #f3f3f3; /* Light grey */
+    border-top: 4px solid var(--primary-accent-color); /* Accent color */
+    border-radius: 50%;
+    width: 30px; /* Smaller size */
+    height: 30px; /* Smaller size */
+    animation: spin 1.5s linear infinite;
+}
+/* Re-use the main spin keyframes */
+
+
+.trailer-message {
+    margin-top: 15px;
+    font-size: 1em;
+    text-align: center;
+}
+
+
+/* --- Rest of the existing CSS --- */
 
 .category-section {
     margin-bottom: 60px;
@@ -189,7 +329,8 @@ img { max-width: 100%; height: auto; display: block; }
     border: 2px solid var(--text-heading-color); color: var(--text-heading-color); width: 60px; height: 60px; border-radius: 50%;
     display: flex; justify-content: center; align-items: center; font-size: 1.5em; cursor: pointer; opacity: 0;
     transition: transform var(--transition-fast), opacity var(--transition-fast), background-color var(--transition-fast); z-index: 3;
-    pointer-events: auto;
+    /* play button on index page now navigates */
+    pointer-events: auto; /* Make clickable */
 }
 .item-card:hover .play-button, .item-card:focus-within .play-button { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .play-button:hover { background-color: rgba(255, 255, 255, 0.4); transform: translate(-50%, -50%) scale(1.1); }
@@ -210,7 +351,7 @@ img { max-width: 100%; height: auto; display: block; }
     background-color: rgba(40, 40, 40, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); color: var(--text-heading-color);
     width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
     font-size: 0.8em; cursor: pointer; transition: background-color var(--transition-fast), transform var(--transition-fast);
-    pointer-events: auto;
+    pointer-events: auto; /* Make clickable */
 }
 .card-actions button:hover { background-color: rgba(60, 60, 60, 0.9); transform: scale(1.1); }
 
@@ -325,6 +466,7 @@ img { max-width: 100%; height: auto; display: block; }
     animation: spin 1.5s linear infinite; /* Slightly faster spin */
     margin-bottom: 20px;
     position: relative; /* Needed for centering image */
+    flex-shrink: 0; /* Prevent spinner from shrinking in flex layout */
 }
 
 @keyframes spin {
@@ -349,6 +491,7 @@ img { max-width: 100%; height: auto; display: block; }
     visibility: hidden;
     /* display: none will be added by JS after transition */
 }
+
 
 /* --- Styles for add.html - included in style.css for simplicity --- */
 /* Ideally these would be in static/css/add.css */
@@ -457,6 +600,7 @@ img { max-width: 100%; height: auto; display: block; }
     background-color: var(--secondary-accent-color);
 }
 
+/* Renamed from #omdbResults for clarity */
 #omdbMovieResults, #omdbSeriesResults {
     list-style: none;
     padding: 0;
@@ -486,12 +630,12 @@ img { max-width: 100%; height: auto; display: block; }
     color: var(--text-color);
 }
 
-#omdbMovieResults li .result-id {
-    font-size: 0.9em;
+#omdbMovieResults li .result-id { /* Specific for movie search results */
+    font-size: 0.9em; /* Adjusted font size for ID */
     color: var(--text-muted-color);
 }
-#omdbSeriesResults li .result-id {
-     font-size: 0.9em;
+#omdbSeriesResults li .result-id { /* Specific for series search results */
+     font-size: 0.9em; /* Adjusted font size for ID */
      color: var(--text-muted-color);
 }
 
@@ -509,6 +653,7 @@ img { max-width: 100%; height: auto; display: block; }
  }
 
 
+/* Renamed from #selectedOmdbDetails */
 #selectedOmdbMovieDetails, #selectedOmdbSeriesDetails {
      margin-top: 15px;
      padding: 15px;
@@ -554,7 +699,7 @@ img { max-width: 100%; height: auto; display: block; }
     transform: translateY(-2px);
 }
 
-.manual-imdb-input {
+.manual-imdb-input { /* Used for manual episode series ID */
      margin-top: 20px;
      padding-top: 20px;
      border-top: 1px dashed rgba(102, 252, 241, 0.3);
@@ -598,182 +743,6 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 
-/* --- Trailer Section Styles --- */
-.greeting-trailer-row {
-    display: flex;
-    /* Changed to row for RTL: greeting left, trailer right */
-    flex-direction: row;
-    align-items: flex-start;
-    gap: var(--container-padding);
-    margin-bottom: 60px;
-    flex-wrap: wrap;
-}
-
-.page-greeting {
-    margin-bottom: 0;
-    flex-shrink: 0;
-    /* Adjusted width/flex-basis slightly if needed, but keeping auto works */
-     width: auto;
-}
-
-#featuredTrailerSection {
-    /* Reduced max-width significantly */
-    max-width: 450px; /* Approx half of 900px */
-    flex-shrink: 0; /* Prevent shrinking */
-    flex-grow: 0; /* Prevent growing */
-    min-width: 300px; /* Keep a minimum size */
-
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    box-shadow: 0 5px 15px var(--shadow-color);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-}
-
-.trailer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-#trailerMovieTitle {
-    font-family: var(--font-heading);
-    font-size: 1.4em;
-    font-weight: 600;
-    color: var(--text-heading-color);
-    margin: 0;
-    flex-grow: 1;
-    margin-left: 15px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.trailer-controls {
-    display: flex;
-    gap: 10px;
-    flex-shrink: 0;
-}
-
-.trailer-controls button {
-    background-color: rgba(69, 162, 158, 0.3);
-    border: 1px solid var(--primary-accent-color);
-    color: var(--primary-accent-color);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: background-color var(--transition-fast), color var(--transition-fast);
-}
-
-.trailer-controls button:hover:not(:disabled) {
-    background-color: var(--primary-accent-color);
-    color: var(--bg-color);
-}
-
-.trailer-controls button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.video-wrapper {
-    position: relative;
-    width: 100%;
-    padding-top: 56.25%; /* 16:9 Aspect Ratio */
-    background-color: #000; /* Black background behind video */
-    border-radius: var(--border-radius-sm);
-    overflow: hidden;
-    /* Explicitly set position and z-index for stacking context */
-    position: relative;
-    z-index: 1; /* Ensure it's above standard flow but below modals/header */
-}
-
-/* Ensure the iframe gets a higher z-index within its wrapper */
-#trailerPlayer iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    z-index: 2; /* Set a higher z-index than the placeholder */
-    /* Add a background just for debugging if needed */
-     /* background-color: blue; */
-}
-
-.player-placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1; /* Lower z-index than the iframe when visible */
-    font-size: 1.1em;
-    /* Add transition for smoother appearance */
-    transition: opacity var(--transition-fast);
-    opacity: 1; /* Default visible state */
-}
-.player-placeholder p {
-    margin: 0;
-}
-
-.player-placeholder.hidden {
-    opacity: 0;
-    /* display: none handled by JS */
-}
-
-.poster-placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Cover the space */
-    z-index: 0; /* Below the player/placeholder */
-    display: none; /* Initially hidden */
-    background-color: var(--bg-secondary); /* Background if poster doesn't load */
-    border-radius: var(--border-radius-sm);
-}
-
-
-.trailer-message {
-    margin-top: 15px;
-    font-size: 1em;
-    text-align: center;
-    /* Center the message horizontally within its container */
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 90%; /* Limit message width */
-    padding: 5px 10px;
-    border-radius: var(--border-radius-sm);
-}
-
-#trailerError {
-     background-color: rgba(255, 0, 0, 0.2);
-     border: 1px solid rgba(255, 0, 0, 0.4);
-}
-#trailerNoTrailerFound {
-     background-color: rgba(255, 165, 0, 0.2);
-     border: 1px solid rgba(255, 165, 0, 0.4);
-}
-#trailerEmpty {
-     background-color: rgba(102, 252, 241, 0.1);
-     border: 1px solid rgba(66, 203, 194, 0.2);
-}
-
-
 /* Responsive adjustments */
 @media (max-width: 992px) { /* Adjust breakpoint as needed */
     .greeting-trailer-row {
@@ -783,16 +752,14 @@ img { max-width: 100%; height: auto; display: block; }
     .page-greeting {
          margin-bottom: 30px; /* Add back some space below greeting when stacked */
          padding-right: 15px; /* Adjust padding if needed */
-         border-left: 4px solid var(--primary-accent-color); /* Add left border for RTL stacking */
-         border-right: none; /* Remove right border when stacked */
     }
     #featuredTrailerSection {
         max-width: 100%; /* Allow trailer section to take full width when stacked */
         min-width: unset; /* Remove min-width */
     }
      #trailerMovieTitle {
-         font-size: 1.2em;
-         margin-left: 10px;
+         font-size: 1.2em; /* Slightly smaller title on smaller screens */
+         margin-left: 10px; /* Adjust space */
      }
      .trailer-controls button {
          width: 32px;
