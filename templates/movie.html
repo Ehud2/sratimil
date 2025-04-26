@@ -101,9 +101,9 @@
         </div>
 
         <div class="movie-info">
-            <!-- The Vidsrc embed is still here, but for movies,
-                 it's typical to have the trailer button first -->
-
+            <div class="vidsrc-embed-container" id="embed-container">
+                <!-- יוזן על ידי JS -->
+            </div>
             <div class="movie-details-list">
                 <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
                 <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
@@ -124,9 +124,6 @@
             </div>
 
              {# Optional: Add a dedicated area for the video player/trailer #}
-             <div class="vidsrc-embed-container" id="video-embed-container" style="display: none;">
-                 <!-- Vidsrc embed will be added here by JS if a trailer is clicked -->
-             </div>
             <div id="no-trailer-message" class="no-video-message" style="display: none;">טריילר לא נמצא.</div>
             <div id="trailer-error-message" class="no-video-message" style="display: none; color: orange;">שגיאה באחזור הטריילר.</div>
 
