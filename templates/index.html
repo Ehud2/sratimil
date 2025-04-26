@@ -103,7 +103,7 @@
                             <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}"
                                data-title="{{ item.title.lower() }}" {# Always include main title #}
                                {% if item.type == 'movie' and item.titles %} {# Add data-titles only for movies that have the list #}
-                                   data-titles="{{ item.titles | tojson }}" {# Pass the list as JSON string #}
+                                   data-titles="{{ item.titles | tojson | e }}" {# Pass the list as JSON string, escaped for HTML attribute #}
                                {% endif %}
                                >
                                 <div class="item-card" tabindex="0"> {# Moved data-title/id/type to the link #}
