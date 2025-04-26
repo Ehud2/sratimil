@@ -363,7 +363,7 @@
                                 }
                             } else {
                                 // No entry for this series yet, add this one (converted to canonical format)
-                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E{episodeNum}.`);
+                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E${episodeNum}.`);
                                 uniqueValidItemsMap.set(canonicalKey, {
                                     id: item.id,
                                     type: 'series',
@@ -530,7 +530,7 @@
                              }
                             overlay.appendChild(actionsDiv);
                             imageContainer.appendChild(overlay);
-                            itemCard.appendChild(imageContainer);
+                            itemCard.appendChild(itemContainer);
                             itemLink.appendChild(itemCard);
                             continueWatchingRow.appendChild(itemLink);
                         });
@@ -681,7 +681,8 @@
         function showTrailerLoading(show) {
              trailerPlayerPlaceholder.style.display = show ? 'flex' : 'none';
              // Also control the visibility of the actual player container
-             trailerPlayerDiv.style.display = show ? 'none' : 'block';
+             // Don't hide the player div itself, only the placeholder overlay
+             // trailerPlayerDiv.style.display = show ? 'none' : 'block'; // REMOVED
         }
 
          function showTrailerMessage(type) {
@@ -691,7 +692,14 @@
              if (type === 'empty' || type === 'error') {
                   showTrailerLoading(false); // Hide loading spinner if showing a message
                   if (player && typeof player.stopVideo === 'function') {
-                       player.stopVideo(); // Stop playback if showing an error/empty state
+                       // Stop playback if showing an error/empty state, but only if it's currently playing
+                       try {
+                           if (player.getPlayerState() === YT.PlayerState.PLAYING || player.getPlayerState() === YT.PlayerState.BUFFERING) {
+                                player.stopVideo();
+                           }
+                       } catch(e) {
+                           console.warn("Failed to stop video on message:", e);
+                       }
                   }
              }
          }
@@ -699,7 +707,7 @@
 
         // Function to find a trailer by picking random movies until one is found
         async function findAndLoadTrailer(initialDirection = 'random', attempt = 1) {
-             console.log(`Attempting to find trailer (Attempt ${attempt})...`);
+             console.log(`Attempting to find trailer (Attempt ${attempt}, Direction: ${initialDirection})...`);
 
              if (attempt > maxTrailerFindAttempts) {
                  console.error(`Failed to find a trailer after ${maxTrailerFindAttempts} attempts.`);
@@ -734,7 +742,11 @@
                     // Stay on current trailer if cannot go back, just update button state
                     showTrailerLoading(false); // Hide loading if we stayed
                     updateButtonStates();
-                    return;
+                    // Attempt to play current video again in case it was paused/stopped?
+                     if (player && typeof player.playVideo === 'function') {
+                         try { player.playVideo(); } catch(e) { console.warn("Failed to auto-play current video:", e); e.message="Playback error";}
+                     }
+                    return; // Stop here if cannot go back
                 }
              } else if (initialDirection === 'next') {
                   if (currentTrailerIndex < trailerHistory.length - 1) {
@@ -745,7 +757,7 @@
                           console.warn(`Movie ID ${imdbId} from history not found in playable list. Trying next history item.`);
                           findAndLoadTrailer('next', attempt + 1); // Try next history item
                           return;
-                      }
+                       }
                       console.log(`Navigating forward to: ${candidateMovie.title} (${candidateMovie.id})`);
                   } else {
                      // Find a *new* random movie if at the end of history
@@ -805,28 +817,40 @@
                         console.log(`Loading YouTube video ID: ${videoId}`);
 
                         // If this was a *new* random movie (not from history), add it to history
-                         if (initialDirection !== 'prev' && initialDirection !== 'next' && currentTrailerIndex === trailerHistory.length - 1) {
-                             // This condition means we were at the end of history (or it's the very first trailer)
-                             // and successfully found a trailer for the candidate.
-                             // Add the *successful* candidate's ID to history.
-                              trailerHistory.push(candidateMovie.id);
-                              currentTrailerIndex = trailerHistory.length - 1; // Update index
+                         // This condition means we were either doing an initial 'random' load OR
+                         // we were navigating 'next' AND were already at the end of the history array
+                         // (meaning we needed to find a *new* random one).
+                         const isNewRandom = (initialDirection === 'random' || (initialDirection === 'next' && currentTrailerIndex === trailerHistory.length - 1 && trailerHistory.length > 0));
+                         const isFirstTrailer = initialDirection === 'random' && trailerHistory.length === 0;
 
-                              // Trim history if it exceeds limit
-                             if (trailerHistory.length > historyLimit) {
-                                  trailerHistory.shift(); // Remove the oldest entry
-                                  currentTrailerIndex--; // Adjust index as elements were removed from the start
-                                  console.log(`Trimmed trailer history to ${historyLimit} items.`);
+                         if (isNewRandom || isFirstTrailer) {
+                             // Add the *successful* candidate's ID to history.
+                             // Only push if it's not already the very last item (prevents double push on 'next' from end)
+                             if (trailerHistory.length === 0 || trailerHistory[trailerHistory.length - 1] !== candidateMovie.id) {
+                                trailerHistory.push(candidateMovie.id);
+                                currentTrailerIndex = trailerHistory.length - 1; // Update index
+
+                                // Trim history if it exceeds limit
+                               if (trailerHistory.length > historyLimit) {
+                                    trailerHistory.shift(); // Remove the oldest entry
+                                    currentTrailerIndex--; // Adjust index as elements were removed from the start
+                                    console.log(`Trimmed trailer history to ${historyLimit} items.`);
+                               }
+                                console.log(`Added ${candidateMovie.id} to history. Current history:`, trailerHistory);
+                                console.log(`Current history index: ${currentTrailerIndex}`);
+                             } else {
+                                // This happens if the last item in history is the same as the new random one found.
+                                // Index and history are already correct.
+                                console.log(`Found same trailer ${candidateMovie.id} as last in history. History unchanged.`);
                              }
-                              console.log(`Added ${candidateMovie.id} to history. Current history:`, trailerHistory);
-                              console.log(`Current history index: ${currentTrailerIndex}`);
                          }
                         // If initialDirection was 'prev' or 'next' and it was *not* end of history,
                         // currentTrailerIndex is already set correctly, and the ID is already in history.
 
                         // Load and play the video using the YouTube API
                         if (player && typeof player.loadVideoById === 'function') {
-                             player.loadVideoById(videoId); // Loads and plays
+                             // Use loadVideoById which handles both loading and starting playback
+                             player.loadVideoById(videoId);
                              trailerTitleElement.textContent = candidateMovie.title;
                              showTrailerLoading(false); // Hide loading spinner
                              showTrailerMessage('none'); // Hide error/empty messages
@@ -838,19 +862,23 @@
                              showTrailerMessage('error');
                              showTrailerLoading(false);
                              // Attempt to find next trailer on player error
-                             setTimeout(() => findAndLoadTrailer('next', attempt + 1), 3000);
+                             // Pass the correct direction to maintain history navigation intent if possible
+                             setTimeout(() => findAndLoadTrailer(initialDirection, attempt + 1), 3000);
                         }
                     } else {
                         console.warn(`No video ID found in trailer URL for ${candidateMovie.id}: ${youtubeUrl}.`);
+                        // If we couldn't get a video ID from the URL, treat as a find error and try again.
                         handleTrailerFindError(candidateMovie.id, 'כתובת טריילר לא תקינה.', initialDirection, attempt + 1);
                     }
 
                 } else {
-                    console.warn(`Trailer not found for IMDb ID ${candidateMovie.id}. API response: ${data.error || response.status}`);
+                    console.warn(`Trailer not found on API for IMDb ID ${candidateMovie.id}. Response: ${data.error || response.status}`);
+                    // Trailer not found on the API side, treat as a find error and try again.
                     handleTrailerFindError(candidateMovie.id, data.error || 'טריילר לא נמצא.', initialDirection, attempt + 1);
                 }
             } catch (error) {
                 console.error(`Error fetching trailer for ${candidateMovie.id}:`, error);
+                 // Network or server error during fetch, treat as a find error and try again.
                 handleTrailerFindError(candidateMovie.id, `שגיאה ברשת או בשרת: ${error.message}`, initialDirection, attempt + 1);
             } finally {
                 updateButtonStates(); // Update button states after attempt
@@ -860,31 +888,34 @@
         // Function to handle errors when *finding* a trailer and try again
         function handleTrailerFindError(imdbId, message, initialDirection, nextAttempt) {
              console.log(`Handling trailer find error for ${imdbId}. Message: "${message}". Attempt ${nextAttempt}.`);
-             trailerTitleElement.textContent = 'שגיאה בטעינת טריילר';
-             trailerErrorDiv.textContent = message + ` (ניסיון ${nextAttempt}). מחפש טריילר אחר...`;
-             showTrailerMessage('error');
-             showTrailerLoading(false); // Hide loading spinner
 
-             // If it was navigating history (prev/next), stay on this history slot for now
-             // If it was finding a *new* random one, immediately try finding another
-             if (initialDirection === 'random' || (initialDirection === 'next' && currentTrailerIndex === trailerHistory.length -1)) {
-                 // Try finding another random trailer
-                 // Note: If we were navigating history forward/backward, but hit an error,
-                 // we probably *don't* want to find a *new* random one, but rather just
-                 // stay on this history item and display the error, allowing the user to click
-                 // prev/next again. The logic above in findAndLoadTrailer handles this
-                 // by recursing with the same direction if the history item is invalid.
-                 // So, this error handler is primarily for when finding a *new* random trailer fails.
-                 // Let's call findAndLoadTrailer with 'next' which will attempt to find a new one
-                 // if currentTrailerIndex is at the end of history.
-                 setTimeout(() => {
-                      findAndLoadTrailer('next', nextAttempt);
-                 }, 1000); // Wait 1 second before trying the next one
-             } else {
-                 // If we failed loading a trailer from history, just display the error and stop.
-                 // The user can click prev/next again.
-                 console.log("Stopped retrying after history trailer load failed.");
+             // If we were trying to load a specific history item (prev/next not at end),
+             // we should *not* remove it from history or try finding another one.
+             // Just show the error for *this specific* history item.
+             const isNavigatingHistory = initialDirection === 'prev' || (initialDirection === 'next' && currentTrailerIndex < trailerHistory.length -1);
+
+             if (isNavigatingHistory) {
+                  // Just update the UI to show the error for the current (failed) history item.
+                  // The user can then click prev/next again.
+                  trailerTitleElement.textContent = 'שגיאה בטעינת טריילר'; // Generic error title
+                  trailerErrorDiv.textContent = message; // Show the specific error message
+                  showTrailerMessage('error');
+                  showTrailerLoading(false); // Hide loading spinner
                   updateButtonStates();
+                  console.log(`Stopped retrying after history trailer load failed for ${imdbId}.`);
+             } else {
+                  // If we were finding a *new* random one (initial load or 'next' at end of history)
+                  // or if the previous attempt was also a retry, try finding another one.
+                  trailerTitleElement.textContent = 'שגיאה בטעינת טריילר'; // Show loading/searching message
+                  trailerErrorDiv.textContent = message + ` (ניסיון ${nextAttempt}). מחפש טריילר אחר...`; // Indicate retry
+                  showTrailerMessage('error'); // Show error message briefly before loading again
+                  showTrailerLoading(false); // Hide the explicit loading overlay for a moment
+                  updateButtonStates();
+
+                  // Wait a bit, then try finding the *next* trailer (which will pick a new random one if at end of history)
+                  setTimeout(() => {
+                      findAndLoadTrailer('next', nextAttempt);
+                  }, 1000); // Wait 1 second before trying the next one
              }
         }
 
@@ -892,14 +923,18 @@
         function navigateTrailer(direction) {
             if (direction === 'prev') {
                 if (currentTrailerIndex > 0) {
-                    findAndLoadTrailer('prev'); // Use the findAndLoadTrailer logic
+                    // findAndLoadTrailer('prev'); // This was complex due to recursive calls on error
+                    // Let's simplify: just update the index and call the loader
+                     currentTrailerIndex--; // Decrement index first
+                    findAndLoadTrailer('prev'); // Call loader, it will use the new currentTrailerIndex
                 } else {
                     console.log("Cannot go back, already at the first trailer.");
                     updateButtonStates();
                 }
             } else if (direction === 'next') {
                  // Always allow 'next'. If at end of history, findAndLoadTrailer('next') will pick a new random one.
-                 findAndLoadTrailer('next'); // Use the findAndLoadTrailer logic
+                 // Let's simplify: just call the loader. It will handle incrementing index if needed.
+                 findAndLoadTrailer('next');
             }
         }
 
