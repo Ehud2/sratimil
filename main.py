@@ -242,12 +242,21 @@ def categorize_content(movies_data, series_data):
         # Add to the correct category list if category is valid and not "ללא"
         # We need id, title, poster, and type for the item cards on index.html
         if category in CATEGORIES and category != "ללא" and item_type in ['movie', 'series']:
-             categorized_items[category].append({
+             item_data_for_index = {
                 "id": imdb_id,
                 "title": title,
                 "poster": poster,
                 "type": item_type # Include type here
-             })
+             }
+
+             # --- START OF ADDED/MODIFIED CODE ---
+             if item_type == 'movie':
+                  # Include the list of titles for movies if it exists
+                  item_data_for_index['titles'] = item_details.get('titles', [])
+             # --- END OF ADDED/MODIFIED CODE ---
+
+
+             categorized_items[category].append(item_data_for_index)
         elif category == "ללא":
             pass # Don't display 'ללא' category on index
         else:
