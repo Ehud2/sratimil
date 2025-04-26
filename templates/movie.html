@@ -53,6 +53,8 @@
              font-weight: 700;
              transition: background-color var(--transition-fast), transform var(--transition-fast);
              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+             display: inline-block; /* Make it display correctly if needed */
+             margin-top: 15px; /* Add some space above */
         }
 
         .watch-trailer-button:hover {
@@ -279,27 +281,6 @@
         }
 
     }); // End DOMContentLoaded
-
-     // Search functionality (same as index.html, navigate back to index with search term) - moved outside for access
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const term = this.value.trim();
-                if (term) {
-                    window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
-                }
-            }
-        });
-         // Optional: search button click
-        document.querySelector('.search-container button').addEventListener('click', function() {
-             const term = searchInput.value.trim();
-             if (term) {
-                  window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
-             }
-         });
-    }
 
 </script>
 
