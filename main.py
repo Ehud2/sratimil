@@ -17,6 +17,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 app = Flask(__name__)
 
+
+
+# Replace with your actual TMDB API key from environment variables
+TMDB_API_KEY = os.environ.get('TMDB_API_KEY', 'fb7bb23f03b6994dafc674c074d01761') # THIS IS A SECRET! MUST BE IN ENV VAR!
+
+
 # --- Security Warning: Do NOT hardcode secrets in production ---
 # Use environment variables for production.
 # For this example, default values are kept for demonstration,
@@ -1025,6 +1031,79 @@ keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_UR
 
 # התחלת ה-thread
 keep_alive_thread.start()
+
+
+
+
+
+
+def get_trailer_from_imdb(imdb_id, tmdb_api_key):
+    """Fetches a YouTube trailer URL for a given IMDb ID using TMDB API."""
+    if not tmdb_api_key or tmdb_api_key == 'YOUR_TMDB_API_KEY':
+         logging.warning("TMDB_API_KEY is not set.")
+         return None
+
+    find_url = f"https://api.themoviedb.org/3/find/{imdb_id}?api_key={tmdb_api_key}&external_source=imdb_id"
+    try:
+        find_response = requests.get(find_url, timeout=10)
+        find_response.raise_for_status() # Raise HTTPError for bad responses
+        find_data = find_response.json()
+
+        # Check if movie results are found
+        if not find_data.get('movie_results'):
+            logging.info(f"No movie results found on TMDB for IMDb ID: {imdb_id}")
+            return None
+
+        # Get the first movie ID found (assuming it's the correct one)
+        movie_id = find_data['movie_results'][0].get('id')
+        if not movie_id:
+             logging.warning(f"TMDB find response for {imdb_id} did not contain movie ID.")
+             return None
+
+        videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={tmdb_api_key}"
+        videos_response = requests.get(videos_url, timeout=10)
+        videos_response.raise_for_status() # Raise HTTPError for bad responses
+        videos_data = videos_response.json()
+
+        # Search for a YouTube trailer
+        for video in videos_data.get('results', []):
+            if video.get('site') == 'YouTube' and video.get('type') == 'Trailer' and video.get('key'):
+                youtube_url = f"https://www.youtube.com/watch?v={video['key']}"
+                logging.info(f"Found trailer for {imdb_id}: {youtube_url}")
+                return youtube_url
+
+        logging.info(f"No YouTube trailer found on TMDB for movie ID: {movie_id} (IMDb ID: {imdb_id})")
+        return None # No suitable trailer found
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error calling TMDB API for IMDb ID {imdb_id}: {e}", exc_info=True)
+        return None
+    except Exception as e:
+        logging.error(f"Unexpected error processing TMDB data for IMDb ID {imdb_id}: {e}", exc_info=True)
+        return None
+
+
+
+
+
+
+@app.route('/api/get_trailer/<imdb_id>')
+def api_get_trailer(imdb_id):
+    """API endpoint to get trailer URL for a given IMDb ID."""
+    # Basic validation for IMDb ID format
+    imdb_id_pattern = re.compile(r'^tt\d{7,}$')
+    if not imdb_id or not imdb_id_pattern.match(imdb_id):
+         logging.warning(f"API get trailer called with invalid IMDb ID format: {imdb_id}")
+         return jsonify({"error": "Invalid IMDb ID format"}), 400
+
+    logging.info(f"Attempting to fetch trailer for IMDb ID: {imdb_id}")
+    trailer_url = get_trailer_from_imdb(imdb_id, TMDB_API_KEY)
+
+    if trailer_url:
+        return jsonify({"trailer_url": trailer_url})
+    else:
+        return jsonify({"error": "Trailer not found"}), 404
+
 
 
 
