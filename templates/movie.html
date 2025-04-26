@@ -15,8 +15,9 @@
         .vidsrc-embed-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
             margin-bottom: 20px;
+            background-color: #000; /* Optional: background for player area */
         }
         .vidsrc-embed-container iframe {
             position: absolute;
@@ -31,8 +32,14 @@
             font-size: 18px;
             text-align: center;
             margin-top: 20px;
+            /* Style for message inside embed container */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff; /* White text for messages in dark player area */
         }
-        /* Style for the timestamp display (optional) */
+        /* Style for the timestamp display */
         #current-timestamp {
              margin-top: 10px;
              text-align: center;
@@ -40,7 +47,7 @@
              font-size: 14px;
         }
 
-        /* Added loading spinner style */
+        /* Loading spinner style (for trailer button) */
         .loader {
             border: 4px solid #f3f3f3; /* Light grey */
             border-top: 4px solid var(--primary-accent-color); /* Blue */
@@ -101,35 +108,39 @@
         </div>
 
         <div class="movie-info">
+            {# This container is for the MAIN movie embed #}
             <div class="vidsrc-embed-container" id="embed-container">
-                <!-- יוזן על ידי JS -->
+                <!-- Main Vidsrc iframe will be embedded here by JS -->
+                <!-- Message will appear here if no video is available -->
+                <div id="no-main-video-message" class="no-video-message" style="display: none;">וידאו אינו זמין עבור תוכן זה.</div>
             </div>
+
+             {# Optional: Add a div to display current timestamp info (for main player) #}
+             <div id="current-timestamp" style="display: none;"></div>
+
+
             <div class="movie-details-list">
                 <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
                 <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
                 <p><strong>אורך:</strong> {{ movie.runtime or 'לא זמין' }}</p>
-                <p><strong>שנת יציאה:</strong> {{ movie.year or 'לא זמין' }}</p>
+                <p><strong>שנת יציאה:</strong> {{ movie.year or 'לא זמין' }}</p> {# Changed text for clarity #}
                 <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
                 <p><strong>דירוג IMDb:</strong> {{ movie.imdbRating or 'לא זמין' }}</p> {# Changed text for clarity #}
             </div>
 
             <div class="movie-actions">
-                 {# Changed button to Watch Trailer #}
+                 {# Button to watch the TRAILER #}
                  <button id="watch-trailer-button" class="watch-trailer-button">
                      <i class="fas fa-play"></i> צפייה בטריילר
                      <span class="loader"></span> {# Add loader span #}
                  </button>
-                 {# You might keep or remove the Add to List button if you plan to add it back later #}
+                 {# The "Add to List" button was removed in the 'current' code, keeping it removed based on that #}
                  {# <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> #}
             </div>
 
-             {# Optional: Add a dedicated area for the video player/trailer #}
-            <div id="no-trailer-message" class="no-video-message" style="display: none;">טריילר לא נמצא.</div>
+             {# Messages specific to the TRAILER fetching process #}
+            <div id="no-trailer-message" class="no-video-message" style="display: none; color: #ff4c4c;">טריילר לא נמצא.</div>
             <div id="trailer-error-message" class="no-video-message" style="display: none; color: orange;">שגיאה באחזור הטריילר.</div>
-
-
-             {# The original timestamp display (optional, not relevant for trailers) #}
-             <div id="current-timestamp" style="display: none;"></div>
 
 
         </div>
@@ -165,29 +176,182 @@
              });
         }
 
-        // --- Watch Trailer Functionality ---
+        // --- Main Vidsrc Embed Logic (Restored and adjusted) ---
+        const user = {{ user | tojson }}; // Pass user object from Flask
+        const movieData = {{ movie | tojson }}; // Pass movie object from Flask
+        const embedContainer = document.getElementById('embed-container'); // Container for the MAIN movie iframe
+        const noMainVideoMessageDiv = document.getElementById('no-main-video-message'); // Message for main video
+        const currentTimestampDiv = document.getElementById('current-timestamp'); // Optional display for timestamp
+
+
+        if (movieData && movieData.imdbID) {
+            const imdbId = movieData.imdbID;
+            const movieType = 'movie'; // Explicitly set type
+
+            // Check if user is logged in to enable tracking
+            if (user && user.google_id) {
+                const userId = user.google_id;
+                const localStorageKey = `continueWatching_${userId}`;
+                const itemKey = `movie_${imdbId}`; // Unique key for this movie
+
+                let continueWatchingItems = {};
+                let savedTimestamp = 0; // Default timestamp
+
+                // Load existing continue watching data from localStorage
+                try {
+                    const storedData = localStorage.getItem(localStorageKey);
+                    if (storedData) {
+                        continueWatchingItems = JSON.parse(storedData) || {};
+                        // Check if this movie is already in the list and get its timestamp
+                        if (continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number') {
+                            savedTimestamp = continueWatchingItems[itemKey].timestamp;
+                             console.log(`Loaded saved timestamp for movie ${imdbId} from localStorage: ${savedTimestamp} seconds.`);
+                        } else {
+                             console.log(`Movie ${imdbId} found in localStorage, but no valid timestamp. Starting from 0.`);
+                        }
+                    } else {
+                        console.log(`No continue watching data found for user ${userId}.`);
+                    }
+                } catch (e) {
+                    console.error("Error loading continue watching data from localStorage:", e);
+                     continueWatchingItems = {}; // Reset on error
+                }
+
+                // Check URL hash for initial timestamp (overrides localStorage if present and valid)
+                const urlHash = window.location.hash;
+                if (urlHash.startsWith('#timestamp=')) {
+                    const hashTimestamp = parseInt(urlHash.substring('#timestamp='.length), 10);
+                    if (!isNaN(hashTimestamp) && hashTimestamp >= 0) {
+                        savedTimestamp = hashTimestamp; // Use timestamp from URL hash if valid
+                         console.log(`Overriding saved timestamp with value from URL hash: ${savedTimestamp} seconds.`);
+                    } else {
+                         console.log("Invalid #timestamp hash found in URL.");
+                    }
+                } else {
+                     console.log("No #timestamp hash found in URL.");
+                }
+
+                // Function to save the current item's details to localStorage
+                // This saves the *starting* timestamp when the page loads.
+                // Real-time timestamp saving from Vidsrc iframe is not possible due to cross-origin restrictions.
+                function saveContinueWatchingState(timestampToSave = savedTimestamp) {
+                    // Ensure we have basic movie data
+                    if (!movieData || !movieData.imdbID) {
+                         console.error("Cannot save continue watching state: Missing movie data.");
+                         return;
+                    }
+                    // Create or update the item entry
+                    continueWatchingItems[itemKey] = {
+                        id: imdbId,
+                        type: movieType,
+                        title: movieData.title || 'כותרת לא ידועה',
+                        poster: movieData.poster && movieData.poster !== 'N/A' ? movieData.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
+                        timestamp: timestampToSave // Save the determined starting timestamp
+                    };
+
+                    try {
+                        localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
+                        console.log(`Saved movie ${imdbId} state to localStorage (timestamp: ${timestampToSave}).`);
+                         // Optional: Update the timestamp display
+                         if (currentTimestampDiv) {
+                              // Format timestamp for display (HH:MM:SS)
+                               const formatTime = (seconds) => {
+                                    if (seconds < 0) seconds = 0;
+                                    const h = Math.floor(seconds / 3600);
+                                    const m = Math.floor((seconds % 3600) / 60);
+                                    const s = Math.floor(seconds % 60);
+                                    const parts = [h, m, s].map(v => v < 10 ? '0' + v : v);
+                                     // Show hours only if > 0
+                                    if (h > 0) return parts.join(':');
+                                    // Show minutes and seconds
+                                    return parts.slice(1).join(':');
+                               };
+                              currentTimestampDiv.textContent = `התחלה מ-${formatTime(timestampToSave)}`;
+                              currentTimestampDiv.style.display = 'block';
+                         }
+
+                    } catch (e) {
+                        console.error("Error saving continue watching data to localStorage:", e);
+                    }
+                }
+
+                 // Save the initial state when the page loads (or reloads from CW link)
+                 saveContinueWatchingState(savedTimestamp);
+
+                 // Save the state (initial timestamp) when the user leaves the page
+                 window.addEventListener('beforeunload', () => {
+                      saveContinueWatchingState(savedTimestamp); // Save the initial timestamp one last time
+                      console.log(`Page unload event for movie ${imdbId}. Saving initial state.`);
+                 });
+
+
+                // Construct the Vidsrc URL with the potentially loaded timestamp
+                const vidsrcUrl = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}${savedTimestamp > 0 ? '#timestamp=' + savedTimestamp : ''}`;
+                 console.log(`Constructed Vidsrc URL for main player: ${vidsrcUrl}`);
+
+
+                // Embed the iframe for the main movie
+                const iframe = document.createElement('iframe');
+                iframe.src = vidsrcUrl; // Use the URL with timestamp
+                iframe.allowFullscreen = true;
+                iframe.setAttribute("allow", "autoplay; encrypted-media"); // Added encrypted-media
+                embedContainer.innerHTML = ''; // Clear any initial message like "no video"
+                embedContainer.appendChild(iframe);
+
+
+            } else {
+                 // User not logged in, just embed the iframe without tracking
+                 console.log("User not logged in. Continue Watching tracking disabled for main player.");
+                 // We still check for a valid IMDb ID before embedding
+                 if (/^tt\d{7,}$/.test(imdbId)) {
+                     const iframe = document.createElement('iframe');
+                     iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`; // No timestamp for non-logged-in users
+                     iframe.allowFullscreen = true;
+                     iframe.setAttribute("allow", "autoplay; encrypted-media"); // Added encrypted-media
+                     embedContainer.innerHTML = ''; // Clear any initial message
+                     embedContainer.appendChild(iframe);
+                 } else {
+                      // No valid IMDb ID, show message in the embed container
+                      noMainVideoMessageDiv.style.display = 'block';
+                      embedContainer.appendChild(noMainVideoMessageDiv); // Ensure it's inside the container
+                       console.error("Movie data or IMDb ID missing/invalid. Cannot embed main video.");
+                 }
+            }
+
+        } else {
+             // Movie data or IMDb ID missing entirely
+             console.error("Movie data or IMDb ID not found. Cannot embed any video.");
+             // Show message in the embed container
+             noMainVideoMessageDiv.textContent = 'פרטי סרט חסרים או לא תקינים. וידאו אינו זמין.';
+             noMainVideoMessageDiv.style.display = 'block';
+             embedContainer.appendChild(noMainVideoMessageDiv); // Ensure it's inside the container
+             // Hide the timestamp div if it was visible
+             if (currentTimestampDiv) currentTimestampDiv.style.display = 'none';
+        }
+
+
+        // --- Watch Trailer Functionality (Kept from Current code) ---
         const watchTrailerButton = document.getElementById('watch-trailer-button');
         const loader = watchTrailerButton ? watchTrailerButton.querySelector('.loader') : null; // Get the loader element
-        const movieData = {{ movie | tojson }}; // Pass movie object from Flask
-        const imdbId = movieData ? movieData.imdbID : null;
-        const videoEmbedContainer = document.getElementById('video-embed-container'); // Container for the trailer iframe
+        // Use the same movieData and imdbId from the main logic
         const noTrailerMessageDiv = document.getElementById('no-trailer-message');
         const trailerErrorMessageDiv = document.getElementById('trailer-error-message');
 
 
-        if (watchTrailerButton && imdbId) {
+        if (watchTrailerButton && movieData && movieData.imdbID) { // Ensure button and ID exist
+             const imdbIdForTrailer = movieData.imdbID; // Use a separate variable for clarity
+
             watchTrailerButton.addEventListener('click', function() {
                 // Disable button and show loader while fetching
                 watchTrailerButton.disabled = true;
                 if (loader) loader.style.display = 'inline-block';
                 noTrailerMessageDiv.style.display = 'none'; // Hide previous messages
                 trailerErrorMessageDiv.style.display = 'none';
-                videoEmbedContainer.style.display = 'none'; // Hide previous embed
 
-                console.log(`Fetching trailer for IMDb ID: ${imdbId}`);
+                console.log(`Fetching trailer for IMDb ID: ${imdbIdForTrailer}`);
 
-                // Call the new API endpoint
-                fetch(`/api/get_trailer/${imdbId}`)
+                // Call the API endpoint
+                fetch(`/api/get_trailer/${imdbIdForTrailer}`)
                     .then(response => {
                         // Re-enable button and hide loader regardless of success/failure
                         watchTrailerButton.disabled = false;
@@ -204,29 +368,13 @@
                     })
                     .then(data => {
                         if (data && data.trailer_url) {
-                            console.log(`Redirecting to trailer: ${data.trailer_url}`);
-                            // You can either redirect or embed the YouTube video here.
-                            // The request asked to "redirect there", so let's redirect.
-                             window.open(data.trailer_url, '_blank'); // Open in a new tab
-
-                            // --- Alternative: Embed YouTube video (More complex, requires checking YouTube embed permissions) ---
-                            // const youtubeEmbedUrl = `https://www.youtube.com/embed/${data.trailer_url.split('v=')[1]}?autoplay=1`;
-                            // const iframe = document.createElement('iframe');
-                            // iframe.src = youtubeEmbedUrl;
-                            // iframe.allowFullscreen = true;
-                            // iframe.setAttribute("allow", "autoplay; encrypted-media");
-                            // iframe.width = "100%"; // Use CSS for aspect ratio instead of fixed dimensions
-                            // iframe.height = "100%"; // Use CSS for aspect ratio instead of fixed dimensions
-                            // videoEmbedContainer.innerHTML = ''; // Clear previous content
-                            // videoEmbedContainer.appendChild(iframe);
-                            // videoEmbedContainer.style.display = 'block'; // Show the embed container
-                            // watchTrailerButton.style.display = 'none'; // Hide the button after clicking? Optional.
-                            // -----------------------------------------------------------------------------------------
-
+                            console.log(`Opening trailer URL: ${data.trailer_url}`);
+                            // Open in a new tab
+                             window.open(data.trailer_url, '_blank');
 
                         } else if (data && data.error) {
                             console.log(`API reported error: ${data.error}`);
-                            noTrailerMessageDiv.textContent = `לא נמצא טריילר עבור סרט זה.`; // Show default "not found" message
+                            noTrailerMessageDiv.textContent = `לא נמצא טריילר עבור סרט זה.`; // Show "not found" message
                             noTrailerMessageDiv.style.display = 'block';
 
                         } else {
@@ -238,139 +386,52 @@
                     })
                     .catch(error => {
                         // Handle network errors or issues before the response
-                        console.error("Fetch error:", error);
+                        console.error("Fetch error for trailer:", error);
                         watchTrailerButton.disabled = false; // Ensure button is re-enabled
                         if (loader) loader.style.display = 'none';
-                        trailerErrorMessageDiv.textContent = `שגיאה ברשת: ${error.message}`;
+                        trailerErrorMessageDiv.textContent = `שגיאת רשת באחזור טריילר: ${error.message}`;
                         trailerErrorMessageDiv.style.display = 'block';
                     });
             });
         } else {
-            console.warn("Watch Trailer button or IMDb ID not found.");
-            if(watchTrailerButton) watchTrailerButton.style.display = 'none'; // Hide button if no IMDb ID
-            noTrailerMessageDiv.textContent = 'פרטי טריילר אינם זמינים.';
-            noTrailerMessageDiv.style.display = 'block';
-        }
-
-
-        // --- Original Vidsrc Embed Logic (Keeping the container, but not auto-embedding) ---
-        // The original Vidsrc embed was for watching the main movie.
-        // Since we are now adding a trailer button, the main movie player
-        // is no longer automatically embedded on page load.
-        // If you still want a main movie player *in addition* to the trailer button,
-        // you would need to add another button or a separate section for it,
-        // using the original Vidsrc embed logic, potentially replacing the
-        // "video-embed-container" or adding another container.
-        // For now, the default state is NO video player until the trailer button is clicked
-        // (and it redirects).
-
-        // The original logic for Vidsrc auto-embedding and continue watching
-        // is now commented out or removed as the primary action is "Watch Trailer".
-        // If you want both trailer and full movie playback, you'll need to restructure
-        // the page and JS to handle two distinct player/button scenarios.
-        // The requested change replaces the "Add to list" button with "Watch Trailer".
-
-        // The continue watching logic related to the *main movie player* timestamps
-        // is therefore also less relevant now that the main player isn't auto-embedded
-        // and the trailer is just a redirect. The code below is kept but its function
-        // is limited to saving the item's presence, not playback timestamp.
-
-         // --- Continue Watching Tracking (Limited function after trailer change) ---
-        const user = {{ user | tojson }}; // Pass user object from Flask
-        // The continue watching logic below is based on the *previous*
-        // expectation of a main Vidsrc player. It will still mark the movie
-        // as visited, but cannot track playback progress for the *trailer*.
-        // If you re-introduce a main movie player, this logic would become relevant again.
-
-        if (movieData && movieData.imdbID && user && user.google_id) {
-            const userId = user.google_id;
-            const localStorageKey = `continueWatching_${userId}`;
-            const itemKey = `movie_${imdbId}`; // Unique key for this movie
-            const movieType = 'movie';
-
-            let continueWatchingItems = {};
-            let savedTimestamp = 0; // Timestamp tracking is not effective for trailer redirects
-
-            // Load existing continue watching data from localStorage
-            try {
-                const storedData = localStorage.getItem(localStorageKey);
-                if (storedData) {
-                    continueWatchingItems = JSON.parse(storedData) || {};
-                    // Check if this movie is already in the list
-                    if (continueWatchingItems[itemKey]) {
-                         console.log(`Loaded existing state for movie ${imdbId} in Continue Watching.`);
-                         // savedTimestamp would be loaded here if needed for a main player
-                    } else {
-                        console.log(`Movie ${imdbId} not found in Continue Watching. Adding.`);
-                    }
-                }
-            } catch (e) {
-                console.error("Error loading continue watching data from localStorage:", e);
-                 continueWatchingItems = {}; // Reset on error
-            }
-
-            // Function to save the current item's details to localStorage
-            // Now primarily used to mark the movie as "viewed" or "started"
-            function saveContinueWatchingState() {
-                 // Ensure we have basic movie data
-                 if (!movieData || !movieData.imdbID) {
-                      console.error("Cannot save continue watching state: Missing movie data.");
-                      return;
-                 }
-                 // Create or update the item entry
-                 continueWatchingItems[itemKey] = {
-                     id: imdbId,
-                     type: movieType,
-                     title: movieData.title || 'כותרת לא ידועה',
-                     poster: movieData.poster && movieData.poster !== 'N/A' ? movieData.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
-                     timestamp: 0 // Timestamp is not relevant for trailer redirect, store 0 or last known if re-introducing main player
-                 };
-
-                 try {
-                     localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
-                     console.log(`Saved movie ${imdbId} state to localStorage (marked as visited).`);
-                 } catch (e) {
-                     console.error("Error saving continue watching data to localStorage:", e);
-                 }
-            }
-
-            // Save the state when the page loads to mark it as visited
-             saveContinueWatchingState();
-
-             // Save the state when the user leaves the page
-             window.addEventListener('beforeunload', () => {
-                  saveContinueWatchingState(); // Ensure state is saved on exit
-                  console.log(`Page unload event for movie ${imdbId}. Saving state.`);
-             });
-
-        } else {
-             // User not logged in or movie data missing, continue watching tracking disabled
-             console.log("User not logged in or movie data missing. Continue Watching tracking disabled.");
+            console.log("Watch Trailer button or IMDb ID not available. Trailer button hidden.");
+            // Hide the button if no IMDb ID is available for trailer lookup
+            if(watchTrailerButton) watchTrailerButton.style.display = 'none';
+             // Optional: show a message indicating trailer is not available
+             if (noTrailerMessageDiv) {
+                 noTrailerMessageDiv.textContent = 'טריילר אינו זמין.';
+                 noTrailerMessageDiv.style.display = 'block';
+             }
         }
 
 
     }); // End DOMContentLoaded
 
      // Search functionality (same as index.html, navigate back to index with search term) - outside DOMContentLoaded for access
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const term = this.value.trim();
-                if (term) {
-                    window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
-                }
-            }
-        });
-         // Optional: search button click
-        document.querySelector('.search-container button').addEventListener('click', function() {
-             const term = searchInput.value.trim();
-             if (term) {
-                  window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+     // This section was duplicated, keeping only one copy outside DOMContentLoaded for robustness.
+     const searchInputOutside = document.getElementById('searchInput');
+     if (searchInputOutside) {
+         searchInputOutside.addEventListener('keypress', function(event) {
+             if (event.key === 'Enter') {
+                 event.preventDefault();
+                 const term = this.value.trim();
+                 if (term) {
+                     window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                 }
              }
          });
-    }
+          // Optional: search button click
+         const searchButtonOutside = document.querySelector('.search-container button');
+         if (searchButtonOutside) {
+             searchButtonOutside.addEventListener('click', function() {
+                  const term = searchInputOutside.value.trim();
+                  if (term) {
+                       window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                  }
+              });
+         }
+     }
+
 
 </script>
 
