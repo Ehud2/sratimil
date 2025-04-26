@@ -171,8 +171,9 @@
     text-align: center;
 }
 
-/* Style the add to list button */
-.add-to-list-button {
+/* Style the action buttons (Watch Trailer, Add to list, etc.) */
+/* Apply same base style to both classes */
+.add-to-list-button, .watch-trailer-button {
     padding: 12px 25px;
     background-color: var(--primary-accent-color);
     color: var(--bg-color);
@@ -184,15 +185,28 @@
     font-weight: 700;
     transition: background-color var(--transition-fast), transform var(--transition-fast);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* Ensure display is inline-flex or similar if you want icon and text aligned,
+       especially with the loader. Flex is usually better for aligning children. */
+    display: inline-flex; /* Use flexbox for better alignment of icon, text, and loader */
+    align-items: center; /* Vertically align items */
+    justify-content: center; /* Center content horizontally */
 }
 
-.add-to-list-button:hover {
+.add-to-list-button:hover, .watch-trailer-button:hover {
     background-color: var(--secondary-accent-color);
     transform: translateY(-2px);
 }
 
-.add-to-list-button i {
-    margin-left: 8px;
+/* Style the icon inside the button */
+.add-to-list-button i, .watch-trailer-button i {
+    margin-left: 8px; /* Space between icon and text */
+}
+
+/* Style for the loader added in the previous HTML update */
+.watch-trailer-button .loader {
+     margin-right: 10px; /* Space before the loader */
+     /* Other loader styles are in the style tag in movie.html,
+        but you could move them here if preferred. */
 }
 
 /* Responsive adjustments */
