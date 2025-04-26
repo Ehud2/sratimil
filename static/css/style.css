@@ -599,3 +599,159 @@ img { max-width: 100%; height: auto; display: block; }
 .error-container a:hover {
     background-color: var(--primary-accent-color);
 }
+
+
+
+/* Add these styles to your existing style.css */
+
+/* --- Trailer Section Styles --- */
+.greeting-trailer-row {
+    display: flex;
+    /* On RTL, this positions greeting right, trailer container left */
+    flex-direction: row-reverse; /* Place greeting on the right, trailer container on the left */
+    align-items: flex-start; /* Align items to the top */
+    gap: var(--container-padding); /* Space between greeting and trailer */
+    margin-bottom: 60px; /* Space below this row */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.page-greeting {
+    /* Keep existing styles */
+    margin-bottom: 0; /* Remove bottom margin if used in flex container */
+    flex-shrink: 0;
+    /* Adjust width/flex-basis if needed to control how much space greeting takes */
+    /* flex-basis: 300px; */ /* Example fixed width */
+     width: auto; /* Allow it to take content width */
+}
+
+#featuredTrailerSection {
+    flex-grow: 1; /* Allow trailer section to take remaining space */
+    min-width: 300px; /* Ensure it doesn't get too small */
+    max-width: 900px; /* Optional: Prevent it from getting too wide if the screen is huge */
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 5px 15px var(--shadow-color);
+    padding: 20px;
+    display: flex; /* Use flex for internal layout */
+    flex-direction: column;
+}
+
+.trailer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+#trailerMovieTitle {
+    font-family: var(--font-heading);
+    font-size: 1.4em;
+    font-weight: 600;
+    color: var(--text-heading-color);
+    margin: 0; /* Remove default h2 margin */
+    flex-grow: 1; /* Allow title to take space */
+    margin-left: 15px; /* Space between title and controls */
+    overflow: hidden; /* Prevent overflow */
+    text-overflow: ellipsis; /* Add ellipsis */
+    white-space: nowrap; /* Keep title on a single line */
+}
+
+.trailer-controls {
+    display: flex;
+    gap: 10px; /* Space between buttons */
+    flex-shrink: 0; /* Prevent controls from shrinking */
+}
+
+.trailer-controls button {
+    background-color: rgba(69, 162, 158, 0.3);
+    border: 1px solid var(--primary-accent-color);
+    color: var(--primary-accent-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.trailer-controls button:hover:not(:disabled) {
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+}
+
+.trailer-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    background-color: #000; /* Black background behind video */
+    border-radius: var(--border-radius-sm);
+    overflow: hidden; /* Ensure iframe stays within bounds */
+}
+
+#trailerPlayer iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.player-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1; /* Above iframe if it somehow loads behind */
+    font-size: 1.1em;
+}
+.player-placeholder p {
+    margin: 0;
+}
+
+.trailer-message {
+    margin-top: 15px;
+    font-size: 1em;
+    text-align: center;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 992px) { /* Adjust breakpoint as needed */
+    .greeting-trailer-row {
+        flex-direction: column; /* Stack items vertically */
+        align-items: stretch; /* Stretch items to full width */
+    }
+    .page-greeting {
+         margin-bottom: 30px; /* Add back some space below greeting when stacked */
+         padding-right: 15px; /* Adjust padding if needed */
+    }
+    #featuredTrailerSection {
+        max-width: 100%; /* Allow trailer section to take full width when stacked */
+        min-width: unset; /* Remove min-width */
+    }
+     #trailerMovieTitle {
+         font-size: 1.2em; /* Slightly smaller title on smaller screens */
+         margin-left: 10px; /* Adjust space */
+     }
+     .trailer-controls button {
+         width: 32px;
+         height: 32px;
+         font-size: 0.8em;
+     }
+}
