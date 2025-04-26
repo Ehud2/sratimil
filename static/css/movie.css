@@ -173,7 +173,9 @@
 
 /* Style the action buttons (Watch Trailer, Add to list, etc.) */
 /* Apply same base style to both classes */
-.add-to-list-button, .watch-trailer-button {
+/* Style the action buttons (Watch Trailer, Add to list, etc.) */
+/* Apply same base style to both classes */
+.add-to-list-button, .watch-trailer-button { /* <-- Added .watch-trailer-button here */
     padding: 12px 25px;
     background-color: var(--primary-accent-color);
     color: var(--bg-color);
@@ -185,28 +187,25 @@
     font-weight: 700;
     transition: background-color var(--transition-fast), transform var(--transition-fast);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    /* Ensure display is inline-flex or similar if you want icon and text aligned,
-       especially with the loader. Flex is usually better for aligning children. */
-    display: inline-flex; /* Use flexbox for better alignment of icon, text, and loader */
-    align-items: center; /* Vertically align items */
-    justify-content: center; /* Center content horizontally */
+    /* Use flexbox for better alignment of icon, text, and loader */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.add-to-list-button:hover, .watch-trailer-button:hover {
+.add-to-list-button:hover, .watch-trailer-button:hover { /* <-- Added .watch-trailer-button here */
     background-color: var(--secondary-accent-color);
     transform: translateY(-2px);
 }
 
 /* Style the icon inside the button */
-.add-to-list-button i, .watch-trailer-button i {
+.add-to-list-button i, .watch-trailer-button i { /* <-- Added .watch-trailer-button here */
     margin-left: 8px; /* Space between icon and text */
 }
 
 /* Style for the loader added in the previous HTML update */
-.watch-trailer-button .loader {
+.watch-trailer-button .loader { /* <-- Specific rule for loader inside the trailer button */
      margin-right: 10px; /* Space before the loader */
-     /* Other loader styles are in the style tag in movie.html,
-        but you could move them here if preferred. */
 }
 
 /* Responsive adjustments */
