@@ -21,6 +21,14 @@ app = Flask(__name__)
 # Use environment variables for production.
 # For this example, default values are kept for demonstration,
 # but replace these with your actual keys/secrets set as environment variables.
+# Replace with your actual OMDB API key from environment variables
+OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # THIS IS A SECRET! MUST BE IN ENV VAR!
+
+# --- Add TMDb API Key ---
+TMDB_API_KEY = os.environ.get('TMDB_API_KEY', 'fb7bb23f03b6994dafc674c074d01761') # Replace with your actual key (or use env var)
+# Note: This key is less sensitive than OAuth secrets, but still best kept in env vars.
+
+
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moviesilsuperdupersecretkey')
 
 # Replace these with your actual Google OAuth credentials from environment variables
@@ -1025,6 +1033,97 @@ keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_UR
 
 # התחלת ה-thread
 keep_alive_thread.start()
+
+
+
+
+
+
+# --- TMDb API Function for Trailer ---
+def get_trailer_from_imdb(imdb_id, tmdb_api_key):
+    """
+    Fetches a YouTube trailer URL from TMDb using the movie's IMDb ID.
+    Returns the YouTube URL string or None if not found.
+    """
+    if not tmdb_api_key or tmdb_api_key == 'YOUR_TMDB_API_KEY': # Add a check for the key
+         logging.warning("TMDB_API_KEY is not set.")
+         return None
+
+    find_url = f"https://api.themoviedb.org/3/find/{imdb_id}?api_key={tmdb_api_key}&external_source=imdb_id"
+    try:
+        find_response = requests.get(find_url, timeout=10)
+        find_response.raise_for_status() # Raise HTTPError for bad responses
+        find_data = find_response.json()
+
+        if not find_data.get('movie_results'):
+            logging.info(f"TMDb 'find' found no movie results for IMDb ID: {imdb_id}")
+            return None
+
+        # Assuming the first result is the correct movie
+        movie_id = find_data['movie_results'][0].get('id')
+        if not movie_id:
+             logging.warning(f"TMDb 'find' result for {imdb_id} did not contain a movie ID.")
+             return None
+
+
+        videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={tmdb_api_key}"
+        videos_response = requests.get(videos_url, timeout=10)
+        videos_response.raise_for_status()
+        videos_data = videos_response.json()
+
+        # Look for a YouTube trailer
+        for video in videos_data.get('results', []):
+            if video.get('site') == 'YouTube' and video.get('type') == 'Trailer' and video.get('key'):
+                youtube_url = f"https://www.youtube.com/watch?v={video['key']}"
+                logging.info(f"Found YouTube trailer for {imdb_id} via TMDb movie ID {movie_id}: {youtube_url}")
+                return youtube_url
+
+        logging.info(f"No YouTube trailer found in TMDb videos for movie ID {movie_id} (IMDb ID: {imdb_id}).")
+        return None
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error calling TMDb API for trailer for IMDb ID {imdb_id}: {e}", exc_info=True)
+        return None
+    except Exception as e:
+        logging.error(f"Unexpected error during TMDb trailer search for IMDb ID {imdb_id}: {e}", exc_info=True)
+        return None
+
+
+
+
+
+@app.route('/movie/<imdb_id>/trailer')
+def watch_trailer(imdb_id):
+    """
+    Finds the trailer URL for a given movie IMDb ID using TMDb API
+    and redirects the user to the trailer URL.
+    """
+    # Validate IMDb ID format
+    if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
+        logging.warning(f"Attempted to find trailer with invalid IMDb ID format: {imdb_id}")
+        flash('שגיאה: פורמט IMDb ID לא תקין.', 'error')
+        return redirect(url_for('movie_details', imdb_id=imdb_id)) # Redirect back to the movie page
+
+    logging.info(f"Attempting to find trailer for IMDb ID: {imdb_id}")
+
+    # Get the TMDB API key from app config
+    tmdb_api_key = app.config.get('TMDB_API_KEY')
+
+    # Fetch the trailer URL using the function
+    trailer_url = get_trailer_from_imdb(imdb_id, tmdb_api_key)
+
+    if trailer_url:
+        logging.info(f"Redirecting to trailer: {trailer_url}")
+        # Redirect the user to the found trailer URL
+        return redirect(trailer_url)
+    else:
+        logging.warning(f"No trailer found for IMDb ID: {imdb_id}")
+        # If no trailer is found, flash a message and redirect back to the movie page
+        flash('לא נמצא טריילר זמין עבור סרט זה.', 'warning')
+        return redirect(url_for('movie_details', imdb_id=imdb_id))
+
+
+
 
 
 
