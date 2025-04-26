@@ -242,20 +242,12 @@ def categorize_content(movies_data, series_data):
         # Add to the correct category list if category is valid and not "ללא"
         # We need id, title, poster, and type for the item cards on index.html
         if category in CATEGORIES and category != "ללא" and item_type in ['movie', 'series']:
-             item_data_for_index = {
+             categorized_items[category].append({
                 "id": imdb_id,
                 "title": title,
                 "poster": poster,
                 "type": item_type # Include type here
-             }
-
-             # --- START OF MODIFIED CODE ---
-             if item_type == 'movie':
-                  # Include the list of titles for movies if it exists
-                  item_data_for_index['titles'] = item_details.get('titles', [])
-             # --- END OF MODIFIED CODE ---
-
-             categorized_items[category].append(item_data_for_index)
+             })
         elif category == "ללא":
             pass # Don't display 'ללא' category on index
         else:
@@ -681,12 +673,8 @@ def add_content():
                     'production': omdb_details.get('Production', 'N/A'),
                     'website': omdb_details.get('Website', 'N/A'),
                     'video_url': '', # Placeholder: Video URL must be added separately
-                    'category': category, # From form
-                    'titles': [] # Initialize empty list for alternative titles
+                    'category': category # From form
                 }
-                 # Add the main title to the titles list
-                if movie_data['title'] and movie_data['title'] != 'Untitled':
-                    movie_data['titles'].append(movie_data['title'])
 
                 # Save movie data to Firebase under /Movies/{imdb_id}
                 ref = db.reference(f'/Movies/{imdb_id}')
