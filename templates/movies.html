@@ -88,9 +88,9 @@
         {# Container for the movie grid #}
         <div class="all-movies-grid">
             {# Iterate through the 'movies' dictionary passed from main.py #}
+            {# Note: movie object from load_movies_data already includes 'titles' if added by the script #}
             {% for imdb_id, movie in movies.items() %}
                  {# Ensure item has basic properties needed for display and linking #}
-                 {# Note: movie object from load_movies_data already includes 'titles' if added by the script #}
                  {% if movie and movie.get('imdbID') and movie.get('title') %}
                      {# Wrap card in an anchor tag linking to the movie details page #}
                      {# --- UPDATED: Moved data attributes and added data-titles --- #}
@@ -163,14 +163,13 @@
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
+                    const searchTerm = this.value.toLowerCase().trim(); // Trim search term
                     // Select the anchor tag wrappers for the movie cards
                     const itemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link'); // Target only links within the grid
                     let anyVisible = false;
 
                     itemCardLinks.forEach(link => {
                         let isMatch = false;
-                        // --- UPDATED: Check data-titles first, fallback to data-title ---
                         const titlesJson = link.dataset.titles; // Get data-titles attribute (JSON string)
 
                         if (titlesJson) {
@@ -179,8 +178,8 @@
                                  if (Array.isArray(titles)) {
                                      // Check each title in the list
                                      for (const titleItem of titles) {
-                                          // Ensure the item in the list is a string before calling includes
-                                         if (typeof titleItem === 'string' && titleItem.toLowerCase().includes(searchTerm)) {
+                                          // Ensure the item in the list is a string, trim, and check includes
+                                         if (typeof titleItem === 'string' && titleItem.toLowerCase().trim().includes(searchTerm)) {
                                              isMatch = true;
                                              break; // Found a match
                                          }
@@ -190,16 +189,14 @@
                                  }
                              } catch (e) {
                                  console.error("Search: Error parsing data-titles JSON for item:", link.dataset.id, e);
-                                 // Fallback to data-title if parsing fails
-                                 const title = link.dataset.title || '';
-                                 if (title.includes(searchTerm)) {
-                                     isMatch = true;
-                                 }
+                                 // If parsing fails, fall through to check data-title
                              }
-                         } else {
-                             // Fallback to data-title if data-titles is missing
+                         }
+
+                         // Fallback: If no match found in data-titles (or data-titles was missing/invalid), check data-title
+                         if (!isMatch) {
                              const title = link.dataset.title || '';
-                             if (title.includes(searchTerm)) {
+                             if (title.toLowerCase().trim().includes(searchTerm)) {
                                  isMatch = true;
                              }
                          }
