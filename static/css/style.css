@@ -79,21 +79,40 @@ img { max-width: 100%; height: auto; display: block; }
     margin-right: auto;
     flex-shrink: 0;
 }
+/* Adjust main-nav link styling */
 .main-nav a {
     font-family: var(--font-heading);
     font-size: 1em;
     font-weight: 600;
     color: var(--text-color);
-    padding: 5px 0;
+    /* Changed from padding: 5px 0 */
+    padding: 8px 15px; /* Add padding for larger clickable area */
     position: relative;
+    /* Removed underline transition, using background now */
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-radius var(--transition-fast);
+    display: inline-flex; /* Use flex to align icon and text */
+    align-items: center; /* Vertically center icon and text */
+    gap: 8px; /* Space between icon and text (gap works for RTL too) */
+    border-radius: var(--border-radius-sm); /* Optional: Add rounded corners */
+}
+
+/* Change hover effect from underline to background highlight */
+.main-nav a:hover, .main-nav a:focus {
+    color: var(--text-heading-color);
+    outline: none;
+    background-color: rgba(102, 252, 241, 0.15); /* Add a subtle background on hover */
+}
+
+.main-nav a:hover i, .main-nav a:focus i {
+    color: var(--primary-accent-color); /* Change icon color to primary accent on hover */
+}
+
+
+.main-nav a i {
+    color: var(--text-muted-color); /* Icon color, slightly muted accent */
+    font-size: 1.2em; /* Make icons slightly larger than text */
     transition: color var(--transition-fast);
 }
-.main-nav a::after {
-    content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px;
-    background-color: var(--primary-accent-color); transition: width var(--transition-medium);
-}
-.main-nav a:hover, .main-nav a:focus { color: var(--text-heading-color); outline: none; }
-.main-nav a:hover::after, .main-nav a:focus::after { width: 100%; }
 
 .auth-container {
     flex-shrink: 0;
