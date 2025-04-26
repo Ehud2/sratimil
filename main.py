@@ -300,8 +300,9 @@ OMDB_BASE_URL = 'http://www.omdbapi.com/'
 
 def search_omdb_api(search_term, content_type):
     """Searches OMDB API for movies or series."""
-    if not OMDB_API_KEY or OMDB_API_KEY == 'YOUR_OMDB_API_KEY' or OMDB_API_KEY == '4ea6447b': # Also check default hardcoded value
-        logging.warning("OMDB_API_KEY is not set or is default.")
+    # Modified check: Only warn if key is missing or is the placeholder, NOT if it's the default fallback value.
+    if not OMDB_API_KEY or OMDB_API_KEY == 'YOUR_OMDB_API_KEY':
+        logging.warning("OMDB_API_KEY is not set or is the placeholder 'YOUR_OMDB_API_KEY'. OMDB search skipped.")
         return []
     params = {
         'apikey': OMDB_API_KEY,
@@ -1043,8 +1044,9 @@ keep_alive_thread.start()
 
 def get_trailer_from_imdb(imdb_id, tmdb_api_key):
     """Fetches a YouTube trailer URL for a given IMDb ID using TMDB API."""
-    if not tmdb_api_key or tmdb_api_key == 'YOUR_TMDB_API_KEY' or tmdb_api_key == 'fb7bb23f03b6994dafc674c074d01761': # Check default hardcoded value too
-         logging.warning("TMDB_API_KEY is not set or is default.")
+    # Modified check: Only warn if key is missing or is the placeholder, NOT if it's the default fallback value.
+    if not tmdb_api_key or tmdb_api_key == 'YOUR_TMDB_API_KEY':
+         logging.warning("TMDB_API_KEY is not set or is the placeholder 'YOUR_TMDB_API_KEY'. Trailer fetch skipped.")
          return None
 
     find_url = f"https://api.themoviedb.org/3/find/{imdb_id}?api_key={tmdb_api_key}&external_source=imdb_id"
