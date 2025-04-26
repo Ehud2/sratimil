@@ -15,8 +15,8 @@
     --font-body: 'Assistant', sans-serif;
     --font-heading: 'Poppins', sans-serif;
     --header-height: 70px;
-    --card-width: 240px;
-    --card-height: 360px;
+    --card-width: 240px; /* Adjusted for standard item cards */
+    --card-height: 360px; /* Adjusted for standard item cards */
     --card-gap: 25px;
     --container-padding: 30px;
     --border-radius-sm: 4px;
@@ -37,7 +37,7 @@ body {
     background: linear-gradient(180deg, var(--bg-color) 0%, #111821 100%);
     color: var(--text-color);
     line-height: 1.6;
-    direction: rtl;
+    direction: rtl; /* Site direction */
     overflow-x: hidden;
     min-height: 100vh;
     display: flex;
@@ -68,15 +68,16 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .search-container {
-    margin-right: 0;
+    margin-right: 0; /* In RTL, search should be on the right */
     flex-shrink: 0;
 }
 
 .main-nav {
     display: flex;
     gap: 25px;
-    margin-left: auto;
-    margin-right: auto;
+    /* Center the nav items or push them */
+    margin-left: auto; /* Push to the left (in RTL) */
+    margin-right: auto; /* Push to the right (in RTL) */
     flex-shrink: 0;
 }
 .main-nav a {
@@ -113,11 +114,12 @@ img { max-width: 100%; height: auto; display: block; }
     transition: all var(--transition-fast);
 }
 .search-container:focus-within { border-color: var(--primary-accent-color); background-color: var(--bg-secondary); box-shadow: 0 0 8px rgba(102, 252, 241, 0.3); }
-#searchInput { padding: 8px 12px; border: none; background-color: transparent; color: var(--text-color); font-family: var(--font-body); font-size: 0.95em; outline: none; width: 180px; transition: width var(--transition-medium); }
+#searchInput { padding: 8px 12px; border: none; background-color: transparent; color: var(--text-color); font-family: var(--font-body); font-size: 0.95em; outline: none; width: 180px; transition: width var(--transition-medium); text-align: right; /* Align text right for RTL */ }
 #searchInput:focus { width: 250px; }
-#searchInput::placeholder { color: #888; }
+#searchInput::placeholder { color: #888; text-align: right; /* Align placeholder right for RTL */ }
 .search-container button { background-color: transparent; border: none; color: var(--text-muted-color); padding: 0 10px; cursor: pointer; font-size: 1em; height: 36px; display: flex; align-items: center; transition: color var(--transition-fast); }
 .search-container button:hover { color: var(--text-heading-color); }
+
 
 .main-content {
     padding-top: 40px;
@@ -125,11 +127,28 @@ img { max-width: 100%; height: auto; display: block; }
     flex-grow: 1;
 }
 
+/* --- Layout for Greeting and Trailer --- */
+.greeting-trailer-row {
+    display: flex;
+    /* flex-direction: row; is default, puts first item on the left.
+       In RTL, this means the trailer section (first in HTML) is on the right,
+       and the greeting (second in HTML) is on the left. */
+    flex-direction: row;
+    align-items: flex-start; /* Align tops */
+    gap: var(--container-padding); /* Space between greeting and trailer */
+    margin-bottom: 60px; /* Space below this row */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
 .page-greeting {
-    margin-bottom: 45px;
-    padding-left: 10px;
-    border-right: 4px solid var(--primary-accent-color);
-    padding-right: 20px;
+    margin-bottom: 0; /* Remove bottom margin if used in flex container */
+    padding-left: 10px; /* Keep existing RTL border-right padding */
+    border-right: 4px solid var(--primary-accent-color); /* Keep existing RTL border */
+    padding-right: 20px; /* Keep existing RTL padding */
+    flex-shrink: 0; /* Prevent greeting from shrinking */
+     flex-basis: 300px; /* Give greeting a base width */
+     flex-grow: 1; /* Allow greeting to grow if there's space, but less than trailer */
+     max-width: 400px; /* Limit max width for greeting */
 }
 .page-greeting h1 {
     font-family: var(--font-heading);
@@ -143,6 +162,133 @@ img { max-width: 100%; height: auto; display: block; }
     color: var(--text-color);
 }
 
+
+/* --- Featured Trailer Section Styles --- */
+#featuredTrailerSection {
+    /* Place trailer section visually on the right in RTL */
+    flex-grow: 1; /* Allow trailer section to take remaining space */
+    /* Adjusted max-width to make it smaller */
+    max-width: 600px; /* Example: Adjust this value as needed */
+    /* Adjusted min-width to ensure responsiveness doesn't make it too small */
+     min-width: 300px; /* Keep a reasonable minimum width */
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 5px 15px var(--shadow-color);
+    padding: 20px;
+    display: flex; /* Use flex for internal layout */
+    flex-direction: column;
+}
+
+.trailer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+#trailerMovieTitle {
+    font-family: var(--font-heading);
+    font-size: 1.4em;
+    font-weight: 600;
+    color: var(--text-heading-color);
+    margin: 0; /* Remove default h2 margin */
+    flex-grow: 1; /* Allow title to take space */
+    margin-right: 15px; /* Space between title and controls in RTL */
+    overflow: hidden; /* Prevent overflow */
+    text-overflow: ellipsis; /* Add ellipsis */
+    white-space: nowrap; /* Keep title on a single line */
+    text-align: right; /* Align title right for RTL */
+}
+
+.trailer-controls {
+    display: flex;
+    gap: 10px; /* Space between buttons */
+    flex-shrink: 0; /* Prevent controls from shrinking */
+    /* Order buttons for RTL: Prev (right), Next (left), Mute (far left) */
+    flex-direction: row-reverse;
+}
+
+.trailer-controls button {
+    background-color: rgba(69, 162, 158, 0.3);
+    border: 1px solid var(--primary-accent-color);
+    color: var(--primary-accent-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.trailer-controls button:hover:not(:disabled) {
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+}
+
+.trailer-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    background-color: #000; /* Black background behind video */
+    border-radius: var(--border-radius-sm);
+    overflow: hidden; /* Ensure iframe stays within bounds */
+}
+
+#trailerPlayer {
+    /* This is the container for the iframe */
+    position: absolute; /* Position it absolutely within video-wrapper */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block; /* Ensure this container is displayed */
+}
+
+
+#trailerPlayer iframe {
+    /* Styles for the actual iframe embedded by YouTube API */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block; /* Ensure the iframe itself is displayed */
+}
+
+.player-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
+    color: #fff;
+    display: flex; /* Kept flex for centering */
+    justify-content: center;
+    align-items: center;
+    z-index: 1; /* Above iframe if it somehow loads behind */
+    font-size: 1.1em;
+    /* This will be toggled by JS, default is flex */
+}
+
+
+.trailer-message {
+    margin-top: 15px;
+    font-size: 1em;
+    text-align: center;
+}
+
+/* --- Continue Watching Styles --- */
 .category-section {
     margin-bottom: 60px;
 }
@@ -159,11 +305,17 @@ img { max-width: 100%; height: auto; display: block; }
     display: flex; overflow-x: auto; overflow-y: hidden; padding-bottom: 30px;
     margin-bottom: -30px; gap: var(--card-gap); scroll-snap-type: x mandatory; position: relative;
 }
-.item-row::before, .item-row::after {
+/* Fades at the ends of the scrollable row */
+.item-row::before {
     content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
+    right: 0; /* Fade on the right for RTL */
+    background: linear-gradient(to left, var(--bg-color), transparent);
 }
-.item-row::before { right: 0; background: linear-gradient(to left, var(--bg-color), transparent); }
-.item-row::after { left: 0; background: linear-gradient(to right, var(--bg-color), transparent); }
+.item-row::after {
+    content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
+    left: 0; /* Fade on the left for RTL */
+    background: linear-gradient(to right, var(--bg-color), transparent);
+}
 
 .item-card {
     background-color: var(--card-bg-color); border-radius: var(--border-radius-md); width: var(--card-width); flex-shrink: 0;
@@ -189,7 +341,6 @@ img { max-width: 100%; height: auto; display: block; }
     border: 2px solid var(--text-heading-color); color: var(--text-heading-color); width: 60px; height: 60px; border-radius: 50%;
     display: flex; justify-content: center; align-items: center; font-size: 1.5em; cursor: pointer; opacity: 0;
     transition: transform var(--transition-fast), opacity var(--transition-fast), background-color var(--transition-fast); z-index: 3;
-    /* play button on index page now navigates */
     pointer-events: auto; /* Make clickable */
 }
 .item-card:hover .play-button, .item-card:focus-within .play-button { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -200,11 +351,13 @@ img { max-width: 100%; height: auto; display: block; }
     font-family: var(--font-heading); font-size: 1.1em; font-weight: 600; color: var(--text-heading-color); margin-bottom: 10px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
     transform: translateY(10px); opacity: 0; transition: transform 0.3s 0.1s ease, opacity 0.3s 0.1s ease;
+    text-align: right; /* Align card title right for RTL */
 }
 .item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; }
 
 .card-actions {
     display: flex; gap: 10px; opacity: 0; transition: opacity 0.3s 0.2s ease;
+    flex-direction: row-reverse; /* Order buttons for RTL: Add (right), Info (left) */
 }
 .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
 .card-actions button {
@@ -216,8 +369,9 @@ img { max-width: 100%; height: auto; display: block; }
 .card-actions button:hover { background-color: rgba(60, 60, 60, 0.9); transform: scale(1.1); }
 
 .rank-number {
-    position: absolute; left: -15px; bottom: 10px; width: 60px; height: 60px;
+    position: absolute; /* left: -15px; removed */ bottom: 10px; width: 60px; height: 60px;
     display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none;
+    right: -15px; /* Position on the right for RTL */
 }
 .rank-circle-bg {
     width: 100%; height: 100%; position: absolute; transform: rotate(-90deg); stroke-linecap: round;
@@ -251,6 +405,7 @@ img { max-width: 100%; height: auto; display: block; }
     position: relative;
     color: var(--text-heading-color);
     font-size: 0.95em;
+    text-align: right; /* Ensure flash messages are RTL */
 }
 
 .alert-success { background-color: #1f4a42; border-color: #2c6b5d; }
@@ -261,7 +416,8 @@ img { max-width: 100%; height: auto; display: block; }
 .close-flash {
     position: absolute;
     top: 50%;
-    left: 15px;
+    /* left: 15px; removed */
+    right: 15px; /* Position on the right for RTL */
     transform: translateY(-50%);
     background: none;
     border: none;
@@ -309,7 +465,7 @@ img { max-width: 100%; height: auto; display: block; }
     display: flex; /* Ensure it's a flex container initially */
     justify-content: center;
     align-items: center;
-    z-index: 1000; /* Ensure it's on top, below modal */
+    z-index: 10000; /* Ensure it's on top of almost everything */
     flex-direction: column;
     color: white;
     font-size: 1.2em;
@@ -351,6 +507,7 @@ img { max-width: 100%; height: auto; display: block; }
     /* display: none will be added by JS after transition */
 }
 
+
 /* --- Styles for add.html - included in style.css for simplicity --- */
 /* Ideally these would be in static/css/add.css */
 .add-movie-form-container {
@@ -360,7 +517,7 @@ img { max-width: 100%; height: auto; display: block; }
     background-color: var(--bg-secondary);
     border-radius: var(--border-radius-md);
     box-shadow: 0 5px 15px var(--shadow-color);
-    direction: rtl;
+    direction: rtl; /* Explicitly set direction for the form container */
 }
 
 .add-movie-form-container h1 {
@@ -379,6 +536,7 @@ img { max-width: 100%; height: auto; display: block; }
     margin-bottom: 8px;
     color: var(--text-color);
     font-weight: 600;
+    text-align: right; /* Align labels right for RTL */
 }
 
 .form-group input[type="text"],
@@ -394,6 +552,7 @@ img { max-width: 100%; height: auto; display: block; }
     font-family: var(--font-body);
     font-size: 1em;
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    text-align: right; /* Align input text right for RTL */
 }
 
 .form-group input[type="text"]:focus,
@@ -404,6 +563,16 @@ img { max-width: 100%; height: auto; display: block; }
     box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
     outline: none;
 }
+.form-group input[type="number"] {
+     /* Remove default spinner arrows for number inputs */
+     -moz-appearance: textfield;
+}
+.form-group input[type="number"]::-webkit-outer-spin-button,
+.form-group input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 
 .omdb-search-section {
     border: 1px solid var(--border-color);
@@ -418,12 +587,14 @@ img { max-width: 100%; height: auto; display: block; }
     margin-bottom: 15px;
     font-family: var(--font-heading);
     font-size: 1.4em;
+    text-align: right; /* Align heading right for RTL */
 }
 
 .omdb-search-input {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
+    flex-direction: row-reverse; /* Input on the right, button on the left for RTL */
 }
 
 .omdb-search-input input {
@@ -435,12 +606,17 @@ img { max-width: 100%; height: auto; display: block; }
      color: var(--text-color);
      font-family: var(--font-body);
      font-size: 1em;
+     text-align: right; /* Align input text right for RTL */
  }
 .omdb-search-input input:focus {
     border-color: var(--primary-accent-color);
     box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
     outline: none;
 }
+.omdb-search-input input::placeholder {
+    text-align: right; /* Align placeholder text right for RTL */
+}
+
 
 .omdb-search-input button {
     padding: 10px 20px;
@@ -478,6 +654,7 @@ img { max-width: 100%; height: auto; display: block; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    text-align: right; /* Ensure list item content is RTL */
 }
 
 #omdbMovieResults li:hover, #omdbSeriesResults li:hover {
@@ -491,12 +668,15 @@ img { max-width: 100%; height: auto; display: block; }
 #omdbMovieResults li .result-id { /* Specific for movie search results */
     font-size: 0.9em; /* Adjusted font size for ID */
     color: var(--text-muted-color);
+    direction: ltr; /* Display ID left-to-right */
+     margin-left: 10px; /* Space from title */
 }
 #omdbSeriesResults li .result-id { /* Specific for series search results */
      font-size: 0.9em; /* Adjusted font size for ID */
      color: var(--text-muted-color);
+     direction: ltr; /* Display ID left-to-right */
+     margin-left: 10px; /* Space from title */
 }
-
 
 #omdbMovieResults li.selected-result, #omdbSeriesResults li.selected-result {
     background-color: var(--primary-accent-color);
@@ -519,6 +699,7 @@ img { max-width: 100%; height: auto; display: block; }
      border: 1px solid var(--primary-accent-color);
      border-radius: var(--border-radius-sm);
      color: var(--text-color);
+     text-align: right; /* Ensure details text is RTL */
 }
 
 #selectedOmdbMovieDetails p, #selectedOmdbSeriesDetails p {
@@ -534,6 +715,9 @@ img { max-width: 100%; height: auto; display: block; }
      max-width: 100px;
      height: auto;
      border-radius: var(--border-radius-sm);
+     display: block; /* Ensure image doesn't mess up layout */
+     margin-left: auto; /* Center image in RTL or align right */
+     margin-right: 0;
  }
 
 .form-submit-button {
@@ -565,6 +749,7 @@ img { max-width: 100%; height: auto; display: block; }
 
 .manual-imdb-input label {
      margin-bottom: 8px;
+     text-align: right; /* Ensure label is RTL */
 }
 
 .error-container {
@@ -601,138 +786,51 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 
-
-/* Add these styles to your existing style.css */
-
-/* --- Trailer Section Styles --- */
-.greeting-trailer-row {
-    display: flex;
-    /* On RTL, this positions greeting right, trailer container left */
-    flex-direction: row-reverse; /* Place greeting on the right, trailer container on the left */
-    align-items: flex-start; /* Align items to the top */
-    gap: var(--container-padding); /* Space between greeting and trailer */
-    margin-bottom: 60px; /* Space below this row */
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
-}
-
-.page-greeting {
-    /* Keep existing styles */
-    margin-bottom: 0; /* Remove bottom margin if used in flex container */
-    flex-shrink: 0;
-    /* Adjust width/flex-basis if needed to control how much space greeting takes */
-    /* flex-basis: 300px; */ /* Example fixed width */
-     width: auto; /* Allow it to take content width */
-}
-
-#featuredTrailerSection {
-    flex-grow: 1; /* Allow trailer section to take remaining space */
-    min-width: 300px; /* Ensure it doesn't get too small */
-    max-width: 900px; /* Optional: Prevent it from getting too wide if the screen is huge */
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    box-shadow: 0 5px 15px var(--shadow-color);
-    padding: 20px;
-    display: flex; /* Use flex for internal layout */
-    flex-direction: column;
-}
-
-.trailer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-#trailerMovieTitle {
-    font-family: var(--font-heading);
-    font-size: 1.4em;
-    font-weight: 600;
-    color: var(--text-heading-color);
-    margin: 0; /* Remove default h2 margin */
-    flex-grow: 1; /* Allow title to take space */
-    margin-left: 15px; /* Space between title and controls */
-    overflow: hidden; /* Prevent overflow */
-    text-overflow: ellipsis; /* Add ellipsis */
-    white-space: nowrap; /* Keep title on a single line */
-}
-
-.trailer-controls {
-    display: flex;
-    gap: 10px; /* Space between buttons */
-    flex-shrink: 0; /* Prevent controls from shrinking */
-}
-
-.trailer-controls button {
-    background-color: rgba(69, 162, 158, 0.3);
-    border: 1px solid var(--primary-accent-color);
-    color: var(--primary-accent-color);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: background-color var(--transition-fast), color var(--transition-fast);
-}
-
-.trailer-controls button:hover:not(:disabled) {
-    background-color: var(--primary-accent-color);
-    color: var(--bg-color);
-}
-
-.trailer-controls button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.video-wrapper {
-    position: relative;
-    width: 100%;
-    padding-top: 56.25%; /* 16:9 Aspect Ratio */
-    background-color: #000; /* Black background behind video */
-    border-radius: var(--border-radius-sm);
-    overflow: hidden; /* Ensure iframe stays within bounds */
-}
-
-#trailerPlayer iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-
-.player-placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1; /* Above iframe if it somehow loads behind */
-    font-size: 1.1em;
-}
-.player-placeholder p {
-    margin: 0;
-}
-
-.trailer-message {
-    margin-top: 15px;
-    font-size: 1em;
-    text-align: center;
-}
-
-
 /* Responsive adjustments */
 @media (max-width: 992px) { /* Adjust breakpoint as needed */
+    .container {
+         padding: 0 15px; /* Reduce horizontal padding on smaller screens */
+    }
+
+    .header-content {
+        flex-direction: column; /* Stack header items */
+        height: auto;
+        padding: 10px 0;
+    }
+
+    .search-container {
+         width: 100%; /* Make search full width when stacked */
+         margin: 0; /* Remove auto margins */
+    }
+     #searchInput {
+         width: 100%; /* Make input full width */
+         text-align: right; /* Keep text right for RTL */
+     }
+     #searchInput:focus {
+         width: 100%; /* Keep input full width on focus */
+     }
+
+
+    .main-nav {
+        flex-direction: column; /* Stack nav links */
+        align-items: center; /* Center nav links */
+        gap: 10px;
+        margin: 10px auto; /* Adjust margins */
+    }
+    .main-nav a::after {
+         left: auto; right: 0; /* Position underline correctly for stacked RTL links */
+    }
+     .main-nav a:hover::after, .main-nav a:focus::after {
+         width: 100%;
+     }
+
+
+    .auth-container {
+        margin-top: 10px; /* Space above profile button */
+    }
+
+
+    /* Stack greeting and trailer vertically */
     .greeting-trailer-row {
         flex-direction: column; /* Stack items vertically */
         align-items: stretch; /* Stretch items to full width */
@@ -740,18 +838,104 @@ img { max-width: 100%; height: auto; display: block; }
     .page-greeting {
          margin-bottom: 30px; /* Add back some space below greeting when stacked */
          padding-right: 15px; /* Adjust padding if needed */
+         flex-basis: auto; /* Remove fixed basis */
+         max-width: 100%; /* Allow full width */
+         flex-grow: 0; /* Remove growth when stacked */
     }
     #featuredTrailerSection {
         max-width: 100%; /* Allow trailer section to take full width when stacked */
-        min-width: unset; /* Remove min-width */
+        min-width: unset; /* Remove min-width constraint when stacked */
     }
+
      #trailerMovieTitle {
          font-size: 1.2em; /* Slightly smaller title on smaller screens */
-         margin-left: 10px; /* Adjust space */
+         margin-right: 10px; /* Adjust space */
      }
      .trailer-controls button {
          width: 32px;
          height: 32px;
          font-size: 0.8em;
      }
+
+     .category-section h2 {
+         font-size: 1.8em; /* Slightly smaller section titles */
+     }
+
+     .item-card {
+         width: 180px; /* Make cards smaller on smaller screens */
+         height: 270px; /* Adjust height proportionally */
+     }
+     .card-width { --card-width: 180px; } /* Update CSS variable in media query */
+     .card-height { --card-height: 270px; } /* Update CSS variable in media query */
+
+     .item-row {
+         gap: 15px; /* Reduce gap between cards */
+         padding-bottom: 20px; /* Adjust padding */
+         margin-bottom: -20px; /* Adjust margin */
+     }
+     .item-row::before, .item-row::after {
+         bottom: 20px; /* Match padding adjustment */
+         width: 30px; /* Make fade narrower */
+     }
+
+     .card-title {
+          font-size: 1em; /* Adjust font size */
+     }
+      .card-actions button {
+          width: 28px; height: 28px; font-size: 0.7em; /* Make action buttons smaller */
+      }
+      .play-button {
+          width: 40px; height: 40px; font-size: 1.2em; /* Make play button smaller */
+      }
+
+      .rank-number {
+          width: 45px; height: 45px; /* Make rank circle smaller */
+          right: -10px; /* Adjust position */
+      }
+      .rank-circle-bg path {
+          stroke-width: 3; /* Reduce stroke width */
+      }
+      .rank-text {
+          font-size: 1.3em; /* Reduce rank number font size */
+      }
+
+     .add-movie-form-container {
+         padding: 20px; /* Reduce padding in form */
+     }
+     .form-group input, .form-group select {
+         padding: 8px; /* Reduce input padding */
+         font-size: 0.9em; /* Reduce input font size */
+     }
+     .omdb-search-section {
+         padding: 15px; /* Reduce search section padding */
+     }
+      .omdb-search-input input {
+          padding: 8px; /* Reduce search input padding */
+      }
+      .omdb-search-input button {
+          padding: 8px 15px; /* Reduce search button padding */
+          font-size: 0.9em; /* Reduce search button font size */
+      }
+      #omdbMovieResults li, #omdbSeriesResults li {
+          padding: 8px; /* Reduce result list item padding */
+      }
+       .form-submit-button {
+           padding: 10px; /* Reduce submit button padding */
+           font-size: 1em; /* Reduce submit button font size */
+       }
+
+       .error-container h1 {
+           font-size: 3em; /* Smaller error heading */
+       }
+       .error-container h2 {
+           font-size: 1.4em; /* Smaller error subheading */
+       }
+       .error-container p {
+           font-size: 1em; /* Smaller error text */
+       }
+       .error-container a {
+           padding: 8px 16px; /* Smaller error link padding */
+           font-size: 0.9em; /* Smaller error link font size */
+       }
+
 }
