@@ -146,7 +146,8 @@ img { max-width: 100%; height: auto; display: block; }
 #featuredTrailerSection {
     flex-grow: 1; /* Allow trailer section to take remaining space */
     min-width: 320px; /* Ensure it doesn't get too small */
-    max-width: 900px; /* Optional: Prevent it from getting too wide if the screen is huge */
+    /* *** CHANGE HERE: Reduced max-width from 900px to 500px *** */
+    max-width: 500px; /* Optional: Prevent it from getting too wide if the screen is huge */
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
@@ -270,6 +271,7 @@ img { max-width: 100%; height: auto; display: block; }
     width: 30px; /* Smaller size */
     height: 30px; /* Smaller size */
     animation: spin 1.5s linear infinite;
+    flex-shrink: 0; /* Prevent spinner from shrinking */
 }
 /* Re-use the main spin keyframes */
 
