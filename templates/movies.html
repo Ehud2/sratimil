@@ -96,7 +96,7 @@
                        data-id="{{ movie.imdbID }}" data-type="movie"
                        data-title="{{ movie.title.lower() }}" {# Always include main title #}
                        {% if movie.titles %} {# Add data-titles if the list exists #}
-                           data-titles="{{ movie.titles | tojson }}" {# Pass the list as JSON string #}
+                           data-titles="{{ movie.titles | tojson | e }}" {# Pass the list as JSON string, escaped for HTML attribute #}
                        {% endif %}
                        tabindex="0" {# Added tabindex here #}
                        >
