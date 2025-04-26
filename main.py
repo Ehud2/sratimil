@@ -432,6 +432,52 @@ def api_get_omdb_details():
         error_message = details.get('Error', 'Details not found or API error') if isinstance(details, dict) else 'Details not found or API error'
         return jsonify({"Error": error_message}), 404
 
+# --- API Route for fetching trailer (NEW - Placeholder) ---
+# NOTE: The logic inside this route currently does NOT fetch a real trailer URL.
+# It just returns 'not found', which will prevent the 404 but requires
+# actual implementation to work correctly.
+@app.route('/api/get_trailer/<imdb_id>')
+def api_get_trailer(imdb_id):
+    """
+    Fetches a trailer URL for a given IMDb ID.
+    NOTE: Requires integration with a service that provides trailer URLs (e.g., TMDB, YouTube Data API).
+    OMDB does NOT provide trailer URLs directly.
+    """
+    logging.info(f"Received request for trailer for IMDb ID: {imdb_id}")
+
+    # --- Placeholder Logic ---
+    # This is where you would add logic to look up the trailer URL.
+    # OMDB doesn't provide trailers. You would need to:
+    # 1. Use another API (like TMDB) with the IMDb ID.
+    # 2. Search YouTube or a dedicated trailer source.
+    # 3. Store trailer URLs in your Firebase data (e.g., under the movie/series/episode entry).
+
+    # --- Example Placeholder: Always return 'not found' ---
+    # This will prevent the 404 but the frontend will display "Trailer not found".
+    # Replace this with actual logic when you implement trailer fetching.
+    # You could potentially load the movie/series data from Firebase here
+    # and check if you manually added a 'trailer_url' field there.
+
+    # Example (If you added 'trailer_url' to your Firebase movie data):
+    # movie_data = load_movie_details(imdb_id) # Assuming it's a movie
+    # if movie_data and movie_data.get('trailer_url'):
+    #     logging.info(f"Returning trailer URL from Firebase for {imdb_id}")
+    #     return jsonify({"trailer_url": movie_data['trailer_url']}), 200
+    # else:
+    #     logging.info(f"No trailer_url found in Firebase for {imdb_id}. Returning 404.")
+    #     # Return 404 Not Found, matching the frontend's expectation for 'not found'
+    #     return jsonify({"error": "Trailer not found in Firebase"}), 404
+
+
+    # --- CURRENT PLACEHOLDER RETURNING NOT FOUND ---
+    # This matches the observed behavior (no trailer found) without causing a 500.
+    logging.info(f"Trailer fetching logic not implemented. Returning 'not found' for {imdb_id}.")
+    # The frontend JS checks for data.trailer_url or data.error.
+    # Returning 404 here directly signals "Not Found" to the frontend fetch.
+    # Change this to return 200 with {"error": "Trailer not found"} if you prefer the JS to show the specific message
+    # return jsonify({"error": "Trailer fetching not implemented"}), 404 # Return 404 Not Found
+    # Let's return 200 with an error message as the JS handles data.error specifically
+    return jsonify({"error": "Trailer fetching not implemented"}), 200 # Return 200 OK but with an error message
 
 # --- Authentication Routes ---
 @app.route('/auth/google')
@@ -1025,7 +1071,6 @@ keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_UR
 
 # התחלת ה-thread
 keep_alive_thread.start()
-
 
 
 # --- Error Handlers ---
