@@ -96,7 +96,7 @@
                        data-id="{{ movie.imdbID }}" data-type="movie"
                        data-title="{{ movie.title.lower() }}" {# Always include main title #}
                        {% if movie.titles %} {# Add data-titles if the list exists #}
-                           data-titles="{{ movie.titles | tojson | e }}" {# Pass the list as JSON string, escaped for HTML attribute #}
+                           data-titles='{{ movie.titles | tojson }}' {# Pass the list as JSON string, using single quotes for the attribute #}
                        {% endif %}
                        tabindex="0" {# Added tabindex here #}
                        >
@@ -180,6 +180,7 @@
                     // Since this page is only movies, check alternative titles if available
                     if (itemElement.dataset.titles) {
                         try {
+                            // Parse the JSON string from the data attribute
                             const alternativeTitles = JSON.parse(itemElement.dataset.titles);
                             if (Array.isArray(alternativeTitles)) {
                                 for (const altTitle of alternativeTitles) {
@@ -190,7 +191,9 @@
                                 }
                             }
                         } catch (e) {
+                             // --- ADDED LOGGING ---
                             console.error("Error parsing data-titles attribute:", e, itemElement.dataset.titles);
+                             // --- END ADDED LOGGING ---
                             // Continue without using alternative titles if parsing fails
                         }
                     }
