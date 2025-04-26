@@ -22,6 +22,10 @@
             scrollbar-color: var(--secondary-color) var(--bg-color); /* Customize scrollbar colors (Firefox) */
             -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS */
             cursor: grab; /* Default cursor for draggable area */
+            /* Added to allow children (links) to be positioned relative to this for effects if needed,
+               and ensures proper containing block for positioning/overflow */
+             position: relative;
+             z-index: 1; /* Ensure it's above general page content if needed */
         }
 
         /* Customize scrollbar appearance (Chrome, Edge, Safari) */
@@ -47,13 +51,22 @@
              user-select: none;
              -webkit-user-select: none; /* Safari */
              -ms-user-select: none; /* IE 10+ */
+             /* Prevent pointer events on children while dragging to avoid accidental clicks */
+             /* pointer-events: none; */ /* This might interfere with the click prevention logic, let's skip it for now */
         }
 
         .item-row .item-card-link {
             /* Ensure cards are inline-block to stay in a row */
             display: inline-block;
             vertical-align: top; /* Align items to the top */
+            /* Ensure links still receive pointer events */
+             pointer-events: auto;
         }
+
+        /* Ensure buttons/interactive elements inside card overlay are clickable */
+         .card-overlay .card-actions button {
+              pointer-events: auto;
+         }
 
 
     </style>
@@ -282,6 +295,7 @@
             // Corrected URL generation - get base paths and append dynamically in JS
             // Using a dummy ID (0) to ensure the URL structure is correct before appending
             const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id=0).replace('0', '') }}"; // Gets /movie/
+            // Need to replace multiple dummies for series URL structure
             const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id=0, season=0, episode=0).replace('/0/0/0', '') }}"; // Gets /series/
 
 
@@ -382,12 +396,11 @@
                                 const existingSeason = existingEpisodeInfo ? existingEpisodeInfo.season : 0; // Default to 0 if no info
                                 const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0; // Default to 0 if no info
 
-                                // Compare the current episode with the one already in the map
+                                // Compare the current item (from storage) with the one already in the map
                                 // Keep the one with the later season, or later episode if seasons are the same
                                 // Also consider updating the timestamp if the current item's timestamp is more recent,
                                 // even if the episode number isn't higher (e.g., re-watching an episode).
-                                // However, the primary goal is to show the *latest watched episode*.
-                                // Let's prioritize episode number for the 'latest' designation.
+                                // Let's prioritize episode number for the 'latest' designation first.
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
                                      // The current item represents a *later* episode for this series
                                      console.log(`CW: Updating series ${item.id} to S${seasonNum}E${episodeNum} (was S${existingSeason}E${existingEpisode}).`);
@@ -635,8 +648,91 @@
 
             itemRows.forEach(row => {
                 let isDown = false;
-                let startX;
-                let scrollLeft;
+                let startX; // Mouse X position when drag started
+                let initialScrollLeft; // Element's scrollLeft when drag started
+                let lastX; // Mouse X position in the previous frame/event
+                let animationFrameId = null; // To manage the requestAnimationFrame loop
+                let wasDragged = false; // Flag to indicate if a significant drag occurred
+
+                const minDragDistance = 5; // Minimum pixel distance to consider it a drag vs a click attempt
+
+                const mouseMoveHandler = (e) => {
+                    if (!isDown) return; // Stop if not dragging
+                    e.preventDefault(); // Prevent text selection, image dragging, etc.
+
+                    lastX = e.pageX; // Update the latest mouse position
+                    // The actual scrolling will happen in the tick function
+                };
+
+                 const mouseUpHandlerWithClickPrevention = (e) => {
+                    if (!isDown) return; // Ensure it was actually down
+
+                    isDown = false;
+                    row.classList.remove('dragging');
+                    // Remove global listeners
+                    window.removeEventListener('mousemove', mouseMoveHandler);
+                    window.removeEventListener('mouseup', mouseUpHandlerWithClickPrevention);
+
+                    // Cancel the animation frame loop
+                    if (animationFrameId) {
+                       cancelAnimationFrame(animationFrameId);
+                       animationFrameId = null;
+                    }
+
+                    // Calculate the total distance dragged from the start of the drag
+                    const draggedDistance = Math.abs(e.pageX - startX);
+
+                    if (draggedDistance > minDragDistance) {
+                         // If it was a significant drag, set the flag to prevent the subsequent click
+                         wasDragged = true;
+                         console.log(`CW: Detected drag of ${draggedDistance}px. Setting wasDragged = true.`);
+                         // Add a short timeout to reset the flag, just in case the click listener doesn't catch it
+                         setTimeout(() => {
+                             wasDragged = false;
+                             console.log("CW: wasDragged reset by timeout.");
+                         }, 100); // A small delay (e.g., 100ms) should be enough
+                    } else {
+                         // If it wasn't a significant drag, allow clicks
+                         wasDragged = false;
+                    }
+                 };
+
+                 const tick = () => {
+                     if (!isDown) return; // Stop the loop if dragging is finished
+
+                     // Calculate the difference between the current mouse position and the start position
+                     // This delta determines the scroll amount
+                     const mouseDelta = lastX - startX;
+
+                     // Calculate the target scroll position
+                     // In RTL, dragging right (positive mouseDelta) should generally *decrease* scrollLeft (move content left).
+                     // Dragging left (negative mouseDelta) should generally *increase* scrollLeft (move content right).
+                     // The standard formula `initialScrollLeft - mouseDelta` works because mouseDelta is positive when dragging right.
+                     // In RTL, increasing scrollLeft usually moves the visible area right relative to the content's start.
+                     // Let's re-verify RTL scroll behavior... Browsers are inconsistent. However, the common pattern for drag-to-scroll
+                     // is `element.scrollLeft -= deltaX` where `deltaX` is the change in mouse position between frames.
+                     // Let's use the difference between the *current* mouse position and the *last* recorded mouse position (`lastX` vs the actual mouse position *now*).
+                     // But we already have `lastX` updated by `mousemove`. Let's calculate scroll amount based on *that* delta since the last tick.
+
+                     // Let's refine tick to use delta since last tick rather than total delta
+                     // This requires tracking scroll position and last mouse position *within* the tick.
+
+                     // Alternative (and more common) simple rAF approach: calculate the scroll amount
+                     // needed based on the delta between current mouse position and the position
+                     // where scrolling started (startX).
+                     // The amount to scroll is `mouseDelta`.
+                     // The new scrollLeft position should be `initialScrollLeft - mouseDelta`.
+                     // This directly maps mouse position to scroll position, smoothed by rAF.
+
+                      const targetScrollLeft = initialScrollLeft - mouseDelta;
+
+                     // Set the scroll position. requestAnimationFrame ensures this happens efficiently.
+                     row.scrollLeft = targetScrollLeft;
+
+                     // Request the next frame as long as dragging is active
+                     animationFrameId = requestAnimationFrame(tick);
+                 };
+
 
                 row.addEventListener('mousedown', (e) => {
                      // Only start dragging if the left mouse button is pressed (button 0)
@@ -644,122 +740,63 @@
 
                     isDown = true;
                     row.classList.add('dragging'); // Add class for cursor feedback
-                    startX = e.pageX - row.offsetLeft; // Get mouse starting position relative to the row
-                    scrollLeft = row.scrollLeft; // Get the current scroll position
+                    startX = e.pageX; // Get mouse starting position on the page
+                    initialScrollLeft = row.scrollLeft; // Get the current scroll position of the element
+                    lastX = e.pageX; // Initialize lastX with the start position
 
-                    // Add a listener to the *window* for mouseup and mousemove *while* dragging
-                    // This prevents issues if the mouse leaves the row while dragging
+                    // Reset the dragged flag
+                    wasDragged = false;
+
+                    // Add listeners to the *window* to track mouse movement and release anywhere
                     window.addEventListener('mousemove', mouseMoveHandler);
-                    window.addEventListener('mouseup', mouseUpHandler);
+                    window.addEventListener('mouseup', mouseUpHandlerWithClickPrevention);
+
+                    // Start the requestAnimationFrame loop
+                    animationFrameId = requestAnimationFrame(tick);
                 });
-
-                const mouseMoveHandler = (e) => {
-                    if (!isDown) return; // Stop if not dragging
-                    e.preventDefault(); // Prevent text selection, image dragging, etc.
-
-                    const x = e.pageX - row.offsetLeft; // Get current mouse position relative to the row
-                    const walk = (x - startX); // Calculate how far the mouse moved
-
-                    // Update the scroll position. Scroll left is decreased when dragging right (positive walk).
-                    // In RTL, dragging right scrolls left. So, `scrollLeft - walk` for LTR would be `scrollLeft + walk` for RTL.
-                    // However, the browser handles RTL scrolling direction automatically.
-                    // `scrollLeft` is the distance from the right edge in RTL.
-                    //Dragging right increases `x`, so `x - startX` is positive.
-                    //To scroll right (increase `scrollLeft` from the right edge), we need to add the walk.
-                    //BUT, the browser's `scrollLeft` in RTL *is* the distance from the left edge, despite `dir="rtl"`.
-                    //So dragging right (positive `walk`) should increase `scrollLeft`. The calculation is `scrollLeft - walk` which is standard LTR.
-                    //Let's test this... Yes, `scrollLeft - walk` is correct for both LTR and RTL browsers.
-                    row.scrollLeft = scrollLeft - walk;
-                };
-
-                 const mouseUpHandler = () => {
-                    isDown = false;
-                    row.classList.remove('dragging'); // Remove class
-                    // Remove the global listeners once dragging stops
-                    window.removeEventListener('mousemove', mouseMoveHandler);
-                    window.removeEventListener('mouseup', mouseUpHandler);
-                 };
 
                 // Add a listener to the *row* for mouseleave to handle cases where the mouse leaves the element
-                 // This one is separate from the global handlers and just resets the state if the mouse leaves *without* mouseup
-                row.addEventListener('mouseleave', () => {
-                     // If mouseleave happens *while* dragging, stop dragging but *keep* the global handlers
-                     // until mouseup occurs, or simply stop dragging and remove global handlers immediately.
-                     // Removing global handlers immediately is simpler and generally fine.
-                    if (isDown) {
-                       isDown = false;
-                       row.classList.remove('dragging');
-                       window.removeEventListener('mousemove', mouseMoveHandler);
-                       window.removeEventListener('mouseup', mouseUpHandler);
-                       console.log("Dragging stopped due to mouseleave"); // Debug log
-                    }
-                });
+                // This ensures dragging stops cleanly if the mouse exits the container without releasing.
+                row.addEventListener('mouseleave', (e) => {
+                     // Check if dragging was active before mouseleave
+                     if (isDown) {
+                          // Manually stop dragging and clean up
+                          isDown = false;
+                          row.classList.remove('dragging');
+                          window.removeEventListener('mousemove', mouseMoveHandler);
+                          window.removeEventListener('mouseup', mouseUpHandlerWithClickPrevention);
+                          if (animationFrameId) {
+                             cancelAnimationFrame(animationFrameId);
+                             animationFrameId = null;
+                          }
 
-                 // Important: Add a click handler to prevent item clicks immediately after dragging
-                 // This listens for clicks on the row itself (or its children).
-                 // We check if the row was marked as 'dragging' immediately before the click.
-                 // We add a small delay to allow the click event to finish propagating after mouseup.
-                 row.addEventListener('click', (e) => {
-                    // Check if the row was dragging recently. A common threshold is 100-300ms.
-                    // Instead of a direct class check which might be removed too quickly,
-                    // we can check the mouse movement distance. If it moved significantly, it was a drag.
-                    // A simpler approach is to temporarily prevent clicks after mouseup.
-                    // Let's add a small timeout after mouseup during which clicks are ignored on the row/items.
-                    // This requires a flag managed by mouseup. Let's refine the mouseup handler.
-                 }, true); // Use capture phase to intercept clicks early
-
-
-                 // Refined mouseUpHandler to manage click prevention
-                 const mouseUpHandlerWithClickPrevention = (e) => {
-                     if (!isDown) return; // Ensure it was actually down
-
-                     isDown = false;
-                     row.classList.remove('dragging');
-                     window.removeEventListener('mousemove', mouseMoveHandler);
-                     window.removeEventListener('mouseup', mouseUpHandlerWithClickPrevention); // Note the handler name change
-
-                     // Check if a significant drag occurred by comparing the startX and current mouse position
-                     const draggedDistance = Math.abs(e.pageX - (startX + row.offsetLeft)); // Compare current pageX with the pageX where the drag started
-                     const minDragDistance = 5; // Minimum pixel distance to consider it a drag vs a click attempt
-
-                     if (draggedDistance > minDragDistance) {
-                          // If it was a drag, prevent the default action (which might be the link click)
-                          console.log(`CW: Detected drag of ${draggedDistance}px. Preventing click.`);
-                           // Add a short timeout to prevent the *next* potential click event from firing on an item
-                           // This timeout prevents accidental navigation when the user releases the mouse after dragging.
-                          let preventClickTimeout = setTimeout(() => {
-                              row.dataset.preventClick = 'false';
-                              console.log("CW: Click prevention timeout ended.");
-                          }, 50); // Small delay (e.g., 50ms)
-
-                          // Set a flag on the element that the click listener can check
-                           row.dataset.preventClick = 'true';
-                     } else {
-                          // If it wasn't a drag (just a click), ensure the flag is off
-                           row.dataset.preventClick = 'false';
+                           // Determine if it was a drag based on movement *before* mouseleave
+                          const draggedDistance = Math.abs(e.pageX - startX);
+                          if (draggedDistance > minDragDistance) {
+                              wasDragged = true;
+                              console.log(`CW: Detected drag (${draggedDistance}px) on mouseleave. Setting wasDragged = true.`);
+                              // Timeout to reset flag
+                              setTimeout(() => { wasDragged = false; console.log("CW: wasDragged reset by mouseleave timeout."); }, 100);
+                           } else {
+                              wasDragged = false;
+                           }
+                          console.log("Dragging stopped due to mouseleave"); // Debug log
                      }
-                 };
-
-                 // Re-attach the mouseup listener using the refined handler
-                 row.removeEventListener('mouseup', mouseUpHandler); // Remove the old one if it exists
-                 window.addEventListener('mouseup', mouseUpHandlerWithClickPrevention); // Add the new one
+                });
 
 
                  // Add a click handler to intercept clicks on children (item links)
-                 // This handler checks the preventClick flag set by the mouseup handler.
+                 // Use capture phase (true) to catch the event before it bubbles down to the specific link/button
                  row.addEventListener('click', (e) => {
-                     // Check the flag set by the mouseup handler
-                     if (row.dataset.preventClick === 'true') {
+                      // Check the flag set by the mouseup/mouseleave handler
+                     if (wasDragged) {
                          console.log("CW: Preventing click because it was a drag.");
-                         e.preventDefault(); // Prevent navigation
+                         e.preventDefault(); // Prevent navigation/default action
                          e.stopPropagation(); // Stop event propagation
+                         wasDragged = false; // Reset the flag immediately after preventing
                      }
-                      // Reset the flag immediately after checking, just in case
-                      // (though the timeout in mouseUpHandler also handles this)
-                     row.dataset.preventClick = 'false'; // Ensure it's false for subsequent clicks
-                 }, true); // Use capture phase to catch clicks on children links before they navigate
-
-
+                      // If wasDragged is false, the click proceeds normally
+                 }, true); // Use capture phase
             }); // End forEach row
 
         }); // End DOMContentLoaded
