@@ -1,4 +1,3 @@
-# main.py
 import datetime
 import traceback
 import os
@@ -433,54 +432,6 @@ def api_get_omdb_details():
         error_message = details.get('Error', 'Details not found or API error') if isinstance(details, dict) else 'Details not found or API error'
         return jsonify({"Error": error_message}), 404
 
-# --- API Route for fetching trailer (NEW - Placeholder) ---
-# NOTE: The logic inside this route currently does NOT fetch a real trailer URL.
-# It just returns 'not found', which will prevent the 404 but requires
-# actual implementation to work correctly.
-@app.route('/api/get_trailer/<imdb_id>')
-def api_get_trailer(imdb_id):
-    """
-    Fetches a trailer URL for a given IMDb ID.
-    NOTE: Requires integration with a service that provides trailer URLs (e.g., TMDB, YouTube Data API).
-    OMDB does NOT provide trailer URLs directly.
-    """
-    logging.info(f"Received request for trailer for IMDb ID: {imdb_id}")
-
-    # --- Placeholder Logic ---
-    # This is where you would add logic to look up the trailer URL.
-    # OMDB doesn't provide trailers. You would need to:
-    # 1. Use another API (like TMDB) with the IMDb ID.
-    # 2. Search YouTube or a dedicated trailer source.
-    # 3. Store trailer URLs in your Firebase data (e.g., under the movie/series/episode entry).
-
-    # Example (If you added 'trailer_url' to your Firebase movie data):
-    # movie_data = load_movie_details(imdb_id) # Assuming it's a movie
-    # if movie_data and movie_data.get('trailer_url'):
-    #     logging.info(f"Returning trailer URL from Firebase for {imdb_id}")
-    #     return jsonify({"trailer_url": movie_data['trailer_url']}), 200
-    # else:
-    #     logging.info(f"No trailer_url found in Firebase for {imdb_id}. Returning 404.")
-    #     # Return 404 Not Found, matching the frontend's expectation for 'not found'
-    #     return jsonify({"error": "Trailer not found in Firebase"}), 404
-
-
-    # --- CURRENT PLACEHOLDER RETURNING NOT FOUND ---
-    # This matches the observed behavior (no trailer found) without causing a 500.
-    logging.info(f"Trailer fetching logic not implemented. Returning 'not found' for {imdb_id}.")
-    # The frontend JS checks for data.trailer_url or data.error.
-    # Returning 404 here directly signals "Not Found" to the frontend fetch.
-    # Change this to return 200 with {"error": "Trailer not found"} if you prefer the JS to show the specific message
-    # return jsonify({"error": "Trailer fetching not implemented"}), 404 # Return 404 Not Found
-    # Let's return 200 with an error message as the JS handles data.error specifically
-    # IMPORTANT: Your JS handles `data.error`. Returning 200 with `{"error": ...}` will trigger the `else if (data && data.error)` block in your JS, displaying the message. Returning 404 will trigger the `.catch` or the initial `if (!response.ok)` block. Returning 200 with the error object is probably closer to what the JS expects for a "trailer not found *from the API*" scenario.
-    # Returning 404 here seems more semantically correct for "resource (trailer) not found". Let's stick to returning 404 with a JSON error message.
-    # return jsonify({"error": "Trailer fetching not implemented"}), 404 # Return 404 Not Found
-
-    # Re-reading the user's *current* JS: It expects either `data.trailer_url` for success OR `data.error` for a specific error message from the API. If `!response.ok`, it shows a generic HTTP error.
-    # So, if the API *responds* but says "not found", `{"error": "Trailer not found"}` is expected with a 200 status. If there's an HTTP error (like the route doesn't exist, or permission error), `!response.ok` handles it. If the fetch *fails* entirely (network), `.catch` handles it.
-    # Therefore, returning 200 with `{"error": ...}` is the correct way to signal "found the item, but no trailer linked".
-    return jsonify({"error": "Trailer not available for this item."}), 200
-
 
 # --- Authentication Routes ---
 @app.route('/auth/google')
@@ -883,19 +834,18 @@ def add_content():
                  episode_title_form = request.form.get('episode_title', '').strip() # Get title from form (user override)
                  season_number_str = request.form.get('episode_season', '').strip()
                  episode_number_str = request.form.get('episode_number', '').strip()
-                 video_url = request.form.get('episode_video_url', '').strip() # RE-INTRODUCED VIDEO URL INPUT
+                 # video_url = request.form.get('episode_video_url', '').strip() # REMOVED INPUT
 
                  # Determine the series IMDb ID
                  series_imdb_id = manual_series_imdb_id if series_imdb_id_select == 'manual' else series_imdb_id_select
 
-                 # Validate required fields for episode (excluding episode_imdb_id)
-                 # Title is now optional from form, but we need season, episode, series ID, and video_url
-                 if not series_imdb_id or not season_number_str or not episode_number_str or not video_url:
+                 # Validate required fields for episode (excluding episode_imdb_id and video_url)
+                 # Title is now optional from form, but we need season, episode, and series ID
+                 if not series_imdb_id or not season_number_str or not episode_number_str:
                       missing = []
                       if not series_imdb_id: missing.append('סדרה')
                       if not season_number_str: missing.append('מספר עונה')
                       if not episode_number_str: missing.append('מספר פרק')
-                      if not video_url: missing.append('כתובת וידאו (URL)') # Added video_url back to validation
                       flash(f'שגיאה: שדות חובה חסרים: {", ".join(missing)}.', 'error')
                       return redirect(url_for('add_content'))
 
@@ -916,7 +866,6 @@ def add_content():
                      return redirect(url_for('add_content'))
 
                  # Fetch episode details from OMDB using the Series ID, Season, and Episode numbers
-                 # This fetch is primarily to get the official episode IMDb ID and Title if not provided
                  episode_details_from_omdb = get_omdb_details_api(series_imdb_id, season=season_number, episode=episode_number)
 
                  # Determine the episode's IMDb ID and Title to save
@@ -945,41 +894,21 @@ def add_content():
                      episode_imdb_id_to_save = f'tt_fallback_{series_imdb_id}_s{season_number}e{episode_number}'
                      logging.error(f"Critical: No episode IMDb ID could be determined for {series_imdb_id} S{season_number}E{episode_number}. Using double-fallback placeholder.")
 
-                 # Construct episode data
+                 # Construct episode data (without video_url from form, but setting it to empty)
                  episode_data = {
                      'episode_imdb_id': episode_imdb_id_to_save, # Store the fetched/placeholder episode IMDb ID
                      'title': episode_title_to_save, # Use user's title or fetched title
-                     'video_url': video_url, # Use the provided video URL
+                     'video_url': '', # Placeholder: Video URL must be added separately
                      'episode_number': episode_number,
                      'season_number': season_number
                  }
 
                  # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}
-                 # Use update instead of set to preserve other fields if they exist
+                 # Use update instead of set to preserve existing video_url if it was added manually before
                  ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}')
-                 # Check if the series/season path exists before attempting to update episode
-                 # This prevents errors if someone tries to add an episode to a non-existent series or season node
-                 series_ref = db.reference(f'/Series/{series_imdb_id}')
-                 series_exists = series_ref.get() is not None
-
-                 if series_exists:
-                      season_ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}')
-                      season_exists = season_ref.get() is not None
-
-                      if season_exists:
-                           # Use .set() to overwrite existing episode data completely or create it
-                           # Or use .update() to only change specified fields (like video_url).
-                           # .update() is safer if you might add more fields later.
-                           # Let's use .update() to be safe.
-                           ref.update(episode_data)
-                           logging.info(f"Episode S{season_number}E{episode_number} (IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_data['title']}') added/updated in series {series_imdb_id}.")
-                           flash(f'פרק "{episode_data["title"]}" (עונה {season_number}, פרק {episode_number}) נוסף/עודכן בהצלחה לסדרה!', 'success')
-                      else:
-                           flash(f'שגיאה: עונה {season_number} לא קיימת עבור סדרה עם IMDb ID {series_imdb_id}. הוסף את הסדרה והעונות תחילה.', 'error')
-                           logging.warning(f"Attempted to add episode to non-existent season {season_number} for series {series_imdb_id}.")
-                 else:
-                      flash(f'שגיאה: סדרה עם IMDb ID {series_imdb_id} לא קיימת. הוסף את הסדרה תחילה.', 'error')
-                      logging.warning(f"Attempted to add episode to non-existent series {series_imdb_id}.")
+                 ref.update(episode_data)
+                 logging.info(f"Episode S{season_number}E{episode_number} (IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_data['title']}') added/updated in series {series_imdb_id}.")
+                 flash(f'פרק "{episode_data["title"]}" (עונה {season_number}, פרק {episode_number}) נוסף/עודכן בהצלחה לסדרה!', 'success')
 
 
             else:
@@ -1096,6 +1025,7 @@ keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_UR
 
 # התחלת ה-thread
 keep_alive_thread.start()
+
 
 
 # --- Error Handlers ---
