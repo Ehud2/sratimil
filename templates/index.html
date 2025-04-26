@@ -20,7 +20,8 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
+                {# Replaced base64 with requested placeholder #}
+                <img src="imageurlhere" alt="Default profile picture">
             {% endif %}
         </div>
         <p>טוען סינמה פריים...</p>
@@ -51,8 +52,8 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Reverting to a default placeholder image URL that exists #}
-                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAABR1BMVEX////lQzU0o1NCgO/2twQ9fu9rl/FynvPt8v0xee72tADlQTMwolDkPS7kOyv2uADkNCL98O8ln0kpoEwanUPkNibkMR3nVEjp9ez3zMntioPrenL+9vX++vr74uD73Zj3+v7f7+P519T2xMHwmZP40c7ukYroYFXnUUXzsq3xpaDkOzb98dj/+/HA0vn74auRsvX868VVjPDM2/rK5dGDw5NjtXmn1LJXsG/B4MlMrGZCfffi8eX1u7fsgXrpaF/jKA7re3PyqZXqb2XujDvyoiv1syHpYz3sf0D3wDTwlzPnVT350XTrc0H63Z7nWTD4y1z++ej3w0mnwvf4zm2auPbe5/yFtFzJvUyeul5psF3WvUGVyqKuulXjvTSz0J2ixd1TnrRKo4xMjdtPl79Jn5lGpnFJiORhs3ZKkslJm6Y+pGd8quAEW6SpAAAHw0lEQVR4nO2b2X/bRBCAZUVJG12WddnO4cZOYjtp0yP1FZPELYVCIUAPChTcQjlKKPz/z8i3LUurlbUrrf2b76V9SKX9MrMzu2OX4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAk0yhlM/v7+fzh4XMbtKLIcpO4eL4siLZDlof5y+PlOz2wUUpk/TaopPZL3ckW7MUSUrNIEmKatlKZ+uikPQaI1A6qEiaqrjcZjwVVVOz5VLSK12IUtlZvDtynpaS84NLJ5k5ztoqht3YUrWzx0u0KUuXihVCbyhpKZdLsiUPO1aY8E0H0tpegmQtdWxUaQlwVB5tMx7HwratLKo3QNG2GN6PuweqGs2vF0dLOkpaxI98NXx98XTUKkym6s6WTcSvh2IzGMbDrEXKL9UL4zZru/FYi1hh3KgpphrHzhONWIaOkB4xlKmFavQS6oFdTlpsxKFCOENHaNtsXJT3yWfoCPtx0nI9jsg1CTdqZSdpO46uYGfVBVc+glkWysz+qkewRK+KqhUWTm2ZFDVBpcpCBHcroRu9NCTo59QsC4LcVqjLhKJamnP/r2az2api25aK+PWwkaLchY1tJ6ma3SkfHWYyO30ymcOjcsXWfAZWSpYJwQxuGXX0UuW8R+XfyW9JmsfUio09yHGYm1DSUluIi17+8dxklZE96Nx48fyqRwHrLbimV4ykKFfAmTlJlnSBcS7JlKcmkEqVDUGug5GjinqA+bRCZ3R0YGUP4tRRSeuEGAkeDS7RrKQotxt8mJHs41CPLFRUhlKUOw7s9YoUelL2RFNSrAhmAo9dCx1KyswIcp8GhdB6stBzmRE8SX92GxlEi5ER2cLcEtOfVxGK1nbSK4yKIAjpp1/c9t2DnaQXGJV7Yk9R+NInUxUmxiuReCb0SX/lqSipTH70F4Y7ojBUfPr1fKZK2n7SC4zM1cjQydRv5hStraTXF5kTYUJ6rm1IqaXfhNwDUZh2dLUN+zDp9UXnasbQ1TZUJj4qikhamCWdnrSNFaij7iR1tQ2Vmc9sI3Br3nDcNlYihKN271IctA31MunVEeDEI4TjtmGvQgg9tuG4bSjZpFdHgm/9DJ3N+N1F0qsjwXNfQ2czniS9OhJ4Fpohz/EecXMjIjdoCr5w9/spxFuYhpvr0Vjbo2h4xz9JBfEOruFaNNZvUjT0LaU9MLdhZMPNHygaep1oRrzEfEZ0w7sUDa/8DcWr2AxfUTT8HmF4Ly7D9fsUDRHtUHwQmyHNdvHSfxvillLGDRENX3wRm+EGPcETlCHumS264ekeGC5u6C8oiLgPYduQiRiugWEUmKilVA3Z6Ic0DZ8jDOM709A0ZONcSrHjs3G3oGrIxP2Q6rmUiTs+1dsTE3OazdcUDcnM2qIa0rzjE5mXRjZ8SNMQdclP421EvHkpypDmrA1RTEXhxzM8w40bGKCCSHNe6l9MxXdt45rce276+62fknuNBz6fHwriT7zMmzli73nov1mptkPOp9SIwhvewagTe81rf0OqzYLz3ojis5/5PjKxIG74lxq6pdRzI4q/8EP0LqG3oDrKJtVCw81/n0YQ3/JjSAXxFapnknmFP64LlNMkJoLEdiLCj+qptM9smjpNgp/GLJJ4x11UktL85KnPyXSaOk1iFpkn8Y5TxJFmc4/EG5BMp+kb3g2JYoMKIdXr75Bxmo6bxKxiLeoL9pAhpHqxGPLM3SRm8zRyPb2PKqTUe0WP4beG3noKOoqtaI9HHNjiSVKu//8tZpuEK08bUR6+h/CLKUl7JzfxnVM1/RWjdEXEeW2N8jdNJpwI7iZBTvEGcgJA+14x5lcdbbi4IrLK0L7eT5ELEFx4L6IjSPvyO003KIi8wYc/v+1tBAyp6J/YJqAKzQBZb4Z85sM1ZJGJNYQcd2YGJipv1kP1/t8+CRCMNYQcd20EKxo8fhhrbfN9gGKsIeS4cwxDp+C08U6pxYYp8+bvqANp3CHkuGZgsekhm63gKWqtrvd/X/q/f3yCCGE8B7YpWoHFZujYbqL2Y67Z0kf5IMt/+ivG1gsnS8MoNoN163qr6d07io6ePvWbks2//ArqJvXpxTw49XQsafL1Zi03DmYuVzzrNmRTdyeC+eFvz6ZI9cN7X+pYW3Ekaeimybdb141Gq9XmdVM3PNPc4P/xylTaU1If2lgFdcZzCOpH9I/zbSOJHO2RCz7aLIL54dSVqTG3wimKYfIUH6PtahsxXQu9CFFtwiAb76cVE9qEA5p0FJ0DzqRtxDS6iFtxcsBJqspQVxwdcDbjmlwkoGh+XF9nQdApN3MnE0LozgGHBUHncoBs4REwjP+SdhtyHv50g4UZdhJCkQaFzSibeN/QiYkm8c24yLiOKrU22SOc3iD39RxS1E1yYZRZ2oITajypMOrt86RlfOgaJIqqITMZwAHnjcipKoccJcdO7TqSo2w2GCuhHtSu9UVz1dCvI3/TIRaKdXmB9uj8mzr78RuRa7bNcIE0AkbHDFLsyqb3xNAjeqbcXZ7wTVHstnifuehYTjZM3m8mvhTkzurXvKl7eMr9IXG70a0tWXJ60Bvh11u82UfXB38ajltzBeRmyBWLtdrZWa1WO18xMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAQ/wNhUPDo3tE+ZAAAAABJRU5ErkJggg==" alt="Sign in with Google" loading="lazy">
+                         {# Replaced base64 with requested placeholder #}
+                         <img src="imageurlhere" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -75,10 +76,38 @@
     {% endwith %}
 
     <main class="container main-content">
-        <div class="page-greeting">
-            <h1>{{ greeting }}!</h1>
-            <p>מה נראה היום?</p>
+        <div class="top-section-flex"> {# Flex container for greeting and trailer #}
+             <div class="page-greeting">
+                 <h1>{{ greeting }}!</h1>
+                 <p>מה נראה היום?</p>
+             </div>
+
+             {# --- Random Trailer Section --- #}
+             <div id="trailer-section">
+                 <div class="trailer-loading" id="trailerLoading">טוען טריילר מומלץ...</div>
+                 <div class="trailer-error" id="trailerError" style="display: none;">שגיאה בטעינת הטריילר המומלץ.</div>
+                 <div class="trailer-content" id="trailerContent" style="display: none;">
+                      <div class="trailer-header">
+                           <h3 id="trailerTitle"></h3>
+                           <div class="trailer-nav-buttons">
+                               <button id="prevTrailerBtn" aria-label="טריילר קודם" disabled><i class="fas fa-chevron-left"></i></button>
+                               <button id="nextTrailerBtn" aria-label="טריילר הבא"><i class="fas fa-chevron-right"></i></button>
+                           </div>
+                      </div>
+                      <div id="trailer-player-container">
+                         {# YouTube player iframe will be inserted here by JS #}
+                         <div id="trailer-player"></div>
+                      </div>
+                      <div class="trailer-action-buttons">
+                          <button id="muteButton" aria-label="השתק"><i class="fas fa-volume-up"></i></button>
+                          <button id="openMovieButton" aria-label="פתח באתר"><i class="fas fa-external-link-alt"></i> פתח באתר</button>
+                      </div>
+                 </div>
+             </div>
+             {# --- End Random Trailer Section --- #}
+
         </div>
+
 
         {# The "Continue Watching" section will be added here by JavaScript if applicable #}
         <section id="continueWatchingSection" class="category-section" style="display: none;">
@@ -136,6 +165,9 @@
             <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
         </div>
     </footer>
+
+    {# Load the YouTube Iframe Player API asynchronously #}
+    <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
         // JavaScript to hide the loading spinner once the page is loaded
@@ -341,7 +373,7 @@
                                     });
                                 } else {
                                     // The existing item in the map is already the latest or equal. Do nothing.
-                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E${episodeNum}.`); // Debug log
+                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E{episodeNum}.`); // Debug log
                                 }
                             } else {
                                 // No entry for this series yet, add this one (converted to canonical format)
@@ -549,6 +581,308 @@
 
 
         }); // End DOMContentLoaded
+
+        // --- Random Trailer Functionality (Client-Side) ---
+
+        let player; // Global variable for the YouTube player
+        let trailerHistory = []; // Array to store trailer data for navigation
+        let currentHistoryIndex = -1; // Index of the currently playing trailer in history
+
+        const trailerSection = document.getElementById('trailer-section');
+        const trailerContentDiv = document.getElementById('trailerContent');
+        const trailerLoadingDiv = document.getElementById('trailerLoading');
+        const trailerErrorDiv = document.getElementById('trailerError');
+        const trailerTitleElement = document.getElementById('trailerTitle');
+        const prevTrailerBtn = document.getElementById('prevTrailerBtn');
+        const nextTrailerBtn = document.getElementById('nextTrailerBtn');
+        const muteButton = document.getElementById('muteButton');
+        const openMovieButton = document.getElementById('openMovieButton');
+
+        let isMuted = false; // Track mute state
+
+        // This function is called automatically by the YouTube Iframe Player API when it's ready
+        function onYouTubeIframeAPIReady() {
+            console.log("YouTube Iframe API is ready.");
+            // Initiate loading the first trailer
+            loadTrailer(true); // Load the initial random trailer
+        }
+
+        // Function to load a specific trailer by its data object
+        function loadTrailerData(trailerData) {
+            if (!trailerData || !trailerData.trailer_url) {
+                console.error("Invalid trailer data provided:", trailerData);
+                 showTrailerError("שגיאה: נתוני טריילר חסרים או לא תקינים.");
+                return;
+            }
+
+            const videoIdMatch = trailerData.trailer_url.match(/(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+            const videoId = videoIdMatch ? videoIdMatch[1] : null;
+
+            if (!videoId) {
+                console.error("Could not extract YouTube video ID from URL:", trailerData.trailer_url);
+                 showTrailerError("שגיאה: לא ניתן להפעיל את הטריילר (פורמט קישור לא תקין).");
+                return;
+            }
+
+            // Update UI elements
+            trailerTitleElement.textContent = trailerData.title || "טריילר מומלץ";
+            openMovieButton.onclick = () => {
+                 // Construct the movie URL using the imdbID from the trailer data
+                 window.location.href = `{{ url_for('movie_details', imdb_id='') }}${trailerData.imdbID}`;
+            };
+
+
+            if (!player) {
+                // Create the YouTube player for the first time
+                player = new YT.Player('trailer-player', {
+                    videoId: videoId,
+                    playerVars: {
+                        'autoplay': 1, // Auto-play the video
+                        'controls': 0, // Hide video controls
+                        'disablekb': 1, // Disable keyboard controls
+                        'modestbranding': 1, // Use modest branding
+                        'rel': 0, // Do not show related videos
+                        'showinfo': 0, // Hide video title and uploader info
+                        'iv_load_policy': 3, // Hide video annotations
+                        'enablejsapi': 1, // Enable JS API control
+                        'origin': window.location.origin // Required for some APIs
+                        // 'mute': 1 // Can optionally start muted here, but handling with muteButton state is better
+                    },
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange,
+                        'onError': onPlayerError
+                    }
+                });
+                console.log("YouTube player initialized.");
+
+            } else {
+                // Player already exists, load the new video
+                player.loadVideoById(videoId);
+                console.log(`Loading new video: ${videoId}`);
+            }
+
+             // After loading/creating player, ensure mute state is applied
+             if (isMuted) {
+                 player.mute();
+             } else {
+                 player.unMute();
+             }
+
+             // Show content, hide loading/error
+            trailerLoadingDiv.style.display = 'none';
+            trailerErrorDiv.style.display = 'none';
+            trailerContentDiv.style.display = 'block';
+
+             updateNavButtonStates(); // Update button states after loading
+
+        }
+
+        // Function to load the next/previous/initial trailer
+        async function loadTrailer(isInitial = false) {
+            showTrailerLoading(); // Show loading indicator
+
+            let trailerData = null;
+
+            if (isInitial || currentHistoryIndex === trailerHistory.length - 1) {
+                 // Load a NEW random trailer (initial load or after reaching end of history)
+                 console.log("Fetching new random trailer...");
+                 const excludeIds = trailerHistory.map(item => item.imdbID).join(','); // Exclude already seen IDs
+                 try {
+                     const response = await fetch(`/api/random_trailer?exclude_ids=${excludeIds}`);
+                     if (!response.ok) {
+                         const errorData = await response.json();
+                         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                     }
+                     const data = await response.json();
+                     if (data && data.imdbID && data.trailer_url) {
+                          trailerData = data;
+                          // Add to history and update index
+                          trailerHistory.push(trailerData);
+                          currentHistoryIndex = trailerHistory.length - 1;
+                          console.log(`Fetched and added trailer to history. New index: ${currentHistoryIndex}`);
+                     } else {
+                         throw new Error("Invalid data format from API.");
+                     }
+
+                 } catch (error) {
+                     console.error("Error fetching random trailer:", error);
+                     showTrailerError("אירעה שגיאה בטעינת הטריילר. נסה שוב מאוחר יותר.");
+                     trailerData = null; // Ensure trailerData is null on error
+                 }
+
+            } else {
+                 // Load trailer from history (next or previous)
+                 const nextIndex = currentHistoryIndex + 1;
+                 if (nextIndex >= 0 && nextIndex < trailerHistory.length) {
+                      currentHistoryIndex = nextIndex;
+                      trailerData = trailerHistory[currentHistoryIndex];
+                      console.log(`Loading trailer from history at index: ${currentHistoryIndex}`);
+                 } else {
+                      // This case should ideally not happen with correct button state management
+                      console.warn("Attempted to load trailer from invalid history index during 'next'.");
+                       showTrailerError("שגיאה פנימית בניווט טריילרים.");
+                       trailerData = null;
+                 }
+            }
+
+
+            if (trailerData) {
+                 loadTrailerData(trailerData); // Load the video into the player
+            } else {
+                // If no trailer data was successfully loaded (either fetch failed or history lookup failed)
+                 if (trailerHistory.length > 0) {
+                     // If history exists but loading the next one failed, maybe revert to the last valid one
+                      if (currentHistoryIndex < 0) currentHistoryIndex = 0; // Prevent negative index
+                     trailerData = trailerHistory[currentHistoryIndex]; // Try to load the current one from history
+                     console.warn("Failed to load requested trailer, attempting to revert to current history index:", currentHistoryIndex);
+                     if (trailerData) {
+                         loadTrailerData(trailerData);
+                     } else {
+                          showTrailerError("שגיאה בטעינת הטריילר. אין טריילרים בהיסטוריה זמינים.");
+                     }
+                 } else {
+                     // No history, and fetch failed. Error already shown.
+                      showTrailerError("אירעה שגיאה בטעינת הטריילר הראשון.");
+                 }
+            }
+        }
+
+        // Function to load the previous trailer from history
+         function loadPreviousTrailer() {
+             if (currentHistoryIndex > 0) {
+                  showTrailerLoading(); // Show loading indicator
+                  currentHistoryIndex--;
+                  const trailerData = trailerHistory[currentHistoryIndex];
+                  console.log(`Loading previous trailer from history at index: ${currentHistoryIndex}`);
+                  loadTrailerData(trailerData);
+             }
+             // Button should be disabled if currentHistoryIndex is 0 or less
+         }
+
+
+        // Function to update the state of the navigation buttons
+        function updateNavButtonStates() {
+             // Previous button is enabled only if there's an item before the current one in history
+             prevTrailerBtn.disabled = currentHistoryIndex <= 0;
+
+             // Next button is always enabled (either loads from history or fetches new random)
+             nextTrailerBtn.disabled = false;
+        }
+
+        // Functions to manage loading/error states
+        function showTrailerLoading() {
+             trailerLoadingDiv.style.display = 'block';
+             trailerErrorDiv.style.display = 'none';
+             trailerContentDiv.style.display = 'none';
+        }
+
+        function showTrailerError(message = "שגיאה בטעינת טריילר.") {
+             trailerLoadingDiv.style.display = 'none';
+             trailerErrorDiv.style.display = 'block';
+             trailerErrorDiv.textContent = message; // Display the specific error message
+             trailerContentDiv.style.display = 'none';
+
+             // Hide the player itself within its container on error
+             const playerElement = document.getElementById('trailer-player');
+             if (playerElement) {
+                  playerElement.style.display = 'none';
+             }
+        }
+
+        function showTrailerContent() {
+             trailerLoadingDiv.style.display = 'none';
+             trailerErrorDiv.style.display = 'none';
+             trailerContentDiv.style.display = 'block';
+
+             // Show the player itself if content is shown
+              const playerElement = document.getElementById('trailer-player');
+             if (playerElement) {
+                  playerElement.style.display = ''; // Reset display
+             }
+        }
+
+
+        // Event handlers for the YouTube player
+        function onPlayerReady(event) {
+            console.log("YouTube player is ready.");
+            // Optional: Mute/Unmute logic can go here on initial load if not using playerVars mute
+            if (isMuted) {
+                 event.target.mute();
+            } else {
+                 event.target.unMute();
+            }
+
+             showTrailerContent(); // Show the content once player is ready
+        }
+
+        function onPlayerStateChange(event) {
+            // State 0: Ended
+            // State 1: Playing
+            // State 2: Paused
+            // State 3: Buffering
+            // State 5: Cued
+            console.log("Player state changed:", event.data);
+            if (event.data === YT.PlayerState.ENDED) {
+                console.log("Trailer ended, loading next.");
+                loadTrailer(); // Load the next trailer when the current one ends
+            }
+             // Note: Default player controls are hidden, so user cannot manually seek/pause/etc.
+             // The play/pause state changes based on auto-play and buffering/ending.
+        }
+
+        function onPlayerError(event) {
+             console.error("YouTube player error:", event.data);
+             let errorMessage = "אירעה שגיאת נגן (קוד: " + event.data + ").";
+             switch (event.data) {
+                 case 2: errorMessage = "בקשת וידאו לא תקינה או פרמטרים שגויים."; break;
+                 case 5: errorMessage = "אירעה שגיאה בפלייבק."; break;
+                 case 100: errorMessage = "הסרטון לא נמצא."; break;
+                 case 101: // Fallthrough
+                 case 150: errorMessage = "פלייבק אסור עבור סרטון זה."; break;
+                 // Add more cases if specific handling is needed
+             }
+            showTrailerError("שגיאת נגן: " + errorMessage);
+             // Attempt to load the next trailer after a short delay on error?
+             // setTimeout(() => loadTrailer(), 3000); // Optional: auto-skip on error
+        }
+
+
+        // Add event listeners to the custom buttons
+        muteButton.addEventListener('click', () => {
+            if (!player) return; // Do nothing if player isn't ready
+
+            if (isMuted) {
+                player.unMute();
+                muteButton.innerHTML = '<i class="fas fa-volume-up"></i>'; // Change icon to volume up
+                muteButton.setAttribute('aria-label', 'השתק');
+                isMuted = false;
+                console.log("Player unmuted.");
+            } else {
+                player.mute();
+                 muteButton.innerHTML = '<i class="fas fa-volume-mute"></i>'; // Change icon to volume mute
+                 muteButton.setAttribute('aria-label', 'הפעל קול');
+                isMuted = true;
+                console.log("Player muted.");
+            }
+        });
+
+        nextTrailerBtn.addEventListener('click', () => {
+             loadTrailer(); // This function handles loading from history or fetching new
+        });
+
+        prevTrailerBtn.addEventListener('click', () => {
+            loadPreviousTrailer(); // Loads from history only
+        });
+
+
+        // Initial state for buttons
+        updateNavButtonStates();
+
+        // Optional: Clear the history if the user logs out or navigates significantly?
+        // For this implementation, history is just for the current page session.
+        // If you wanted persistence, you'd need to save/load trailerHistory from localStorage/sessionStorage.
+
 
         {# If you have a separate static/js/script.js, link it here AFTER this script block #}
         {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
