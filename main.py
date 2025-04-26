@@ -514,35 +514,18 @@ def index():
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
-
-    # --- Prepare a list of all movies for the client-side trailer feature ---
-    # Create a simplified list containing only necessary details (id, title, poster)
-    # Filter out any entries that don't look like movies or are incomplete
-    all_movies_list_for_js = []
-    if movies_data:
-        for imdb_id, details in movies_data.items():
-            # Check if essential details are present and it's marked as a movie (or lacks type but has basic movie structure)
-            if isinstance(details, dict) and details.get('imdbID') and details.get('title') and details.get('poster'):
-                 # Ensure it's likely a movie and has an IMDb ID starting with 'tt'
-                 if (details.get('type') == 'movie' or 'type' not in details) and str(details['imdbID']).startswith('tt'):
-                     all_movies_list_for_js.append({
-                         "id": details['imdbID'],
-                         "title": details['title'],
-                         "poster": details['poster'] # Pass poster for potential fallback image in JS
-                     })
-    logging.info(f"Prepared {len(all_movies_list_for_js)} movies for client-side trailer feature.")
-    # --- End Trailer Prep ---
-
+    # Pass the list of admin emails to the template if needed (though index.html might not use it)
+    # If admin status is only checked server-side, passing the list isn't strictly necessary here.
+    # However, keeping it consistent with previous logic of passing *something* related to admin.
 
     # Pass the user object and categorized data to the template.
-    # Pass the list of all movies for the trailer feature JS.
+    # The 'continue watching' logic is handled client-side using localStorage.
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories, # All categoried content for display and JS lookup
                            current_year=current_year,
                            user=user,
-                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
-                           all_movies_list=all_movies_list_for_js # Pass the list of movies for JS
+                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
                            )
 
 # --- Route for Single Movie Page ---
