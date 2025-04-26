@@ -4,7 +4,6 @@ import os
 import requests
 import json
 import re # Import re for regex validation
-import random # Import random
 from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
 import firebase_admin
@@ -22,30 +21,17 @@ app = Flask(__name__)
 # Use environment variables for production.
 # For this example, default values are kept for demonstration,
 # but replace these with your actual keys/secrets set as environment variables.
-#
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# !!! IMPORTANT: REPLACE THESE DEFAULT VALUES WITH ACTUAL   !!!
-# !!!            ENVIRONMENT VARIABLES IN PRODUCTION        !!!
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moviesilsuperdupersecretkey')
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '367711020009-o70b96v4cv604acg2hqv60k8c5mjmhtr.apps.googleusercontent.com')
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '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')
-app.config['GOOGLE_DISCOVERY_URL'] = ('https://accounts.google.com/.well-known/openid-configuration')
-TMDB_API_KEY = os.environ.get('TMDB_API_KEY', 'fb7bb23f03b6994dafc674c074d01761')
-OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b')
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-# Replace with your actual Google OAuth credentials from environment variables
-# app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID') # Example for production
-# app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET') # Example for production
-# app.config['GOOGLE_DISCOVERY_URL'] = ('https://accounts.google.com/.well-known/openid-configuration')
+# Replace these with your actual Google OAuth credentials from environment variables
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '367711020009-o70b96v4cv604acg2hqv60k8c5mjmhtr.apps.googleusercontent.com')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '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') # THIS IS A SECRET! MUST BE IN ENV VAR!
+app.config['GOOGLE_DISCOVERY_URL'] = (
+    'https://accounts.google.com/.well-known/openid-configuration'
+)
 
 # Replace with your actual OMDB API key from environment variables
-# OMDB_API_KEY = os.environ.get('OMDB_API_KEY') # Example for production
-
-# Replace with your actual TMDB API key from environment variables
-# TMDB_API_KEY = os.environ.get('TMDB_API_KEY') # Example for production
-
+OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # THIS IS A SECRET! MUST BE IN ENV VAR!
 
 # List of admin emails
 ADMIN_EMAILS = ['ehudverbin@gmail.com', 'guykresco@gmail.com']
@@ -300,9 +286,8 @@ OMDB_BASE_URL = 'http://www.omdbapi.com/'
 
 def search_omdb_api(search_term, content_type):
     """Searches OMDB API for movies or series."""
-    # Modified check: Only warn if key is missing or is the placeholder, NOT if it's the default fallback value.
     if not OMDB_API_KEY or OMDB_API_KEY == 'YOUR_OMDB_API_KEY':
-        logging.warning("OMDB_API_KEY is not set or is the placeholder 'YOUR_OMDB_API_KEY'. OMDB search skipped.")
+        logging.warning("OMDB_API_KEY is not set.")
         return []
     params = {
         'apikey': OMDB_API_KEY,
@@ -332,8 +317,8 @@ def get_omdb_details_api(imdb_id, season=None, episode=None):
     If season and episode are provided, gets details for a specific episode of a series.
     If only season is provided (and imdb_id is series ID), gets details for that season (list of episodes).
     """
-    if not OMDB_API_KEY or OMDB_API_KEY == 'YOUR_OMDB_API_KEY' or OMDB_API_KEY == '4ea6447b': # Also check default hardcoded value
-         logging.warning("OMDB_API_KEY is not set or is default.")
+    if not OMDB_API_KEY or OMDB_API_KEY == 'YOUR_OMDB_API_KEY':
+         logging.warning("OMDB_API_KEY is not set.")
          return None
     params = {
         'apikey': OMDB_API_KEY,
@@ -557,7 +542,7 @@ def movie_details(imdb_id):
 
     # Check if found and if it's a movie type (assuming /Movies only contains movies or add type check)
     # Add explicit type check from loaded data if available
-    if not movie or (movie.get('type') is not None and movie.get('type') != 'movie'): # Handle potential old data without 'type'
+    if not movie or (movie.get('type') not in [None, 'movie'] and movie.get('type') != 'movie'): # Handle potential old data without 'type'
         logging.warning(f"Movie details not found or is not of type 'movie' for ID: {imdb_id}")
         # If not found or not a movie type, show 404 or specific error page
         abort(404)
@@ -606,7 +591,7 @@ def series_details(imdb_id, season_number=None, episode_number=None):
 
     # Check if found and if it's a series type
     # Handle potential old data without 'type' gracefully by checking existence
-    if not series or (series.get('type') is not None and series.get('type') != 'series'):
+    if not series or (series.get('type') not in [None, 'series'] and series.get('type') != 'series'):
         logging.warning(f"Series details not found or is not of type 'series' for ID: {imdb_id}")
         abort(404)
 
@@ -1042,140 +1027,6 @@ keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_UR
 keep_alive_thread.start()
 
 
-def get_trailer_from_imdb(imdb_id, tmdb_api_key):
-    """Fetches a YouTube trailer URL for a given IMDb ID using TMDB API."""
-    # Modified check: Only warn if key is missing or is the placeholder, NOT if it's the default fallback value.
-    if not tmdb_api_key or tmdb_api_key == 'YOUR_TMDB_API_KEY':
-         logging.warning("TMDB_API_KEY is not set or is the placeholder 'YOUR_TMDB_API_KEY'. Trailer fetch skipped.")
-         return None
-
-    find_url = f"https://api.themoviedb.org/3/find/{imdb_id}?api_key={tmdb_api_key}&external_source=imdb_id"
-    try:
-        find_response = requests.get(find_url, timeout=10)
-        find_response.raise_for_status() # Raise HTTPError for bad responses
-        find_data = find_response.json()
-
-        # Check if movie results are found (TMDB Find API returns results in lists)
-        # It might return tv_results or other types, but we are looking for movies
-        movie_results = find_data.get('movie_results')
-        if not movie_results or not movie_results[0]:
-            logging.info(f"No movie results found on TMDB for IMDb ID: {imdb_id}")
-            # Try TV show results just in case (though the request is for movies)
-            tv_results = find_data.get('tv_results')
-            if tv_results and tv_results[0]:
-                 logging.info(f"Found TV results for IMDb ID: {imdb_id}. Trailer might be for series.")
-                 # For series, the trailer might be linked to the main series ID, but TMDB's Find might give a specific episode.
-                 # The get_trailer_from_imdb is primarily designed for movies.
-                 # For simplicity, we'll only proceed if movie_results are found as per the original requirement.
-                 # If series trailers are needed, this function needs a major rewrite to handle TV show video endpoints.
-                 pass # Do nothing, continue to return None if no movie results
-
-
-            return None
-
-        # Get the first movie ID found (assuming it's the correct one)
-        movie_id = movie_results[0].get('id')
-        if not movie_id:
-             logging.warning(f"TMDB find response for {imdb_id} did not contain movie ID.")
-             return None
-
-        videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={tmdb_api_key}"
-        videos_response = requests.get(videos_url, timeout=10)
-        videos_response.raise_for_status() # Raise HTTPError for bad responses
-        videos_data = videos_response.json()
-
-        # Search for a YouTube trailer (type 'Trailer')
-        for video in videos_data.get('results', []):
-            if video.get('site') == 'YouTube' and video.get('type') == 'Trailer' and video.get('key'):
-                youtube_url = f"https://www.youtube.com/embed/{video['key']}" # Use embed URL for iframe
-                logging.info(f"Found trailer for {imdb_id}: {youtube_url}")
-                return youtube_url
-
-        logging.info(f"No YouTube trailer (type 'Trailer') found on TMDB for movie ID: {movie_id} (IMDb ID: {imdb_id})")
-        return None # No suitable trailer found
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error calling TMDB API for IMDb ID {imdb_id}: {e}", exc_info=True)
-        return None
-    except Exception as e:
-        logging.error(f"Unexpected error processing TMDB data for IMDb ID {imdb_id}: {e}", exc_info=True)
-        return None
-
-
-@app.route('/api/random_trailer')
-def api_random_trailer():
-    """
-    API endpoint to get data for a random movie that has a trailer.
-    Optionally excludes IMDb IDs provided in the 'exclude_ids' query parameter.
-    """
-    exclude_ids_str = request.args.get('exclude_ids', '')
-    exclude_ids = [id.strip() for id in exclude_ids_str.split(',') if id.strip()] if exclude_ids_str else []
-
-    try:
-        # Load all movie IDs from Firebase
-        ref = db.reference('/Movies')
-        all_movies = ref.get()
-
-        if not all_movies:
-            logging.warning("No movies found in Firebase to select a random trailer from.")
-            return jsonify({"error": "No movies available"}), 404
-
-        movie_ids = list(all_movies.keys())
-
-        # Filter out excluded IDs
-        available_ids = [id for id in movie_ids if id not in exclude_ids]
-
-        if not available_ids:
-            logging.warning("All available movie IDs were excluded. Trying random from all movies again.")
-            available_ids = list(movie_ids) # Fallback: try from all if excluded list is exhaustive
-
-        if not available_ids:
-             logging.warning("No movie IDs available after filtering/fallback.")
-             return jsonify({"error": "No eligible movies available"}), 404
-
-
-        # Shuffle and try to find one with a trailer (limit attempts)
-        random.shuffle(available_ids)
-        trailer_found = False
-        selected_movie_data = None
-        trailer_url = None
-        attempts = min(len(available_ids), 20) # Try up to 20 random movies or all if less
-
-        for i in range(attempts):
-            imdb_id = available_ids[i]
-            # Ensure it's actually a movie type in Firebase (redundant if only movies are in /Movies, but safe)
-            movie_details = all_movies.get(imdb_id)
-            if movie_details and (movie_details.get('type') is None or movie_details.get('type') == 'movie'):
-                 logging.info(f"Attempting to get trailer for random movie ID: {imdb_id}")
-                 trailer_url = get_trailer_from_imdb(imdb_id, TMDB_API_KEY)
-
-                 if trailer_url:
-                     # Found a movie with a trailer! Get necessary details for the frontend.
-                     selected_movie_data = {
-                         "imdbID": imdb_id,
-                         "title": movie_details.get("title", "כותרת לא ידועה"),
-                         "poster": movie_details.get("poster", "N/A"),
-                         "trailer_url": trailer_url
-                         # Add other details if needed on the frontend (e.g., year)
-                     }
-                     trailer_found = True
-                     logging.info(f"Successfully found trailer for {imdb_id}.")
-                     break # Exit the loop
-
-            else:
-                logging.warning(f"Skipping non-movie or missing entry {imdb_id} during random selection.")
-
-
-        if trailer_found:
-            return jsonify(selected_movie_data)
-        else:
-            logging.warning(f"Failed to find a movie with a trailer after {attempts} attempts.")
-            return jsonify({"error": "No movie with an available trailer found"}), 404
-
-    except Exception as e:
-        logging.error(f"Error fetching random trailer: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error fetching random trailer"}), 500
-
 
 # --- Error Handlers ---
 @app.errorhandler(403)
@@ -1217,7 +1068,6 @@ if __name__ == '__main__':
                 logging.info("Firebase default app credential check passed.")
                 port = int(os.environ.get('PORT', 5000))
                 # debug=True should only be used in development
-                # IMPORTANT: For production, set debug=False
                 app.run(host='0.0.0.0', port=port, debug=True)
              else:
                  logging.error("Application not started: Firebase default app credential is None.")
