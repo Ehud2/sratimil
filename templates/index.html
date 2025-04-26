@@ -20,8 +20,7 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                {# Using a placeholder image URL instead of base64 #}
-                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Sign in with Google" loading="lazy">
+                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
             {% endif %}
         </div>
         <p>טוען סינמה פריים...</p>
@@ -52,8 +51,8 @@
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Using a placeholder image URL instead of base64 #}
-                         <img src="{{ url_for('static', filename='images/google-signin.png') }}" alt="Sign in with Google" loading="lazy">
+                         {# Reverting to a default placeholder image URL that exists #}
+                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -82,7 +81,6 @@
         </div>
 
         {# The "Continue Watching" section will be added here by JavaScript if applicable #}
-        {# NOTE: The CW section search is NOT integrated with the main search bar in this update #}
         <section id="continueWatchingSection" class="category-section" style="display: none;">
             <h2>המשך צפייה</h2>
             <div class="item-row" id="continueWatchingRow">
@@ -100,13 +98,7 @@
                         {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
-                             {# --- UPDATED: Added data-titles attribute --- #}
-                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}"
-                               class="item-card-link catalog-item"
-                               data-id="{{ item.id }}"
-                               data-type="{{ item.type }}"
-                               data-title="{{ item.title | lower }}" {# Keep data-title as fallback #}
-                               {% if item.titles %}data-titles="{{ item.titles | tojson | escape }}"{% endif %}> {# Pass the titles list as JSON #}
+                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.title.lower() }}"> {# Added catalog-item class and data attributes for search #}
                                 <div class="item-card" tabindex="0"> {# Moved data-title/id/type to the link #}
                                     <div class="card-image-container">
                                         {# Use item.poster, fall back to default if N/A or empty #}
@@ -182,50 +174,19 @@
 
 
             // --- Search Filter Functionality ---
+            // Example search filter (assuming this was in your script.js and moved here):
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase().trim(); // Trim search term
+                    const searchTerm = this.value.toLowerCase();
                     // Select only the items within the main categories, not Continue Watching
                     const itemCardLinks = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Target catalog items
                     let anyVisible = false;
-
                     itemCardLinks.forEach(link => {
-                         let isMatch = false;
-                         const titlesJson = link.dataset.titles; // Get data-titles attribute (JSON string)
+                         // Use data-title directly from the link
+                         const title = link.dataset.title || '';
 
-                         if (titlesJson) {
-                             try {
-                                 const titles = JSON.parse(titlesJson); // Parse JSON string into an array
-                                 if (Array.isArray(titles)) {
-                                     // Check each title in the list
-                                     for (const titleItem of titles) {
-                                         // Ensure the item in the list is a string, trim, and check includes
-                                         if (typeof titleItem === 'string' && titleItem.toLowerCase().trim().includes(searchTerm)) {
-                                             isMatch = true;
-                                             break; // Found a match, no need to check other titles for this item
-                                         }
-                                     }
-                                 } else {
-                                      console.warn("Search: data-titles was not an array for item:", link.dataset.id);
-                                 }
-                             } catch (e) {
-                                 console.error("Search: Error parsing data-titles JSON for item:", link.dataset.id, e);
-                                 // If parsing fails, fall through to check data-title
-                             }
-                         }
-
-                         // Fallback: If no match found in data-titles (or data-titles was missing/invalid), check data-title
-                         if (!isMatch) {
-                             const title = link.dataset.title || '';
-                             if (title.toLowerCase().trim().includes(searchTerm)) {
-                                 isMatch = true;
-                             }
-                         }
-                         // --- END UPDATED SEARCH LOGIC ---
-
-
-                        if (isMatch) {
+                         if (title.includes(searchTerm)) {
                              link.style.display = ''; // Show the link (and thus the card)
                              anyVisible = true;
                          } else {
@@ -238,16 +199,23 @@
                      }
                 });
 
-                // Handle search button click (does nothing extra, input event handles filter)
+                // Handle search button click
                 document.querySelector('.search-container button').addEventListener('click', function() {
-                     // const searchTerm = searchInput.value.trim(); // Already handled by 'input' event
+                     const searchTerm = searchInput.value.trim();
+                     // The input listener already handles filtering as typing occurs.
+                     // If you want a full page search results page on button click,
+                     // you would modify this to redirect, similar to the Enter key logic.
+                     // For now, the button click does nothing extra besides triggering the input event.
                 });
 
-                // Handle Enter key on search input (does nothing extra, input event handles filter)
+                // Handle Enter key on search input
                 searchInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
-                        event.preventDefault(); // Prevent potential form submission
-                        // Filtering already happens on 'input'
+                        event.preventDefault(); // Prevent form submission if search was inside a form
+                        // The 'input' listener handles the filtering in real-time.
+                        // If you want 'Enter' to trigger a *different* action (like a full page search result),
+                        // you'd put that logic here instead of just preventing default.
+                        // For now, 'Enter' just confirms the current filter.
                     }
                 });
 
@@ -258,8 +226,6 @@
 
 
             // --- Continue Watching Functionality (Client-Side) ---
-            // Note: This CW section search is NOT integrated with the main search bar.
-            // It continues to use its own logic based on stored CW data.
             const user = {{ user | tojson }}; // Pass user object from Flask
 
             // Corrected URL generation - get base paths and append dynamically in JS
@@ -296,9 +262,8 @@
 
                     // --- Helper to determine season/episode, preferring latest_* ---
                     function getEpisodeInfo(item) {
-                         // Use ?. chaining for safety if properties are missing
-                         const season = item?.latest_season ?? item?.season;
-                         const episode = item?.latest_episode ?? item?.episode;
+                         const season = item.latest_season || item.season;
+                         const episode = item.latest_episode || item.episode;
                          // Return as numbers if possible, default to 0 if not valid
                          const seasonNum = season ? parseInt(season, 10) : 0;
                          const episodeNum = episode ? parseInt(episode, 10) : 0;
@@ -323,7 +288,7 @@
                         const canonicalKey = `${item.type}_${item.id}`;
 
                         if (item.type === 'movie') {
-                             // For movies, just add/overwrite. The key is already unique per movie ID.
+                             // For movies, just add/overwrite. The key is already unique per movie.
                             uniqueValidItemsMap.set(canonicalKey, {
                                 id: item.id,
                                 type: 'movie',
@@ -357,12 +322,12 @@
                                 const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0; // Default to 0 if no info
 
 
-                                // Compare the current item's episode with the one already in the map
-                                // Keep the one that represents the *latest* progress (later season, or later episode if same season)
+                                // Compare the current episode with the one already in the map
+                                // Keep the one with the later season, or later episode if seasons are the same
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
                                      // The current item represents a *later* episode for this series
                                      console.log(`CW: Updating series ${item.id} to S${seasonNum}E${episodeNum} (was S${existingSeason}E${existingEpisode}).`);
-                                    // Update the map entry with the later episode details and its timestamp
+                                    // Update the map entry with the later episode details
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
@@ -370,21 +335,17 @@
                                         poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
                                         latest_season: seasonNum, // Store as latest_* in the canonical format
                                         latest_episode: episodeNum, // Store as latest_* in the canonical format
-                                         timestamp: timestamp, // Use the timestamp from the *latest* episode found
+                                         // Use the timestamp from the *latest* episode found, even if it's from an old entry format
+                                        timestamp: timestamp,
                                         // Add other series details needed for the card if any beyond title/poster
                                     });
-                                } else if (seasonNum === existingSeason && episodeNum === existingEpisode && timestamp > existingItem.timestamp) {
-                                     // Same episode, but the current item has a later timestamp (more progress)
-                                     console.log(`CW: Updating timestamp for series ${item.id} S${seasonNum}E${episodeNum} (was ${existingItem.timestamp}s, now ${timestamp}s).`);
-                                     existingItem.timestamp = timestamp; // Update timestamp on the existing map item
-                                     // No need to set the item again, just modifying the object reference is fine.
                                 } else {
-                                    // The existing item in the map is already the latest episode, or same episode with more progress. Do nothing.
+                                    // The existing item in the map is already the latest or equal. Do nothing.
                                      // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E${episodeNum}.`); // Debug log
                                 }
                             } else {
                                 // No entry for this series yet, add this one (converted to canonical format)
-                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E{episodeNum}.`);
+                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E${episodeNum}.`);
                                 uniqueValidItemsMap.set(canonicalKey, {
                                     id: item.id,
                                     type: 'series',
@@ -420,14 +381,9 @@
 
 
                     // --- Display the items ---
-                    // Clear previous content
-                    continueWatchingRow.innerHTML = '';
-
                     if (validItemsToDisplay.length > 0) {
                         // Sort items if desired (e.g., by title)
-                        // Sort alphabetically by title
                         validItemsToDisplay.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-
 
                         validItemsToDisplay.forEach(item => {
                             const itemLink = document.createElement('a');
@@ -441,7 +397,7 @@
                                  href = `${movieDetailsBaseUrl}${item.id}`;
                                  // Add timestamp hash if available (even if it's 0)
                                  if (item.timestamp && item.timestamp > 0) {
-                                     href += `#timestamp=${Math.floor(item.timestamp)}`; // Use integer seconds
+                                     href += `#timestamp=${item.timestamp}`;
                                  } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
                                       href += `#timestamp=0`;
                                  }
@@ -452,7 +408,7 @@
 
                                  // Add timestamp hash if available (even if it's 0)
                                  if (item.timestamp && item.timestamp > 0) {
-                                     href += `#timestamp=${Math.floor(item.timestamp)}`; // Use integer seconds
+                                     href += `#timestamp=${item.timestamp}`;
                                  } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
                                      href += `#timestamp=0`;
                                  }
@@ -470,11 +426,6 @@
                             itemLink.href = href;
                             itemLink.classList.add('item-card-link');
                             itemLink.classList.add('continue-watching-item');
-
-                            // Add data attributes for the item here if needed for future CW-specific JS
-                             itemLink.dataset.id = item.id;
-                             itemLink.dataset.type = item.type;
-                             itemLink.dataset.title = item.title; // For potential future CW-specific search/filter
 
                             // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
@@ -496,12 +447,7 @@
                              playButton.classList.add('play-button');
                              playButton.setAttribute('aria-label', `המשך צפייה ב${titleText}`);
                              playButton.innerHTML = '<i class="fas fa-play"></i>';
-                             // Play button click should navigate the parent link
-                             playButton.addEventListener('click', (e) => {
-                                 e.preventDefault(); // Prevent button default
-                                 e.stopPropagation(); // Stop propagation so the link click is handled
-                                 window.location.href = itemLink.href; // Navigate to the link's URL
-                             });
+                             playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
 
 
                             const titleElement = document.createElement('h3');
@@ -534,6 +480,7 @@
                                         uniqueValidItemsMap.delete(itemKeyToRemove); // Remove from the map
                                         try {
                                              // Save the *current state of the map* back to localStorage
+                                             // This is the cleaned state, so old keys won't be added back.
                                              localStorage.setItem(localStorageKey, JSON.stringify(Object.fromEntries(uniqueValidItemsMap)));
                                              itemLink.remove(); // Remove the element from the DOM
                                              console.log(`CW: Removed item ${itemKeyToRemove} from continue watching.`);
@@ -548,22 +495,13 @@
                                             console.error("CW: Error saving continue watching data after removing item:", e);
                                         }
                                    } else {
-                                       console.warn("CW: Item element in DOM not found in uniqueValidItemsMap during remove:", itemKeyToRemove, item);
+                                       // This case should not happen if the display logic is correct,
+                                       // but if the item somehow exists in the DOM but not the map,
+                                       // it means something is out of sync. Log a warning.
+                                        console.warn("CW: Item element in DOM not found in uniqueValidItemsMap:", itemKeyToRemove, item);
                                    }
                               });
                              actionsDiv.appendChild(removeButton);
-
-                             // Info button - links to the same details page as the main card link
-                             const infoButton = document.createElement('button');
-                             infoButton.classList.add('info-button');
-                             infoButton.setAttribute('aria-label', 'עוד מידע');
-                             infoButton.innerHTML = '<i class="fas fa-info-circle"></i>';
-                             infoButton.addEventListener('click', (e) => {
-                                  e.preventDefault(); // Prevent button default
-                                  e.stopPropagation(); // Stop propagation so the link click is handled
-                                  window.location.href = itemLink.href; // Navigate to the link's URL
-                             });
-                             actionsDiv.appendChild(infoButton);
 
 
                             imageContainer.appendChild(img);
