@@ -249,12 +249,11 @@ def categorize_content(movies_data, series_data):
                 "type": item_type # Include type here
              }
 
-             # --- START OF ADDED/MODIFIED CODE ---
+             # --- START OF MODIFIED CODE ---
              if item_type == 'movie':
                   # Include the list of titles for movies if it exists
                   item_data_for_index['titles'] = item_details.get('titles', [])
-             # --- END OF ADDED/MODIFIED CODE ---
-
+             # --- END OF MODIFIED CODE ---
 
              categorized_items[category].append(item_data_for_index)
         elif category == "ללא":
@@ -682,8 +681,12 @@ def add_content():
                     'production': omdb_details.get('Production', 'N/A'),
                     'website': omdb_details.get('Website', 'N/A'),
                     'video_url': '', # Placeholder: Video URL must be added separately
-                    'category': category # From form
+                    'category': category, # From form
+                    'titles': [] # Initialize empty list for alternative titles
                 }
+                 # Add the main title to the titles list
+                if movie_data['title'] and movie_data['title'] != 'Untitled':
+                    movie_data['titles'].append(movie_data['title'])
 
                 # Save movie data to Firebase under /Movies/{imdb_id}
                 ref = db.reference(f'/Movies/{imdb_id}')
