@@ -1,10 +1,12 @@
-<!-- index.html -->
+{# index.html #}
+{# Update the html tag #}
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movies</title>
+    {# Use conditional title or always keep it fixed, depending on preference #}
+    <title>סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,46 +16,69 @@
 </head>
 <body>
     <!-- Loading Spinner -->
+    {# Keep this as is, it will handle the page reload visually #}
     <div id="loading-spinner">
         <div class="spinner">
             {% if user and user.picture %}
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
-                <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy"> {# Changed from base64 to local file #}
+                {# Use url_for for your static image #}
+                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
             {% endif %}
         </div>
-        <p>טוען סינמה פריים...</p>
+        <p>
+            {% if current_language == 'he' %}
+            טוען סינמה פריים...
+            {% else %}
+            Loading Cinema Prime...
+            {% endif %}
+        </p>
     </div>
 
 
     <header class="site-header">
         <div class="container header-content">
 
+            {# --- Add Language Switcher Here --- #}
+            <div class="language-switcher">
+                {# Link to the set_language route. Show the name of the *target* language. #}
+                <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'Switch to English' if current_language == 'he' else 'החלף לעברית' }}" aria-label="{{ 'Switch to English' if current_language == 'he' else 'החלף לעברית' }}">
+                     {% if current_language == 'he' %}
+                         <i class="fas fa-globe"></i> English
+                     {% else %}
+                         <i class="fas fa-globe"></i> עברית
+                     {% endif %}
+                 </a>
+            </div>
+
+
             <div class="search-container">
-               <input type="search" id="searchInput" placeholder="חיפוש...">
-               <button aria-label="Search"><i class="fas fa-search"></i></button>
+               <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
+               <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
             </div>
 
             <nav class="main-nav">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> בית</a> {# Added icon #}
-                <a href="{{ url_for('all_movies') }}"><i class="fas fa-film"></i> סרטים</a> {# Added icon #}
-                <a href="{{ url_for('all_series') }}"><i class="fas fa-tv"></i> סדרות</a> {# Added icon #}
+                {# Update link text and aria-label based on language #}
+                <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
+                <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
+                <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
                 {% if user and user.email in admin_emails %}
-                    <a href="{{ url_for('add_content') }}"><i class="fas fa-plus-circle"></i> הוספת תוכן</a> {# Added icon #}
+                    <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a>
                 {% endif %}
             </nav>
 
             <div class="auth-container">
                 {% if user %}
-                    <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
+                    <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
                         {# Ensure this path is correct for your default image if user.picture is missing #}
-                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
+                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
                     </a>
                 {% else %}
-                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
+                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
                          {# Replace the base64 string with your desired image URL or placeholder #}
-                         <img src="Imageurlhere" alt="Sign in with Google" loading="lazy">
+                         {# Use url_for for your static image #}
+                         <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -77,33 +102,44 @@
 
     <main class="container main-content">
         <div class="page-greeting">
+            {# greeting already includes language #}
             <h1>{{ greeting }}!</h1>
-            <p>מה נראה היום?</p>
+            <p>{{ 'מה נראה היום?' if current_language == 'he' else 'What should we watch today?' }}</p>
         </div>
 
         {# The "Continue Watching" section will be added here by JavaScript if applicable #}
         <section id="continueWatchingSection" class="category-section" style="display: none;">
-            <h2>המשך צפייה</h2>
+            <h2>{{ 'המשך צפייה' if current_language == 'he' else 'Continue Watching' }}</h2>
             <div class="item-row" id="continueWatchingRow">
                 {# Items will be populated here by JavaScript #}
             </div>
-             <div id="noContinueWatchingMessage" style="display: none; color: #aaa; text-align: center; padding: 20px;">אין פריטים ברשימת 'המשך צפייה'.</div>
+             <div id="noContinueWatchingMessage" style="display: none; color: #aaa; text-align: center; padding: 20px;">
+                {% if current_language == 'he' %}
+                 אין פריטים ברשימת 'המשך צפייה'.
+                {% else %}
+                 No items in 'Continue Watching' list.
+                {% endif %}
+             </div>
         </section>
 
 
         {% for category_name, items_in_category in categories.items() %}
             {% if items_in_category %}
+                 {# Display category name based on language if you have translations #}
+                 {# For now, just display the Hebrew category name as CATEGORIES list is in Hebrew #}
                 <section class="category-section">
-                    <h2>{{ category_name }}</h2>
+                    <h2>{{ category_name }}</h2> {# Keep Hebrew category name as defined #}
                     <div class="item-row">
                         {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
-                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.title.lower() }}"> {# Added catalog-item class and data attributes for search #}
+                             {# Make sure the URL includes the language parameter if needed, but the backend sets session, so not strictly necessary in URL #}
+                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}"> {# Added data attributes for search with both languages #}
                                 <div class="item-card" tabindex="0"> {# Moved data-title/id/type to the link #}
                                     <div class="card-image-container">
-                                        {# Use item.poster, fall back to default if N/A or empty #}
-                                        <img src="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.title }}" loading="lazy">
+                                        {# Use Hebrew poster if language is HE and Hebrew poster exists, otherwise use English poster, fallback to default #}
+                                        {% set item_poster = (item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') else item.get('poster')) %}
+                                        <img src="{{ item_poster if item_poster and item_poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) }}" loading="lazy">
                                         {% if is_ranked_category and loop.index <= 15 %}
                                             <span class="rank-number">
                                                 <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
@@ -112,13 +148,21 @@
                                         {% endif %}
                                         <div class="card-overlay">
                                              {# The play button now also links to the movie/series page #}
-                                            <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
-                                            <h3 class="card-title">{{ item.title }}</h3>
+                                            <button class="play-button" aria-label="{{ ('צפה ב' + (item.get('HebrewName', item.get('title', ''))) if current_language == 'he' else ('Watch ' + (item.get('title', item.get('HebrewName', ''))))) }}"><i class="fas fa-play"></i></button>
+                                            <h3 class="card-title">
+                                                 {# Use Hebrew title if language is HE and Hebrew title exists, otherwise use English title, fallback to placeholder #}
+                                                 {{ item.get('HebrewName', item.get('title', 'כותרת לא ידועה')) if current_language == 'he' else item.get('title', item.get('HebrewName', 'Unknown Title')) }}
+                                            </h3>
+                                             {# Add subtitle for Series on index page (e.g., "Series") #}
+                                             {% if item.type == 'series' %}
+                                                 <p class="card-subtitle" style="font-size: 0.8em; color: #ccc; margin-top: 5px;">{{ 'סדרה' if current_language == 'he' else 'Series' }}</p>
+                                             {% endif %}
                                             <div class="card-actions">
                                                 {# Added data attributes for JS to identify the item for adding/removing from lists #}
-                                                <button aria-label="Add to list" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.title }}" data-poster="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
+                                                {# Pass both Hebrew and English details as data attributes #}
+                                                <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
                                                  {# The info button might also link to the movie/series page #}
-                                                <button class="info-button" aria-label="More info" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
+                                                <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
                                             </div>
                                         </div>
                                     </div>
@@ -129,16 +173,27 @@
                 </section>
             {% endif %}
         {% endfor %}
-        <div id="noResultsMessage" style="display: none;">לא נמצאו תוצאות התואמות את החיפוש שלך.</div>
+        <div id="noResultsMessage" style="display: none;">
+            {% if current_language == 'he' %}
+            לא נמצאו תוצאות התואמות את החיפוש שלך.
+            {% else %}
+            No results found matching your search.
+            {% endif %}
+        </div>
     </main>
 
     <footer class="site-footer-bottom">
         <div class="container">
-            <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
+             <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
         </div>
     </footer>
 
     <script>
+        // Pass current_language from Flask to JavaScript
+        const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
+        const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+
+
         // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOMContentLoaded fired."); // Debug log
@@ -175,17 +230,19 @@
 
 
             // --- Search Filter Functionality ---
-            // Example search filter (assuming this was in your script.js and moved here):
             const searchInput = document.getElementById('searchInput');
+            const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
+            const catalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Get all catalog items
+
+
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
-                    // Select only the items within the main categories, not Continue Watching
-                    const itemCardLinks = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Target catalog items
                     let anyVisible = false;
-                    itemCardLinks.forEach(link => {
-                         // Use data-title directly from the link
-                         const title = link.dataset.title || '';
+
+                    catalogItems.forEach(link => {
+                         // Get title based on current language from data attributes
+                         const title = (currentLanguage === 'he' ? link.dataset.titleHe : link.dataset.titleEn) || '';
 
                          if (title.includes(searchTerm)) {
                              link.style.display = ''; // Show the link (and thus the card)
@@ -194,32 +251,27 @@
                              link.style.display = 'none'; // Hide the link (and thus the card)
                          }
                     });
-                     const noResultsMessage = document.getElementById('noResultsMessage');
-                     if (noResultsMessage) {
-                          noResultsMessage.style.display = anyVisible ? 'none' : 'block';
-                     }
+
+                    // Update no results message visibility
+                    if (noResultsMessage) {
+                         noResultsMessage.style.display = anyVisible ? 'none' : 'block';
+                    }
                 });
 
-                // Handle search button click
-                document.querySelector('.search-container button').addEventListener('click', function() {
-                     const searchTerm = searchInput.value.trim();
-                     // The input listener already handles filtering as typing occurs.
-                     // If you want a full page search results page on button click,
-                     // you would modify this to redirect, similar to the Enter key logic.
-                     // For now, the button click does nothing extra besides triggering the input event.
-                });
+                // Handle search button click (does the same as input for now)
+                 document.querySelector('.search-container button').addEventListener('click', function() {
+                      // Trigger the input event manually to ensure filtering happens
+                     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                 });
 
                 // Handle Enter key on search input
                 searchInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
-                        event.preventDefault(); // Prevent form submission if search was inside a form
-                        // The 'input' listener handles the filtering in real-time.
-                        // If you want 'Enter' to trigger a *different* action (like a full page search result),
-                        // you'd put that logic here instead of just preventing default.
-                        // For now, 'Enter' just confirms the current filter.
+                        event.preventDefault(); // Prevent default form submission/page reload
+                         // Trigger the input event manually to ensure filtering happens
+                         searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                 });
-
 
             } else {
                  console.warn("Search input #searchInput not found.");
@@ -279,8 +331,8 @@
                     // --- Process and Consolidate Items ---
                     // Iterate through all items found in localStorage (both old and new formats)
                     Object.values(continueWatchingItems).forEach(item => {
-                        // Basic validation: must be an object and have id, type, and title
-                        if (!item || typeof item !== 'object' || !item.id || !item.type || !item.title) {
+                        // Basic validation: must be an object and have id, type, and title (or HebrewName)
+                        if (!item || typeof item !== 'object' || !item.id || !item.type || !(item.title || item.HebrewName)) {
                             console.warn("CW: Skipping invalid item (missing basics):", item);
                             return; // Skip this item
                         }
@@ -293,8 +345,10 @@
                             uniqueValidItemsMap.set(canonicalKey, {
                                 id: item.id,
                                 type: 'movie',
-                                title: item.title,
-                                poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
+                                title: item.title, // Keep both English
+                                poster: item.poster, // Keep both English
+                                HebrewName: item.HebrewName, // Keep Hebrew
+                                HebrewPoster: item.HebrewPoster, // Keep Hebrew
                                 timestamp: typeof item.timestamp === 'number' ? item.timestamp : 0, // Ensure timestamp is a number
                                 // Add other movie details needed for the card if any beyond title/poster
                             });
@@ -327,13 +381,15 @@
                                 // Keep the one with the later season, or later episode if seasons are the same
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
                                      // The current item represents a *later* episode for this series
-                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E${episodeNum} (was S${existingSeason}E${existingEpisode}).`);
+                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E{episodeNum} (was S${existingSeason}E${existingEpisode}).`);
                                     // Update the map entry with the later episode details
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
-                                        title: item.title,
-                                        poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
+                                        title: item.title, // Keep both English
+                                        poster: item.poster, // Keep both English
+                                        HebrewName: item.HebrewName, // Keep Hebrew
+                                        HebrewPoster: item.HebrewPoster, // Keep Hebrew
                                         latest_season: seasonNum, // Store as latest_* in the canonical format
                                         latest_episode: episodeNum, // Store as latest_* in the canonical format
                                          // Use the timestamp from the *latest* episode found, even if it's from an old entry format
@@ -342,7 +398,7 @@
                                     });
                                 } else {
                                     // The existing item in the map is already the latest or equal. Do nothing.
-                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E${episodeNum}.`); // Debug log
+                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E{episodeNum}.`); // Debug log
                                 }
                             } else {
                                 // No entry for this series yet, add this one (converted to canonical format)
@@ -350,8 +406,10 @@
                                 uniqueValidItemsMap.set(canonicalKey, {
                                     id: item.id,
                                     type: 'series',
-                                    title: item.title,
-                                    poster: item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
+                                    title: item.title, // Keep both English
+                                    poster: item.poster, // Keep both English
+                                    HebrewName: item.HebrewName, // Keep Hebrew
+                                    HebrewPoster: item.HebrewPoster, // Keep Hebrew
                                     latest_season: seasonNum, // Store as latest_*
                                     latest_episode: episodeNum, // Store as latest_*
                                      timestamp: timestamp, // Store timestamp
@@ -383,14 +441,24 @@
 
                     // --- Display the items ---
                     if (validItemsToDisplay.length > 0) {
-                        // Sort items if desired (e.g., by title)
-                        validItemsToDisplay.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                        // Sort items alphabetically by the *displayed* title
+                         validItemsToDisplay.sort((a, b) => {
+                             const titleA = (currentLanguage === 'he' ? a.HebrewName || a.title : a.title || a.HebrewName) || '';
+                             const titleB = (currentLanguage === 'he' ? b.HebrewName || b.title : b.title || b.HebrewName) || '';
+                             return titleA.localeCompare(titleB);
+                         });
+
 
                         validItemsToDisplay.forEach(item => {
                             const itemLink = document.createElement('a');
                             let href = '#'; // Default fallback
-                            let titleText = item.title || 'פריט לא ידוע';
-                            let subtitleText = ''; // For series episode info
+                            let titleText = '';
+                            let subtitleText = '';
+
+                            // Select title and poster based on current language
+                            const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
+                            const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
+
 
                             // Construct the correct URL and subtitle based on item type (using canonical format)
                             if (item.type === 'movie') {
@@ -402,7 +470,9 @@
                                  } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
                                       href += `#timestamp=0`;
                                  }
-                                 subtitleText = 'סרט';
+                                 titleText = displayTitle || (currentLanguage === 'he' ? 'סרט לא ידוע' : 'Unknown Movie');
+                                 subtitleText = currentLanguage === 'he' ? 'סרט' : 'Movie';
+
                             } else if (item.type === 'series' && item.id && item.latest_season && item.latest_episode) {
                                  // Use the series base URL and append IMDb ID, season, episode
                                  href = `${seriesDetailsBaseUrl}${item.id}/${item.latest_season}/${item.latest_episode}`;
@@ -415,8 +485,8 @@
                                  }
 
                                  // Display series title as main title and latest episode info as subtitle
-                                 titleText = item.title || 'סדרה לא ידועה';
-                                 subtitleText = `עונה ${item.latest_season}, פרק ${item.latest_episode}`;
+                                 titleText = displayTitle || (currentLanguage === 'he' ? 'סדרה לא ידועה' : 'Unknown Series');
+                                 subtitleText = currentLanguage === 'he' ? `עונה ${item.latest_season}, פרק ${item.latest_episode}` : `Season ${item.latest_season}, Episode ${item.latest_episode}`;
 
                             } else {
                                  // This case should not be reached if processing logic is correct, but defensive check.
@@ -437,8 +507,8 @@
                             imageContainer.classList.add('card-image-container');
 
                             const img = document.createElement('img');
-                            img.src = item.poster && item.poster !== 'N/A' ? item.poster : '{{ url_for('static', filename='images/no_poster.png') }}';
-                            img.alt = titleText;
+                            img.src = displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl; // Use determined poster URL
+                            img.alt = titleText; // Use determined title for alt text
                             img.setAttribute('loading', 'lazy');
 
                             const overlay = document.createElement('div');
@@ -446,18 +516,20 @@
 
                              const playButton = document.createElement('button');
                              playButton.classList.add('play-button');
-                             playButton.setAttribute('aria-label', `המשך צפייה ב${titleText}`);
+                             // Update aria-label based on language and title
+                             playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'המשך צפייה ב' : 'Continue watching ') + titleText);
                              playButton.innerHTML = '<i class="fas fa-play"></i>';
                              playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
 
 
                             const titleElement = document.createElement('h3');
                             titleElement.classList.add('card-title');
-                            titleElement.textContent = titleText;
+                            titleElement.textContent = titleText; // Use determined title
+
 
                              const subtitleElement = document.createElement('p');
                              subtitleElement.classList.add('card-subtitle');
-                             subtitleElement.textContent = subtitleText;
+                             subtitleElement.textContent = subtitleText; // Use determined subtitle
                              subtitleElement.style.fontSize = '0.8em';
                              subtitleElement.style.color = '#ccc';
                              subtitleElement.style.marginTop = '5px';
@@ -468,7 +540,8 @@
 
                              const removeButton = document.createElement('button');
                               removeButton.classList.add('remove-from-cw-button');
-                              removeButton.setAttribute('aria-label', `הסר מ'המשך צפייה'`);
+                              // Update aria-label based on language
+                              removeButton.setAttribute('aria-label', currentLanguage === 'he' ? 'הסר מ\'המשך צפייה\'' : 'Remove from Continue Watching');
                               removeButton.innerHTML = '<i class="fas fa-times"></i>';
                               removeButton.addEventListener('click', (e) => {
                                   e.preventDefault();
@@ -521,10 +594,11 @@
                         // Show/hide sections based on uniqueValidItemsMap size
                          if (uniqueValidItemsMap.size > 0) {
                              continueWatchingSection.style.display = 'block';
-                             noContinueWatchingMessage.style.display = 'none';
+                             noContinueWatchingMessage.style.display = 'block'; // Keep this as block for the message content
+                             noContinueWatchingMessage.style.display = 'none'; // Hide the "No items" message
                          } else {
                              continueWatchingSection.style.display = 'none';
-                             noContinueWatchingMessage.style.display = 'block';
+                             noContinueWatchingMessage.style.display = 'block'; // Show the "No items" message
                              console.log("CW: No valid continue watching items to display after processing.");
                          }
 
@@ -532,7 +606,7 @@
                     } else {
                         console.log("CW: No valid continue watching data found for this user.");
                          continueWatchingSection.style.display = 'none';
-                         noContinueWatchingMessage.style.display = 'block';
+                         noContinueWatchingMessage.style.display = 'block'; // Show "No items" message if no data
                     }
 
                 } catch (e) {
