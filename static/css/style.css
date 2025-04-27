@@ -60,25 +60,70 @@ img { max-width: 100%; height: auto; display: block; }
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
+
 .header-content {
     display: flex;
     align-items: center;
     height: 100%;
     gap: 30px;
+    /* Add this or adjust justify-content to make space for the language switcher */
+    justify-content: space-between;
+}
+.language-switcher {
+    /* Position it left (or right in LTR layout) in the header */
+    /* Remove margin-left: auto; from main-nav if this is on the right */
+    /* If search is on the right and nav is center, language switcher can be on the far left */
+     /* Let's place it on the right side in RTL, next to the search */
+     order: 1; /* Place it first in the flex order (right in RTL) */
+     flex-shrink: 0; /* Don't let it shrink */
+}
+
+.language-switcher a {
+    font-family: var(--font-body); /* Use body font, or heading font if preferred */
+    font-size: 0.95em;
+    font-weight: 400; /* Less bold than nav links */
+    color: var(--text-color); /* Default color */
+    padding: 5px 10px; /* Padding */
+    border: 1px solid var(--border-color); /* Border */
+    border-radius: var(--border-radius-sm); /* Rounded corners */
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+    display: inline-flex; /* Align icon and text */
+    align-items: center;
+    gap: 6px; /* Space between icon and text */
+}
+
+.language-switcher a:hover, .language-switcher a:focus {
+    color: var(--text-heading-color); /* Brighter text on hover */
+    background-color: rgba(102, 252, 241, 0.15); /* Subtle background */
+    border-color: var(--primary-accent-color); /* Highlight border */
+    outline: none;
+}
+
+.language-switcher i {
+    color: var(--text-muted-color); /* Icon color */
+    font-size: 1em; /* Icon size */
+     transition: color var(--transition-fast);
+}
+
+.language-switcher a:hover i {
+     color: var(--primary-accent-color); /* Highlight icon color */
 }
 
 .search-container {
-    margin-right: 0;
+    order: 2; /* Place search after language switcher */
+    margin-right: 0; /* Ensure no extra margin on the right */
     flex-shrink: 0;
 }
 
 .main-nav {
-    display: flex;
-    gap: 25px;
-    margin-left: auto;
-    margin-right: auto;
-    flex-shrink: 0;
+     display: flex;
+     gap: 25px;
+     /* Removed margin-left: auto; and margin-right: auto; */
+     flex-grow: 1; /* Allow nav to take available space */
+     justify-content: center; /* Center the nav links */
+     flex-shrink: 0;
 }
+
 /* Adjust main-nav link styling */
 .main-nav a {
     font-family: var(--font-heading);
@@ -115,6 +160,7 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .auth-container {
+    order: 3; /* Place auth container last (left in RTL) */
     flex-shrink: 0;
 }
 
