@@ -197,7 +197,8 @@
     <script>
          // Pass current_language from Flask to JavaScript
          const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
-         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }};
+         // CORRECTED: Added the missing single quote
+         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
 
          // Pass the full movie data from Flask to JavaScript
          // Note: This converts the Python dictionary to a JavaScript object
