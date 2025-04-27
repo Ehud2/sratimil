@@ -1,10 +1,12 @@
 <!-- SeriesTV.html -->
+{# current_language is passed from Flask #}
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>כל הסדרות</title> {# Changed Title #}
+    {# Use conditional title #}
+    <title>{{ 'כל הסדרות' if current_language == 'he' else 'All Series' }}</title>
     {# Link the main style sheet first for shared styles like header, footer, etc. #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {# Link the specific movie page style sheet after the main one (grid styles are useful) #}
@@ -23,43 +25,67 @@
             {% if user and user.picture %}
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
-                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture">
+                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
             {% endif %}
         </div>
-        <p>טוען סינמה פריים...</p>
+        <p>
+             {% if current_language == 'he' %}
+             טוען סינמה פריים...
+             {% else %}
+             Loading Cinema Prime...
+             {% endif %}
+        </p>
     </div>
 
     <!-- Header - Copy from movies.html -->
     <header class="site-header">
         <div class="container header-content">
 
+             <div class="auth-container">
+                 {% if user %}
+                     <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
+                         {# Ensure this path is correct for your default image if user.picture is missing #}
+                         <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
+                     </a>
+                 {% else %}
+                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
+                          {# Replace the base64 string with your desired image URL or placeholder #}
+                          {# Use url_for for your static image #}
+                          <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
+                     </a>
+                 {% endif %}
+             </div>
+
             <div class="search-container">
-               <input type="search" id="searchInput" placeholder="חיפוש...">
-               <button aria-label="Search"><i class="fas fa-search"></i></button>
+               <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
+               <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
             </div>
 
+             {# --- Add Language Switcher Here (after Search) --- #}
+             <div class="language-switcher">
+                 {# Link to the set_language route. Show the name of the *current* language as per request. #}
+                 {# The href points to the *target* language (opposite of current) #}
+                 <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
+                      <i class="fas fa-globe"></i>
+                      {% if current_language == 'he' %}
+                          עברית
+                      {% else %}
+                          English
+                      {% endif %}
+                  </a>
+             </div>
+
+
             <nav class="main-nav">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> בית</a> {# Added icon #}
-                <a href="{{ url_for('all_movies') }}"><i class="fas fa-film"></i> סרטים</a> {# Added icon #}
-                <a href="{{ url_for('all_series') }}"><i class="fas fa-tv"></i> סדרות</a> {# Added icon #}
+                {# Update link text and aria-label based on language #}
+                <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
+                <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
+                <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
                 {% if user and user.email in admin_emails %}
-                    <a href="{{ url_for('add_content') }}"><i class="fas fa-plus-circle"></i> הוספת תוכן</a> {# Added icon #}
+                    <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a>
                 {% endif %}
             </nav>
 
-            <div class="auth-container">
-                {% if user %}
-                    <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
-                        {# Ensure this path is correct for your default image if user.picture is missing #}
-                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Replace the base64 string with your desired image URL or placeholder #}
-                         <img src="Imageurlhere" alt="Sign in with Google" loading="lazy">
-                    </a>
-                {% endif %}
-            </div>
 
             {# Removed the header-spacer div #}
         </div>
@@ -82,8 +108,9 @@
     {# Reusing the main content structure and grid class #}
     <main class="container main-content movies-page-content"> {# Use same margin class #}
         <div class="page-heading"> {# Use same heading class #}
-            <h1>כל הסדרות</h1> {# Changed Heading #}
-            <p>צפה בכל הסדרות הזמינות באתר.</p> {# Changed description #}
+            {# Update heading based on language #}
+            <h1>{{ 'כל הסדרות' if current_language == 'he' else 'All Series' }}</h1> {# Changed Heading #}
+            <p>{{ 'צפה בכל הסדרות הזמינות באתר.' if current_language == 'he' else 'View all available series on the site.' }}</p> {# Changed description #}
         </div>
 
         {# Container for the series grid - Reusing the movies grid class #}
@@ -92,27 +119,34 @@
             {# Changed variable name from 'movies' to 'series' #}
             {% for imdb_id, item in series.items() %}
                  {# Ensure item has basic properties needed for display and linking #}
-                 {% if item and item.get('imdbID') and item.get('title') %}
+                 {% if item and item.get('imdbID') and (item.get('title') or item.get('HebrewName')) %}
+                     {# Determine display title and poster based on current language #}
+                     {% set display_title = item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) %}
+                     {% set display_poster = item.get('HebrewPoster', item.get('poster', '')) if current_language == 'he' else item.get('poster', item.get('HebrewPoster', '')) %}
+                     {% set alt_text = item.get('HebrewName', item.get('title', 'Unknown Title')) if current_language == 'he' else item.get('title', item.get('HebrewName', 'Unknown Title')) %}
+                     {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
+
+
                      {# Wrap card in an anchor tag linking to the series details page #}
-                     {# Updated url_for to a hypothetical 'series_details' route #}
-                    <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link">
+                    <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link catalog-item" data-id="{{ item.imdbID }}" data-type="series" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}"> {# Added data attributes for search with both languages #}
                         {# Use the same item-card structure as index.html/movies.html #}
-                        {# Add data attributes for client-side search #}
-                        {# Updated data-type to 'series' #}
-                        <div class="item-card" data-title="{{ item.title.lower() }}" data-id="{{ item.imdbID }}" data-type="series" tabindex="0"> {# Changed data-type #}
+                        <div class="item-card" tabindex="0">
                             <div class="card-image-container">
-                                {# Use item.poster, fall back to default if N/A or empty #}
-                                <img src="{{ item.poster if item.poster and item.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.title }}" loading="lazy">
+                                {# Use determined poster, fall back to default #}
+                                <img src="{{ display_poster if display_poster and display_poster != 'N/A' else default_poster_url }}" alt="{{ alt_text }}" loading="lazy">
                                 {# No rank number on this page #}
                                 <div class="card-overlay">
                                      {# The play button now links to the series details page #}
-                                    <button class="play-button" aria-label="Play {{ item.title }}"><i class="fas fa-play"></i></button>
-                                    <h3 class="card-title">{{ item.title }}</h3>
+                                     <button class="play-button" aria-label="{{ ('צפה ב' + display_title) if current_language == 'he' else ('Watch ' + display_title) }}"><i class="fas fa-play"></i></button>
+                                    <h3 class="card-title">
+                                         {# Use determined display title #}
+                                         {{ display_title if display_title else ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
+                                    </h3>
                                     <div class="card-actions">
-                                        {# TODO: Implement add to list - ensure it handles type='series' #}
-                                        <button aria-label="Add to list" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button>
+                                        {# Add to list button - pass both Hebrew and English details #}
+                                        <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.imdbID }}" data-type="series" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button>
                                          {# The info button also links to the series details page #}
-                                        <button class="info-button" aria-label="More info"><i class="fas fa-info-circle"></i></button> {# This button will also follow the card link #}
+                                        <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
                                     </div>
                                 </div>
                             </div>
@@ -122,18 +156,29 @@
             {% endfor %}
         </div>
 
-        <div id="noResultsMessage" style="display: none;">לא נמצאו תוצאות התואמות את החיפוש שלך.</div>
+        <div id="noResultsMessage" style="display: none;">
+            {% if current_language == 'he' %}
+            לא נמצאו תוצאות התואמות את החיפוש שלך.
+            {% else %}
+            No results found matching your search.
+            {% endif %}
+        </div>
     </main>
 
     <!-- Footer - Copy from movies.html -->
     <footer class="site-footer-bottom">
         <div class="container">
-            <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
+             <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
         </div>
     </footer>
 
     <script>
-        // JavaScript to hide the loading spinner once the page is loaded - Copy from movies.html
+         // Pass current_language from Flask to JavaScript
+         const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
+         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+
+
+        // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOMContentLoaded fired on series page."); // Debug log
             const spinner = document.getElementById('loading-spinner');
@@ -159,33 +204,71 @@
                 console.warn("Spinner element #loading-spinner not found on series page.");
             }
 
+            // --- Show spinner on language switcher click ---
+            const languageSwitcherLink = document.querySelector('.language-switcher a');
+            if (languageSwitcherLink) {
+                 languageSwitcherLink.addEventListener('click', function(event) {
+                      // Prevent default behavior immediately so we can show the spinner
+                      // event.preventDefault(); // Don't prevent default, let the browser navigate
+                      // Show the spinner
+                      const spinner = document.getElementById('loading-spinner');
+                      if (spinner) {
+                          spinner.classList.remove('hidden');
+                          spinner.style.display = 'flex'; // Ensure it's flex for centering
+                           console.log("Spinner shown by language switcher click.");
+                      }
+                      // Allow the browser to proceed with the link navigation after showing spinner
+                 });
+            }
+
+
             // --- Search Filter Functionality - Adapted for series page ---
             const searchInput = document.getElementById('searchInput');
+             const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
                     // Select the anchor tag wrappers for the series cards
-                    const itemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link'); // Target only cards within the grid
+                    const itemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item'); // Target only cards within the grid and has catalog-item class
                     let anyVisible = false;
                     itemCardLinks.forEach(link => {
-                        // Get the data-title from the .item-card *inside* the link
-                        const card = link.querySelector('.item-card');
-                        if (card) {
-                            const title = card.dataset.title || '';
+                         // Get title based on current language from data attributes
+                         // Fallback to the other language title if the preferred one is missing
+                         const titleHe = link.dataset.titleHe || link.dataset.titleEn || '';
+                         const titleEn = link.dataset.titleEn || link.dataset.titleHe || '';
 
-                            if (title.includes(searchTerm)) {
-                                link.style.display = ''; // Show the link (and thus the card)
-                                anyVisible = true;
-                            } else {
-                                link.style.display = 'none'; // Hide the link (and thus the card)
-                            }
-                        }
+                         const title = currentLanguage === 'he' ? titleHe : titleEn;
+
+
+                         if (title.includes(searchTerm)) {
+                             link.style.display = ''; // Show the link (and thus the card)
+                             anyVisible = true;
+                         } else {
+                             link.style.display = 'none'; // Hide the link (and thus the card)
+                         }
+
                     });
                     const noResultsMessage = document.getElementById('noResultsMessage');
                     if (noResultsMessage) {
                          noResultsMessage.style.display = anyVisible ? 'none' : 'block';
                     }
                 });
+
+                 // Handle search button click (does the same as input for now)
+                 document.querySelector('.search-container button').addEventListener('click', function() {
+                      // Trigger the input event manually to ensure filtering happens
+                     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                 });
+
+                 // Handle Enter key on search input
+                 searchInput.addEventListener('keypress', function(event) {
+                     if (event.key === 'Enter') {
+                         event.preventDefault(); // Prevent default form submission/page reload
+                          // Trigger the input event manually to ensure filtering happens
+                          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                     }
+                 });
+
             } else {
                  console.warn("Search input #searchInput not found on series page.");
             }
