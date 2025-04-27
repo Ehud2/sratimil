@@ -97,32 +97,14 @@
     display: block; /* Important for the card to take grid space */
     text-decoration: none; /* Remove underline from the link */
     color: inherit; /* Inherit text color */
-    /* Add a transition for smooth hiding/showing */
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, display 0.3s; /* Transition display is tricky, opacity/transform are better */
+    /* Add a transition for smooth hiding/showing if desired (works on opacity/transform) */
+    /* transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; */
 }
 
-/* When an item is hidden, make it invisible and prevent interaction */
-.all-movies-grid .item-card-link[style*="display: none"] {
-  /* Override the inline style for display to make transitions work if needed, */
-  /* or simply rely on opacity/visibility transitions for filtering effect. */
-  /* Using display: none is most effective for layout reflow. Transitions won't work on display. */
-  /* We will use opacity/visibility for a softer effect while display handles the layout */
-  /* Set opacity/visibility in JS when hiding before setting display: none */
-}
+/* When an item is hidden using display: none, transitions don't apply */
+/* You would need to transition opacity/visibility first, then set display: none */
+/* For simple filtering, setting display: none directly is common */
 
-
-/* You might want to adjust card size specifically for the grid if needed, e.g.: */
-/* .all-movies-grid .item-card { width: 100%; height: auto; } */
-/* This makes cards fill their grid cell width. The height will be determined by the image/content. */
-/* Keep the object-fit cover on the image. */
-
-/* If you make cards full width of grid item, you might need to adjust card-image-container height */
-/* .all-movies-grid .card-image-container { height: var(--card-height); } */
-/* Or let the aspect ratio define height: */
-/* .all-movies-grid .card-image-container { aspect-ratio: 2/3; height: auto; } */
-/* The original index.html style.css has fixed width/height for the card, which works fine with grid too. */
-/* Let's keep the fixed width/height for consistency with the card design unless a change is desired. */
-/* The 'minmax(var(--card-width), 1fr)' in grid-template-columns handles width responsively. */
 
 /* Style for the "No results found" message specific to this page if needed */
 /* #noResultsMessage { ... } */
