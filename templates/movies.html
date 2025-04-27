@@ -147,7 +147,7 @@
             {# Iterate through the 'movies' dictionary passed from main.py #}
             {% for imdb_id, movie in movies.items() %}
                  {# Ensure item has basic properties needed for display and linking #}
-                 {# We now add ALL relevant movie data to the data attributes for easy access in JS #}
+                 {# Add data-id for JS to find the element. Other data attributes are kept but not strictly needed for filtering logic if using allMoviesData #}
                  {% if movie and movie.get('imdbID') and (movie.get('title') or movie.get('HebrewName')) %}
                      {# Determine display title and poster based on current language #}
                      {% set display_title = movie.get('HebrewName', movie.get('title', '')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', '')) %}
@@ -155,24 +155,23 @@
                      {% set alt_text = movie.get('HebrewName', movie.get('title', 'Unknown Title')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', 'Unknown Title')) %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
-                     {# Add data attributes for filtering: genre, rated, imdbRating, year #}
-                     {# Store full data string from OMDB, lowercased and trimmed, for parsing in JS #}
+                     {# data-id is crucial for JS mapping. Other data attributes are added just in case other scripts use them. #}
                      <a href="{{ url_for('movie_details', imdb_id=movie.imdbID) }}"
                         class="item-card-link catalog-item"
                         data-id="{{ movie.imdbID }}"
                         data-type="movie"
                         data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower | trim }}"
                         data-title-en="{{ movie.get('title', movie.get('HebrewName', '')) | lower | trim }}"
-                        data-genre="{{ movie.get('Genre', '') | lower | trim }}" {# OMDB Genre is comma-separated #}
-                        data-rated="{{ movie.get('Rated', '') | lower | trim }}" {# Keep this for potential future Rated filter #}
-                        data-imdb-rating="{{ movie.get('imdbRating', '') | lower | trim }}" {# OMDB imdbRating is a string like "7.5" or "N/A" #}
-                        data-year="{{ movie.get('Year', '') | lower | trim }}"> {# OMDB Year is like '2023' or '2020–' #}
+                        data-genre="{{ movie.get('Genre', '') | lower | trim }}"
+                        data-rated="{{ movie.get('Rated', '') | lower | trim }}"
+                        data-imdb-rating="{{ movie.get('imdbRating', '') | lower | trim }}"
+                        data-year="{{ movie.get('Year', '') | lower | trim }}">
 
                         {# Use the same item-card structure as index.html for consistent look, but movies.css will handle grid layout #}
                         <div class="item-card" tabindex="0">
                             <div class="card-image-container">
                                 {# Use determined poster, fall back to default #}
-                                <img src="{{ display_poster if display_poster and display_poster != 'N/A' else default_poster_url }}" alt="{{ alt_text }}" loading="lazy">
+                                <img src="{{ display_poster if display_poster and display_poster != 'N/A' and display_poster != 'N/a' and display_poster != 'N/A.' else default_poster_url }}" alt="{{ alt_text }}" loading="lazy"> {# Added checks for common 'missing poster' strings #}
                                 {# No rank number on this page #}
                                 <div class="card-overlay">
                                      {# The play button now links to the movie details page #}
@@ -219,6 +218,7 @@
          // Pass the full movie data from Flask to JavaScript
          // Note: This converts the Python dictionary to a JavaScript object
          const allMoviesData = {{ movies | tojson }};
+         console.log("Loaded allMoviesData:", allMoviesData); // Log the loaded data
 
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -286,6 +286,7 @@
                      option.textContent = genre; // Display original case
                      genreFilter.appendChild(option);
                  });
+                 console.log("Genre filter populated."); // Log genre population
 
                 // Populate Rating Filter (1-10)
                 for (let i = 1; i <= 10; i++) {
@@ -294,6 +295,7 @@
                      option.textContent = i + "+"; // Display "1+", "2+", etc.
                      ratingFilter.appendChild(option);
                  }
+                 console.log("Rating filter populated."); // Log rating population
 
 
                 // Populate Year Filter (Min Year in data to Current Year)
@@ -320,54 +322,66 @@
                  // If no valid years were found in the data, default minYear to a reasonable value (e.g., 1900)
                  if (!foundAnyYear) {
                      minYear = 1900; // Fallback if no valid years in data
+                 } else {
+                     // Add a small buffer before the minimum year if it's very recent,
+                     // or just ensure it's not in the future by mistake
+                     minYear = Math.min(minYear, currentYear); // Should not show future years
+                     // Optional: minYear = Math.max(minYear - 5, 1900); // Add options for a few years before the earliest found
                  }
 
 
-                // Create options from minYear up to currentYear
+                // Create options from currentYear down to minYear
                 for (let year = currentYear; year >= minYear; year--) { // Sort years descending
                     const option = document.createElement('option');
                     option.value = year;
                     option.textContent = year;
                     yearFilter.appendChild(option);
                 }
+                 console.log(`Year filter populated from ${minYear} to ${currentYear}.`); // Log year population
 
-                 console.log(`Populated filters. Genres: ${predefinedGenres.length}, Ratings: 1-10, Years: ${minYear}-${currentYear}.`);
             }
 
 
             // Function to perform filtering and search
             function applyFiltersAndSearch() {
+                console.log("Applying filters and search..."); // Log function call
                 const searchTerm = searchInput.value.toLowerCase().trim();
                 const selectedGenre = genreFilter.value; // value is already lowercased
                 const selectedRatingValue = parseFloat(ratingFilter.value); // Parse to number
                 const selectedYearValue = parseInt(yearFilter.value); // Parse to number
 
+                console.log(`Search Term: "${searchTerm}", Genre: "${selectedGenre}", Rating: ${selectedRatingValue}, Year: ${selectedYearValue}`); // Log selected values
+
                 let visibleCount = 0;
 
-                // Iterate through the raw data object, not the DOM elements directly for filtering logic
+                // Iterate through the raw data object
                  Object.values(allMoviesData).forEach(movie => {
                     const cardElement = movieCardElements[movie.imdbID]; // Get the corresponding DOM element
                     if (!cardElement) {
-                         console.warn(`DOM element not found for movie ID: ${movie.imdbID}`);
-                         return; // Skip if DOM element is missing (shouldn't happen if all goes well)
+                         console.warn(`DOM element not found for movie ID: ${movie.imdbID}. Skipping.`);
+                         return; // Skip if DOM element is missing
                     }
 
-                    // Get data points from the movie data object
+                    // Get data points directly from the movie data object, always lowercase and trim
                     const titleHe = (movie.HebrewName || movie.title || '').toLowerCase().trim();
                     const titleEn = (movie.title || movie.HebrewName || '').toLowerCase().trim();
                     const movieGenre = (movie.Genre || '').toLowerCase().trim(); // Already comma-separated from OMDB
                     const movieImdbRatingStr = (movie.imdbRating || '').toLowerCase().trim();
                     const movieYearStr = (movie.Year || '').toLowerCase().trim();
 
+                     console.log(`Processing movie "${movie.title}" (${movie.imdbID}): Genre="${movie.Genre}", Rating="${movie.imdbRating}", Year="${movie.Year}"`); // Log movie data being processed
+
 
                     // --- Apply Search Filter ---
                     // Check if either Hebrew or English title contains the search term
                     const passesSearch = (titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
+                    console.log(`  - Passes Search ("${searchTerm}"): ${passesSearch}`); // Log search result
 
 
                     // --- Apply Genre Filter ---
                     // If no genre is selected, it passes; otherwise, check if the movie's genre string includes the selected genre
                     const passesGenreFilter = !selectedGenre || (movieGenre.includes(selectedGenre));
+                    console.log(`  - Passes Genre Filter ("${selectedGenre}"): ${passesGenreFilter}`); // Log genre result
 
 
                     // --- Apply Rating Filter (IMDb Rating) ---
@@ -378,6 +392,7 @@
                          // Check if the movie's rating is a valid number AND is greater than or equal to the selected value
                          passesRatingFilter = (!isNaN(movieImdbRating) && movieImdbRating >= selectedRatingValue);
                     }
+                     console.log(`  - Passes Rating Filter (${selectedRatingValue}): ${passesRatingFilter}`); // Log rating result
 
 
                     // --- Apply Year Filter ---
@@ -390,21 +405,25 @@
                         // Check if the movie's year is a valid number AND is greater than or equal to the selected value
                         passesYearFilter = (!isNaN(movieYear) && movieYear >= selectedYearValue);
                     }
+                     console.log(`  - Passes Year Filter (${selectedYearValue}): ${passesYearFilter}`); // Log year result
 
 
                     // A card is visible only if it passes ALL filters and search
                     if (passesSearch && passesGenreFilter && passesRatingFilter && passesYearFilter) {
                         cardElement.style.display = ''; // Show the element
                         visibleCount++;
+                         console.log("  - Displaying movie.");
                     } else {
                         cardElement.style.display = 'none'; // Hide the element
+                        console.log("  - Hiding movie.");
                     }
-                });
+                 });
 
                 // Update the "No results" message
                 if (noResultsMessage) {
                      noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
                 }
+                 console.log(`Filtering complete. Visible movies: ${visibleCount}.`); // Log total visible count
             }
 
             // Populate filters on page load
@@ -422,11 +441,12 @@
                          applyFiltersAndSearch();
                      }
                  });
+                 console.log("Search input listeners added.");
             }
 
-            if (genreFilter) genreFilter.addEventListener('change', applyFiltersAndSearch);
-            if (ratingFilter) ratingFilter.addEventListener('change', applyFiltersAndSearch);
-            if (yearFilter) yearFilter.addEventListener('change', applyFiltersAndSearch);
+            if (genreFilter) { genreFilter.addEventListener('change', applyFiltersAndSearch); console.log("Genre filter listener added."); }
+            if (ratingFilter) { ratingFilter.addEventListener('change', applyFiltersAndSearch); console.log("Rating filter listener added."); }
+            if (yearFilter) { yearFilter.addEventListener('change', applyFiltersAndSearch); console.log("Year filter listener added."); }
 
 
              // Initial filter/search application in case there's a search term pre-filled
