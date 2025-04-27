@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
 
-    {# CSS for the Vidsrc embed container and messages #}
+    {# CSS for the Vidsrc embed container and messages - kept in <style> block as before #}
     <style>
         /* Added text alignment based on document direction */
         .series-details-page {
@@ -334,6 +334,46 @@
 
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOMContentLoaded fired on series page."); // Debug log
+
+             // --- Loading Spinner Logic --- (Copy from index.html)
+             const spinner = document.getElementById('loading-spinner');
+             const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+
+             if (spinner) {
+                  console.log("Spinner element found, attempting to hide.");
+                  spinner.classList.add('hidden');
+                  spinner.addEventListener('transitionend', function handler(event) {
+                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
+                          spinner.style.display = 'none';
+                          console.log("Spinner hidden via transitionend on series page.");
+                          spinner.removeEventListener('transitionend', handler);
+                      }
+                 });
+                  setTimeout(() => {
+                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+                           spinner.style.display = 'none';
+                           console.log("Spinner hidden via timeout fallback on series page.");
+                      }
+                  }, visualHideDelay + 100);
+             } else {
+                 console.warn("Spinner element #loading-spinner not found on series page.");
+             }
+
+             // --- Show spinner on language switcher click --- (Copy from index.html)
+             const languageSwitcherLink = document.querySelector('.language-switcher a');
+             if (languageSwitcherLink) {
+                  languageSwitcherLink.addEventListener('click', function(event) {
+                       const spinner = document.getElementById('loading-spinner');
+                       if (spinner) {
+                           spinner.classList.remove('hidden');
+                           spinner.style.display = 'flex'; // Ensure it's flex for centering
+                            console.log("Spinner shown by language switcher click on series page.");
+                       }
+                  });
+             }
+
+
             // Embed series data from Flask into a JavaScript variable
             const seriesData = {{ series | tojson }}; // Flask renders the 'series' object as JSON
             const seriesImdbId = seriesData ? seriesData.imdbID : null; // Get the series IMDb ID
@@ -374,7 +414,7 @@
 
              // Expected path format: /series/<series_imdb_id> or /series/<series_imdb_id>/<season_number>/<episode_number>
              // Parts for episode: [series, <series_imdb_id>, <season_number>, <episode_number>]
-             if (pathParts.length === 4 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
+             if (seriesImdbId && pathParts.length === 4 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
                  const seasonCandidate = parseInt(pathParts[2], 10);
                  const episodeCandidate = parseInt(pathParts[3], 10);
 
@@ -386,12 +426,13 @@
                  } else {
                      console.warn("Invalid season or episode number format in URL path.");
                  }
-             } else if (pathParts.length === 2 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
+             } else if (seriesImdbId && pathParts.length === 2 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
                   console.log("No specific season/episode numbers found in URL path.");
              }
-             else {
-                  console.warn("URL format is unexpected for a series page with optional season/episode.");
+             else if (seriesImdbId) { // Log warning only if seriesData exists but path doesn't match
+                  console.warn("URL format is unexpected for this series page with optional season/episode.");
              }
+             // If seriesImdbId is null, it means seriesData was null, error handler should be shown.
 
 
              // Helper to format time for display (HH:MM:SS)
@@ -408,12 +449,20 @@
 
             // Function to find episode data by season and episode numbers
              function findEpisodeByNumbers(seasonNum, episodeNum) {
+                 // Ensure seasonNum and episodeNum are treated as numbers here
+                 if (isNaN(seasonNum) || seasonNum < 1 || isNaN(episodeNum) || episodeNum < 1) {
+                      console.warn(`findEpisodeByNumbers called with invalid numbers: S${seasonNum}E${episodeNum}`);
+                      return null; // Return null for invalid input numbers
+                 }
+
                  if (!seriesData || !seriesData.Seasons || typeof seriesData.Seasons !== 'object') return null;
 
-                 const seasonData = seriesData.Seasons[seasonNum];
+                 // Access season by number key (which is a string in the object keys)
+                 const seasonData = seriesData.Seasons[String(seasonNum)]; // <-- Access using String(seasonNum)
                  if (seasonData && seasonData.Episodes && typeof seasonData.Episodes === 'object') {
-                      // Access episode directly using the episode number key
-                      const episode = seasonData.Episodes[episodeNum];
+                      // Access episode by its STRING key (which is the episode number as a string in Firebase)
+                      const episode = seasonData.Episodes[String(episodeNum)]; // <-- FIX: Access using String(episodeNum)
+
                        // Ensure episode data exists and is an object
                       if (episode && typeof episode === 'object') {
                            return {
@@ -421,9 +470,13 @@
                                episode: episodeNum,
                                data: episode // Return the full episode object from data
                            };
+                      } else {
+                          console.warn(`Episode data not found or invalid for S${seasonNum}E${episodeNum} in Firebase structure.`);
                       }
+                 } else {
+                      console.warn(`Season data not found or invalid for Season ${seasonNum} in Firebase structure.`);
                  }
-                 return null; // Episode not found
+                 return null; // Episode or Season not found or invalid
              }
 
 
@@ -432,10 +485,11 @@
                 if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
                     // Get season numbers from the keys of the Seasons object, convert to numbers,
                     // filter out NaN and numbers less than 1, then sort.
-                    const seasonNumbers = Object.keys(seriesData.Seasons)
-                                                .map(Number)
-                                                .filter(num => !isNaN(num) && num >= 1)
-                                                .sort((a, b) => a - b);
+                    // Use Object.keys().filter() first to ensure only valid season number strings are processed
+                     const seasonNumbers = Object.keys(seriesData.Seasons)
+                                                .filter(key => !isNaN(Number(key)) && Number(key) >= 1) // Filter for valid number strings >= 1
+                                                .map(Number) // Convert valid keys to numbers
+                                                .sort((a, b) => a - b); // Sort numerically
 
                     // Always add the default option first (language dependent)
                     seasonSelect.innerHTML = `<option value="">${currentLanguage === 'he' ? '-- בחר עונה --' : '-- Select Season --'}</option>`;
@@ -443,13 +497,13 @@
                     if (seasonNumbers.length > 0) {
                         seasonNumbers.forEach(seasonNum => {
                             const option = document.createElement('option');
-                            option.value = seasonNum;
+                            option.value = seasonNum; // Option value is the number
                             option.textContent = `${currentLanguage === 'he' ? 'עונה' : 'Season'} ${seasonNum}`; // Language dependent text
                             seasonSelect.appendChild(option);
                         });
                          seasonSelect.disabled = false; // Enable select if seasons are available
                     } else {
-                         console.warn("No season data (>=1) found for this series in the data structure.");
+                         console.warn("No season data (>=1) found for this series after filtering keys.");
                          const option = document.createElement('option');
                          option.value = "";
                          option.textContent = currentLanguage === 'he' ? "-- אין עונות זמינות --" : "-- No Seasons Available --"; // Language dependent text
@@ -528,11 +582,17 @@
                      console.log("Cannot save continue watching state: User not logged in or missing series data.");
                      return;
                 }
+                 // Ensure valid season/episode numbers before saving
+                 if (isNaN(season) || season < 1 || isNaN(episode) || episode < 1) {
+                      console.error(`Cannot save continue watching state: Invalid season (${season}) or episode (${episode}) numbers.`);
+                      return;
+                 }
 
-                 const episodeData = findEpisodeByNumbers(season, episode)?.data;
+
+                 const episodeData = findEpisodeByNumbers(season, episode)?.data; // Use findEpisodeByNumbers to validate episode exists
 
                  if (!episodeData) {
-                     console.error(`Cannot save continue watching state: Episode S${season}E${episode} data not found.`);
+                     console.error(`Cannot save continue watching state: Episode S${season}E${episode} data not found in findEpisodeByNumbers.`);
                      return;
                  }
 
@@ -543,8 +603,8 @@
                 continueWatchingItems[itemKey] = {
                     id: seriesImdbId, // Save series ID
                     type: 'series',
-                    season: season,
-                    episode: episode,
+                    season: season, // Save season number as number
+                    episode: episode, // Save episode number as number
                     title: seriesData.title || 'כותרת סדרה לא ידועה', // Save English series title
                     HebrewName: seriesData.HebrewName || seriesData.title || 'כותרת סדרה לא ידועה', // Save Hebrew series title (with fallback)
                     episode_title: episodeData.title || `פרק ${episode}`, // Save episode title (currently only English from OMDB)
@@ -580,7 +640,7 @@
                       console.log("Cannot remove continue watching state: User not logged in or missing data.");
                       return;
                  }
-                 const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
+                 const itemKey = `series_${seriesImdbId}_S${season}E{episode}`;
                   if (continueWatchingItems[itemKey]) {
                        delete continueWatchingItems[itemKey];
                        try {
@@ -602,8 +662,9 @@
                 const season = parseInt(clickedItem.dataset.season, 10); // Get season number as integer
                 const episode = parseInt(clickedItem.dataset.episode, 10); // Get episode number as integer
 
-                 if (isNaN(season) || isNaN(episode) || season < 1 || episode < 1) {
+                 if (isNaN(season) || season < 1 || isNaN(episode) || episode < 1) {
                       console.error("Invalid season or episode number from clicked item data.");
+                      showEmbedMessage(currentLanguage === 'he' ? 'שגיאה: מספר עונה או פרק לא תקינים.' : 'Error: Invalid season or episode number.'); // Language dependent message
                       return;
                  }
 
@@ -616,7 +677,7 @@
                  // if (saveTimer) clearInterval(saveTimer);
 
                  // --- Update URL with Season and Episode Numbers ---
-                 if (seriesImdbId && season && episode) {
+                 if (seriesImdbId) { // seriesImdbId is already validated on page load/data check
                       // Check localStorage for a saved timestamp for THIS specific episode
                       const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
                       const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
@@ -638,12 +699,10 @@
                      saveContinueWatchingState(currentSeason, currentEpisode, savedEpisodeTimestamp);
 
                  } else {
-                      console.warn("Cannot update URL or save state, missing series IMDb ID, season, or episode number.");
-                      // Clear current episode tracking if data is invalid
-                     currentSeason = null;
-                     currentEpisode = null;
-                     currentEpisodeKey = null;
-                     currentEpisodeTimestampDiv.style.display = 'none';
+                      // This case should not be reached if seriesData was valid initially, but defensive
+                      console.warn("Cannot update URL or save state, missing series IMDb ID.");
+                      showEmbedMessage(currentLanguage === 'he' ? 'שגיאה פנימית: חסר זיהוי סדרה.' : 'Internal error: Missing series ID.'); // Language dependent message
+                      return; // Stop here if basic data is missing
                  }
 
 
@@ -653,7 +712,10 @@
 
 
                 // Validate data before creating iframe
-                if (seriesImdbId && season && episode && seriesImdbId.startsWith('tt')) { // Basic check for series IMDb ID format and number existence
+                // Check if the selected episode actually exists in the seriesData structure
+                 const episodeFoundInData = findEpisodeByNumbers(season, episode);
+
+                if (seriesImdbId.startsWith('tt') && episodeFoundInData) { // Basic check for series IMDb ID format and if the episode exists
                      console.log(`Attempting to embed S${season}E${episode} for series ${seriesImdbId} using vidsrc.`);
 
                     const iframe = document.createElement('iframe');
@@ -683,8 +745,8 @@
 
 
                 } else {
-                     console.warn(`Missing series IMDb ID (${seriesImdbId}), season (${season}), or episode (${episode}) or invalid format. Cannot embed.`);
-                     showEmbedMessage(currentLanguage === 'he' ? 'וידאו אינו זמין עבור פרק זה (חסרים נתוני ID או עונה/פרק).' : 'Video not available for this episode (missing ID or season/episode data).'); // Language dependent message
+                     console.warn(`Missing series IMDb ID (${seriesImdbId}) or episode S${season}E${episode} not found in data. Cannot embed.`);
+                     showEmbedMessage(currentLanguage === 'he' ? 'וידאו אינו זמין עבור פרק זה (חסרים נתונים או הפרק לא קיים במסד).' : 'Video not available for this episode (missing data or episode not found in database).'); // Language dependent message
                 }
             }
 
@@ -693,16 +755,22 @@
                 episodeListUl.innerHTML = ''; // Clear current episodes
                  // episodeListUl.classList.add('loading'); // Optional: Add a loading class
 
-                const seasonData = seriesData && seriesData.Seasons ? seriesData.Seasons[seasonNumber] : null;
+                const seasonData = seriesData && seriesData.Seasons ? seriesData.Seasons[String(seasonNumber)] : null; // Access using String(seasonNumber)
 
                 if (seasonData && seasonData.Episodes && typeof seasonData.Episodes === 'object') {
                     const episodes = seasonData.Episodes;
                     // Get episode numbers (keys of the Episodes object), convert to numbers, sort
-                    const episodeNumbers = Object.keys(episodes).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b); // Added filter for NaN
+                    // Filter keys to include only those that are valid number strings >= 1
+                    const episodeNumbers = Object.keys(episodes)
+                                                .filter(key => !isNaN(Number(key)) && Number(key) >= 1) // Filter for valid number strings >= 1
+                                                .map(Number) // Convert valid keys to numbers
+                                                .sort((a, b) => a - b); // Sort numerically
+
 
                     if (episodeNumbers.length > 0) {
                         episodeNumbers.forEach(episodeNum => {
-                            const episode = episodes[episodeNum];
+                            // Access episode data using the string key
+                            const episode = episodes[String(episodeNum)]; // <-- Access using String(episodeNum)
                             // Ensure episode data is an object
                             if (episode && typeof episode === 'object') {
                                 const li = document.createElement('li');
@@ -717,13 +785,15 @@
                                 li.addEventListener('click', handleEpisodeClick);
                                 episodeListUl.appendChild(li);
                             } else {
-                                 console.warn(`Skipping invalid episode data for S${seasonNumber}E${episodeNum}`);
+                                 console.warn(`Skipping invalid episode data for S${seasonNumber}E${episodeNum} in Firebase structure.`);
                             }
                         });
 
                          // If an episode number was provided to select, find it and click it
-                         if (episodeToSelect !== null) {
+                         // Ensure episodeToSelect is a valid number >= 1
+                         if (episodeToSelect !== null && !isNaN(episodeToSelect) && episodeToSelect >= 1) {
                               setTimeout(() => { // Small delay to ensure elements are in DOM
+                                  // Use attribute selector with string values for data attributes
                                  const targetEpisodeItem = episodeListUl.querySelector(`.episode-item[data-season='${seasonNumber}'][data-episode='${episodeToSelect}']`);
                                  if (targetEpisodeItem) {
                                       console.log(`Found S${seasonNumber}E${episodeToSelect} list item for auto-selection. Clicking.`);
@@ -735,15 +805,18 @@
                                       showEmbedMessage(currentLanguage === 'he' ? `הפרק S${seasonNumber}E${episodeToSelect} לא נמצא. אנא בחר פרק אחר.` : `Episode S${seasonNumber}E${episodeToSelect} not found. Please select another episode.`); // Language dependent message
                                  }
                               }, 50);
+                         } else if (episodeToSelect !== null) {
+                              console.warn(`Attempted to select episode ${episodeToSelect} for S${seasonNumber}, which is invalid.`);
                          }
+
 
                     } else {
                          episodeListUl.innerHTML = `<li class="placeholder-episode">${currentLanguage === 'he' ? 'אין פרקים זמינים לעונה זו.' : 'No episodes available for this season.'}</li>`; // Language dependent text
-                          console.warn(`No episode data found for Season ${seasonNumber}`);
+                          console.warn(`No episode data found for Season ${seasonNumber} after filtering keys.`);
                     }
                 } else {
                     episodeListUl.innerHTML = `<li class="placeholder-episode">${currentLanguage === 'he' ? 'אין פרקים זמינים לעונה זו.' : 'No episodes available for this season.'}</li>`; // Language dependent text
-                     console.warn(`No episode data found for Season ${seasonNumber}`);
+                     console.warn(`No episode data found for Season ${seasonNumber} in Firebase structure.`);
                 }
                  // episodeListUl.classList.remove('loading');
             }
@@ -778,8 +851,12 @@
                          // Message is already set by showEmbedMessage above
                          // Reset URL to base series URL
                          if (seriesImdbId) {
-                             history.replaceState(null, '', `/series/${seriesImdbId}`);
-                              console.log(`Season select cleared, URL reset to: /series/${seriesImdbId}`);
+                             // Only reset URL if it currently includes season/episode numbers, otherwise avoid adding history state unnecessarily
+                             const currentPath = window.location.pathname;
+                             if (currentPath.split('/').filter(part => part !== '').length >= 4) { // Check if path looks like /series/tt.../.../...
+                                 history.replaceState(null, '', `/series/${seriesImdbId}`);
+                                 console.log(`Season select cleared, URL reset to: /series/${seriesImdbId}`);
+                             }
                          }
                     }
                 });
@@ -796,66 +873,70 @@
 
 
             // Initial setup on page load
-            loadContinueWatchingData(); // Load existing CW data
-            populateSeasons(); // Populate the season dropdown
+            if (seriesData) { // Only proceed if seriesData was successfully loaded
+                loadContinueWatchingData(); // Load existing CW data
+                populateSeasons(); // Populate the season dropdown
 
-            // Auto-select season and episode from URL hash or default
-             setTimeout(() => { // Small delay to ensure seasons are populated
-                 if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
-                      const seasonNumbers = Object.keys(seriesData.Seasons).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b);
-
-                      if (seasonNumbers.length > 0) {
-                           let targetSeasonNum = null;
-                           let targetEpisodeNum = null;
-                           let initialTimestamp = initialTimestampFromUrl; // Start with timestamp from URL hash
-
-                          // 1. Prioritize season/episode from URL path
-                          if (initialSeasonFromUrl !== null && initialEpisodeFromUrl !== null) {
-                               console.log(`Attempting to auto-select S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL path.`);
-                               const foundEpisodeInfo = findEpisodeByNumbers(initialSeasonFromUrl, initialEpisodeFromUrl);
-                               if (foundEpisodeInfo) {
-                                   targetSeasonNum = initialSeasonFromUrl;
-                                   targetEpisodeNum = initialEpisodeFromUrl;
-                                   console.log(`Found episode data for S${targetSeasonNum}E${targetEpisodeNum}.`);
-                                    // If episode found by URL path, check localStorage for its specific timestamp
-                                    const itemKey = `series_${seriesImdbId}_S${targetSeasonNum}E${targetEpisodeNum}`;
-                                    const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
-
-                                    // If URL hash had a timestamp, it takes precedence. Otherwise, use the one from localStorage.
-                                    if (initialTimestampFromUrl === 0 && savedEpisodeTimestamp > 0) {
-                                         initialTimestamp = savedEpisodeTimestamp;
-                                         console.log(`No timestamp in URL hash, using saved timestamp from localStorage: ${initialTimestamp} seconds.`);
-                                    } else if (initialTimestampFromUrl > 0) {
-                                         console.log(`Using timestamp from URL hash (${initialTimestampFromUrl}), ignoring localStorage saved timestamp (${savedEpisodeTimestamp}).`);
-                                    } else {
-                                         console.log("No timestamp in URL hash or localStorage for this episode.");
-                                    }
-
-                               } else {
-                                   console.warn(`Episode S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL path not found in series data.`);
-                               }
-                          }
-
-                          // 2. If no URL path numbers or episode not found by path, fall back to the first episode of the first season
-                          if (targetSeasonNum === null || targetEpisodeNum === null) {
-                               console.log("Falling back to selecting the first available season/episode.");
-                               // Find the first season number that actually has episodes
-                               const firstPlayableSeasonNum = seasonNumbers.find(sNum => {
-                                   const seasonData = seriesData.Seasons[sNum];
-                                   return seasonData && seasonData.Episodes && Object.keys(seasonData.Episodes).map(Number).filter(num => !isNaN(num) && num >= 1).length > 0;
-                               });
+                // Auto-select season and episode from URL hash or default
+                 setTimeout(() => { // Small delay to ensure seasons are populated
+                     if (seriesData.Seasons && typeof seriesData.Seasons === 'object') {
+                          // Find season numbers that actually have valid episodes (number >= 1)
+                          const playableSeasonNumbers = Object.keys(seriesData.Seasons)
+                                                            .filter(sKey => {
+                                                                 const seasonData = seriesData.Seasons[sKey];
+                                                                 return seasonData && seasonData.Episodes &&
+                                                                        Object.keys(seasonData.Episodes).filter(eKey => !isNaN(Number(eKey)) && Number(eKey) >= 1).length > 0;
+                                                            })
+                                                            .map(Number)
+                                                            .sort((a, b) => a - b);
 
 
-                               if (firstPlayableSeasonNum !== undefined) {
-                                    // Get episode numbers for the first playable season, convert to numbers, sort, take the first one
-                                    const episodesInFirstSeason = seriesData.Seasons[firstPlayableSeasonNum]?.Episodes || {};
-                                    const firstEpisodeNum = Object.keys(episodesInFirstSeason).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b)[0];
+                          if (playableSeasonNumbers.length > 0) {
+                               let targetSeasonNum = null;
+                               let targetEpisodeNum = null;
+                               let initialTimestamp = initialTimestampFromUrl; // Start with timestamp from URL hash
+
+                              // 1. Prioritize season/episode from URL path
+                              if (initialSeasonFromUrl !== null && initialEpisodeFromUrl !== null) {
+                                   console.log(`Attempting to auto-select S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL path.`);
+                                   const foundEpisodeInfo = findEpisodeByNumbers(initialSeasonFromUrl, initialEpisodeFromUrl); // Uses the fixed findEpisodeByNumbers
+                                   if (foundEpisodeInfo) {
+                                       targetSeasonNum = initialSeasonFromUrl;
+                                       targetEpisodeNum = initialEpisodeFromUrl;
+                                       console.log(`Found episode data for S${targetSeasonNum}E${targetEpisodeNum}.`);
+                                        // If episode found by URL path, check localStorage for its specific timestamp
+                                        const itemKey = `series_${seriesImdbId}_S${targetSeasonNum}E${targetEpisodeNum}`;
+                                        const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
+
+                                        // If URL hash had a timestamp, it takes precedence. Otherwise, use the one from localStorage.
+                                        if (initialTimestampFromUrl === 0 && savedEpisodeTimestamp > 0) {
+                                             initialTimestamp = savedEpisodeTimestamp;
+                                             console.log(`No timestamp in URL hash, using saved timestamp from localStorage: ${initialTimestamp} seconds.`);
+                                        } else if (initialTimestampFromUrl > 0) {
+                                             console.log(`Using timestamp from URL hash (${initialTimestampFromUrl}), ignoring localStorage saved timestamp (${savedEpisodeTimestamp}).`);
+                                        } else {
+                                             console.log("No timestamp in URL hash or localStorage for this episode.");
+                                        }
+
+                                   } else {
+                                       console.warn(`Episode S${initialSeasonFromUrl}E${initialEpisodeFromUrl} from URL path not found in series data.`);
+                                   }
+                              }
+
+                              // 2. If no URL path numbers or episode not found by path, fall back to the first episode of the first playable season
+                              if (targetSeasonNum === null || targetEpisodeNum === null) {
+                                   console.log("Falling back to selecting the first available season/episode.");
+                                   const firstPlayableSeasonNum = playableSeasonNumbers[0]; // Take the first playable season number
+
+                                   const episodesInFirstPlayableSeason = seriesData.Seasons[String(firstPlayableSeasonNum)]?.Episodes || {};
+                                   // Get episode numbers for this season, convert to numbers, sort, take the first one
+                                    const firstEpisodeNum = Object.keys(episodesInFirstPlayableSeason).map(Number).filter(num => !isNaN(num) && num >= 1).sort((a, b) => a - b)[0];
 
 
-                                    if (firstEpisodeNum !== undefined) {
-                                         // Check if episode data exists for the first episode
-                                         const firstEpisodeInfo = findEpisodeByNumbers(firstPlayableSeasonNum, firstEpisodeNum);
-                                          if (firstEpisodeInfo) {
+                                   if (firstEpisodeNum !== undefined) { // Check if there was actually a first episode number >= 1
+                                        // Check if episode data exists for the first episode
+                                        const firstEpisodeInfo = findEpisodeByNumbers(firstPlayableSeasonNum, firstEpisodeNum); // Uses the fixed findEpisodeByNumbers
+                                         if (firstEpisodeInfo) {
                                               targetSeasonNum = firstPlayableSeasonNum;
                                               targetEpisodeNum = firstEpisodeNum;
                                               console.log(`Defaulting to first playable episode S${targetSeasonNum}E${targetEpisodeNum}.`);
@@ -885,9 +966,9 @@
                                                console.warn(`First episode data at S${firstPlayableSeasonNum}E${firstEpisodeNum} is invalid.`);
                                                showEmbedMessage(currentLanguage === 'he' ? 'שגיאה: לא ניתן לטעון את הפרק הראשון בעונה הראשונה הזמינה.' : 'Error: Cannot load the first episode of the first available season.'); // Language dependent message
                                           }
-                                    } else {
-                                         console.warn(`First playable season ${firstPlayableSeasonNum} has no playable episodes.`);
-                                         showEmbedMessage(currentLanguage === 'he' ? `אין פרקים זמינים בעונה ${firstPlayableSeasonNum}.` : `No episodes available in season ${firstPlayableSeasonNum}.`); // Language dependent message
+                                    } else { // <-- This else block is reached if episodeNumbersInSeason[0] is undefined (no episodes found in the first playable season)
+                                         console.warn(`First playable season ${firstPlayableSeasonNum} has no playable episodes (after filtering >= 1).`);
+                                         showEmbedMessage(currentLanguage === 'he' ? `אין פרקים זמינים בעונה ${firstPlayableSeasonNum}.` : `No playable episodes available in season ${firstPlayableSeasonNum}.`); // Language dependent message
                                     }
 
                                } else {
@@ -904,28 +985,23 @@
                                 seasonSelect.value = targetSeasonNum.toString();
 
                                 // Populate episodes for this season, and attempt to select the target episode
-                                // Pass the initial timestamp along to populateEpisodes so it can be used when calling handleEpisodeClick
+                                // The populateEpisodes function will then call handleEpisodeClick if successful.
                                 populateEpisodes(targetSeasonNum, targetEpisodeNum);
-
-                                // The populateEpisodes function with the episodeToSelect parameter
-                                // will handle finding and clicking the specific list item after population.
-                                // The handleEpisodeClick function then reads the new URL hash (which we just set via history.replaceState)
-                                // to get the starting timestamp for the iframe.
 
                           } else {
                                console.warn("No playable episode found for auto-selection after checking URL and defaults.");
                                 // Message is already set by populateSeasons or falls through to default
                                 // Fallback message if no episode was found at all
-                                showEmbedMessage(seasonNumbers.length > 0 ? (currentLanguage === 'he' ? 'אנא בחר עונה ופרק כדי לצפות.' : 'Please select a season and episode to watch.') : (currentLanguage === 'he' ? 'אין עונות זמינות עבור סדרה זו.' : 'No seasons available for this series.'));
+                                showEmbedMessage(playableSeasonNumbers.length > 0 ? (currentLanguage === 'he' ? 'אנא בחר עונה ופרק כדי לצפות.' : 'Please select a season and episode to watch.') : (currentLanguage === 'he' ? 'אין עונות זמינות עבור סדרה זו.' : 'No seasons available for this series.'));
                           }
 
                       } else {
-                           console.warn("No seasons found in series data for auto-selection after initial populate.");
+                           console.warn("No seasons structure found or no seasons >= 1 after initial populate.");
                             // Message is already set by populateSeasons
                              showEmbedMessage(currentLanguage === 'he' ? 'אין עונות זמינות עבור סדרה זו.' : 'No seasons available for this series.'); // Language dependent message
                       }
                   } else {
-                       console.warn("No series data or seasons structure found for auto-selection after initial populate.");
+                       console.warn("No series data found on page load.");
                        showEmbedMessage(currentLanguage === 'he' ? 'נתוני סדרה אינם זמינים.' : 'Series data not available.'); // Language dependent message
                   }
              }, 50); // Delay initial auto-selection slightly
