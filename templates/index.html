@@ -1,5 +1,5 @@
-{# index.html #}
-{# Update the html tag #}
+<!-- index.html -->
+{# current_language is passed from Flask #}
 <!DOCTYPE html>
 <html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'he' else 'ltr' }}">
 <head>
@@ -16,7 +16,6 @@
 </head>
 <body>
     <!-- Loading Spinner -->
-    {# Keep this as is, it will handle the page reload visually #}
     <div id="loading-spinner">
         <div class="spinner">
             {% if user and user.picture %}
@@ -28,11 +27,8 @@
             {% endif %}
         </div>
         <p>
-            {% if current_language == 'he' %}
+            {# Spinner text always in Hebrew as per request #}
             טוען סינמה פריים...
-            {% else %}
-            Loading Cinema Prime...
-            {% endif %}
         </p>
     </div>
 
@@ -40,23 +36,40 @@
     <header class="site-header">
         <div class="container header-content">
 
-            {# --- Add Language Switcher Here --- #}
-            <div class="language-switcher">
-                {# Link to the set_language route. Show the name of the *target* language. #}
-                <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'Switch to English' if current_language == 'he' else 'החלף לעברית' }}" aria-label="{{ 'Switch to English' if current_language == 'he' else 'החלף לעברית' }}">
-                     {% if current_language == 'he' %}
-                         <i class="fas fa-globe"></i> English
-                     {% else %}
-                         <i class="fas fa-globe"></i> עברית
-                     {% endif %}
-                 </a>
-            </div>
-
+             <div class="auth-container">
+                 {% if user %}
+                     <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
+                         {# Ensure this path is correct for your default image if user.picture is missing #}
+                         <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
+                     </a>
+                 {% else %}
+                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
+                          {# Replace the base64 string with your desired image URL or placeholder #}
+                          {# Use url_for for your static image #}
+                          <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
+                     </a>
+                 {% endif %}
+             </div>
 
             <div class="search-container">
                <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
                <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
             </div>
+
+             {# --- Add Language Switcher Here (after Search) --- #}
+             <div class="language-switcher">
+                 {# Link to the set_language route. Show the name of the *current* language as per request. #}
+                 {# The href points to the *target* language (opposite of current) #}
+                 <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
+                      <i class="fas fa-globe"></i>
+                      {% if current_language == 'he' %}
+                          עברית
+                      {% else %}
+                          English
+                      {% endif %}
+                  </a>
+             </div>
+
 
             <nav class="main-nav">
                 {# Update link text and aria-label based on language #}
@@ -68,20 +81,6 @@
                 {% endif %}
             </nav>
 
-            <div class="auth-container">
-                {% if user %}
-                    <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
-                        {# Ensure this path is correct for your default image if user.picture is missing #}
-                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
-                         {# Replace the base64 string with your desired image URL or placeholder #}
-                         {# Use url_for for your static image #}
-                         <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
-                    </a>
-                {% endif %}
-            </div>
 
             {# Removed the header-spacer div #}
         </div>
@@ -102,9 +101,10 @@
 
     <main class="container main-content">
         <div class="page-greeting">
-            {# greeting already includes language #}
+            {# greeting is always Hebrew now #}
             <h1>{{ greeting }}!</h1>
-            <p>{{ 'מה נראה היום?' if current_language == 'he' else 'What should we watch today?' }}</p>
+            {# This phrase is always Hebrew now #}
+            <p>מה נראה היום?</p>
         </div>
 
         {# The "Continue Watching" section will be added here by JavaScript if applicable #}
@@ -228,6 +228,23 @@
                 console.warn("Spinner element #loading-spinner not found."); // Debug log
             }
 
+            // --- Show spinner on language switcher click ---
+            const languageSwitcherLink = document.querySelector('.language-switcher a');
+            if (languageSwitcherLink) {
+                 languageSwitcherLink.addEventListener('click', function(event) {
+                      // Prevent default behavior immediately so we can show the spinner
+                      // event.preventDefault(); // Don't prevent default, let the browser navigate
+                      // Show the spinner
+                      const spinner = document.getElementById('loading-spinner');
+                      if (spinner) {
+                          spinner.classList.remove('hidden');
+                          spinner.style.display = 'flex'; // Ensure it's flex for centering
+                           console.log("Spinner shown by language switcher click.");
+                      }
+                      // Allow the browser to proceed with the link navigation after showing spinner
+                 });
+            }
+
 
             // --- Search Filter Functionality ---
             const searchInput = document.getElementById('searchInput');
@@ -242,7 +259,12 @@
 
                     catalogItems.forEach(link => {
                          // Get title based on current language from data attributes
-                         const title = (currentLanguage === 'he' ? link.dataset.titleHe : link.dataset.titleEn) || '';
+                         // Fallback to the other language title if the preferred one is missing
+                         const titleHe = link.dataset.titleHe || link.dataset.titleEn || '';
+                         const titleEn = link.dataset.titleEn || link.dataset.titleHe || '';
+
+                         const title = currentLanguage === 'he' ? titleHe : titleEn;
+
 
                          if (title.includes(searchTerm)) {
                              link.style.display = ''; // Show the link (and thus the card)
@@ -381,14 +403,14 @@
                                 // Keep the one with the later season, or later episode if seasons are the same
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
                                      // The current item represents a *later* episode for this series
-                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E{episodeNum} (was S${existingSeason}E${existingEpisode}).`);
+                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E{episodeNum} (was S${existingSeason}E{existingEpisode}).`);
                                     // Update the map entry with the later episode details
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
                                         title: item.title, // Keep both English
                                         poster: item.poster, // Keep both English
-                                        HebrewName: item.HebrewName, // Keep Hebrew
+                                        HebrewName: item.HebbrewName, // Keep Hebrew - Fix typo HebrewName
                                         HebrewPoster: item.HebrewPoster, // Keep Hebrew
                                         latest_season: seasonNum, // Store as latest_* in the canonical format
                                         latest_episode: episodeNum, // Store as latest_* in the canonical format
@@ -402,7 +424,7 @@
                                 }
                             } else {
                                 // No entry for this series yet, add this one (converted to canonical format)
-                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E${episodeNum}.`);
+                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E{episodeNum}.`);
                                 uniqueValidItemsMap.set(canonicalKey, {
                                     id: item.id,
                                     type: 'series',
@@ -448,6 +470,8 @@
                              return titleA.localeCompare(titleB);
                          });
 
+                        // Clear previous content
+                        continueWatchingRow.innerHTML = '';
 
                         validItemsToDisplay.forEach(item => {
                             const itemLink = document.createElement('a');
@@ -594,7 +618,6 @@
                         // Show/hide sections based on uniqueValidItemsMap size
                          if (uniqueValidItemsMap.size > 0) {
                              continueWatchingSection.style.display = 'block';
-                             noContinueWatchingMessage.style.display = 'block'; // Keep this as block for the message content
                              noContinueWatchingMessage.style.display = 'none'; // Hide the "No items" message
                          } else {
                              continueWatchingSection.style.display = 'none';
