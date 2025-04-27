@@ -4,6 +4,7 @@ import os
 import requests
 import json
 import re # Import re for regex validation
+import random # Import random for jitter in retry
 from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
 import firebase_admin
@@ -150,10 +151,13 @@ def load_series_data_for_index():
                  # Only include basic details for the index card
                  # Avoid fetching nested Seasons/Episodes here for performance
                 if isinstance(details, dict):
+                     # Include both English and Hebrew names/posters if they exist
                     series_for_index[imdb_id] = {
                         'imdbID': imdb_id,
                         'title': details.get('title', 'כותרת לא ידועה'),
                         'poster': details.get('poster', 'N/A'),
+                        'HebrewName': details.get('HebrewName'), # Include Hebrew name
+                        'HebrewPoster': details.get('HebrewPoster'), # Include Hebrew poster
                         'category': details.get('category', 'ללא'),
                         'type': 'series' # Add type identifier
                     }
@@ -177,9 +181,11 @@ def load_series_list_for_add_page():
              # Convert to the list format expected by the add.html dropdown
             for imdb_id, details in series_dict.items():
                  if isinstance(details, dict):
+                     # Use Hebrew name if available, otherwise English title for dropdown
+                     display_title = details.get('HebrewName') or details.get('title', 'Untitled Series')
                      available_series_list.append({
                         "id": imdb_id,
-                        "title": details.get('title', 'Untitled Series')
+                        "title": display_title # Use the determined display title
                      })
         logging.info(f"Loaded {len(available_series_list)} series for dropdown from Firebase.")
         return available_series_list
@@ -246,18 +252,24 @@ def categorize_content(movies_data, series_data):
             continue
 
         # Ensure required fields exist, provide defaults
+        # Get both English and Hebrew names/posters
         title = item_details.get('title', 'כותרת לא ידועה')
         poster = item_details.get('poster', 'N/A')
+        hebrew_name = item_details.get('HebrewName')
+        hebrew_poster = item_details.get('HebrewPoster')
+
         category = item_details.get('category', 'ללא') # Default to 'ללא'
         item_type = item_details.get('type') # Get the type ('movie' or 'series')
 
         # Add to the correct category list if category is valid and not "ללא"
-        # We need id, title, poster, and type for the item cards on index.html
+        # We need id, title, poster, type, and Hebrew fields for the item cards on index.html
         if category in CATEGORIES and category != "ללא" and item_type in ['movie', 'series']:
              categorized_items[category].append({
                 "id": imdb_id,
-                "title": title,
-                "poster": poster,
+                "title": title, # Include English title
+                "poster": poster, # Include English poster
+                "HebrewName": hebrew_name, # Include Hebrew name
+                "HebrewPoster": hebrew_poster, # Include Hebrew poster
                 "type": item_type # Include type here
              })
         elif category == "ללא":
@@ -273,25 +285,50 @@ def categorize_content(movies_data, series_data):
     return categorized_items
 
 
-def get_greeting(user=None):
+def get_greeting(user=None, language='he'):
     now = datetime.datetime.now()
     current_hour = now.hour
     greeting_text = ""
-    if 5 <= current_hour < 12:
-        greeting_text = "בוקר טוב"
-    elif 12 <= current_hour < 18:
-        greeting_text = "צהריים טובים"
-    elif 18 <= current_hour < 21:
-        greeting_text = "ערב טוב"
-    else:
-        greeting_text = "לילה טוב"
+
+    greetings_he = {
+        (5, 12): "בוקר טוב",
+        (12, 18): "צהריים טובים",
+        (18, 21): "ערב טוב",
+        (21, 24): "לילה טוב",
+        (0, 5): "לילה טוב" # Handle 0-4 AM
+    }
+
+    greetings_en = {
+         (5, 12): "Good Morning",
+         (12, 18): "Good Afternoon",
+         (18, 21): "Good Evening",
+         (21, 24): "Good Night",
+         (0, 5): "Good Night"
+    }
+
+    greetings = greetings_he if language == 'he' else greetings_en
+
+    for hour_range, text in greetings.items():
+        if hour_range[0] <= current_hour < hour_range[1]:
+            greeting_text = text
+            break
+    # Fallback if hour doesn't match any range (shouldn't happen with comprehensive ranges)
+    if not greeting_text:
+         greeting_text = "שלום" if language == 'he' else "Hello"
+
 
     if user and user.get('name'):
         # Split name by space and take the first part (handle multi-word names)
         first_name = user['name'].split(' ')[0]
-        return f"{greeting_text} {first_name}"
+        # Append the name only if it's a Hebrew greeting or if name is ASCII
+        # Avoid issues with Hebrew name display if greeting is English and font doesn't mix well easily
+        if language == 'he' or all(ord(c) < 128 for c in first_name):
+             return f"{greeting_text} {first_name}"
+        else:
+             return greeting_text # Just return the greeting in English without potentially non-ASCII name
     else:
-        return f"{greeting_text} אורח"
+        return f"{greeting_text} {'אורח' if language == 'he' else 'Guest'}"
+
 
 # --- OMDB API Functions ---
 OMDB_BASE_URL = 'http://www.omdbapi.com/'
@@ -509,15 +546,33 @@ def logout():
     # Redirecting back to index. The index page JS will handle the logged-out state.
     return redirect(url_for('index'))
 
+# --- Language Route ---
+@app.route('/set_language/<lang_code>')
+def set_language(lang_code):
+    """Sets the language preference in the session and redirects."""
+    # Validate language code
+    valid_languages = ['he', 'en']
+    if lang_code not in valid_languages:
+        logging.warning(f"Attempted to set invalid language code: {lang_code}")
+        flash('שגיאה: שפה לא נתמכת.', 'error')
+        return redirect(request.referrer or url_for('index')) # Redirect back or to index
+
+    session['language'] = lang_code
+    logging.info(f"Language set to: {lang_code}")
+    # Redirect back to the page the user was on, or the index page if referrer is not available
+    return redirect(request.referrer or url_for('index'))
+
+
 # --- Main Routes ---
 @app.route('/')
 def index():
     user = session.get('user')
-    greeting = get_greeting(user)
+    current_language = session.get('language', 'he') # Get language from session, default to 'he'
+    greeting = get_greeting(user, current_language) # Pass language to greeting function
 
     # Load all content from Firebase for the index page
-    movies_data = load_movies_data() # Includes type: 'movie'
-    series_data_for_index = load_series_data_for_index() # Includes type: 'series'
+    movies_data = load_movies_data() # Includes type: 'movie' and Hebrew fields if exist
+    series_data_for_index = load_series_data_for_index() # Includes type: 'series' and Hebrew fields if exist
 
     # Categorize them for standard display sections
     categories = categorize_content(movies_data, series_data_for_index)
@@ -527,22 +582,23 @@ def index():
     # If admin status is only checked server-side, passing the list isn't strictly necessary here.
     # However, keeping it consistent with previous logic of passing *something* related to admin.
 
-    # Pass the user object and categorized data to the template.
+    # Pass the user object, categorized data, and current language to the template.
     # The 'continue watching' logic is handled client-side using localStorage.
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories, # All categoried content for display and JS lookup
                            current_year=current_year,
                            user=user,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           current_language=current_language # Pass the current language
                            )
 
 # --- Route for Single Movie Page ---
 @app.route('/movie/<imdb_id>')
 def movie_details(imdb_id):
     user = session.get('user')
+    current_language = session.get('language', 'he') # Get language from session, default to 'he'
     current_year = datetime.datetime.utcnow().year
-    # admin_email = ADMIN_EMAIL # Pass admin email to movie page for nav link # <-- REMOVED
 
     # Validate IMDb ID format before querying
     if not imdb_id or not imdb_id.startswith('tt') or len(imdb_id) < 7:
@@ -550,7 +606,7 @@ def movie_details(imdb_id):
          abort(404) # Or redirect to error page
 
     # Load movie details from Firebase
-    movie = load_movie_details(imdb_id)
+    movie = load_movie_details(imdb_id) # Includes Hebrew fields if exist
 
     # Check if found and if it's a movie type (assuming /Movies only contains movies or add type check)
     # Add explicit type check from loaded data if available
@@ -568,7 +624,8 @@ def movie_details(imdb_id):
                            movie=movie, # movie object should contain video_url if needed for playback
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           current_language=current_language # Pass the current language
                            )
 
 # --- Route for Single Series Page ---
@@ -578,6 +635,7 @@ def movie_details(imdb_id):
 @app.route('/series/<imdb_id>/<int:season_number>/<int:episode_number>')
 def series_details(imdb_id, season_number=None, episode_number=None):
     user = session.get('user')
+    current_language = session.get('language', 'he') # Get language from session, default to 'he'
     current_year = datetime.datetime.utcnow().year
 
     # Validate Series IMDb ID format
@@ -599,7 +657,7 @@ def series_details(imdb_id, season_number=None, episode_number=None):
 
 
     # Load full series details from Firebase (including Seasons/Episodes)
-    series = load_full_series_details(imdb_id)
+    series = load_full_series_details(imdb_id) # Includes Hebrew fields if exist
 
     # Check if found and if it's a series type
     # Handle potential old data without 'type' gracefully by checking existence
@@ -607,7 +665,7 @@ def series_details(imdb_id, season_number=None, episode_number=None):
         logging.warning(f"Series details not found or is not of type 'series' for ID: {imdb_id}")
         abort(404)
 
-    # Pass the full series object to the template.
+    # Pass the full series object and current language to the template.
     # The season_number and episode_number from the URL are *not* explicitly
     # passed as template variables here, because the JavaScript reads them
     # directly from window.location.pathname on page load.
@@ -615,7 +673,8 @@ def series_details(imdb_id, season_number=None, episode_number=None):
                            series=series, # Pass the full series data
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           current_language=current_language # Pass the current language
                            )
 
 
@@ -688,7 +747,7 @@ def add_content():
                     'category': category # From form
                 }
 
-                # --- START NEW CODE: Fetch and add Hebrew details from TMDB ---
+                # --- Fetch and add Hebrew details from TMDB ---
                 logging.info(f"Attempting to fetch Hebrew details for movie {imdb_id} from TMDB...")
                 tmdb_id, tmdb_type = get_tmdb_info(imdb_id)
 
@@ -793,7 +852,7 @@ def add_content():
                     # HebrewName and HebrewPoster will be added below
                  }
 
-                 # --- START NEW CODE: Fetch and add Hebrew details from TMDB FOR THE SERIES ---
+                 # --- Fetch and add Hebrew details from TMDB FOR THE SERIES ---
                  logging.info(f"Attempting to fetch Hebrew details for series {series_imdb_id} from TMDB...")
                  tmdb_id, tmdb_type = get_tmdb_info(series_imdb_id)
 
@@ -847,7 +906,7 @@ def add_content():
                                             'title': episode_title_to_save,
                                             'season_number': season_num, # Store season number explicitly
                                             'episode_number': episode_num, # Store episode number explicitly
-                                            'video_url': '', # Placeholder: Video URL must be added separately per episode
+                                            'video_url': '', # Placeholder: Video URL must be added separately
                                             # Optionally add other episode details from OMDB if available and desired
                                             # e.g., 'Released': episode_detail.get('Released'), 'Plot': episode_detail.get('Plot') # Plot is often short in season response
                                         }
@@ -1019,17 +1078,17 @@ def add_content():
                            )
 
 
-
 @app.route('/movies')
 def all_movies():
     """Displays all movies from Firebase in a grid."""
     user = session.get('user')
+    current_language = session.get('language', 'he') # Get language from session, default to 'he'
     current_year = datetime.datetime.utcnow().year
 
     # Load ALL movies from Firebase
     # load_movies_data() already returns a dictionary {imdbID: details}
     # with 'type: movie' added, which is what we need.
-    all_movies_data = load_movies_data()
+    all_movies_data = load_movies_data() # Includes Hebrew fields if exist
 
     # No categorization needed for this page, just pass the dictionary
     # The template will iterate through this dictionary.
@@ -1040,7 +1099,8 @@ def all_movies():
                            movies=all_movies_data, # Pass all movies
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           current_language=current_language # Pass the current language
                            )
 
 
@@ -1050,22 +1110,24 @@ def all_movies():
 def all_series():
     """Displays all series from Firebase in a grid."""
     user = session.get('user')
+    current_language = session.get('language', 'he') # Get language from session, default to 'he'
     current_year = datetime.datetime.utcnow().year
 
     # Use the existing function that loads basic series data for display
     # load_series_data_for_index() already returns {imdbID: basic_details}
     # with 'type: series' added, which is perfect for the grid.
-    all_series_data = load_series_data_for_index()
+    all_series_data = load_series_data_for_index() # Includes Hebrew fields if exist
 
     # Log how many series were loaded
     logging.info(f"Rendering all_series page with {len(all_series_data)} series.")
 
-    # Render the new template, passing the series data
+    # Render the new template, passing the series data and current language
     return render_template('SeriesTV.html',
                            series=all_series_data, # Pass series data to the template
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           current_language=current_language # Pass the current language
                            )
 
 
@@ -1292,24 +1354,27 @@ def get_hebrew_details(tmdb_id, media_type):
 @app.errorhandler(403)
 def forbidden(e):
     user = session.get('user')
+    current_language = session.get('language', 'he') # Get language for error page
     current_year = datetime.datetime.utcnow().year
     logging.warning(f"403 Forbidden: {request.path} - {e}")
-    return render_template('403.html', user=user, current_year=current_year), 403
+    return render_template('403.html', user=user, current_year=current_year, current_language=current_language), 403
 
 @app.errorhandler(404)
 def page_not_found(e):
     user = session.get('user')
+    current_language = session.get('language', 'he') # Get language for error page
     current_year = datetime.datetime.utcnow().year
     logging.warning(f"404 Not Found: {request.path} - {e}")
-    return render_template('404.html', user=user, current_year=current_year), 404
+    return render_template('404.html', user=user, current_year=current_year, current_language=current_language), 404
 
 @app.errorhandler(500)
 def internal_server_error(e):
     tb_str = traceback.format_exc()
     logging.error(f"Internal Server Error: {request.path} - {e}\n{tb_str}", exc_info=True)
     user = session.get('user')
+    current_language = session.get('language', 'he') # Get language for error page
     current_year = datetime.datetime.utcnow().year
-    return render_template('500.html', user=user, current_year=current_year), 500
+    return render_template('500.html', user=user, current_year=current_year, current_language=current_language), 500
 
 
 if __name__ == '__main__':
