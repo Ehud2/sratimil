@@ -1,80 +1,221 @@
-/* movies.css */
-
-/* Styles specific to the All Movies page */
-
-/* Ensure main content padding and margin on the movies page */
-.movies-page-content {
-    padding-top: 40px; /* Same as index */
-    padding-bottom: 50px; /* Same as index */
-    flex-grow: 1; /* Same as index */
-}
-
-/* Style for the page heading */
-.page-heading {
-    margin-bottom: 45px; /* Same as index greeting */
-    padding-left: 10px;
-    border-right: 4px solid var(--primary-accent-color); /* Same as index greeting */
-    padding-right: 20px;
-}
-
-.page-heading h1 {
-    font-family: var(--font-heading);
-    font-size: 2.4em; /* Slightly smaller than index main heading, or keep same */
-    font-weight: 700;
-    color: var(--text-heading-color);
-    margin-bottom: 5px;
-}
-
-.page-heading p {
-    font-size: 1.1em;
-    color: var(--text-color);
-}
-
-
-/* Styles for the movie grid container */
-.all-movies-grid {
-    display: grid;
-    /* Use grid-template-columns for responsive layout */
-    /* minmax(180px, 1fr) allows items to be at least 180px wide, growing up to 1fr (equal fraction of available space) */
-    /* auto-fill fills the available space with as many columns as possible */
-    /* auto-fit would also collapse columns if there are too few items, but auto-fill maintains minimum size */
-    grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
-    gap: var(--card-gap); /* Use the same gap defined in style.css */
-    justify-content: center; /* Center items horizontally if they don't fill the grid */
-    padding-bottom: 30px; /* Add padding similar to item-row */
-    margin-bottom: -30px; /* Counteract the padding */
-}
-
-/* The item-card-link wraps the item-card */
-/* Ensure it doesn't add extra layout properties */
-.all-movies-grid .item-card-link {
-    display: block; /* Important for the card to take grid space */
-    text-decoration: none; /* Remove underline from the link */
-    color: inherit; /* Inherit text color */
-}
-
-/* Reuse the item-card styles from style.css */
-/* No need to redefine .item-card, .card-image-container, etc. */
-/* They are defined in style.css and the movies.css grid layout applies to their container */
+<!-- movies.html -->
+{# current_language is passed from Flask #}
+<!DOCTYPE html>
+<html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'he' else 'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# Use conditional title #}
+    <title>{% if current_language == 'he' %}כל הסרטים{% else %}All Movies{% endif %} | סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {# Link to movies.css after style.css so movies.css can override global styles if needed #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movies.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    {# Included loading spinner styles directly in style.css #}
+</head>
+<body>
+    <!-- Loading Spinner -->
+    {# Keep this as is, it will handle the page reload visually #}
+    <div id="loading-spinner">
+        <div class="spinner">
+            {% if user and user.picture %}
+                <img src="{{ user.picture }}" alt="User profile picture">
+            {% else %}
+                {# Fallback to default profile image if user or picture is missing #}
+                {# Use url_for for your static image #}
+                <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
+            {% endif %}
+        </div>
+        <p>
+             {# Spinner text always in Hebrew as per request #}
+             טוען סינמה פריים...
+        </p>
+    </div>
 
 
-/* You might want to adjust card size specifically for the grid if needed, e.g.: */
-/* .all-movies-grid .item-card { width: 100%; height: auto; } */
-/* This makes cards fill their grid cell width. The height will be determined by the image/content. */
-/* Keep the object-fit cover on the image. */
+    <header class="site-header">
+        <div class="container header-content">
 
-/* If you make cards full width of grid item, you might need to adjust card-image-container height */
-/* .all-movies-grid .card-image-container { height: var(--card-height); } */
-/* Or let the aspect ratio define height: */
-/* .all-movies-grid .card-image-container { aspect-ratio: 2/3; height: auto; } */
-/* The original index.html style.css has fixed width/height for the card, which works fine with grid too. */
-/* Let's keep the fixed width/height for consistency with the card design unless a change is desired. */
-/* The 'minmax(var(--card-width), 1fr)' in grid-template-columns handles width responsively. */
+            <div class="auth-container">
+                {% if user %}
+                    <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
+                        {# Ensure this path is correct for your default image if user.picture is missing #}
+                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
+                         {# Use url_for for your static image #}
+                         <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
+                    </a>
+                {% endif %}
+            </div>
 
-/* Style for the "No results found" message specific to this page if needed */
-/* #noResultsMessage { ... } */
-/* (The style is already in style.css and applies globally, which is fine) */
+            <div class="search-container">
+                {# Search input might not be needed or work on this page, but keeping the structure #}
+               <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
+               <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
+            </div>
 
+            {# --- Language Switcher --- #}
+            <div class="language-switcher">
+                 {# Link to the set_language route. Show the name of the *current* language. #}
+                 {# The href points to the *target* language (opposite of current) #}
+                <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
+                     <i class="fas fa-globe"></i>
+                     {% if current_language == 'he' %}
+                         עברית
+                     {% else %}
+                         English
+                     {% endif %}
+                 </a>
+            </div>
 
-/* You can add media queries here for different screen sizes if the default grid settings aren't perfect */
-/* @media (max-width: 768px) { ... } */
+            <nav class="main-nav">
+                {# Update link text and aria-label based on language #}
+                <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
+                <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
+                <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
+                {% if user and user.email in admin_emails %}
+                    <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a>
+                {% endif %}
+            </nav>
+
+            {# Removed the header-spacer div #}
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category|default('info') }}" role="alert">
+                {{ message }}
+                <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="container movies-page-content">
+        <div class="page-heading">
+            <h1>{% if current_language == 'he' %}כל הסרטים{% else %}All Movies{% endif %}</h1>
+            <p>{% if current_language == 'he' %}רשימה של כל הסרטים הזמינים.{% else %}A list of all available movies.{% endif %}</p>
+        </div>
+
+        <div class="all-movies-grid">
+            {% if movies %}
+                {% for imdb_id, movie in movies.items() %}
+                    {# Use Hebrew details if language is HE and they exist, otherwise use English #}
+                    {% set display_title = (movie.get('HebrewName') if current_language == 'he' and movie.get('HebrewName') else movie.get('title')) %}
+                    {% set display_poster = (movie.get('HebrewPoster') if current_language == 'he' and movie.get('HebrewPoster') else movie.get('poster')) %}
+
+                    {# Fallback for missing titles/posters #}
+                    {% set final_title = display_title if display_title else (movie.get('title', 'כותרת לא ידועה') if current_language == 'he' else movie.get('title', 'Unknown Title')) %}
+                    {% set final_poster = display_poster if display_poster and display_poster != 'N/A' else url_for('static', filename='images/no_poster.png') %}
+
+                    {# Wrap the item card in an anchor tag #}
+                    {# Add data attributes for consistency, although filtering might not be live on this page #}
+                    <a href="{{ url_for('movie_details', imdb_id=movie.imdbID) }}" class="item-card-link catalog-item" data-id="{{ movie.imdbID }}" data-type="movie" data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower }}" data-title-en="{{ movie.get('title', movie.get('HebrewName', '')) | lower }}">
+                        <div class="item-card" tabindex="0">
+                            <div class="card-image-container">
+                                <img src="{{ final_poster }}" alt="{{ final_title }}" loading="lazy">
+                                <div class="card-overlay">
+                                    {# Play button on this page also just navigates #}
+                                    <button class="play-button" aria-label="{{ ('צפה ב' + final_title) if current_language == 'he' else ('Watch ' + final_title) }}"><i class="fas fa-play"></i></button>
+                                    <h3 class="card-title">{{ final_title }}</h3>
+                                     {# Add subtitle for Movie #}
+                                     <p class="card-subtitle" style="font-size: 0.8em; color: #ccc; margin-top: 5px;">{{ 'סרט' if current_language == 'he' else 'Movie' }}</p>
+                                    <div class="card-actions">
+                                        {# Add/Info buttons - assuming they would link/function similarly to index #}
+                                        <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ movie.imdbID }}" data-type="movie" data-title="{{ movie.get('title', '') }}" data-poster="{{ movie.get('poster', '') }}" data-hebrew-name="{{ movie.get('HebrewName', '') }}" data-hebrew-poster="{{ movie.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
+                                        <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            {% else %}
+                 <p id="noResultsMessage">{% if current_language == 'he' %}לא נמצאו סרטים זמינים.{% else %}No movies available.{% endif %}</p>
+            {% endif %}
+        </div>
+    </main>
+
+    <footer class="site-footer-bottom">
+        <div class="container">
+            <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
+        </div>
+    </footer>
+
+    <script>
+         // Pass current_language from Flask to JavaScript
+         const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
+         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+
+        // JavaScript to hide the loading spinner once the page is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+             console.log("DOMContentLoaded fired on movies.html."); // Debug log
+             const spinner = document.getElementById('loading-spinner');
+             // Delay before making spinner invisible (matches CSS transition duration)
+             const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+
+             if (spinner) {
+                  console.log("Spinner element found, attempting to hide."); // Debug log
+                  // Step 1: Start the visual hiding transition (opacity/visibility)
+                  spinner.classList.add('hidden');
+
+                 // Use transitionend for reliable removal from layout after animation
+                 spinner.addEventListener('transitionend', function handler(event) {
+                      // Ensure this handler only runs once for opacity transition
+                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
+                          spinner.style.display = 'none';
+                          console.log("Spinner hidden via transitionend.");
+                          // Remove this listener to prevent it from firing on future transitions
+                          spinner.removeEventListener('transitionend', handler);
+                      }
+                 });
+
+                  // Fallback timeout in case transitionend doesn't fire for some reason
+                  setTimeout(() => {
+                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+                           spinner.style.display = 'none';
+                           console.log("Spinner hidden via timeout fallback."); // Debug log
+                      }
+                  }, visualHideDelay + 100); // Wait a bit longer than the transition
+             } else {
+                 console.warn("Spinner element #loading-spinner not found on movies.html."); // Debug log
+             }
+
+             // --- Show spinner on language switcher click ---
+             const languageSwitcherLink = document.querySelector('.language-switcher a');
+             if (languageSwitcherLink) {
+                  languageSwitcherLink.addEventListener('click', function(event) {
+                       // Prevent default behavior immediately so we can show the spinner
+                       // event.preventDefault(); // Don't prevent default, let the browser navigate
+                       // Show the spinner
+                       const spinner = document.getElementById('loading-spinner');
+                       if (spinner) {
+                           spinner.classList.remove('hidden');
+                           spinner.style.display = 'flex'; // Ensure it's flex for centering
+                            console.log("Spinner shown by language switcher click on movies.html.");
+                       }
+                       // Allow the browser to proceed with the link navigation after showing spinner
+                  });
+             }
+
+             // NOTE: Search filtering logic from index.html is NOT included here
+             // unless you plan to implement live filtering on the all movies page.
+             // The data-title-he/en attributes are kept on item-card-link for consistency
+             // or potential future use.
+
+        }); // End DOMContentLoaded
+
+        {# If you have a separate static/js/script.js, link it here AFTER this script block #}
+        {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
+    </script>
+</body>
+</html>
