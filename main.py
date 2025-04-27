@@ -26,6 +26,15 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moviesilsuperdupersecre
 # Replace with your actual TMDB API key from environment variables
 TMDB_API_KEY = os.environ.get('TMDB_API_KEY', 'fb7bb23f03b6994dafc674c074d01761') # THIS IS A SECRET! MUST BE IN ENV VAR!
 
+TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500' # Standard size for posters
+
+# Retry Configuration for TMDB API Calls within Flask app
+# Using lower retries/delay than the standalone script to keep web requests responsive
+TMDB_MAX_RETRIES = 3 # Fewer retries for a live web request
+TMDB_BASE_DELAY_SECONDS = 1 # Shorter initial delay for web requests
+
+
 # Replace these with your actual Google OAuth credentials from environment variables
 app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '367711020009-o70b96v4cv604acg2hqv60k8c5mjmhtr.apps.googleusercontent.com')
 app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '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') # THIS IS A SECRET! MUST BE IN ENV VAR!
@@ -649,7 +658,7 @@ def add_content():
                      logging.warning(f"OMDB details not found or type is not 'movie' for ID {imdb_id}. OMDB Response: {omdb_details}")
                      return redirect(url_for('add_content'))
 
-                # Construct movie data from OMDB details and form data
+                # Construct base movie data from OMDB details and form data
                 movie_data = {
                     'imdbID': omdb_details.get('imdbID', imdb_id), # Use fetched ID if available
                     'title': omdb_details.get('Title', 'Untitled'),
@@ -679,11 +688,45 @@ def add_content():
                     'category': category # From form
                 }
 
+                # --- START NEW CODE: Fetch and add Hebrew details from TMDB ---
+                logging.info(f"Attempting to fetch Hebrew details for movie {imdb_id} from TMDB...")
+                tmdb_id, tmdb_type = get_tmdb_info(imdb_id)
+
+                if tmdb_id and tmdb_type == 'movie':
+                     hebrew_name, hebrew_poster_url = get_hebrew_details(tmdb_id, tmdb_type)
+
+                     if hebrew_name:
+                         movie_data['HebrewName'] = hebrew_name
+                         logging.info(f"Added HebrewName: {hebrew_name} for movie {imdb_id}")
+
+                     if hebrew_poster_url:
+                         movie_data['HebrewPoster'] = hebrew_poster_url
+                         logging.info(f"Added HebrewPoster: {hebrew_poster_url} for movie {imdb_id}")
+                     elif movie_data['poster'] == 'N/A' or movie_data['poster'] is None:
+                          # If OMDB poster was missing AND TMDB Hebrew poster was missing,
+                          # fallback to a default missing image URL if you have one defined elsewhere.
+                          # For now, just log that both are missing.
+                          logging.warning(f"Both OMDB and TMDB Hebrew posters are missing for movie {imdb_id}.")
+
+                else:
+                    logging.warning(f"Could not find TMDB movie info for IMDb ID {imdb_id} or type mismatch. Skipping Hebrew details.")
+                # --- END NEW CODE ---
+
+
                 # Save movie data to Firebase under /Movies/{imdb_id}
+                # Use set here as adding a movie usually means a new entry
                 ref = db.reference(f'/Movies/{imdb_id}')
                 ref.set(movie_data)
                 logging.info(f"Movie '{movie_data['title']}' ({imdb_id}) added to Firebase.")
-                flash(f'סרט "{movie_data["title"]}" נוסף בהצלחה!', 'success')
+
+                # --- Update Flash Message for Movie ---
+                flash_message = f'סרט "{movie_data.get("title", imdb_id)}" נוסף בהצלחה!'
+                if not (movie_data.get('HebrewName') or movie_data.get('HebrewPoster')):
+                     flash_message += ' אזהרה: לא ניתן היה להשיג שם עברי או פוסטר עברי מ-TMDb.'
+                     flash(flash_message, 'warning')
+                else:
+                     flash(flash_message, 'success')
+
 
             elif content_type == 'series':
                  # Get form data for series (main details, series_imdb_id from search selection)
@@ -747,7 +790,32 @@ def add_content():
                     'type': 'series',
                     'totalSeasons': total_seasons_str, # Store the string from OMDB or default '1'
                     'category': category
+                    # HebrewName and HebrewPoster will be added below
                  }
+
+                 # --- START NEW CODE: Fetch and add Hebrew details from TMDB FOR THE SERIES ---
+                 logging.info(f"Attempting to fetch Hebrew details for series {series_imdb_id} from TMDB...")
+                 tmdb_id, tmdb_type = get_tmdb_info(series_imdb_id)
+
+                 # Check for 'tv' type from TMDB find
+                 if tmdb_id and tmdb_type == 'tv':
+                     hebrew_name, hebrew_poster_url = get_hebrew_details(tmdb_id, tmdb_type)
+
+                     if hebrew_name:
+                         series_data['HebrewName'] = hebrew_name
+                         logging.info(f"Added HebrewName: {hebrew_name} for series {series_imdb_id}")
+
+                     if hebrew_poster_url:
+                         series_data['HebrewPoster'] = hebrew_poster_url
+                         logging.info(f"Added HebrewPoster: {hebrew_poster_url} for series {series_imdb_id}")
+                     elif series_data['poster'] == 'N/A' or series_data['poster'] is None:
+                          # If OMDB poster was missing AND TMDB Hebrew poster was missing
+                          logging.warning(f"Both OMDB and TMDB Hebrew posters are missing for series {series_imdb_id}.")
+
+                 else:
+                     logging.warning(f"Could not find TMDB TV info for IMDb ID {series_imdb_id} or type mismatch. Skipping Hebrew details for series.")
+                 # --- END NEW CODE ---
+
 
                  # Build the Seasons/Episodes structure by fetching season data from OMDB
                  seasons_data = {}
@@ -764,6 +832,7 @@ def add_content():
                           logging.info(f"Fetched {num_episodes_in_season} episodes for S{season_num} from OMDB for series {series_imdb_id}.")
 
                           # OMDB season response gives a list of episodes, each with its 'Episode', 'Title', 'imdbID' etc.
+                          # NOTE: Hebrew details are NOT fetched for individual episodes here as requested.
                           for episode_detail in episodes_list_for_season:
                                try:
                                    episode_num_str = episode_detail.get('Episode')
@@ -817,18 +886,27 @@ def add_content():
                      # Flash a warning if no episodes were processed at all
 
 
-                 # Save series data (including Seasons/Episodes) to Firebase under /Series/{imdb_id}
-                 # Use update instead of set to potentially preserve manual video_urls if re-adding
+                 # Save series data (including Seasons/Episodes and new Hebrew fields) to Firebase
+                 # Use update instead of set to potentially preserve manual video_urls if re-adding or partial updates happen
                  ref = db.reference(f'/Series/{series_imdb_id}')
                  ref.update(series_data)
-                 logging.info(f"Series '{series_data.get('title', series_imdb_id)}' ({series_imdb_id}) added/updated in Firebase with {len(seasons_data)} seasons.")
+                 logging.info(f"Series '{series_data.get('title', series_imdb_id)}' ({series_imdb_id}) added/updated in Firebase with {len(seasons_data)} seasons and Hebrew details.")
 
+                 # --- Update Flash Message for Series ---
                  flash_message = f'סדרה "{series_data.get("title", series_imdb_id)}" נוספה/עודכנה בהצלחה!'
+                 # Combine warnings
+                 warnings = []
+                 if not (series_data.get('HebrewName') or series_data.get('HebrewPoster')):
+                      warnings.append('לא ניתן היה להשיג שם עברי או פוסטר עברי מ-TMDb')
                  if not all_episodes_fetched_successfully:
-                      flash_message += ' אזהרה: לא ניתן היה להשיג פרטים עבור כל הפרקים/עונות מ-OMDb. בדוק את הנתונים שנוספו.'
+                      warnings.append('לא ניתן היה להשיג פרטים עבור כל הפרקים/עונות מ-OMDb')
+
+                 if warnings:
+                      flash_message += ' אזהרה: ' + '. '.join(warnings) + '.'
                       flash(flash_message, 'warning')
                  else:
                       flash(flash_message, 'success')
+
 
             elif content_type == 'episode':
                  # Get form data for episode
@@ -869,6 +947,7 @@ def add_content():
                      return redirect(url_for('add_content'))
 
                  # Fetch episode details from OMDB using the Series ID, Season, and Episode numbers
+                 # This is mainly for title and episode_imdb_id if available from OMDB
                  episode_details_from_omdb = get_omdb_details_api(series_imdb_id, season=season_number, episode=episode_number)
 
                  # Determine the episode's IMDb ID and Title to save
@@ -898,6 +977,7 @@ def add_content():
                      logging.error(f"Critical: No episode IMDb ID could be determined for {series_imdb_id} S{season_number}E{episode_number}. Using double-fallback placeholder.")
 
                  # Construct episode data (without video_url from form, but setting it to empty)
+                 # NOTE: Hebrew details are NOT added to individual episodes.
                  episode_data = {
                      'episode_imdb_id': episode_imdb_id_to_save, # Store the fetched/placeholder episode IMDb ID
                      'title': episode_title_to_save, # Use user's title or fetched title
@@ -1100,6 +1180,108 @@ def api_get_trailer(imdb_id):
         return jsonify({"trailer_url": trailer_url})
     else:
         return jsonify({"error": "Trailer not found"}), 404
+
+
+
+
+
+
+# --- New TMDB API Helper Functions (for Hebrew data) ---
+# Using TMDB for finding Hebrew titles/posters as OMDB lacks good localization
+
+def fetch_tmdb_data_with_retry(url, params, max_retries, base_delay):
+    """Fetches data from a TMDB URL with retry logic."""
+    if not TMDB_API_KEY or TMDB_API_KEY == 'YOUR_TMDB_API_KEY':
+         logging.warning("TMDB_API_KEY is not set. Cannot fetch Hebrew data from TMDB.")
+         return None
+
+    params['api_key'] = TMDB_API_KEY # Ensure API key is always included
+    params['language'] = params.get('language', 'en-US') # Default language if not specified
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, params=params, timeout=15) # Add timeout
+            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+            data = response.json()
+            return data # Success!
+
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"Attempt {attempt + 1}/{max_retries} failed for {url}: {e}")
+            if attempt < max_retries - 1:
+                # Exponential backoff with jitter
+                # Cap the delay to avoid excessive waiting in a web request
+                delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), 10) # Cap delay at 10 seconds
+                logging.info(f"Retrying in {delay:.2f} seconds...")
+                time.sleep(delay)
+            else:
+                logging.error(f"Max retries ({max_retries}) exceeded for {url}. Skipping TMDB call.")
+                return None # Failed after all retries
+        except Exception as e:
+            logging.error(f"Unexpected error during TMDB fetch attempt {attempt + 1}/{max_retries} for {url}: {e}", exc_info=True)
+            return None # Return None for unexpected errors too
+
+def get_tmdb_info(imdb_id):
+    """Finds TMDB ID and media type (movie/tv) for a given IMDb ID."""
+    url = f"{TMDB_BASE_URL}/find/{imdb_id}"
+    params = {'external_source': 'imdb_id'}
+    # We don't add language=he here because /find doesn't support it well for initial match
+
+    data = fetch_tmdb_data_with_retry(url, params, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
+
+    if data:
+        if data.get('movie_results'):
+            tmdb_id = data['movie_results'][0].get('id')
+            if tmdb_id:
+                 logging.debug(f"Found TMDB movie ID {tmdb_id} for IMDb ID {imdb_id}")
+                 return tmdb_id, 'movie'
+        elif data.get('tv_results'):
+            tmdb_id = data['tv_results'][0].get('id')
+            if tmdb_id:
+                 logging.debug(f"Found TMDB TV ID {tmdb_id} for IMDb ID {imdb_id}")
+                 return tmdb_id, 'tv'
+        else:
+            logging.info(f"No movie or TV results found on TMDB for IMDb ID: {imdb_id}")
+    else:
+         logging.warning(f"Failed to get TMDB info for IMDb ID {imdb_id} after retries.")
+
+    return None, None # Not found or failed
+
+def get_hebrew_details(tmdb_id, media_type):
+    """Gets Hebrew title and poster path for a TMDB ID and media type."""
+    if not tmdb_id or media_type not in ['movie', 'tv']:
+        logging.error(f"Invalid TMDB ID ({tmdb_id}) or media type ({media_type}) passed to get_hebrew_details.")
+        return None, None # Invalid input
+
+    endpoint = f"movie/{tmdb_id}" if media_type == 'movie' else f"tv/{tmdb_id}"
+    url = f"{TMDB_BASE_URL}/{endpoint}"
+    params = {'language': 'he-IL'} # Use he-IL for Hebrew details
+
+    data = fetch_tmdb_data_with_retry(url, params, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
+
+    hebrew_name = None
+    hebrew_poster_url = None
+
+    if data:
+        # TMDB returns 'title' for movies and 'name' for TV shows
+        hebrew_name = data.get('title') if media_type == 'movie' else data.get('name')
+        poster_path = data.get('poster_path')
+
+        if not hebrew_name:
+            logging.info(f"No Hebrew title found on TMDB for {media_type} ID {tmdb_id}.")
+        if not poster_path:
+             logging.info(f"No Hebrew poster path found on TMDB for {media_type} ID {tmdb_id}.")
+
+        # Construct full poster URL if path exists
+        if poster_path:
+             hebrew_poster_url = f"{TMDB_IMAGE_BASE_URL}{poster_path}"
+
+        logging.debug(f"Fetched Hebrew details for TMDB ID {tmdb_id}: Name='{hebrew_name}', Poster URL='{hebrew_poster_url}'")
+
+    else:
+        logging.warning(f"Failed to get Hebrew details for TMDB {media_type} ID {tmdb_id} after retries.")
+
+    return hebrew_name, hebrew_poster_url
+
 
 
 
