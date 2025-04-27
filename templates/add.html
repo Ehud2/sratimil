@@ -1,16 +1,21 @@
 <!-- add.html -->
+{# current_language is passed from Flask #}
+{# This page will always be in Hebrew (RTL), but header/footer will respect the session language #}
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# Title always in Hebrew #}
     <title>הוספת תוכן - סינמה פריים</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/add.css') }}"> {# Ensure this file exists or remove #}
+    {# Ensure your add.css exists and is linked if needed for page-specific layout beyond base styles #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/add.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    {# Included loading spinner styles directly in style.css #}
     <style>
         /* Add specific styles for add.html if needed, e.g., for form layout */
          .hidden-form-section {
@@ -20,48 +25,79 @@
              max-width: 100px; /* Limit size of displayed poster */
              height: auto;
              margin-top: 10px;
+              /* Added margin-right for RTL layout */
+             margin-right: 10px;
+             margin-left: 0;
          }
           .omdb-search-results {
               max-height: 200px; /* Limit height of search results list */
               overflow-y: auto; /* Add scrollbar if needed */
-              border: 1px solid #ccc;
+              /* Use border color from CSS variables */
+              border: 1px solid var(--border-color);
               list-style: none;
               padding: 0;
               margin-top: 10px;
+              /* Ensure results list is LTR */
+              direction: ltr;
+              text-align: left;
           }
           .omdb-search-results li {
               padding: 8px;
               cursor: pointer;
-              border-bottom: 1px solid #eee;
-              background-color: #f9f9f9;
+               /* Use border color from CSS variables */
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+              /* Use card background color */
+              background-color: var(--card-bg-color);
               display: flex; /* Use flexbox to align title and id */
               justify-content: space-between; /* Space out title and id */
               align-items: center;
+               /* Match text color */
+              color: var(--text-color);
+               transition: background-color var(--transition-fast);
           }
            .omdb-search-results li:hover {
-               background-color: #e9e9e9;
+               /* Use a hover background color */
+               background-color: rgba(40, 40, 40, 0.7);
            }
             .omdb-search-results li.selected-result {
-               background-color: #d9d9d9;
-               font-weight: bold;
+               /* Use accent color for selected */
+               background-color: var(--primary-accent-color);
+               color: var(--bg-color); /* Change text color for contrast */
            }
+            .omdb-search-results li.selected-result span {
+                color: var(--bg-color); /* Ensure span text color is also updated */
+            }
+
            .result-id {
                font-size: 0.8em;
-               color: #555;
-               /* margin-left: 10px; */ /* Removed margin-left due to flexbox */
+                /* Use muted text color */
+               color: var(--text-muted-color);
                flex-shrink: 0; /* Prevent id from shrinking */
            }
+            .omdb-search-results li.selected-result .result-id {
+                 color: rgba(11, 12, 16, 0.8); /* Darker color for selected ID */
+            }
+
            .omdb-search-input {
                display: flex;
                gap: 10px;
            }
             .omdb-search-input input[type="text"] {
                 flex-grow: 1;
+                 /* Force LTR for English input */
+                 direction: ltr;
+                 text-align: left;
             }
+             .omdb-search-input input[type="text"]::placeholder {
+                  direction: ltr;
+                  text-align: left;
+             }
+
             .omdb-search-section {
                 margin-top: 20px;
                 padding-top: 20px;
-                border-top: 1px solid #eee;
+                 /* Use border color from CSS variables */
+                border-top: 1px solid rgba(102, 252, 241, 0.3);
             }
             .hidden-manual-series-id {
                 display: none; /* Initially hidden */
@@ -83,60 +119,164 @@
                   margin-left: 5px; /* Add some space */
              }
 
+         /* Specific styles for add.html form container */
+         .add-content-form-container {
+             max-width: 700px;
+             margin: 40px auto;
+             padding: 30px;
+             background-color: var(--bg-secondary);
+             border-radius: var(--border-radius-md);
+             box-shadow: 0 5px 15px var(--shadow-color);
+             direction: rtl; /* Explicitly keep RTL for the form */
+         }
+         .add-content-form-container h1 {
+             font-family: var(--font-heading);
+             color: var(--text-heading-color);
+             text-align: center;
+             margin-bottom: 30px;
+         }
+         .form-group {
+             margin-bottom: 20px;
+         }
+         .form-group label {
+             display: block;
+             margin-bottom: 8px;
+             color: var(--text-color);
+             font-weight: 600;
+         }
+         .form-group input[type="text"],
+         .form-group input[type="url"],
+         .form-group input[type="number"],
+         .form-group select {
+             width: 100%;
+             padding: 10px;
+             background-color: var(--card-bg-color);
+             border: 1px solid var(--border-color);
+             border-radius: var(--border-radius-sm);
+             color: var(--text-color);
+             font-family: var(--font-body);
+             font-size: 1em;
+             transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+             direction: rtl; /* Explicitly keep RTL for inputs by default */
+             text-align: right; /* Explicitly keep right alignment by default */
+         }
+          .form-group input[type="text"]:focus,
+          .form-group input[type="url"]:focus,
+          .form-group input[type="number"]:focus,
+          .form-group select:focus {
+              border-color: var(--primary-accent-color);
+              box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
+              outline: none;
+          }
+         .form-submit-button {
+              display: block;
+              width: 100%;
+              padding: 12px;
+              background-color: var(--primary-accent-color);
+              color: var(--bg-color);
+              border: none;
+              border-radius: var(--border-radius-md);
+              cursor: pointer;
+              font-family: var(--font-heading);
+              font-size: 1.2em;
+              font-weight: 700;
+              margin-top: 30px;
+              transition: background-color var(--transition-fast), transform var(--transition-fast);
+         }
+         .form-submit-button:hover {
+             background-color: var(--secondary-accent-color);
+             transform: translateY(-2px);
+         }
+
+
     </style>
 </head>
 <body>
-    <header class="site-header">
-        <div class="container header-content">
+     <!-- Loading Spinner - Copy from index.html -->
+     {# Spinner text always in Hebrew on this page #}
+     <div id="loading-spinner">
+         <div class="spinner">
+             {% if user and user.picture %}
+                 <img src="{{ user.picture }}" alt="User profile picture">
+             {% else %}
+                 {# Fallback to default profile image if user or picture is missing #}
+                 <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
+             {% endif %}
+         </div>
+         <p>טוען סינמה פריים...</p>
+     </div>
 
-            <div class="search-container">
-               <input type="search" id="searchInput" placeholder="חיפוש...">
-               <button aria-label="Search"><i class="fas fa-search"></i></button>
-            </div>
+     <!-- Header - Copy from index.html -->
+     <header class="site-header">
+         <div class="container header-content">
 
-            <nav class="main-nav">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> בית</a> {# Added icon #}
-                <a href="{{ url_for('all_movies') }}"><i class="fas fa-film"></i> סרטים</a> {# Added icon #}
-                <a href="{{ url_for('all_series') }}"><i class="fas fa-tv"></i> סדרות</a> {# Added icon #}
-                {% if user and user.email in admin_emails %}
-                    <a href="{{ url_for('add_content') }}"><i class="fas fa-plus-circle"></i> הוספת תוכן</a> {# Added icon #}
-                {% endif %}
-            </nav>
+              <div class="auth-container">
+                  {% if user %}
+                      <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
+                          {# Ensure this path is correct for your default image if user.picture is missing #}
+                          <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
+                      </a>
+                  {% else %}
+                      <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
+                           {# Use url_for for your static image #}
+                           <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
+                      </a>
+                  {% endif %}
+              </div>
 
-            <div class="auth-container">
-                {% if user %}
-                    <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
-                        {# Ensure this path is correct for your default image if user.picture is missing #}
-                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Replace the base64 string with your desired image URL or placeholder #}
-                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
-                    </a>
-                {% endif %}
-            </div>
+             <div class="search-container">
+                <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
+                <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
+             </div>
 
-            {# Removed the header-spacer div #}
-        </div>
-    </header>
+              {# --- Add Language Switcher Here (after Search) --- #}
+              <div class="language-switcher">
+                  {# Link to the set_language route. Show the name of the *current* language as per request. #}
+                  {# The href points to the *target* language (opposite of current) #}
+                  <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
+                       <i class="fas fa-globe"></i>
+                       {% if current_language == 'he' %}
+                           עברית
+                       {% else %}
+                           English
+                       {% endif %}
+                   </a>
+              </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="container flash-messages">
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category|default('info') }}" role="alert">
-                {{ message }}
-                <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
 
-    {% endwith %}
+             <nav class="main-nav">
+                 {# Update link text and aria-label based on language #}
+                 <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
+                 <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
+                 <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
+                 {% if user and user.email in admin_emails %}
+                     <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a>
+                 {% endif %}
+             </nav>
+
+
+             {# Removed the header-spacer div #}
+         </div>
+     </header>
+
+     {# Flash Messages - Copy from index.html #}
+     {% with messages = get_flashed_messages(with_categories=true) %}
+         {% if messages %}
+         <div class="container flash-messages">
+             {% for category, message in messages %}
+             <div class="alert alert-{{ category|default('info') }}" role="alert">
+                 {{ message }}
+                 <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>
+             </div>
+             {% endfor %}
+         </div>
+         {% endif %}
+
+     {% endwith %}
 
     <main class="container main-content">
         <div class="add-content-form-container"> {# Changed class name to be more general #}
+            {# Heading always in Hebrew #}
             <h1>הוספת תוכן חדש</h1>
 
             {# Ensure form method is POST and action is correct #}
@@ -154,19 +294,22 @@
                 <div id="movie-form" class="content-form-section">
                      {# IMDb ID and Title will be populated from OMDB search results #}
                      <div class="form-group">
+                        {# Labels always in Hebrew #}
                         <label for="movie_imdb_id">IMDb ID של הסרט (יושלם אוטומטית מ-OMDb או ניתן להזנה ידנית):</label> {# Updated label #}
-                        {# REMOVED readonly - Kept required and pattern #}
                         <input type="text" id="movie_imdb_id" name="movie_imdb_id" required pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
                      <div class="form-group">
+                        {# Labels always in Hebrew #}
                         <label for="movie_title">שם הסרט (יושלם אוטומטית מ-OMDb):</label>
                         {# Kept readonly #}
                         <input type="text" id="movie_title" name="movie_title" readonly>
                     </div>
 
                     <div class="form-group">
+                         {# Labels always in Hebrew #}
                          <label for="movie_category">קטגוריה:</label>
                          <select id="movie_category" name="movie_category" required>
+                              {# Categories are in Hebrew #}
                               {% for category in categories %}
                                    <option value="{{ category }}">{{ category }}</option>
                               {% endfor %}
@@ -175,9 +318,12 @@
                     </div>
                     {# REMOVED: Video URL input for movies #}
                      <div class="omdb-search-section">
+                        {# Headings always in Hebrew #}
                         <h3>חיפוש אוטומטי ב-OMDb (סרטים):</h3>
                         <div class="omdb-search-input">
+                             {# Placeholder always in Hebrew #}
                              <input type="text" id="omdb_movie_search_term" placeholder="חפש סרט לפי שם...">
+                             {# Button text always in Hebrew #}
                              <button type="button" id="search_movie_omdb_button">חפש</button>
                         </div>
                          {# Use a distinct class for results list #}
@@ -185,7 +331,9 @@
                          </ul>
                          {# Display area for selected OMDB movie details #}
                          <div id="selectedOmdbMovieDetails" class="omdb-details-display" style="display: none;">
+                             {# Headings always in Hebrew #}
                              <h4>פרטים נבחרים מ-OMDb:</h4>
+                              {# Labels always in Hebrew #}
                               <p><strong>כותרת:</strong> <span id="omdbMovieTitleDisplay"></span></p>
                              <p><strong>שנת יציאה:</strong> <span id="omdbMovieYearDisplay"></span></p>
                               <p><strong>דירוג IMDb:</strong> <span id="omdbMovieRatingDisplay"></span></p>
@@ -199,11 +347,13 @@
                 <div id="series-form" class="content-form-section hidden-form-section">
                      {# IMDb ID and Title will be populated from OMDB search results #}
                      <div class="form-group">
+                         {# Labels always in Hebrew #}
                         <label for="series_imdb_id">IMDb ID של הסדרה (יושלם אוטומטית מ-OMDb או ניתן להזנה ידנית):</label> {# Updated label #}
                          {# REMOVED readonly - Kept required and pattern #}
                         <input type="text" id="series_imdb_id" name="series_imdb_id" required pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
                     <div class="form-group">
+                        {# Labels always in Hebrew #}
                         <label for="series_title">שם הסדרה (יושלם אוטומטית מ-OMDb):</label>
                          {# Kept readonly #}
                         <input type="text" id="series_title" name="series_title" readonly>
@@ -211,8 +361,10 @@
 
                      {# Added category for series #}
                      <div class="form-group">
+                          {# Labels always in Hebrew #}
                          <label for="series_category">קטגוריה:</label>
                          <select id="series_category" name="series_category" required>
+                              {# Categories are in Hebrew #}
                               {% for category in categories %}
                                    <option value="{{ category }}">{{ category }}</option>
                               {% endfor %}
@@ -225,9 +377,12 @@
 
 
                      <div class="omdb-search-section">
+                        {# Headings always in Hebrew #}
                         <h3>חיפוש אוטומטי ב-OMDb (סדרות):</h3>
                         <div class="omdb-search-input">
+                             {# Placeholder always in Hebrew #}
                              <input type="text" id="omdb_series_search_term" placeholder="חפש סדרה לפי שם...">
+                             {# Button text always in Hebrew #}
                              <button type="button" id="search_series_omdb_button">חפש</button>
                         </div>
                          {# Use a distinct class for results list #}
@@ -235,7 +390,9 @@
                          </ul>
                          {# Display area for selected OMDB series details #}
                          <div id="selectedOmdbSeriesDetails" class="omdb-details-display" style="display: none;">
+                             {# Headings always in Hebrew #}
                              <h4>פרטים נבחרים מ-OMDb:</h4>
+                             {# Labels always in Hebrew #}
                               <p><strong>כותרת:</strong> <span id="omdbSeriesTitleDisplay"></span></p>
                              <p><strong>שנות שידור:</strong> <span id="omdbSeriesYearDisplay"></span></p> {# Changed from year to year range #}
                               <p><strong>דירוג IMDb:</strong> <span id="omdbSeriesRatingDisplay"></span></p>
@@ -249,51 +406,126 @@
 
                 <div id="episode-form" class="content-form-section hidden-form-section">
                     <div class="form-group">
+                        {# Labels always in Hebrew #}
                         <label for="episode_series_id">בחר סדרה קיימת:</label>
                         <select id="episode_series_id" name="episode_series_id">
+                            {# Option text always in Hebrew #}
                             <option value="">-- בחר סדרה --</option>
                             {# available_series list is loaded from Firebase in the Flask route #}
+                            {# Titles in dropdown are Hebrew if available (handled in main.py) #}
                             {% for series in available_series %}
                                 <option value="{{ series.id }}">{{ series.title }}</option>
                             {% endfor %}
+                            {# Option text always in Hebrew #}
                             <option value="manual">-- סדרה לא ברשימה (הזן ידנית) --</option>
                         </select>
                     </div>
                     <div class="form-group hidden-manual-series-id" id="manual_series_id_group">
+                         {# Labels always in Hebrew #}
                          <label for="manual_episode_series_id">IMDb ID של הסדרה (הזנה ידנית):</label>
-                         <input type="text" id="manual_episode_series_id" name="manual_episode_series_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-"tt" ואחריו 7 ספרות או יותר">
+                         <input type="text" id="manual_episode_series_id" name="manual_episode_series_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
 
                      {# REMOVED: Episode IMDb ID input #}
 
                     <div class="form-group">
+                         {# Labels always in Hebrew #}
                         <label for="episode_title">שם הפרק (אופציונלי, אם לא יסופק יאוחזר מ-OMDb):</label> {# Updated label #}
                         <input type="text" id="episode_title" name="episode_title"> {# Removed required #}
                     </div>
                      <div class="form-group">
+                         {# Labels always in Hebrew #}
                         <label for="episode_season">מספר עונה:</label>
                         <input type="number" id="episode_season" name="episode_season" min="1" required>
                     </div>
                     <div class="form-group">
+                         {# Labels always in Hebrew #}
                         <label for="episode_number">מספר הפרק:</label>
                         <input type="number" id="episode_number" name="episode_number" min="1" required>
                     </div>
                     {# REMOVED: Video URL input for episodes #}
                 </div>
 
+                {# Button text always in Hebrew #}
                 <button type="submit" class="form-submit-button">הוסף תוכן</button>
             </form>
         </div>
     </main>
 
-    <footer class="site-footer-bottom">
-        <div class="container">
-            <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
-        </div>
-    </footer>
+     {# Footer - Copy from index.html #}
+     <footer class="site-footer-bottom">
+         <div class="container">
+              {# Footer text is language dependent #}
+              <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
+         </div>
+     </footer>
 
     <script>
+        // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOMContentLoaded fired on add page."); // Debug log
+            const spinner = document.getElementById('loading-spinner');
+            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+
+            if (spinner) {
+                 console.log("Spinner element found, attempting to hide.");
+                 spinner.classList.add('hidden');
+                 spinner.addEventListener('transitionend', function handler(event) {
+                     if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
+                         spinner.style.display = 'none';
+                         console.log("Spinner hidden via transitionend on add page.");
+                         spinner.removeEventListener('transitionend', handler);
+                     }
+                });
+                 setTimeout(() => {
+                     if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
+                          spinner.style.display = 'none';
+                          console.log("Spinner hidden via timeout fallback on add page.");
+                     }
+                 }, visualHideDelay + 100);
+            } else {
+                console.warn("Spinner element #loading-spinner not found on add page.");
+            }
+
+            // --- Show spinner on language switcher click ---
+            const languageSwitcherLink = document.querySelector('.language-switcher a');
+            if (languageSwitcherLink) {
+                 languageSwitcherLink.addEventListener('click', function(event) {
+                      // Show the spinner
+                      const spinner = document.getElementById('loading-spinner');
+                      if (spinner) {
+                          spinner.classList.remove('hidden');
+                          spinner.style.display = 'flex'; // Ensure it's flex for centering
+                           console.log("Spinner shown by language switcher click.");
+                      }
+                      // Allow the browser to proceed with the link navigation after showing spinner
+                 });
+            }
+
+
+            // Search functionality (same as index.html, navigate back to index with search term)
+             // Search functionality (same as index.html, navigate back to index with search term) - outside DOMContentLoaded for access
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const term = this.value.trim();
+                        if (term) {
+                            window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                        }
+                    }
+                });
+                 // Optional: search button click
+                document.querySelector('.search-container button').addEventListener('click', function() {
+                     const term = searchInput.value.trim();
+                     if (term) {
+                          window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                     }
+                 });
+            }
+
+
             const contentTypes = document.querySelectorAll('input[name="content_type"]');
             const formSections = document.querySelectorAll('.content-form-section');
             const episodeSeriesSelect = document.getElementById('episode_series_id');
@@ -312,11 +544,7 @@
             const movieImdbIdInput = document.getElementById('movie_imdb_id');
              const seriesTitleInput = document.getElementById('series_title');
              const seriesImdbIdInput = document.getElementById('series_imdb_id');
-             // const totalSeasonsInput = document.getElementById('total_seasons'); // REMOVED INPUT
-             // const seasonEpisodeInputsDiv = document.getElementById('season-episode-inputs'); // REMOVED DIV
 
-
-             // const episodeImdbIdInput = document.getElementById('episode_imdb_id'); // REMOVED INPUT
              const episodeTitleInput = document.getElementById('episode_title'); // KEPT INPUT (Optional)
              const episodeSeasonInput = document.getElementById('episode_season');
              const episodeNumberInput = document.getElementById('episode_number');
@@ -345,7 +573,6 @@
                 if(seriesTitleInput) seriesTitleInput.value = '';
                  // seriesImdbIdInput is no longer readonly, clear its value too
                 if(seriesImdbIdInput) seriesImdbIdInput.value = '';
-                // totalSeasonsInput and seasonEpisodeInputsDiv are removed from HTML
 
 
                  // Clear episode inputs
@@ -387,7 +614,6 @@
                       if (type === 'episode') {
                            updateEpisodeSeriesRequiredState();
                       }
-                      // Dynamic season/episode input required state logic is removed as inputs are removed.
                  }
 
             }
@@ -422,15 +648,6 @@
             if (episodeSeriesSelect) {
                  episodeSeriesSelect.addEventListener('change', updateEpisodeSeriesRequiredState);
             }
-             // No need for input listener on manualEpisodeSeriesIdInput for required state logic,
-             // as its required state is determined solely by the dropdown selection.
-
-
-            // --- Dynamic Season/Episode Inputs for Series Form ---
-            // This function and the related event listener are removed as the HTML inputs are removed.
-            // function populateSeasonEpisodeInputs() { ... }
-            // if (totalSeasonsInput) { ... }
-
 
             // Initial state setup based on checked radio button
             // Moved this block INSIDE the DOMContentLoaded listener and ensure it's not duplicated
@@ -663,6 +880,7 @@
                           const isSeriesIdProvided = (seriesSelectValue !== '' && seriesSelectValue !== 'manual') || (seriesSelectValue === 'manual' && manualId !== '');
 
                           if (!isSeriesIdProvided) {
+                               // Using hardcoded Hebrew for flash messages as requested for this page
                                flash('שגיאה: אנא בחר סדרה קיימת מהרשימה או הזן IMDb ID ידנית.', 'error');
                                event.preventDefault(); // Stop submission
                                 // Optional: Focus the relevant input/select
@@ -678,6 +896,7 @@
                           if (seriesSelectValue === 'manual' && manualId !== '') {
                               const imdbIdPattern = /^tt\d{7,}$/;
                                if (!imdbIdPattern.test(manualId)) {
+                                   // Using hardcoded Hebrew for flash messages as requested for this page
                                    flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error');
                                    event.preventDefault();
                                    manualEpisodeSeriesIdInput.focus();
@@ -698,6 +917,7 @@
                            // Removed video URL missing field check
 
                            if (missingFields.length > 0) {
+                                // Using hardcoded Hebrew for flash messages as requested for this page
                                 flash(`שגיאה: אנא מלא את כל שדות החובה לפרק: ${missingFields.join(', ')}.`, 'error');
                                 event.preventDefault(); // Stop submission
                                 return;
@@ -708,18 +928,17 @@
                                 const seasonNumInt = parseInt(seasonNumber, 10);
                                 const episodeNumInt = parseInt(episodeNumber, 10);
                                 if (seasonNumInt < 1 || episodeNumInt < 1) {
+                                     // Using hardcoded Hebrew for flash messages as requested for this page
                                      flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים.', 'error');
                                      event.preventDefault();
                                      return;
                                 }
                             } catch (e) {
+                                 // Using hardcoded Hebrew for flash messages as requested for this page
                                  flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים תקינים.', 'error');
                                  event.preventDefault();
                                  return;
                             }
-
-                          // No client-side validation needed for episode IMDb ID input as it's removed.
-                          // The server will fetch it from OMDB or use a placeholder.
 
 
                      } else if (contentType === 'series') {
@@ -730,12 +949,14 @@
                            // Check IMDb ID is provided and format is correct
                            const imdbIdPattern = /^tt\d{7,}$/;
                             if (!seriesImdbId) {
+                                // Using hardcoded Hebrew for flash messages as requested for this page
                                 flash('שגיאה: שדה חובה (IMDb ID של הסדרה) חסר.', 'error');
                                 event.preventDefault();
                                 seriesImdbIdInput.focus();
                                 return;
                             }
                             if (!imdbIdPattern.test(seriesImdbId)) {
+                                // Using hardcoded Hebrew for flash messages as requested for this page
                                 flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error');
                                 event.preventDefault();
                                 seriesImdbIdInput.focus();
@@ -768,10 +989,9 @@
     {# Add a simple flash message display function if you're not using a Flask-specific one #}
     <script>
         // Dummy flash function if needed for client-side validation messages
+        // This function is used by the client-side form validation in add.html
         function flash(message, category) {
             console.log(`FLASH (${category}): ${message}`);
-             // You might want to actually display this in a visible part of the page
-             // For now, it just logs to console.
              // A real implementation would add a div to the .flash-messages container
              const flashMessagesDiv = document.querySelector('.flash-messages');
              if (flashMessagesDiv) {
