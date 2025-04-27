@@ -285,11 +285,12 @@ def categorize_content(movies_data, series_data):
     return categorized_items
 
 
-def get_greeting(user=None, language='he'):
+def get_greeting(user=None): # Removed language parameter - always Hebrew
     now = datetime.datetime.now()
     current_hour = now.hour
     greeting_text = ""
 
+    # Always use Hebrew greetings
     greetings_he = {
         (5, 12): "בוקר טוב",
         (12, 18): "צהריים טובים",
@@ -298,36 +299,22 @@ def get_greeting(user=None, language='he'):
         (0, 5): "לילה טוב" # Handle 0-4 AM
     }
 
-    greetings_en = {
-         (5, 12): "Good Morning",
-         (12, 18): "Good Afternoon",
-         (18, 21): "Good Evening",
-         (21, 24): "Good Night",
-         (0, 5): "Good Night"
-    }
-
-    greetings = greetings_he if language == 'he' else greetings_en
-
-    for hour_range, text in greetings.items():
+    for hour_range, text in greetings_he.items():
         if hour_range[0] <= current_hour < hour_range[1]:
             greeting_text = text
             break
     # Fallback if hour doesn't match any range (shouldn't happen with comprehensive ranges)
     if not greeting_text:
-         greeting_text = "שלום" if language == 'he' else "Hello"
-
+         greeting_text = "שלום"
 
     if user and user.get('name'):
         # Split name by space and take the first part (handle multi-word names)
         first_name = user['name'].split(' ')[0]
-        # Append the name only if it's a Hebrew greeting or if name is ASCII
-        # Avoid issues with Hebrew name display if greeting is English and font doesn't mix well easily
-        if language == 'he' or all(ord(c) < 128 for c in first_name):
-             return f"{greeting_text} {first_name}"
-        else:
-             return greeting_text # Just return the greeting in English without potentially non-ASCII name
+        # Only append the name if it's an ASCII name, otherwise Hebrew names can look weird after English greetings
+        # Since greeting is always Hebrew now, we can always append the name.
+        return f"{greeting_text} {first_name}"
     else:
-        return f"{greeting_text} {'אורח' if language == 'he' else 'Guest'}"
+        return f"{greeting_text} אורח"
 
 
 # --- OMDB API Functions ---
@@ -568,7 +555,7 @@ def set_language(lang_code):
 def index():
     user = session.get('user')
     current_language = session.get('language', 'he') # Get language from session, default to 'he'
-    greeting = get_greeting(user, current_language) # Pass language to greeting function
+    greeting = get_greeting(user) # Greeting is always Hebrew now
 
     # Load all content from Firebase for the index page
     movies_data = load_movies_data() # Includes type: 'movie' and Hebrew fields if exist
@@ -1074,7 +1061,7 @@ def add_content():
                            categories=[c for c in CATEGORIES if c != 'ללא'], # Categories excluding 'ללא' for movie/series dropdown
                            available_series=available_series,
                            current_year=datetime.datetime.utcnow().year,
-                           admin_emails=ADMIN_EMAILS # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS
                            )
 
 
@@ -1099,7 +1086,7 @@ def all_movies():
                            movies=all_movies_data, # Pass all movies
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS,
                            current_language=current_language # Pass the current language
                            )
 
@@ -1126,7 +1113,7 @@ def all_series():
                            series=all_series_data, # Pass series data to the template
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS,
                            current_language=current_language # Pass the current language
                            )
 
