@@ -234,7 +234,7 @@
         {# Use series variable passed from Flask route #}
         {% if series %}
             {# Determine display title and poster based on current language #}
-            {% set display_title = series.get('HebrewName', series.get('title', '')) if current_language == 'he' else series.get('title', series.get('HebrewName', '')) %}
+            {% set display_title = series.get('HebrewName', series.get('title', '')) if current_language == 'he' else series.get('title', series.get('HebbrewName', '')) %} {# FIX: Typo HebrewName #}
             {% set display_poster = series.get('HebrewPoster', series.get('poster', '')) if current_language == 'he' else series.get('poster', series.get('HebrewPoster', '')) %}
             {% set alt_text = series.get('HebrewName', series.get('title', 'Unknown Title')) if current_language == 'he' else series.get('title', series.get('HebrewName', 'Unknown Title')) %}
             {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
@@ -326,11 +326,49 @@
         </div>
     </footer>
 
+    {# --- Safely embed JSON data for JS --- #}
+    {# Use type="application/json" to prevent browser from interpreting this as JavaScript #}
+    {# Access this data in the main script tag below by reading textContent and parsing JSON #}
+     <script id="series-data" type="application/json">{{ series | tojson }}</script>
+     <script id="user-data" type="application/json">{{ user | tojson }}</script>
+
+
      {# --- JavaScript for Series Details and Episode Playback --- #}
     <script>
          // Pass current_language from Flask to JavaScript
          const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
          const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+
+         // --- Read JSON data from script tags ---
+         let seriesData = null;
+         let user = null; // Declare user here, will be populated below
+
+         const seriesDataScript = document.getElementById('series-data');
+         if (seriesDataScript) {
+             try {
+                 seriesData = JSON.parse(seriesDataScript.textContent);
+                 console.log("Parsed seriesData from script tag:", seriesData);
+             } catch (e) {
+                 console.error("Error parsing seriesData from script tag:", e);
+                  // seriesData remains null, the {% if series %} in Jinja should handle this visual error state
+             }
+         } else {
+              console.error("series-data script tag not found!");
+         }
+
+         const userDataScript = document.getElementById('user-data');
+          if (userDataScript) {
+              try {
+                   user = JSON.parse(userDataScript.textContent);
+                  console.log("Parsed user data from script tag:", user);
+              } catch (e) {
+                   console.error("Error parsing user data from script tag:", e);
+                   user = null; // Ensure user is null if parsing fails
+              }
+          } else {
+              console.warn("user-data script tag not found.");
+              user = null; // Ensure user is null if tag not found
+          }
 
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -355,7 +393,7 @@
                            spinner.style.display = 'none';
                            console.log("Spinner hidden via timeout fallback on series page.");
                       }
-                  }, visualHideDelay + 100);
+                 }, visualHideDelay + 100);
              } else {
                  console.warn("Spinner element #loading-spinner not found on series page.");
              }
@@ -374,29 +412,41 @@
              }
 
 
-            // Embed series data from Flask into a JavaScript variable
-            const seriesData = {{ series | tojson }}; // Flask renders the 'series' object as JSON
-            const seriesImdbId = seriesData ? seriesData.imdbID : null; // Get the series IMDb ID
-            const user = {{ user | tojson }}; // Pass user object from Flask
+            // Check if seriesData was successfully parsed before proceeding
+            if (!seriesData) {
+                console.error("Cannot initialize series page: seriesData is null or invalid.");
+                // The Jinja {% else %} block should handle the visual error state,
+                // but we might want to disable JS interactions here.
+                if (seasonSelect) seasonSelect.disabled = true;
+                // episodeListUl remains empty or placeholder from Jinja/initial populate
+                 showEmbedMessage(currentLanguage === 'he' ? 'שגיאה בטעינת נתוני סדרה.' : 'Error loading series data.'); // Language dependent message
+                 return; // Stop JS execution
+            }
+
+
+            // Get seriesImdbId after successful seriesData parse
+            const seriesImdbId = seriesData.imdbID;
+            const userId = user && user.google_id ? user.google_id : null;
+            const localStorageKey = `continueWatching_${userId}`;
+
 
             const seasonSelect = document.getElementById('season-select');
             const episodeListUl = document.getElementById('episode-list');
-            // Reference the new embed container and message div
             const episodeEmbedContainer = document.getElementById('episode-embed-container');
             const embedMessageDiv = document.getElementById('embed-message');
-            const currentEpisodeTimestampDiv = document.getElementById('current-episode-timestamp'); // Optional display
+            const currentEpisodeTimestampDiv = document.getElementById('current-episode-timestamp');
 
-            let saveTimer = null; // Timer for saving state (not real-time playback)
+            let saveTimer = null;
             let currentSeason = null;
             let currentEpisode = null;
-            let currentEpisodeKey = null; // Key for localStorage
+            let currentEpisodeKey = null;
 
 
              // Get season and episode numbers from URL path for initial load
-             const pathParts = window.location.pathname.split('/').filter(part => part !== ''); // Split path and remove empty parts
+             const pathParts = window.location.pathname.split('/').filter(part => part !== '');
              let initialSeasonFromUrl = null;
              let initialEpisodeFromUrl = null;
-             let initialTimestampFromUrl = 0; // Default timestamp from URL hash
+             let initialTimestampFromUrl = 0;
 
 
              // Check URL hash for initial timestamp
@@ -404,8 +454,11 @@
              if (urlHash.startsWith('#timestamp=')) {
                  const hashTimestamp = parseInt(urlHash.substring('#timestamp='.length), 10);
                  if (!isNaN(hashTimestamp) && hashTimestamp >= 0) {
-                      initialTimestampFromUrl = hashTimestamp; // Use timestamp from URL hash if valid
+                      initialTimestampFromUrl = hashTimestamp;
                       console.log(`Loaded initial timestamp from URL hash: ${initialTimestampFromUrl} seconds.`);
+                 } else {
+                     console.warn("Invalid timestamp format in URL hash.");
+                     initialTimestampFromUrl = 0; // Reset to 0 if invalid
                  }
              } else {
                   console.log("No #timestamp hash found in URL.");
@@ -413,30 +466,28 @@
 
 
              // Expected path format: /series/<series_imdb_id> or /series/<series_imdb_id>/<season_number>/<episode_number>
-             // Parts for episode: [series, <series_imdb_id>, <season_number>, <episode_number>]
              if (seriesImdbId && pathParts.length === 4 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
                  const seasonCandidate = parseInt(pathParts[2], 10);
                  const episodeCandidate = parseInt(pathParts[3], 10);
 
-                 // Check if they are valid numbers and within a reasonable range (e.g., >= 1)
                  if (!isNaN(seasonCandidate) && seasonCandidate >= 1 && !isNaN(episodeCandidate) && episodeCandidate >= 1) {
                       initialSeasonFromUrl = seasonCandidate;
                       initialEpisodeFromUrl = episodeCandidate;
-                      console.log(`Found initial season '${initialSeasonFromUrl}' and episode '${initialEpisodeFromUrl}' in URL.`);
+                      console.log(`Found initial season '${initialSeasonFromUrl}' and episode '${initialEpisodeFromUrl}' in URL path.`);
                  } else {
                      console.warn("Invalid season or episode number format in URL path.");
                  }
              } else if (seriesImdbId && pathParts.length === 2 && pathParts[0] === 'series' && pathParts[1] === seriesImdbId) {
                   console.log("No specific season/episode numbers found in URL path.");
              }
-             else if (seriesImdbId) { // Log warning only if seriesData exists but path doesn't match
+             else if (seriesImdbId) {
                   console.warn("URL format is unexpected for this series page with optional season/episode.");
              }
-             // If seriesImdbId is null, it means seriesData was null, error handler should be shown.
 
 
              // Helper to format time for display (HH:MM:SS)
              const formatTime = (seconds) => {
+                 if (isNaN(seconds) || seconds < 0) return '--:--'; // Handle invalid time
                  const h = Math.floor(seconds / 3600);
                  const m = Math.floor((seconds % 3600) / 60);
                  const s = Math.floor(seconds % 60);
@@ -449,19 +500,22 @@
 
             // Function to find episode data by season and episode numbers
              function findEpisodeByNumbers(seasonNum, episodeNum) {
-                 // Ensure seasonNum and episodeNum are treated as numbers here
                  if (isNaN(seasonNum) || seasonNum < 1 || isNaN(episodeNum) || episodeNum < 1) {
                       console.warn(`findEpisodeByNumbers called with invalid numbers: S${seasonNum}E${episodeNum}`);
-                      return null; // Return null for invalid input numbers
+                      return null;
                  }
 
-                 if (!seriesData || !seriesData.Seasons || typeof seriesData.Seasons !== 'object') return null;
+                 if (!seriesData.Seasons || typeof seriesData.Seasons !== 'object') {
+                     console.warn("findEpisodeByNumbers: SeriesData.Seasons is missing or not an object.");
+                     return null;
+                 }
+
 
                  // Access season by number key (which is a string in the object keys)
-                 const seasonData = seriesData.Seasons[String(seasonNum)]; // <-- Access using String(seasonNum)
+                 const seasonData = seriesData.Seasons[String(seasonNum)]; // Access using String(seasonNum)
                  if (seasonData && seasonData.Episodes && typeof seasonData.Episodes === 'object') {
                       // Access episode by its STRING key (which is the episode number as a string in Firebase)
-                      const episode = seasonData.Episodes[String(episodeNum)]; // <-- FIX: Access using String(episodeNum)
+                      const episode = seasonData.Episodes[String(episodeNum)]; // Access using String(episodeNum)
 
                        // Ensure episode data exists and is an object
                       if (episode && typeof episode === 'object') {
@@ -482,7 +536,7 @@
 
             // Function to populate the season dropdown
             function populateSeasons() {
-                if (seriesData && seriesData.Seasons && typeof seriesData.Seasons === 'object') {
+                if (seriesData.Seasons && typeof seriesData.Seasons === 'object') {
                     // Get season numbers from the keys of the Seasons object, convert to numbers,
                     // filter out NaN and numbers less than 1, then sort.
                     // Use Object.keys().filter() first to ensure only valid season number strings are processed
@@ -514,7 +568,7 @@
                          showEmbedMessage(currentLanguage === 'he' ? 'אין עונות זמינות עבור סדרה זו.' : 'No seasons available for this series.'); // Language dependent message
                     }
                 } else {
-                     console.warn("Series data or season structure is invalid/empty.");
+                     console.warn("Series season structure is invalid/empty.");
                       const option = document.createElement('option');
                      option.value = "";
                      option.textContent = currentLanguage === 'he' ? "-- אין עונות זמינות --" : "-- No Seasons Available --"; // Language dependent text
@@ -522,7 +576,7 @@
                      seasonSelect.appendChild(option);
                      seasonSelect.disabled = true; // Disable select
                      episodeListUl.innerHTML = `<li class="placeholder-episode">${currentLanguage === 'he' ? 'אין פרקים זמינים.' : 'No episodes available.'}</li>`; // Language dependent text
-                     showEmbedMessage(currentLanguage === 'he' ? 'נתוני סדרה אינם זמינים.' : 'Series data not available.'); // Language dependent message
+                     showEmbedMessage(currentLanguage === 'he' ? 'נתוני עונות חסרים או לא תקינים.' : 'Season data missing or invalid.'); // Language dependent message
 
                 }
             }
@@ -578,7 +632,7 @@
             // Function to save the current episode's details to localStorage
             // timestampToSave here is the timestamp we started playback at, NOT current player time.
             function saveContinueWatchingState(season, episode, timestampToSave = 0) {
-                if (!userId || !seriesData || !seriesData.imdbID) {
+                if (!userId || !seriesData || !seriesImdbId) {
                      console.log("Cannot save continue watching state: User not logged in or missing series data.");
                      return;
                 }
@@ -607,9 +661,9 @@
                     episode: episode, // Save episode number as number
                     title: seriesData.title || 'כותרת סדרה לא ידועה', // Save English series title
                     HebrewName: seriesData.HebrewName || seriesData.title || 'כותרת סדרה לא ידועה', // Save Hebrew series title (with fallback)
-                    episode_title: episodeData.title || `פרק ${episode}`, // Save episode title (currently only English from OMDB)
-                    poster: seriesData.poster && seriesData.poster !== 'N/A' ? seriesData.poster : '{{ url_for('static', filename='images/no_poster.png') }}', // Save English series poster
-                    HebrewPoster: seriesData.HebrewPoster || seriesData.poster || '{{ url_for('static', filename='images/no_poster.png') }}', // Save Hebrew series poster (with fallback)
+                    episode_title: episodeData.title || (currentLanguage === 'he' ? `פרק ${episode}` : `Episode ${episode}`), // Save episode title (language dependent fallback)
+                    poster: seriesData.poster && seriesData.poster !== 'N/A' ? seriesData.poster : defaultPosterUrl, // Save English series poster
+                    HebrewPoster: seriesData.HebrewPoster || seriesData.poster || defaultPosterUrl, // Save Hebrew series poster (with fallback)
                     timestamp: timestampToSave // Save the timestamp (likely the initial one loaded or 0)
                      // Note: Real-time timestamp updates are NOT possible here with standard Vidsrc iframe.
                 };
@@ -636,11 +690,11 @@
              // Function to remove the current episode from localStorage
              // This function is not currently used on series.html but is kept for consistency if needed later
              function removeContinueWatchingState(season, episode) {
-                 if (!userId || !seriesData || !seriesData.imdbID || !season || !episode) {
+                 if (!userId || !seriesData || !seriesImdbId || !season || !episode) {
                       console.log("Cannot remove continue watching state: User not logged in or missing data.");
                       return;
                  }
-                 const itemKey = `series_${seriesImdbId}_S${season}E{episode}`;
+                 const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
                   if (continueWatchingItems[itemKey]) {
                        delete continueWatchingItems[itemKey];
                        try {
@@ -685,6 +739,7 @@
 
 
                      // Construct the new URL using series ID, season, episode, and loaded timestamp
+                     // Note: Using 'seriesImdbId' here which is confirmed to exist if we reach this point.
                      const newUrl = `/series/${seriesImdbId}/${season}/${episode}${savedEpisodeTimestamp > 0 ? '#timestamp=' + savedEpisodeTimestamp : ''}`;
                      // Use replaceState to change the URL without adding a history entry
                      history.replaceState(null, '', newUrl);
@@ -755,14 +810,18 @@
                 episodeListUl.innerHTML = ''; // Clear current episodes
                  // episodeListUl.classList.add('loading'); // Optional: Add a loading class
 
-                const seasonData = seriesData && seriesData.Seasons ? seriesData.Seasons[String(seasonNumber)] : null; // Access using String(seasonNumber)
+                const seasonData = seriesData.Seasons ? seriesData.Seasons[String(seasonNumber)] : null; // Access using String(seasonNumber)
 
                 if (seasonData && seasonData.Episodes && typeof seasonData.Episodes === 'object') {
                     const episodes = seasonData.Episodes;
                     // Get episode numbers (keys of the Episodes object), convert to numbers, sort
                     // Filter keys to include only those that are valid number strings >= 1
                     const episodeNumbers = Object.keys(episodes)
-                                                .filter(key => !isNaN(Number(key)) && Number(key) >= 1) // Filter for valid number strings >= 1
+                                                .filter(key => {
+                                                     const num = Number(key);
+                                                     // Ensure the key is a number string >= 1 AND the corresponding value is an object (basic episode structure check)
+                                                     return !isNaN(num) && num >= 1 && typeof episodes[key] === 'object';
+                                                })
                                                 .map(Number) // Convert valid keys to numbers
                                                 .sort((a, b) => a - b); // Sort numerically
 
@@ -770,8 +829,8 @@
                     if (episodeNumbers.length > 0) {
                         episodeNumbers.forEach(episodeNum => {
                             // Access episode data using the string key
-                            const episode = episodes[String(episodeNum)]; // <-- Access using String(episodeNum)
-                            // Ensure episode data is an object
+                            const episode = episodes[String(episodeNum)]; // Access using String(episodeNum)
+                            // Ensure episode data is an object (already checked in filter, but double-check)
                             if (episode && typeof episode === 'object') {
                                 const li = document.createElement('li');
                                 li.classList.add('episode-item');
@@ -785,7 +844,7 @@
                                 li.addEventListener('click', handleEpisodeClick);
                                 episodeListUl.appendChild(li);
                             } else {
-                                 console.warn(`Skipping invalid episode data for S${seasonNumber}E${episodeNum} in Firebase structure.`);
+                                 console.warn(`Skipping invalid episode data (not an object) for S${seasonNumber}E${episodeNum} after filter.`);
                             }
                         });
 
@@ -873,6 +932,7 @@
 
 
             // Initial setup on page load
+             // seriesData is now loaded from the script tag at the top
             if (seriesData) { // Only proceed if seriesData was successfully loaded
                 loadContinueWatchingData(); // Load existing CW data
                 populateSeasons(); // Populate the season dropdown
@@ -884,6 +944,7 @@
                           const playableSeasonNumbers = Object.keys(seriesData.Seasons)
                                                             .filter(sKey => {
                                                                  const seasonData = seriesData.Seasons[sKey];
+                                                                 // Ensure season data exists and has episodes object, and at least one episode key >= 1 exists
                                                                  return seasonData && seasonData.Episodes &&
                                                                         Object.keys(seasonData.Episodes).filter(eKey => !isNaN(Number(eKey)) && Number(eKey) >= 1).length > 0;
                                                             })
@@ -925,7 +986,7 @@
 
                               // 2. If no URL path numbers or episode not found by path, fall back to the first episode of the first playable season
                               if (targetSeasonNum === null || targetEpisodeNum === null) {
-                                   console.log("Falling back to selecting the first available season/episode.");
+                                   console.log("Falling back to selecting the first playable season/episode.");
                                    const firstPlayableSeasonNum = playableSeasonNumbers[0]; // Take the first playable season number
 
                                    const episodesInFirstPlayableSeason = seriesData.Seasons[String(firstPlayableSeasonNum)]?.Episodes || {};
@@ -966,7 +1027,7 @@
                                                console.warn(`First episode data at S${firstPlayableSeasonNum}E${firstEpisodeNum} is invalid.`);
                                                showEmbedMessage(currentLanguage === 'he' ? 'שגיאה: לא ניתן לטעון את הפרק הראשון בעונה הראשונה הזמינה.' : 'Error: Cannot load the first episode of the first available season.'); // Language dependent message
                                           }
-                                    } else { // <-- This else block is reached if episodeNumbersInSeason[0] is undefined (no episodes found in the first playable season)
+                                    } else { // This else block is reached if episodeNumbersInSeason[0] is undefined (no episodes found in the first playable season)
                                          console.warn(`First playable season ${firstPlayableSeasonNum} has no playable episodes (after filtering >= 1).`);
                                          showEmbedMessage(currentLanguage === 'he' ? `אין פרקים זמינים בעונה ${firstPlayableSeasonNum}.` : `No playable episodes available in season ${firstPlayableSeasonNum}.`); // Language dependent message
                                     }
@@ -988,6 +1049,11 @@
                                 // The populateEpisodes function will then call handleEpisodeClick if successful.
                                 populateEpisodes(targetSeasonNum, targetEpisodeNum);
 
+                                // The populateEpisodes function with the episodeToSelect parameter
+                                // will handle finding and clicking the specific list item after population.
+                                // The handleEpisodeClick function then reads the new URL hash (which we just set via history.replaceState)
+                                // to get the starting timestamp for the iframe.
+
                           } else {
                                console.warn("No playable episode found for auto-selection after checking URL and defaults.");
                                 // Message is already set by populateSeasons or falls through to default
@@ -1000,8 +1066,8 @@
                             // Message is already set by populateSeasons
                              showEmbedMessage(currentLanguage === 'he' ? 'אין עונות זמינות עבור סדרה זו.' : 'No seasons available for this series.'); // Language dependent message
                       }
-                  } else {
-                       console.warn("No series data found on page load.");
+                  } else { // This case is handled by the initial !seriesData check, but defensive here.
+                       console.warn("No series data found on page load during auto-selection phase.");
                        showEmbedMessage(currentLanguage === 'he' ? 'נתוני סדרה אינם זמינים.' : 'Series data not available.'); // Language dependent message
                   }
              }, 50); // Delay initial auto-selection slightly
