@@ -111,19 +111,12 @@
         <div class="page-heading"> {# Use a slightly different class for heading #}
             {# Update heading based on language #}
             <h1>{{ 'כל הסרטים' if current_language == 'he' else 'All Movies' }}</h1>
-            <p>{{ 'צפה בכל הסרטים הזמינים באתר וסנן לפי ז\'אנר, דירוג ושנת יציאה.' if current_language == 'he' else 'View all available movies on the site and filter by genre, rating, and release year.' }}</p>
+            {# Updated description #}
+            <p>{{ 'צפה בכל הסרטים הזמינים באתר וסנן לפי דירוג IMDb.' if current_language == 'he' else 'View all available movies on the site and filter by IMDb rating.' }}</p>
         </div>
 
-        <!-- Filter Container -->
+        <!-- Filter Container - Only includes Rating filter -->
         <div class="filter-container">
-             <div class="filter-group">
-                 <label for="genreFilter">{{ 'ז\'אנר:' if current_language == 'he' else 'Genre:' }}</label>
-                 <select id="genreFilter">
-                      <option value="">{{ 'כל הז\'אנרים' if current_language == 'he' else 'All Genres' }}</option>
-                     {# Options will be populated by JavaScript #}
-                 </select>
-             </div>
-
             <div class="filter-group">
                  <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMdb):' }}</label>
                  <select id="ratingFilter">
@@ -131,14 +124,7 @@
                      {# Options will be populated by JavaScript #}
                  </select>
              </div>
-
-             <div class="filter-group">
-                 <label for="yearFilter">{{ 'שנה:' if current_language == 'he' else 'Year:' }}</label>
-                 <select id="yearFilter">
-                     <option value="">{{ 'כל השנים' if current_language == 'he' else 'All Years' }}</option>
-                     {# Options will be populated by JavaScript #}
-                 </select>
-             </div>
+             {# Removed Genre and Year filter groups #}
          </div>
 
 
@@ -160,15 +146,10 @@
                         class="item-card-link catalog-item"
                         data-id="{{ movie.imdbID }}"
                         data-type="movie"
-                        {# Although not strictly used by the JS filtering function, keeping these data attributes is fine #}
-                        {# for potential future use or debugging inspection in elements panel. #}
-                        {# Ensure data attributes are lowercase/trimmed, matching JS comparison #}
+                        {# Removed genre and year data attributes #}
                         data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower | trim }}"
                         data-title-en="{{ movie.get('title', movie.get('HebrewName', '')) | lower | trim }}"
-                        data-genre="{{ movie.get('Genre', '') | lower | trim }}"
-                        data-rated="{{ movie.get('Rated', '') | lower | trim }}"
-                        data-imdb-rating="{{ movie.get('imdbRating', '') | lower | trim }}"
-                        data-year="{{ movie.get('Year', '') | lower | trim }}">
+                        data-imdb-rating="{{ movie.get('imdbRating', '') | lower | trim }}">
 
                         {# Use the same item-card structure as index.html for consistent look, but movies.css will handle grid layout #}
                         <div class="item-card" tabindex="0">
@@ -216,7 +197,7 @@
     <script>
          // Pass current_language from Flask to JavaScript
          const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
-         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }};
 
          // Pass the full movie data from Flask to JavaScript
          // Note: This converts the Python dictionary to a JavaScript object
@@ -260,9 +241,7 @@
 
             // --- Filtering and Search Functionality ---
             const searchInput = document.getElementById('searchInput');
-            const genreFilter = document.getElementById('genreFilter');
             const ratingFilter = document.getElementById('ratingFilter');
-            const yearFilter = document.getElementById('yearFilter');
             const noResultsMessage = document.getElementById('noResultsMessage');
 
             // Map IMDb IDs to their corresponding DOM elements for quick access
@@ -272,25 +251,8 @@
             });
 
 
-            // Predefined Genre List
-            const predefinedGenres = [
-                 "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary",
-                 "Drama", "Family", "Fantasy", "Film-Noir", "History", "Horror", "Music", "Musical",
-                 "Mystery", "Romance", "Sci-Fi", "Sport", "Thriller", "War", "Western"
-            ];
-
-
             // Function to populate filter dropdowns
             function populateFilters() {
-                // Populate Genre Filter from predefined list
-                 predefinedGenres.sort().forEach(genre => { // Sort alphabetically
-                     const option = document.createElement('option');
-                     option.value = genre.toLowerCase(); // Use lowercase for value
-                     option.textContent = genre; // Display original case
-                     genreFilter.appendChild(option);
-                 });
-                 console.log("Genre filter populated."); // Log genre population
-
                 // Populate Rating Filter (1-10)
                 for (let i = 1; i <= 10; i++) {
                      const option = document.createElement('option');
@@ -300,48 +262,7 @@
                  }
                  console.log("Rating filter populated."); // Log rating population
 
-
-                // Populate Year Filter (Min Year in data to Current Year)
-                let minYear = new Date().getFullYear(); // Start with current year
-                 const currentYear = new Date().getFullYear();
-                 let foundAnyYear = false;
-
-                // Find the minimum year present in the data
-                 Object.values(allMoviesData).forEach(movie => {
-                    const yearData = movie.Year; // Get the Year string from the passed data
-                    if (yearData) {
-                         // Attempt to parse the starting year (handles 'YYYY' or 'YYYY–')
-                        const match = yearData.match(/^\d{4}/);
-                        if (match) {
-                             const year = parseInt(match[0]);
-                             if (!isNaN(year)) {
-                                 minYear = Math.min(minYear, year);
-                                 foundAnyYear = true;
-                             }
-                         }
-                    }
-                 });
-
-                 // If no valid years were found in the data, default minYear to a reasonable value (e.g., 1900)
-                 if (!foundAnyYear) {
-                     minYear = 1900; // Fallback if no valid years in data
-                 } else {
-                     // Add a small buffer before the minimum year if it's very recent,
-                     // or just ensure it's not in the future by mistake
-                     minYear = Math.min(minYear, currentYear); // Should not show future years
-                     // Optional: minYear = Math.max(minYear - 5, 1900); // Add options for a few years before the earliest found
-                 }
-
-
-                // Create options from currentYear down to minYear
-                for (let year = currentYear; year >= minYear; year--) { // Sort years descending
-                    const option = document.createElement('option');
-                    option.value = year;
-                    option.textContent = year;
-                    yearFilter.appendChild(option);
-                }
-                 console.log(`Year filter populated from ${minYear} to ${currentYear}.`); // Log year population
-
+                // Removed Genre and Year filter population
             }
 
 
@@ -349,11 +270,9 @@
             function applyFiltersAndSearch() {
                 console.log("Applying filters and search..."); // Log function call
                 const searchTerm = searchInput.value.toLowerCase().trim();
-                const selectedGenre = genreFilter.value; // value is already lowercased
                 const selectedRatingValue = parseFloat(ratingFilter.value); // Parse to number
-                const selectedYearValue = parseInt(yearFilter.value); // Parse to number
 
-                console.log(`Filter Values - Search: "${searchTerm}", Genre: "${selectedGenre}", Rating: ${selectedRatingValue}, Year: ${selectedYearValue}`); // Log selected values
+                console.log(`Filter Values - Search: "${searchTerm}", Rating: ${selectedRatingValue}`); // Log selected values
 
                 let visibleCount = 0;
 
@@ -371,25 +290,13 @@
 
                     const titleHe = (movie.HebrewName || movie.title || '').toLowerCase().trim();
                     const titleEn = (movie.title || movie.HebrewName || '').toLowerCase().trim();
-                    const movieGenre = (movie.Genre || '').toLowerCase().trim(); // Already comma-separated from OMDB
                     const movieImdbRatingStr = (movie.imdbRating || '').toLowerCase().trim();
-                    const movieYearStr = (movie.Year || '').toLowerCase().trim();
-
-                    console.group(`Processing movie: ${movieTitle} (${movieImdbId})`); // Group logs for each movie
-                     console.log(`  Raw Data - Genre: "${movie.Genre}", Year: "${movie.Year}", Rating: "${movie.imdbRating}"`);
-                     console.log(`  Processed Data - Genre: "${movieGenre}", YearStr: "${movieYearStr}", RatingStr: "${movieImdbRatingStr}"`);
 
 
                     // --- Apply Search Filter ---
                     // Check if either Hebrew or English title contains the search term
                     const passesSearch = (titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
-                    console.log(`  - Search ("${searchTerm}"): Passes = ${passesSearch}`);
-
-
-                    // --- Apply Genre Filter ---
-                    // If no genre is selected, it passes; otherwise, check if the movie's genre string includes the selected genre
-                    const passesGenreFilter = !selectedGenre || (movieGenre.includes(selectedGenre));
-                    console.log(`  - Genre ("${selectedGenre}"): Passes = ${passesGenreFilter}`);
+                    // console.log(`  - Search ("${searchTerm}"): Passes = ${passesSearch}`); // Keep for debugging if needed
 
 
                     // --- Apply Rating Filter (IMDb Rating) ---
@@ -404,45 +311,24 @@
                     if (!isNaN(selectedRatingValue)) { // Check if a valid rating number is selected
                          // Check if the movie's rating is a valid number AND is greater than or equal to the selected value
                          passesRatingFilter = (!isNaN(movieImdbRating) && movieImdbRating >= selectedRatingValue);
-                         console.log(`  - Rating (${selectedRatingValue}+) - Movie Rating: ${movieImdbRating}, Passes = ${passesRatingFilter}`);
+                         // console.log(`  - Rating (${selectedRatingValue}+) - Movie Rating: ${movieImdbRating}, Passes = ${passesRatingFilter}`); // Keep for debugging if needed
                     } else {
-                         console.log(`  - Rating Filter (None Selected): Passes = ${passesRatingFilter}`); // Log when no rating filter is active
-                    }
-
-
-                    // --- Apply Year Filter ---
-                    // If no year is selected, it passes; otherwise, check if movie's parsed year is >= selected year
-                    let passesYearFilter = true; // Assume pass if no filter selected
-                    let movieYear = NaN; // Initialize to NaN
-
-                    if (movieYearStr) { // Check if year string exists
-                         // Attempt to parse the starting year from the movie's year string
-                         const match = movieYearStr.match(/^\d{4}/);
-                         movieYear = match ? parseInt(match[0]) : NaN;
-                    }
-
-
-                    if (!isNaN(selectedYearValue)) { // Check if a valid year number is selected
-                        // Check if the movie's year is a valid number AND is greater than or equal to the selected value
-                        passesYearFilter = (!isNaN(movieYear) && movieYear >= selectedYearValue);
-                        console.log(`  - Year (${selectedYearValue}+) - Movie Year: ${movieYear}, Passes = ${passesYearFilter}`);
-                    } else {
-                         console.log(`  - Year Filter (None Selected): Passes = ${passesYearFilter}`); // Log when no year filter is active
+                         // console.log(`  - Rating Filter (None Selected): Passes = ${passesRatingFilter}`); // Keep for debugging if needed
                     }
 
 
                     // A card is visible only if it passes ALL filters and search
-                    const shouldBeVisible = passesSearch && passesGenreFilter && passesRatingFilter && passesYearFilter;
+                    const shouldBeVisible = passesSearch && passesRatingFilter;
 
                     if (shouldBeVisible) {
                         cardElement.style.display = ''; // Show the element
                         visibleCount++;
-                         console.log("  - Result: Displaying movie.");
+                         // console.log("  - Result: Displaying movie."); // Keep for debugging if needed
                     } else {
                         cardElement.style.display = 'none'; // Hide the element
-                         console.log("  - Result: Hiding movie.");
+                         // console.log("  - Result: Hiding movie."); // Keep for debugging if needed
                     }
-                    console.groupEnd(); // End group for this movie
+                    // console.groupEnd(); // Keep for debugging if needed
 
                  });
 
@@ -471,9 +357,8 @@
                  console.log("Search input listeners added.");
             }
 
-            if (genreFilter) { genreFilter.addEventListener('change', applyFiltersAndSearch); console.log("Genre filter listener added."); }
             if (ratingFilter) { ratingFilter.addEventListener('change', applyFiltersAndSearch); console.log("Rating filter listener added."); }
-            if (yearFilter) { yearFilter.addEventListener('change', applyFiltersAndSearch); console.log("Year filter listener added."); }
+            // Removed Genre and Year filter listeners
 
 
              // Initial filter/search application in case there's a search term pre-filled
