@@ -111,8 +111,36 @@
         <div class="page-heading"> {# Use a slightly different class for heading #}
             {# Update heading based on language #}
             <h1>{{ 'כל הסרטים' if current_language == 'he' else 'All Movies' }}</h1>
-            <p>{{ 'צפה בכל הסרטים הזמינים באתר.' if current_language == 'he' else 'View all available movies on the site.' }}</p>
+            <p>{{ 'צפה בכל הסרטים הזמינים באתר וסנן לפי ז\'אנר, דירוג ושנת יציאה.' if current_language == 'he' else 'View all available movies on the site and filter by genre, rating, and release year.' }}</p>
         </div>
+
+        <!-- Filter Container -->
+        <div class="filter-container">
+             <div class="filter-group">
+                 <label for="genreFilter">{{ 'ז\'אנר:' if current_language == 'he' else 'Genre:' }}</label>
+                 <select id="genreFilter">
+                      <option value="">{{ 'כל הז\'אנרים' if current_language == 'he' else 'All Genres' }}</option>
+                     {# Options will be populated by JavaScript #}
+                 </select>
+             </div>
+
+            <div class="filter-group">
+                 <label for="ratingFilter">{{ 'דירוג (גיל):' if current_language == 'he' else 'Rating (Age):' }}</label>
+                 <select id="ratingFilter">
+                      <option value="">{{ 'כל הדירוגים' if current_language == 'he' else 'All Ratings' }}</option>
+                     {# Options will be populated by JavaScript #}
+                 </select>
+             </div>
+
+             <div class="filter-group">
+                 <label for="yearFilter">{{ 'שנה:' if current_language == 'he' else 'Year:' }}</label>
+                 <select id="yearFilter">
+                     <option value="">{{ 'כל השנים' if current_language == 'he' else 'All Years' }}</option>
+                     {# Options will be populated by JavaScript #}
+                 </select>
+             </div>
+         </div>
+
 
         {# Container for the movie grid #}
         <div class="all-movies-grid">
@@ -126,9 +154,19 @@
                      {% set alt_text = movie.get('HebrewName', movie.get('title', 'Unknown Title')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', 'Unknown Title')) %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
+                     {# Add data attributes for filtering: genre, rated, year #}
+                     {# Convert relevant data to lowercase and trim for easier filtering/searching #}
+                     {# Store original case for display if needed, but filtering uses lowercase data attributes #}
+                     <a href="{{ url_for('movie_details', imdb_id=movie.imdbID) }}"
+                        class="item-card-link catalog-item"
+                        data-id="{{ movie.imdbID }}"
+                        data-type="movie"
+                        data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower | trim }}"
+                        data-title-en="{{ movie.get('title', movie.get('HebrewName', '')) | lower | trim }}"
+                        data-genre="{{ movie.get('Genre', '') | lower | trim }}" {# OMDB Genre is comma-separated #}
+                        data-rated="{{ movie.get('Rated', '') | lower | trim }}"
+                        data-year="{{ movie.get('Year', '') | lower | trim }}"> {# OMDB Year is like '2023' or '2020–' #}
 
-                     {# Wrap card in an anchor tag linking to the movie details page #}
-                    <a href="{{ url_for('movie_details', imdb_id=movie.imdbID) }}" class="item-card-link catalog-item" data-id="{{ movie.imdbID }}" data-type="movie" data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower }}" data-title-en="{{ movie.get('title', movie.get('HebrewName', '')) | lower }}"> {# Added data attributes for search with both languages #}
                         {# Use the same item-card structure as index.html for consistent look, but movies.css will handle grid layout #}
                         <div class="item-card" tabindex="0">
                             <div class="card-image-container">
@@ -158,9 +196,9 @@
 
         <div id="noResultsMessage" style="display: none;">
             {% if current_language == 'he' %}
-            לא נמצאו תוצאות התואמות את החיפוש שלך.
+            לא נמצאו תוצאות התואמות את הסינון או החיפוש שלך.
             {% else %}
-            No results found matching your search.
+            No results found matching your filters or search.
             {% endif %}
         </div>
     </main>
@@ -177,103 +215,196 @@
          const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
          const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
 
-
-        // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded fired on movies page."); // Debug log
+            console.log("DOMContentLoaded fired on movies page.");
+
+            // --- Loading Spinner Logic ---
             const spinner = document.getElementById('loading-spinner');
             const visualHideDelay = 200; // Corresponds to var(--transition-fast)
-
             if (spinner) {
-                 console.log("Spinner element found, attempting to hide.");
                  spinner.classList.add('hidden');
                  spinner.addEventListener('transitionend', function handler(event) {
                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                          spinner.style.display = 'none';
-                         console.log("Spinner hidden via transitionend on movies page.");
                          spinner.removeEventListener('transitionend', handler);
                      }
                 });
                  setTimeout(() => {
                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
                           spinner.style.display = 'none';
-                          console.log("Spinner hidden via timeout fallback on movies page.");
                      }
                  }, visualHideDelay + 100);
-            } else {
-                console.warn("Spinner element #loading-spinner not found on movies page.");
             }
 
-            // --- Show spinner on language switcher click ---
+            // --- Language Switcher Spinner ---
             const languageSwitcherLink = document.querySelector('.language-switcher a');
             if (languageSwitcherLink) {
                  languageSwitcherLink.addEventListener('click', function(event) {
-                      // Prevent default behavior immediately so we can show the spinner
-                      // event.preventDefault(); // Don't prevent default, let the browser navigate
-                      // Show the spinner
                       const spinner = document.getElementById('loading-spinner');
                       if (spinner) {
                           spinner.classList.remove('hidden');
                           spinner.style.display = 'flex'; // Ensure it's flex for centering
-                           console.log("Spinner shown by language switcher click.");
                       }
-                      // Allow the browser to proceed with the link navigation after showing spinner
                  });
             }
 
 
-            // --- Search Filter Functionality - Adapted for movies page ---
+            // --- Filtering and Search Functionality ---
             const searchInput = document.getElementById('searchInput');
-             const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-                    // Select the anchor tag wrappers for the movie cards
-                    const itemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item'); // Target only cards within the grid and has catalog-item class
-                    let anyVisible = false;
-                    itemCardLinks.forEach(link => {
-                        // Get the data-title from the .item-card *inside* the link
-                        // const card = link.querySelector('.item-card'); // Not needed, data attributes are on the link
-                         // Get title based on current language from data attributes
-                         // Fallback to the other language title if the preferred one is missing
-                         const titleHe = link.dataset.titleHe || link.dataset.titleEn || '';
-                         const titleEn = link.dataset.titleEn || link.dataset.titleHe || '';
-
-                         const title = currentLanguage === 'he' ? titleHe : titleEn;
+            const genreFilter = document.getElementById('genreFilter');
+            const ratingFilter = document.getElementById('ratingFilter');
+            const yearFilter = document.getElementById('yearFilter');
+            const movieCards = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item');
+            const noResultsMessage = document.getElementById('noResultsMessage');
 
 
-                         if (title.includes(searchTerm)) {
-                             link.style.display = ''; // Show the link (and thus the card)
-                             anyVisible = true;
-                         } else {
-                             link.style.display = 'none'; // Hide the link (and thus the card)
-                         }
+            // Function to populate filter dropdowns
+            function populateFilters() {
+                const uniqueGenres = new Set();
+                const uniqueRatings = new Set();
+                const uniqueYears = new Set();
 
-                    });
-                    const noResultsMessage = document.getElementById('noResultsMessage');
-                    if (noResultsMessage) {
-                         noResultsMessage.style.display = anyVisible ? 'none' : 'block';
+                movieCards.forEach(card => {
+                    // Add Genre(s) - OMDB returns comma-separated string
+                    const genreData = card.dataset.genre; // Already lowercased and trimmed
+                    if (genreData) {
+                        genreData.split(',').forEach(genre => {
+                            const trimmedGenre = genre.trim();
+                            if (trimmedGenre) {
+                                uniqueGenres.add(trimmedGenre);
+                            }
+                        });
+                    }
+
+                    // Add Rating (Rated)
+                    const ratedData = card.dataset.rated; // Already lowercased and trimmed
+                    if (ratedData) {
+                        uniqueRatings.add(ratedData);
+                    }
+
+                    // Add Year
+                    const yearData = card.dataset.year; // Already lowercased and trimmed
+                    if (yearData) {
+                        // Handle year ranges like "2020–" or specific years "2023"
+                        // For filtering, just use the string as is for exact match for simplicity
+                         uniqueYears.add(yearData);
                     }
                 });
 
-                 // Handle search button click (does the same as input for now)
-                 document.querySelector('.search-container button').addEventListener('click', function() {
-                      // Trigger the input event manually to ensure filtering happens
-                     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                // Populate Genre Filter
+                const sortedGenres = Array.from(uniqueGenres).sort();
+                sortedGenres.forEach(genre => {
+                     const option = document.createElement('option');
+                     option.value = genre;
+                     option.textContent = genre; // Use the raw genre string for display
+                     genreFilter.appendChild(option);
                  });
 
+                // Populate Rating Filter (sort ratings like PG, PG-13, R, etc. if possible, or just alphabetically)
+                 // A custom sort might be needed for specific rating orders (e.g., G, PG, PG-13, R, NC-17)
+                const sortedRatings = Array.from(uniqueRatings).sort(); // Simple alphabetical sort
+                 sortedRatings.forEach(rating => {
+                     const option = document.createElement('option');
+                     option.value = rating;
+                     option.textContent = rating.toUpperCase(); // Display rating in uppercase
+                     ratingFilter.appendChild(option);
+                 });
+
+
+                // Populate Year Filter (sort numerically descending)
+                const sortedYears = Array.from(uniqueYears).sort((a, b) => {
+                    // Attempt numerical sort, fallback to string sort if parsing fails
+                    const numA = parseInt(a);
+                    const numB = parseInt(b);
+                     if (!isNaN(numA) && !isNaN(numB)) return numB - numA; // Sort numerically descending
+                     return a.localeCompare(b); // Fallback to string comparison
+                });
+                sortedYears.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year; // Display the year string
+                    yearFilter.appendChild(option);
+                });
+
+                 console.log(`Populated filters with ${sortedGenres.length} genres, ${sortedRatings.length} ratings, ${sortedYears.length} years.`);
+            }
+
+
+            // Function to perform filtering and search
+            function applyFiltersAndSearch() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const selectedGenre = genreFilter.value; // value is already lowercased
+                const selectedRating = ratingFilter.value; // value is already lowercased
+                const selectedYear = yearFilter.value; // value is already lowercased
+
+                let visibleCount = 0;
+
+                movieCards.forEach(card => {
+                    const titleHe = card.dataset.titleHe || '';
+                    const titleEn = card.dataset.titleEn || '';
+                    const cardGenre = card.dataset.genre || ''; // Already lowercased
+                    const cardRated = card.dataset.rated || ''; // Already lowercased
+                    const cardYear = card.dataset.year || ''; // Already lowercased
+
+                    // --- Apply Search Filter ---
+                    // Check if either Hebrew or English title contains the search term
+                    const passesSearch = (titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
+
+                    // --- Apply Genre Filter ---
+                    // If no genre is selected, it passes; otherwise, check if the selected genre is IN the movie's genre string
+                    const passesGenreFilter = !selectedGenre || cardGenre.includes(selectedGenre);
+
+
+                    // --- Apply Rating Filter ---
+                    // If no rating is selected, it passes; otherwise, check for exact match
+                    const passesRatingFilter = !selectedRating || cardRated === selectedRating;
+
+                    // --- Apply Year Filter ---
+                    // If no year is selected, it passes; otherwise, check for exact match
+                    const passesYearFilter = !selectedYear || cardYear === selectedYear;
+
+
+                    // A card is visible only if it passes ALL filters and search
+                    if (passesSearch && passesGenreFilter && passesRatingFilter && passesYearFilter) {
+                        card.style.display = ''; // Show the link (and thus the card)
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none'; // Hide the link (and thus the card)
+                    }
+                });
+
+                // Update the "No results" message
+                if (noResultsMessage) {
+                     noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                }
+            }
+
+            // Populate filters on page load
+            populateFilters();
+
+            // Add event listeners to filters and search input
+            if (searchInput) {
+                 searchInput.addEventListener('input', applyFiltersAndSearch);
+                  // Handle search button click (does the same as input)
+                 document.querySelector('.search-container button').addEventListener('click', applyFiltersAndSearch);
                  // Handle Enter key on search input
                  searchInput.addEventListener('keypress', function(event) {
                      if (event.key === 'Enter') {
                          event.preventDefault(); // Prevent default form submission/page reload
-                          // Trigger the input event manually to ensure filtering happens
-                          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                         applyFiltersAndSearch();
                      }
                  });
-
-            } else {
-                 console.warn("Search input #searchInput not found on movies page.");
             }
+
+            if (genreFilter) genreFilter.addEventListener('change', applyFiltersAndSearch);
+            if (ratingFilter) ratingFilter.addEventListener('change', applyFiltersAndSearch);
+            if (yearFilter) yearFilter.addEventListener('change', applyFiltersAndSearch);
+
+
+             // Initial filter/search application in case there's a search term pre-filled
+             // or to ensure 'No results' is shown if the loaded list is empty
+             applyFiltersAndSearch();
+
 
         }); // End DOMContentLoaded
     </script>
