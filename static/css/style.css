@@ -1,4 +1,3 @@
-/* style.css */
 :root {
     --bg-color: #0B0C10;
     --bg-secondary: #1F2833;
@@ -37,7 +36,8 @@ body {
     background: linear-gradient(180deg, var(--bg-color) 0%, #111821 100%);
     color: var(--text-color);
     line-height: 1.6;
-    direction: rtl;
+    /* Direction is set by HTML lang attribute */
+    /* direction: rtl; */
     overflow-x: hidden;
     min-height: 100vh;
     display: flex;
@@ -60,69 +60,41 @@ img { max-width: 100%; height: auto; display: block; }
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-
 .header-content {
     display: flex;
     align-items: center;
     height: 100%;
-    gap: 30px;
-    /* Add this or adjust justify-content to make space for the language switcher */
+    /* Use space-between to push items to edges */
     justify-content: space-between;
-}
-.language-switcher {
-    /* Position it left (or right in LTR layout) in the header */
-    /* Remove margin-left: auto; from main-nav if this is on the right */
-    /* If search is on the right and nav is center, language switcher can be on the far left */
-     /* Let's place it on the right side in RTL, next to the search */
-     order: 1; /* Place it first in the flex order (right in RTL) */
-     flex-shrink: 0; /* Don't let it shrink */
+    gap: 20px; /* Add a default gap */
 }
 
-.language-switcher a {
-    font-family: var(--font-body); /* Use body font, or heading font if preferred */
-    font-size: 0.95em;
-    font-weight: 400; /* Less bold than nav links */
-    color: var(--text-color); /* Default color */
-    padding: 5px 10px; /* Padding */
-    border: 1px solid var(--border-color); /* Border */
-    border-radius: var(--border-radius-sm); /* Rounded corners */
-    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
-    display: inline-flex; /* Align icon and text */
-    align-items: center;
-    gap: 6px; /* Space between icon and text */
-}
-
-.language-switcher a:hover, .language-switcher a:focus {
-    color: var(--text-heading-color); /* Brighter text on hover */
-    background-color: rgba(102, 252, 241, 0.15); /* Subtle background */
-    border-color: var(--primary-accent-color); /* Highlight border */
-    outline: none;
-}
-
-.language-switcher i {
-    color: var(--text-muted-color); /* Icon color */
-    font-size: 1em; /* Icon size */
-     transition: color var(--transition-fast);
-}
-
-.language-switcher a:hover i {
-     color: var(--primary-accent-color); /* Highlight icon color */
+/* Arrange items in Header based on HTML order */
+/* Auth > Search > Lang > Nav */
+.auth-container {
+    flex-shrink: 0;
+    /* order: 1; /* Explicit order if needed, but HTML order is usually enough */
 }
 
 .search-container {
-    order: 2; /* Place search after language switcher */
-    margin-right: 0; /* Ensure no extra margin on the right */
     flex-shrink: 0;
+    /* order: 2; */
+}
+
+.language-switcher {
+    flex-shrink: 0;
+    /* order: 3; */
 }
 
 .main-nav {
-     display: flex;
-     gap: 25px;
-     /* Removed margin-left: auto; and margin-right: auto; */
-     flex-grow: 1; /* Allow nav to take available space */
-     justify-content: center; /* Center the nav links */
-     flex-shrink: 0;
+    display: flex;
+    gap: 25px;
+    flex-grow: 1; /* Allow nav to take available space */
+    justify-content: center; /* Center the nav links */
+    flex-shrink: 0;
+    /* order: 4; */
 }
+
 
 /* Adjust main-nav link styling */
 .main-nav a {
@@ -159,10 +131,6 @@ img { max-width: 100%; height: auto; display: block; }
     transition: color var(--transition-fast);
 }
 
-.auth-container {
-    order: 3; /* Place auth container last (left in RTL) */
-    flex-shrink: 0;
-}
 
 .header-spacer {
     display: none;
@@ -176,13 +144,46 @@ img { max-width: 100%; height: auto; display: block; }
     border-radius: var(--border-radius-md);
     overflow: hidden;
     transition: all var(--transition-fast);
+    /* Removed margin-right: 0; positioning is handled by flexbox order */
 }
 .search-container:focus-within { border-color: var(--primary-accent-color); background-color: var(--bg-secondary); box-shadow: 0 0 8px rgba(102, 252, 241, 0.3); }
-#searchInput { padding: 8px 12px; border: none; background-color: transparent; color: var(--text-color); font-family: var(--font-body); font-size: 0.95em; outline: none; width: 180px; transition: width var(--transition-medium); }
+#searchInput { padding: 8px 12px; border: none; background-color: transparent; color: var(--text-color); font-family: var(--font-body); font-size: 0.95em; outline: none; width: 180px; transition: width var(--transition-medium); text-align: right; /* Align text right for RTL */ }
 #searchInput:focus { width: 250px; }
-#searchInput::placeholder { color: #888; }
+#searchInput::placeholder { color: #888; opacity: 1; /* Firefox fix */ }
 .search-container button { background-color: transparent; border: none; color: var(--text-muted-color); padding: 0 10px; cursor: pointer; font-size: 1em; height: 36px; display: flex; align-items: center; transition: color var(--transition-fast); }
 .search-container button:hover { color: var(--text-heading-color); }
+
+.language-switcher a {
+    font-family: var(--font-body); /* Use body font, or heading font if preferred */
+    font-size: 0.95em;
+    font-weight: 400; /* Less bold than nav links */
+    color: var(--text-color); /* Default color */
+    padding: 5px 10px; /* Padding */
+    border: 1px solid var(--border-color); /* Border */
+    border-radius: var(--border-radius-sm); /* Rounded corners */
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+    display: inline-flex; /* Align icon and text */
+    align-items: center;
+    gap: 6px; /* Space between icon and text */
+}
+
+.language-switcher a:hover, .language-switcher a:focus {
+    color: var(--text-heading-color); /* Brighter text on hover */
+    background-color: rgba(102, 252, 241, 0.15); /* Subtle background */
+    border-color: var(--primary-accent-color); /* Highlight border */
+    outline: none;
+}
+
+.language-switcher i {
+    color: var(--text-muted-color); /* Icon color */
+    font-size: 1em; /* Icon size */
+     transition: color var(--transition-fast);
+}
+
+.language-switcher a:hover i {
+     color: var(--primary-accent-color); /* Highlight icon color */
+}
+
 
 .main-content {
     padding-top: 40px;
@@ -192,9 +193,12 @@ img { max-width: 100%; height: auto; display: block; }
 
 .page-greeting {
     margin-bottom: 45px;
+    /* Adjusted padding/border for RTL based on original HTML */
     padding-left: 10px;
     border-right: 4px solid var(--primary-accent-color);
     padding-right: 20px;
+    /* Ensure text alignment follows document direction */
+    text-align: inherit;
 }
 .page-greeting h1 {
     font-family: var(--font-heading);
@@ -218,17 +222,25 @@ img { max-width: 100%; height: auto; display: block; }
     margin-bottom: 30px;
     color: var(--text-heading-color);
     position: relative;
+    /* Ensure text alignment follows document direction */
+    text-align: inherit;
 }
 
 .item-row {
     display: flex; overflow-x: auto; overflow-y: hidden; padding-bottom: 30px;
     margin-bottom: -30px; gap: var(--card-gap); scroll-snap-type: x mandatory; position: relative;
 }
-.item-row::before, .item-row::after {
+/* Adjust gradients for RTL */
+.item-row::before {
     content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
+    /* Adjusted for RTL */
+    right: 0; background: linear-gradient(to left, var(--bg-color), transparent);
 }
-.item-row::before { right: 0; background: linear-gradient(to left, var(--bg-color), transparent); }
-.item-row::after { left: 0; background: linear-gradient(to right, var(--bg-color), transparent); }
+.item-row::after {
+    content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
+    /* Adjusted for RTL */
+    left: 0; background: linear-gradient(to right, var(--bg-color), transparent);
+}
 
 .item-card {
     background-color: var(--card-bg-color); border-radius: var(--border-radius-md); width: var(--card-width); flex-shrink: 0;
@@ -265,11 +277,34 @@ img { max-width: 100%; height: auto; display: block; }
     font-family: var(--font-heading); font-size: 1.1em; font-weight: 600; color: var(--text-heading-color); margin-bottom: 10px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
     transform: translateY(10px); opacity: 0; transition: transform 0.3s 0.1s ease, opacity 0.3s 0.1s ease;
+    /* Ensure title direction follows document direction */
+    direction: inherit;
+    text-align: inherit;
 }
 .item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; }
 
+/* New style for subtitle on card overlay (Series only) */
+.card-subtitle {
+     font-family: var(--font-body);
+     font-size: 0.8em;
+     color: #ccc; /* Muted color */
+     margin-top: 5px;
+     margin-bottom: 5px; /* Space between subtitle and actions */
+     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      /* Ensure subtitle direction follows document direction */
+     direction: inherit;
+     text-align: inherit;
+      /* Inherit overlay opacity transition */
+     opacity: inherit;
+     transition: inherit;
+     transition-delay: 0.15s; /* Slightly later than title */
+}
+
+
 .card-actions {
     display: flex; gap: 10px; opacity: 0; transition: opacity 0.3s 0.2s ease;
+    /* Align actions based on direction */
+    justify-content: flex-start; /* Align to the right in RTL */
 }
 .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
 .card-actions button {
@@ -281,7 +316,10 @@ img { max-width: 100%; height: auto; display: block; }
 .card-actions button:hover { background-color: rgba(60, 60, 60, 0.9); transform: scale(1.1); }
 
 .rank-number {
-    position: absolute; left: -15px; bottom: 10px; width: 60px; height: 60px;
+    position: absolute;
+    /* Adjusted for RTL */
+    left: -15px; bottom: 10px;
+    width: 60px; height: 60px;
     display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none;
 }
 .rank-circle-bg {
@@ -316,6 +354,8 @@ img { max-width: 100%; height: auto; display: block; }
     position: relative;
     color: var(--text-heading-color);
     font-size: 0.95em;
+     /* Ensure text alignment follows document direction */
+    text-align: inherit;
 }
 
 .alert-success { background-color: #1f4a42; border-color: #2c6b5d; }
@@ -326,6 +366,7 @@ img { max-width: 100%; height: auto; display: block; }
 .close-flash {
     position: absolute;
     top: 50%;
+    /* Adjusted for RTL */
     left: 15px;
     transform: translateY(-50%);
     background: none;
@@ -425,7 +466,7 @@ img { max-width: 100%; height: auto; display: block; }
     background-color: var(--bg-secondary);
     border-radius: var(--border-radius-md);
     box-shadow: 0 5px 15px var(--shadow-color);
-    direction: rtl;
+    direction: rtl; /* Keep RTL for the admin form */
 }
 
 .add-movie-form-container h1 {
@@ -459,6 +500,8 @@ img { max-width: 100%; height: auto; display: block; }
     font-family: var(--font-body);
     font-size: 1em;
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    direction: rtl; /* Keep RTL input for the form */
+    text-align: right; /* Keep RTL text alignment for the form */
 }
 
 .form-group input[type="text"]:focus,
@@ -500,12 +543,20 @@ img { max-width: 100%; height: auto; display: block; }
      color: var(--text-color);
      font-family: var(--font-body);
      font-size: 1em;
+     direction: ltr; /* Force LTR for English search terms */
+     text-align: left; /* Force LTR text alignment */
  }
 .omdb-search-input input:focus {
     border-color: var(--primary-accent-color);
     box-shadow: 0 0 5px rgba(102, 252, 241, 0.5);
     outline: none;
 }
+/* Adjust placeholder direction if needed, though it often follows text direction */
+.omdb-search-input input::placeholder {
+     direction: ltr;
+     text-align: left;
+}
+
 
 .omdb-search-input button {
     padding: 10px 20px;
@@ -543,6 +594,8 @@ img { max-width: 100%; height: auto; display: block; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    direction: ltr; /* OMDB results are usually English */
+    text-align: left;
 }
 
 #omdbMovieResults li:hover, #omdbSeriesResults li:hover {
@@ -584,6 +637,8 @@ img { max-width: 100%; height: auto; display: block; }
      border: 1px solid var(--primary-accent-color);
      border-radius: var(--border-radius-sm);
      color: var(--text-color);
+     direction: ltr; /* OMDB details are English */
+     text-align: left;
 }
 
 #selectedOmdbMovieDetails p, #selectedOmdbSeriesDetails p {
@@ -636,6 +691,8 @@ img { max-width: 100%; height: auto; display: block; }
     text-align: center;
     margin-top: 80px;
     color: var(--text-color);
+     /* Ensure container direction follows document direction */
+    direction: inherit;
 }
 .error-container h1 {
     font-size: 4em;
