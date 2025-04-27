@@ -285,12 +285,11 @@ def categorize_content(movies_data, series_data):
     return categorized_items
 
 
-def get_greeting(user=None): # Removed language parameter - always Hebrew
+def get_greeting(user=None, language='he'): # Added language parameter back
     now = datetime.datetime.now()
     current_hour = now.hour
     greeting_text = ""
 
-    # Always use Hebrew greetings
     greetings_he = {
         (5, 12): "בוקר טוב",
         (12, 18): "צהריים טובים",
@@ -299,22 +298,43 @@ def get_greeting(user=None): # Removed language parameter - always Hebrew
         (0, 5): "לילה טוב" # Handle 0-4 AM
     }
 
-    for hour_range, text in greetings_he.items():
+    greetings_en = {
+         (5, 12): "Good Morning",
+         (12, 18): "Good Afternoon",
+         (18, 21): "Good Evening",
+         (21, 24): "Good Night",
+         (0, 5): "Good Night"
+    }
+
+    greetings = greetings_he if language == 'he' else greetings_en
+
+    for hour_range, text in greetings.items():
         if hour_range[0] <= current_hour < hour_range[1]:
             greeting_text = text
             break
     # Fallback if hour doesn't match any range (shouldn't happen with comprehensive ranges)
     if not greeting_text:
-         greeting_text = "שלום"
+         greeting_text = "שלום" if language == 'he' else "Hello"
+
 
     if user and user.get('name'):
         # Split name by space and take the first part (handle multi-word names)
         first_name = user['name'].split(' ')[0]
-        # Only append the name if it's an ASCII name, otherwise Hebrew names can look weird after English greetings
-        # Since greeting is always Hebrew now, we can always append the name.
-        return f"{greeting_text} {first_name}"
+        # Append the name only if it's a Hebrew greeting or if name is ASCII
+        # Avoid issues with Hebrew name display if greeting is English and font doesn't mix well easily
+        # Now that the greeting is language dependent, we can append the name based on the language
+        if language == 'he':
+             return f"{greeting_text} {first_name}"
+        else: # For English, maybe just the greeting unless name is purely ASCII
+             # Check if name contains only ASCII characters
+             if all(ord(c) < 128 for c in first_name):
+                  return f"{greeting_text} {first_name}"
+             else:
+                  # If the name contains non-ASCII (like Hebrew), just return the greeting
+                  return greeting_text
+
     else:
-        return f"{greeting_text} אורח"
+        return f"{greeting_text} {'אורח' if language == 'he' else 'Guest'}"
 
 
 # --- OMDB API Functions ---
@@ -555,7 +575,7 @@ def set_language(lang_code):
 def index():
     user = session.get('user')
     current_language = session.get('language', 'he') # Get language from session, default to 'he'
-    greeting = get_greeting(user) # Greeting is always Hebrew now
+    greeting = get_greeting(user, current_language) # Pass language to greeting function again
 
     # Load all content from Firebase for the index page
     movies_data = load_movies_data() # Includes type: 'movie' and Hebrew fields if exist
@@ -660,7 +680,7 @@ def series_details(imdb_id, season_number=None, episode_number=None):
                            series=series, # Pass the full series data
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS,
                            current_language=current_language # Pass the current language
                            )
 
