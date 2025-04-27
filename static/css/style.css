@@ -66,7 +66,7 @@ img { max-width: 100%; height: auto; display: block; }
     align-items: center;
     height: 100%;
     /* Use space-between to push items to edges */
-    /* REMOVED: justify-content: space-between; */
+    justify-content: space-between;
     gap: 20px; /* Add a default gap */
 }
 
@@ -90,11 +90,10 @@ img { max-width: 100%; height: auto; display: block; }
 .main-nav {
     display: flex;
     gap: 25px;
-    /* REMOVED: flex-grow: 1; /* Allow nav to take available space */
+    flex-grow: 1; /* Allow nav to take available space */
     justify-content: center; /* Center the nav links */
-    flex-shrink: 0; /* Added flex-shrink: 0 for safety */
+    flex-shrink: 0;
     /* order: 4; */
-    margin-inline: auto; /* ADDED: Centers the nav block within the available space */
 }
 
 
@@ -631,6 +630,7 @@ img { max-width: 100%; height: auto; display: block; }
  }
 
 
+/* Renamed from #selectedOmdbDetails */
 #selectedOmdbMovieDetails, #selectedOmdbSeriesDetails {
      margin-top: 15px;
      padding: 15px;
