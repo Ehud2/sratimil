@@ -101,10 +101,10 @@
 
     <main class="container main-content">
         <div class="page-greeting">
-            {# greeting is always Hebrew now #}
+            {# greeting is now language dependent again #}
             <h1>{{ greeting }}!</h1>
-            {# This phrase is always Hebrew now #}
-            <p>מה נראה היום?</p>
+            {# This phrase is now language dependent again #}
+            <p>{{ 'מה נראה היום?' if current_language == 'he' else 'What should we watch today?' }}</p>
         </div>
 
         {# The "Continue Watching" section will be added here by JavaScript if applicable #}
@@ -410,7 +410,7 @@
                                         type: 'series',
                                         title: item.title, // Keep both English
                                         poster: item.poster, // Keep both English
-                                        HebrewName: item.HebbrewName, // Keep Hebrew - Fix typo HebrewName
+                                        HebrewName: item.HebrewName, // Keep Hebrew
                                         HebrewPoster: item.HebrewPoster, // Keep Hebrew
                                         latest_season: seasonNum, // Store as latest_* in the canonical format
                                         latest_episode: episodeNum, // Store as latest_* in the canonical format
