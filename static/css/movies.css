@@ -11,7 +11,7 @@
 
 /* Style for the page heading */
 .page-heading {
-    margin-bottom: 45px; /* Same as index greeting */
+    margin-bottom: 20px; /* Reduced margin to make space for filters */
     padding-left: 10px;
     border-right: 4px solid var(--primary-accent-color); /* Same as index greeting */
     padding-right: 20px;
@@ -28,6 +28,53 @@
 .page-heading p {
     font-size: 1.1em;
     color: var(--text-color);
+     margin-bottom: 20px; /* Add margin below paragraph to space from filters */
+}
+
+
+/* Styles for the filter container */
+.filter-container {
+    display: flex; /* Use flexbox for layout */
+    flex-wrap: wrap; /* Allow items to wrap to the next line on smaller screens */
+    gap: 20px; /* Space between filter groups */
+    margin-bottom: 40px; /* Space below the filters */
+    padding: 0 10px; /* Match padding of page heading */
+    justify-content: flex-start; /* Align items to the start */
+    align-items: center; /* Align items vertically */
+}
+
+/* Styles for individual filter groups (label + select) */
+.filter-group {
+    display: flex;
+    align-items: center; /* Align label and select vertically */
+    gap: 10px; /* Space between label and select */
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: var(--text-heading-color);
+    font-size: 1em;
+    white-space: nowrap; /* Prevent label from wrapping */
+}
+
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--background-color-light); /* Or a distinct background */
+    color: var(--text-color);
+    font-size: 1em;
+    cursor: pointer;
+    outline: none; /* Remove default outline on focus */
+    min-width: 120px; /* Minimum width for dropdowns */
+     max-width: 200px; /* Maximum width */
+    /* Add an arrow icon - requires custom styling or wrapping in a container */
+    /* For simplicity, rely on default select arrow for now */
+}
+
+.filter-group select:focus {
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-accent-rgb), 0.2);
 }
 
 
@@ -35,9 +82,8 @@
 .all-movies-grid {
     display: grid;
     /* Use grid-template-columns for responsive layout */
-    /* minmax(180px, 1fr) allows items to be at least 180px wide, growing up to 1fr (equal fraction of available space) */
+    /* minmax(var(--card-width), 1fr) allows items to be at least card-width wide, growing up to 1fr */
     /* auto-fill fills the available space with as many columns as possible */
-    /* auto-fit would also collapse columns if there are too few items, but auto-fill maintains minimum size */
     grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
     gap: var(--card-gap); /* Use the same gap defined in style.css */
     justify-content: center; /* Center items horizontally if they don't fill the grid */
@@ -51,11 +97,18 @@
     display: block; /* Important for the card to take grid space */
     text-decoration: none; /* Remove underline from the link */
     color: inherit; /* Inherit text color */
+    /* Add a transition for smooth hiding/showing */
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, display 0.3s; /* Transition display is tricky, opacity/transform are better */
 }
 
-/* Reuse the item-card styles from style.css */
-/* No need to redefine .item-card, .card-image-container, etc. */
-/* They are defined in style.css and the movies.css grid layout applies to their container */
+/* When an item is hidden, make it invisible and prevent interaction */
+.all-movies-grid .item-card-link[style*="display: none"] {
+  /* Override the inline style for display to make transitions work if needed, */
+  /* or simply rely on opacity/visibility transitions for filtering effect. */
+  /* Using display: none is most effective for layout reflow. Transitions won't work on display. */
+  /* We will use opacity/visibility for a softer effect while display handles the layout */
+  /* Set opacity/visibility in JS when hiding before setting display: none */
+}
 
 
 /* You might want to adjust card size specifically for the grid if needed, e.g.: */
@@ -76,5 +129,27 @@
 /* (The style is already in style.css and applies globally, which is fine) */
 
 
-/* You can add media queries here for different screen sizes if the default grid settings aren't perfect */
-/* @media (max-width: 768px) { ... } */
+/* Responsive adjustments for filters */
+@media (max-width: 600px) {
+    .filter-container {
+        flex-direction: column; /* Stack filters vertically */
+        align-items: flex-start; /* Align items to the start */
+        gap: 15px; /* Reduce gap when stacked */
+    }
+
+    .filter-group {
+        flex-direction: column; /* Stack label and select vertically */
+        align-items: flex-start;
+        gap: 5px;
+        width: 100%; /* Make filter group take full width */
+    }
+
+    .filter-group label {
+         width: 100%; /* Label takes full width */
+    }
+
+     .filter-group select {
+         width: 100%; /* Select takes full width */
+         max-width: none; /* Remove max-width constraint */
+     }
+}
