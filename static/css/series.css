@@ -11,8 +11,6 @@
 }
 
 /* Container for the entire content area to control max width */
-/* Removed .series-details-container as it wasn't in series.html. Apply styles directly or add the container div.
-   Applying relevant styles to main.container for now. */
 main.container.series-details-page {
      max-width: 1200px; /* Adjust as needed */
     margin: 0 auto; /* Center the content */
@@ -21,7 +19,6 @@ main.container.series-details-page {
     border-radius: var(--border-radius-lg);
     box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
 }
-
 
 /* Styling for the series title */
 .series-details-page h1 {
@@ -45,7 +42,6 @@ main.container.series-details-page {
 /* Style the series poster */
 .series-poster {
     max-width: 300px;
-    /* margin: 0 auto; */ /* Removed auto margin due to grid layout */
     width: 100%; /* Ensure it takes full grid column width */
 }
 
@@ -63,6 +59,7 @@ main.container.series-details-page {
 }
 
 /* Style the video container */
+/* Keep the base container styles */
 .series-video-container {
     position: relative;
     padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
@@ -72,34 +69,35 @@ main.container.series-details-page {
     background-color: #000;
     border-radius: var(--border-radius-md);
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-}
-
-.series-video-container video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: none; /* Hidden by default until an episode is selected */
+    /* Flex properties were moved from here to the message div in the HTML style block */
+    /* We will rely on absolute positioning for the message div instead */
 }
 
 /* Style for when video is not available */
+/* --- FIX FOR CENTERING THE MESSAGE --- */
 .series-video-container .no-video-message {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    /* Use absolute positioning for centering */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the element based on its own size */
+
+    /* Styling properties from the previous CSS rule */
     background-color: rgba(31, 40, 51, 0.9);
     color: var(--text-muted-color);
     font-size: 1.2em;
-    text-align: center;
-    /* Ensure this message is visible by default or when needed */
-    /* Initial display handled by JS based on state */
+    text-align: center; /* Ensure text inside the message div is centered */
+    padding: 20px; /* Add some padding around the text */
+    border-radius: var(--border-radius-md); /* Optional: give the message box rounded corners */
+    z-index: 1; /* Ensure it's above any potential iframe area */
+    max-width: 90%; /* Prevent message from being too wide */
+    box-sizing: border-box; /* Include padding in max-width calculation */
+
+    /* Remove display: flex; justify-content: center; align-items: center;
+       as centering is now handled by position/transform */
 }
+/* --- END FIX --- */
+
 
 /* Style the series information container */
 .series-info {
@@ -107,7 +105,6 @@ main.container.series-details-page {
     flex-direction: column;
     /* gap: 20px; */ /* Added gap for spacing between sections */
 }
-
 
 /* Episode selection controls */
 .episode-selection {
@@ -192,7 +189,7 @@ main.container.series-details-page select option {
 
 .episode-item .episode-number {
     font-weight: bold;
-    margin-left: 10px;
+    margin-left: 10px; /* Changed from margin-right for RTL */
 }
 
 .episode-item .episode-title {
@@ -224,7 +221,7 @@ main.container.series-details-page select option {
 .series-details-list strong {
     font-weight: bold;
     color: var(--text-heading-color);
-    margin-left: 0.5em;
+    margin-left: 0.5em; /* Adjusted margin for RTL */
 }
 
 
@@ -255,7 +252,7 @@ main.container.series-details-page select option {
 }
 
 .add-to-list-button i {
-    margin-left: 8px;
+    margin-left: 8px; /* Adjusted margin for RTL */
 }
 
 
