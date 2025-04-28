@@ -15,6 +15,7 @@
     --font-body: 'Assistant', sans-serif;
     --font-heading: 'Poppins', sans-serif;
     --header-height: 70px;
+    /* Desktop Card Sizes */
     --card-width: 240px;
     --card-height: 360px;
     --card-gap: 25px;
@@ -44,6 +45,12 @@ body {
     display: flex;
     flex-direction: column;
 }
+/* Prevent scroll when mobile nav is open */
+body.nav-open {
+    overflow: hidden;
+}
+
+
 .container { width: 95%; max-width: 1700px; margin: 0 auto; padding: 0 var(--container-padding); }
 a { color: var(--primary-accent-color); text-decoration: none; transition: color var(--transition-fast); }
 a:hover, a:focus { color: var(--text-heading-color); outline: none; }
@@ -70,31 +77,16 @@ img { max-width: 100%; height: auto; display: block; }
     gap: 20px; /* Add a default gap */
 }
 
-/* Arrange items in Header based on HTML order */
-/* Auth > Search > Lang > Nav */
-.auth-container {
-    flex-shrink: 0;
-    /* order: 1; /* Explicit order if needed, but HTML order is usually enough */
+/* --- Desktop Header Layout --- */
+/* Nav toggle hidden on desktop */
+.nav-toggle {
+    display: none;
 }
-
-.search-container {
-    flex-shrink: 0;
-    /* order: 2; */
-}
-
-.language-switcher {
-    flex-shrink: 0;
-    /* order: 3; */
-}
-
-.main-nav {
-    display: flex;
-    gap: 25px;
-    flex-grow: 1; /* Allow nav to take available space */
-    justify-content: center; /* Center the nav links */
-    flex-shrink: 0;
-    /* order: 4; */
-}
+/* Items order and growth on desktop */
+.auth-container { flex-shrink: 0; }
+.search-container { flex-shrink: 0; }
+.language-switcher { flex-shrink: 0; }
+.main-nav { display: flex; gap: 25px; flex-grow: 1; justify-content: center; flex-shrink: 0; }
 
 
 /* Adjust main-nav link styling */
@@ -103,38 +95,30 @@ img { max-width: 100%; height: auto; display: block; }
     font-size: 1em;
     font-weight: 600;
     color: var(--text-color);
-    /* Changed from padding: 5px 0 */
-    padding: 8px 15px; /* Add padding for larger clickable area */
+    padding: 8px 15px;
     position: relative;
-    /* Removed underline transition, using background now */
     transition: color var(--transition-fast), background-color var(--transition-fast), border-radius var(--transition-fast);
-    display: inline-flex; /* Use flex to align icon and text */
-    align-items: center; /* Vertically center icon and text */
-    gap: 8px; /* Space between icon and text (gap works for RTL too) */
-    border-radius: var(--border-radius-sm); /* Optional: Add rounded corners */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: var(--border-radius-sm);
 }
 
 /* Change hover effect from underline to background highlight */
 .main-nav a:hover, .main-nav a:focus {
     color: var(--text-heading-color);
     outline: none;
-    background-color: rgba(102, 252, 241, 0.15); /* Add a subtle background on hover */
+    background-color: rgba(102, 252, 241, 0.15);
 }
 
 .main-nav a:hover i, .main-nav a:focus i {
-    color: var(--primary-accent-color); /* Change icon color to primary accent on hover */
+    color: var(--primary-accent-color);
 }
-
 
 .main-nav a i {
-    color: var(--text-muted-color); /* Icon color, slightly muted accent */
-    font-size: 1.2em; /* Make icons slightly larger than text */
+    color: var(--text-muted-color);
+    font-size: 1.2em;
     transition: color var(--transition-fast);
-}
-
-
-.header-spacer {
-    display: none;
 }
 
 .search-container {
@@ -145,44 +129,47 @@ img { max-width: 100%; height: auto; display: block; }
     border-radius: var(--border-radius-md);
     overflow: hidden;
     transition: all var(--transition-fast);
-    /* Removed margin-right: 0; positioning is handled by flexbox order */
 }
 .search-container:focus-within { border-color: var(--primary-accent-color); background-color: var(--bg-secondary); box-shadow: 0 0 8px rgba(102, 252, 241, 0.3); }
-#searchInput { padding: 8px 12px; border: none; background-color: transparent; color: var(--text-color); font-family: var(--font-body); font-size: 0.95em; outline: none; width: 180px; transition: width var(--transition-medium); text-align: right; /* Align text right for RTL */ }
+#searchInput { padding: 8px 12px; border: none; background-color: transparent; color: var(--text-color); font-family: var(--font-body); font-size: 0.95em; outline: none; width: 180px; transition: width var(--transition-medium); }
+/* Adjust text alignment for RTL */
+[dir="rtl"] #searchInput { text-align: right; }
+[dir="ltr"] #searchInput { text-align: left; }
+
 #searchInput:focus { width: 250px; }
 #searchInput::placeholder { color: #888; opacity: 1; /* Firefox fix */ }
 .search-container button { background-color: transparent; border: none; color: var(--text-muted-color); padding: 0 10px; cursor: pointer; font-size: 1em; height: 36px; display: flex; align-items: center; transition: color var(--transition-fast); }
 .search-container button:hover { color: var(--text-heading-color); }
 
 .language-switcher a {
-    font-family: var(--font-body); /* Use body font, or heading font if preferred */
+    font-family: var(--font-body);
     font-size: 0.95em;
-    font-weight: 400; /* Less bold than nav links */
-    color: var(--text-color); /* Default color */
-    padding: 5px 10px; /* Padding */
-    border: 1px solid var(--border-color); /* Border */
-    border-radius: var(--border-radius-sm); /* Rounded corners */
+    font-weight: 400;
+    color: var(--text-color);
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
     transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
-    display: inline-flex; /* Align icon and text */
+    display: inline-flex;
     align-items: center;
-    gap: 6px; /* Space between icon and text */
+    gap: 6px;
 }
 
 .language-switcher a:hover, .language-switcher a:focus {
-    color: var(--text-heading-color); /* Brighter text on hover */
-    background-color: rgba(102, 252, 241, 0.15); /* Subtle background */
-    border-color: var(--primary-accent-color); /* Highlight border */
+    color: var(--text-heading-color);
+    background-color: rgba(102, 252, 241, 0.15);
+    border-color: var(--primary-accent-color);
     outline: none;
 }
 
 .language-switcher i {
-    color: var(--text-muted-color); /* Icon color */
-    font-size: 1em; /* Icon size */
+    color: var(--text-muted-color);
+    font-size: 1em;
      transition: color var(--transition-fast);
 }
 
 .language-switcher a:hover i {
-     color: var(--primary-accent-color); /* Highlight icon color */
+     color: var(--primary-accent-color);
 }
 
 
@@ -201,6 +188,21 @@ img { max-width: 100%; height: auto; display: block; }
     /* Ensure text alignment follows document direction */
     text-align: inherit;
 }
+/* Adjust border side for RTL */
+[dir="rtl"] .page-greeting {
+    border-right: 4px solid var(--primary-accent-color);
+    padding-right: 20px;
+    border-left: none; /* Ensure no left border */
+    padding-left: 10px;
+}
+[dir="ltr"] .page-greeting {
+     border-left: 4px solid var(--primary-accent-color);
+     padding-left: 20px;
+     border-right: none; /* Ensure no right border */
+     padding-right: 10px;
+}
+
+
 .page-greeting h1 {
     font-family: var(--font-heading);
     font-size: 2.4em;
@@ -307,6 +309,10 @@ img { max-width: 100%; height: auto; display: block; }
     /* Align actions based on direction */
     justify-content: flex-start; /* Align to the right in RTL */
 }
+/* Adjust actions alignment for RTL */
+[dir="rtl"] .card-actions { justify-content: flex-end; }
+[dir="ltr"] .card-actions { justify-content: flex-start; }
+
 .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
 .card-actions button {
     background-color: rgba(40, 40, 40, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); color: var(--text-heading-color);
@@ -323,6 +329,11 @@ img { max-width: 100%; height: auto; display: block; }
     width: 60px; height: 60px;
     display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none;
 }
+/* Adjust rank number position for RTL */
+[dir="rtl"] .rank-number { left: -15px; right: auto; }
+[dir="ltr"] .rank-number { left: auto; right: -15px; }
+
+
 .rank-circle-bg {
     width: 100%; height: 100%; position: absolute; transform: rotate(-90deg); stroke-linecap: round;
 }
@@ -367,8 +378,6 @@ img { max-width: 100%; height: auto; display: block; }
 .close-flash {
     position: absolute;
     top: 50%;
-    /* Adjusted for RTL */
-    left: 15px;
     transform: translateY(-50%);
     background: none;
     border: none;
@@ -378,6 +387,11 @@ img { max-width: 100%; height: auto; display: block; }
     padding: 0 5px;
     line-height: 1;
 }
+/* Adjust close button position for RTL */
+[dir="rtl"] .close-flash { left: 15px; right: auto; }
+[dir="ltr"] .close-flash { left: auto; right: 15px; }
+
+
 .close-flash:hover { color: #fff; }
 
 .profile-button {
@@ -410,10 +424,10 @@ img { max-width: 100%; height: auto; display: block; }
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw; /* Use vw/vh for reliable fullscreen */
+    height: 100vh;
     background-color: rgba(0, 0, 0, 0.8); /* Dark overlay */
-    display: flex; /* Ensure it's a flex container initially */
+    display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000; /* Ensure it's on top, below modal */
@@ -630,33 +644,6 @@ img { max-width: 100%; height: auto; display: block; }
  }
 
 
-/* Renamed from #selectedOmdbDetails */
-#selectedOmdbMovieDetails, #selectedOmdbSeriesDetails {
-     margin-top: 15px;
-     padding: 15px;
-     background-color: rgba(69, 162, 158, 0.2);
-     border: 1px solid var(--primary-accent-color);
-     border-radius: var(--border-radius-sm);
-     color: var(--text-color);
-     direction: ltr; /* OMDB details are English */
-     text-align: left;
-}
-
-#selectedOmdbMovieDetails p, #selectedOmdbSeriesDetails p {
-    margin-bottom: 5px;
-}
-
-#selectedOmdbMovieDetails strong, #selectedOmdbSeriesDetails strong {
-    color: var(--text-heading-color);
-}
-
- #selectedOmdbMovieDetails img, #selectedOmdbSeriesDetails img {
-     margin-top: 10px;
-     max-width: 100px;
-     height: auto;
-     border-radius: var(--border-radius-sm);
- }
-
 .form-submit-button {
     display: block;
     width: 100%;
@@ -722,3 +709,355 @@ img { max-width: 100%; height: auto; display: block; }
 .error-container a:hover {
     background-color: var(--primary-accent-color);
 }
+
+
+/* ========================================= */
+/* --- Responsive Styles for Smaller Screens --- */
+/* ========================================= */
+
+@media (max-width: 768px) {
+    :root {
+        /* Adjust padding for smaller screens */
+        --container-padding: 15px;
+        /* Adjust card sizes and gap for mobile */
+        --card-width: 180px; /* Slightly smaller cards */
+        --card-height: 270px; /* Proportionally smaller height */
+        --card-gap: 15px; /* Smaller gap */
+        --header-height: 60px; /* Slightly shorter header */
+    }
+
+    .container {
+        padding: 0 var(--container-padding);
+    }
+
+    .site-header {
+        height: var(--header-height);
+    }
+
+    .header-content {
+        /* Allow items to wrap */
+        flex-wrap: wrap;
+        justify-content: space-between; /* Keep space between main items */
+        align-items: center; /* Vertically align items */
+        padding: 0 10px; /* Add a little horizontal padding within header */
+        gap: 10px; /* Smaller gap between wrapped items */
+    }
+
+    /* --- Mobile Header Layout --- */
+    /* Use flex order to arrange items if needed, or rely on HTML order */
+    /* Current HTML order: Nav Toggle, Auth, Search, Lang, Nav */
+    /* Let's keep this order, flex-wrap will handle stacking */
+
+    .nav-toggle {
+        display: flex; /* Show toggle button on mobile */
+        background: none;
+        border: none;
+        color: var(--text-color);
+        font-size: 1.5em;
+        cursor: pointer;
+        padding: 5px; /* Add padding for touch target */
+        align-items: center;
+        justify-content: center;
+         transition: color var(--transition-fast);
+         flex-shrink: 0; /* Prevent shrinking */
+          /* order: 1; /* Optional: force order */
+    }
+     .nav-toggle:hover {
+          color: var(--primary-accent-color);
+     }
+
+
+    .auth-container {
+         /* order: 5; /* Optional: force order */
+         flex-shrink: 0;
+    }
+
+     .search-container {
+         flex-grow: 1; /* Allow search to take remaining space */
+         order: 3; /* Put search in the middle row */
+         max-width: calc(100% - (40px + 10px) * 2 - 10px); /* Adjust max width considering other elements */
+         /* Ensure it doesn't shrink too much */
+         flex-basis: 150px; /* Minimum width */
+     }
+    #searchInput {
+        width: 100%; /* Make search input fluid */
+        max-width: none; /* Remove desktop max-width transition */
+         /* Adjust padding if header height changed */
+         padding: 8px 12px;
+    }
+    #searchInput:focus {
+         width: 100%; /* No width transition on focus */
+    }
+
+
+    .language-switcher {
+         /* order: 4; /* Optional: force order */
+         flex-shrink: 0;
+    }
+
+    .main-nav {
+        /* Mobile Nav - Hidden by default */
+        display: none; /* Hide nav by default on mobile */
+        position: fixed; /* Overlay */
+        top: var(--header-height); /* Position below header */
+        left: 0;
+        width: 100%; /* Full width */
+        height: calc(100vh - var(--header-height)); /* Full height below header */
+        background-color: var(--bg-secondary); /* Background color */
+        flex-direction: column; /* Stack links vertically */
+        align-items: center; /* Center links */
+        padding: 20px 0; /* Padding inside the nav */
+        overflow-y: auto; /* Allow scrolling if links overflow */
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        z-index: 999; /* Below header */
+        /* Add animation for sliding/fading if desired */
+        transition: transform var(--transition-medium), opacity var(--transition-medium);
+        opacity: 0;
+        transform: translateX(100%); /* Start off-screen right (for LTR) */
+         /* Adjust transform for RTL */
+         /* This will be handled by the nav-open class */
+    }
+
+    /* Mobile Nav - Visible when open */
+    .main-nav.nav-open {
+         display: flex; /* Show nav when open */
+         opacity: 1;
+         transform: translateX(0); /* Slide into view */
+          /* Adjust transform origin for RTL */
+          transform-origin: left center; /* For LTR slide */
+    }
+
+    /* RTL adjustment for mobile nav slide */
+    [dir="rtl"] .main-nav.nav-open {
+         transform: translateX(0); /* Slide into view */
+          /* Needs to start translateX(-100%) in RTL and slide to 0 */
+          transform-origin: right center; /* For RTL slide */
+    }
+     [dir="rtl"] .main-nav {
+         transform: translateX(-100%); /* Start off-screen left (for RTL) */
+     }
+
+
+    .main-nav a {
+        width: 100%; /* Make links full width */
+        text-align: center; /* Center text */
+        padding: 15px 20px; /* Increase padding for easier tapping */
+        font-size: 1.2em; /* Larger font size */
+        border-bottom: 1px solid rgba(69, 162, 158, 0.2); /* Separator line */
+        border-radius: 0; /* Remove rounded corners */
+        gap: 10px; /* Space between icon and text */
+         /* Ensure text alignment follows nav direction */
+         justify-content: center; /* Center icon and text */
+         direction: inherit; /* Inherit from html tag */
+    }
+     /* Remove last link's border-bottom */
+     .main-nav a:last-child {
+          border-bottom: none;
+     }
+
+
+    .page-greeting {
+        margin-bottom: 30px; /* Reduce margin */
+        padding-right: 15px; /* Adjust padding */
+        padding-left: 15px; /* Adjust padding */
+    }
+    [dir="rtl"] .page-greeting { padding-right: 15px; padding-left: 15px; }
+    [dir="ltr"] .page-greeting { padding-left: 15px; padding-right: 15px; }
+
+
+    .page-greeting h1 {
+        font-size: 1.8em; /* Smaller font size */
+    }
+    .page-greeting p {
+        font-size: 1em; /* Smaller font size */
+    }
+
+    .category-section {
+        margin-bottom: 40px; /* Reduce margin */
+    }
+    .category-section h2 {
+        font-size: 1.5em; /* Smaller font size */
+        margin-bottom: 20px; /* Reduce margin */
+    }
+
+    .item-row {
+         /* Variables for card/gap are already set in :root */
+         gap: var(--card-gap);
+         padding-bottom: 20px; /* Adjust padding */
+         margin-bottom: -20px; /* Adjust margin */
+    }
+     /* Remove gradients on mobile rows */
+     .item-row::before,
+     .item-row::after {
+         display: none;
+     }
+
+
+    .item-card {
+        width: var(--card-width); /* Use mobile card width */
+         /* Height is set by image container */
+    }
+     .card-image-container {
+          height: var(--card-height); /* Use mobile card height */
+     }
+
+
+     .card-overlay {
+          padding: 10px; /* Smaller padding */
+     }
+
+    .play-button {
+        width: 40px; /* Smaller button */
+        height: 40px;
+        font-size: 1.2em; /* Smaller icon */
+         /* Transform remains centered */
+    }
+     .play-button:hover {
+         transform: translate(-50%, -50%) scale(1.1); /* Keep scale effect */
+     }
+
+    .card-title {
+        font-size: 1em; /* Smaller title font */
+        margin-bottom: 5px; /* Reduce margin */
+         /* Animation delays can remain */
+         transition: transform 0.2s 0.05s ease, opacity 0.2s 0.05s ease;
+    }
+     .item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; } /* Keep animation */
+
+
+     .card-subtitle {
+         font-size: 0.7em; /* Smaller subtitle font */
+         margin-top: 3px; /* Adjust margin */
+         margin-bottom: 8px; /* Adjust margin */
+     }
+
+    .card-actions {
+        gap: 8px; /* Smaller gap */
+         transition: opacity 0.2s 0.1s ease;
+    }
+     .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; } /* Keep animation */
+
+    .card-actions button {
+        width: 28px; /* Smaller buttons */
+        height: 28px;
+        font-size: 0.7em; /* Smaller icon */
+    }
+     .card-actions button:hover { transform: scale(1.1); } /* Keep scale effect */
+
+
+    .rank-number {
+        width: 50px; /* Smaller rank indicator */
+        height: 50px;
+         /* Adjust position - values need testing */
+         left: -10px; /* Adjust left position */
+         bottom: 8px; /* Adjust bottom position */
+    }
+     [dir="rtl"] .rank-number { left: -10px; right: auto; } /* RTL adjustment */
+     [dir="ltr"] .rank-number { left: auto; right: -10px; } /* LTR adjustment */
+
+    .rank-text {
+        font-size: 1.5em; /* Smaller rank font */
+    }
+
+    #noResultsMessage {
+         margin: 40px auto; /* Adjust margin */
+         padding: 20px; /* Adjust padding */
+         font-size: 1em; /* Adjust font size */
+         max-width: 90%; /* Allow it to be wider */
+    }
+
+     .flash-messages {
+         padding: 10px 0; /* Adjust padding */
+     }
+     .alert {
+          padding: 10px 15px; /* Adjust padding */
+          margin-bottom: 10px; /* Adjust margin */
+          font-size: 0.9em; /* Adjust font size */
+     }
+
+     .close-flash {
+         font-size: 1.2em; /* Adjust size */
+          /* Position adjusted above with [dir] */
+     }
+
+
+     /* Admin Form Styles (within media query) */
+    .add-movie-form-container {
+        margin: 20px auto;
+        padding: 20px;
+    }
+    .add-movie-form-container h1 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+    }
+     .form-group label {
+         font-size: 0.95em;
+     }
+     .form-group input[type="text"],
+     .form-group input[type="url"],
+     .form-group input[type="number"],
+     .form-group select {
+         padding: 8px;
+         font-size: 0.95em;
+     }
+
+     .omdb-search-section {
+          padding: 15px;
+          margin-top: 20px;
+     }
+     .omdb-search-section h3 {
+         font-size: 1.2em;
+         margin-bottom: 10px;
+     }
+     .omdb-search-input {
+         flex-direction: column; /* Stack search input and button */
+         gap: 10px;
+     }
+      .omdb-search-input input {
+          width: 100%;
+          text-align: left; /* Keep LTR text alignment */
+      }
+     .omdb-search-input button {
+         padding: 10px 15px;
+         font-size: 0.95em;
+     }
+     #omdbMovieResults, #omdbSeriesResults {
+          max-height: 150px; /* Reduce max height */
+     }
+      #omdbMovieResults li, #omdbSeriesResults li {
+          padding: 8px; /* Adjust padding */
+          font-size: 0.9em;
+      }
+     #selectedOmdbMovieDetails, #selectedOmdbSeriesDetails {
+          padding: 10px;
+     }
+
+
+     /* Error Page Styles (within media query) */
+     .error-container {
+         margin-top: 40px;
+     }
+     .error-container h1 {
+         font-size: 3em;
+     }
+     .error-container h2 {
+         font-size: 1.5em;
+     }
+     .error-container p {
+         font-size: 1em;
+     }
+      .error-container a {
+          padding: 8px 15px;
+          font-size: 0.9em;
+      }
+
+
+} /* End of @media (max-width: 768px) */
+
+/* ========================================= */
+/* --- Optional: Adjustments for slightly larger tablets (e.g., > 768px and <= 1024px) --- */
+/* ========================================= */
+/* You could add another media query here if needed */
+/* @media (min-width: 769px) and (max-width: 1024px) {
+    ... adjustments for tablets ...
+} */
