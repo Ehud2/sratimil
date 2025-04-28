@@ -1,10 +1,13 @@
 <!-- movie.html -->
+{# current_language is passed implicitly via session, but template might need it for text #}
+{# Keeping Hebrew fixed for simplicity as per original file structure, but can be made dynamic if needed #}
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>צפייה בסרט - {{ movie.title or 'סינמה פריים' }}</title> {# Use movie title #}
+    {# Use conditional title based on language #}
+    <title>{{ ('צפייה בסרט' if current_language == 'he' else 'Watch Movie') }} - {{ (movie.HebrewName or movie.title or ('סרט לא ידוע' if current_language == 'he' else 'Unknown Movie')) }}</title> {# Use movie title #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}"> {# Ensure this CSS is included #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,43 +76,61 @@
         <div class="container header-content">
 
             <div class="search-container">
-               <input type="search" id="searchInput" placeholder="חיפוש...">
-               <button aria-label="Search"><i class="fas fa-search"></i></button>
+               <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
+               <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
             </div>
 
             <nav class="main-nav">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> בית</a> {# Added icon #}
-                <a href="{{ url_for('all_movies') }}"><i class="fas fa-film"></i> סרטים</a> {# Added icon #}
-                <a href="{{ url_for('all_series') }}"><i class="fas fa-tv"></i> סדרות</a> {# Added icon #}
+                <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a> {# Added icon #}
+                <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a> {# Added icon #}
+                <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a> {# Added icon #}
                 {% if user and user.email in admin_emails %}
-                    <a href="{{ url_for('add_content') }}"><i class="fas fa-plus-circle"></i> הוספת תוכן</a> {# Added icon #}
+                    <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a> {# Added icon #}
                 {% endif %}
             </nav>
 
-            <div class="auth-container">
-                {% if user %}
-                    <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
-                        {# Ensure this path is correct for your default image if user.picture is missing #}
-                        <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Replace the base64 string with your desired image URL or placeholder #}
-                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
-                    </a>
-                {% endif %}
-            </div>
+             {# --- Add Language Switcher Here (after Search) --- #}
+             <div class="language-switcher">
+                 {# Link to the set_language route. Show the name of the *current* language as per request. #}
+                 {# The href points to the *target* language (opposite of current) #}
+                 <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
+                      <i class="fas fa-globe"></i>
+                      {% if current_language == 'he' %}
+                          עברית
+                      {% else %}
+                          English
+                      {% endif %}
+                  </a>
+             </div>
+
 
             {# Removed the header-spacer div #}
         </div>
     </header>
 
+     {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category|default('info') }}" role="alert">
+                {{ message }}
+                <button type="button" class="close-flash" onclick="this.parentElement.style.display='none';">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    {% endwith %}
+
 <main class="container movie-details-page">
-    <h1 id="movie-title">{{ movie.title or 'צפייה בסרט' }}</h1> {# Use movie title #}
+    {# Use conditional title based on language #}
+    <h1 id="movie-title">{{ (movie.HebrewName or movie.title or ('צפייה בסרט' if current_language == 'he' else 'Watch Movie')) }}</h1> {# Use movie title #}
 
     <div class="movie-grid">
         <div class="movie-poster">
-            <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר הסרט' }}" loading="lazy"> {# Use movie title for alt text #}
+            {# Use Hebrew poster if language is HE and Hebrew poster exists, otherwise use English poster, fallback to default #}
+            {% set item_poster = (movie.get('HebrewPoster') if current_language == 'he' and movie.get('HebrewPoster') else movie.get('poster')) %}
+            <img src="{{ item_poster if item_poster and item_poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ (movie.HebrewName or movie.title or ('פוסטר הסרט' if current_language == 'he' else 'Movie Poster')) }}" loading="lazy"> {# Use movie title for alt text #}
         </div>
 
         <div class="movie-info">
@@ -122,29 +143,34 @@
 
 
             <div class="movie-details-list">
-                <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
-                <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
-                <p><strong>אורך:</strong> {{ movie.runtime or 'לא זמין' }}</p>
-                <p><strong>שנת יציאה:</strong> {{ movie.year or 'לא זמין' }}</p> {# Changed text for clarity #}
-                <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
-                <p><strong>דירוג IMDb:</strong> {{ movie.imdbRating or 'לא זמין' }}</p> {# Changed text for clarity #}
+                {# Use conditional labels and data #}
+                <p><strong>{{ 'שם:' if current_language == 'he' else 'Title:' }}</strong> {{ (movie.HebrewName or movie.title or ('לא זמין' if current_language == 'he' else 'N/A')) }}</p>
+                <p><strong>{{ 'תיאור:' if current_language == 'he' else 'Plot:' }}</strong> {{ movie.plot or ('אין תיאור זמין' if current_language == 'he' else 'No plot available') }}</p>
+                <p><strong>{{ 'אורך:' if current_language == 'he' else 'Runtime:' }}</strong> {{ movie.runtime or ('לא זמין' if current_language == 'he' else 'N/A') }}</p>
+                <p><strong>{{ 'שנת יציאה:' if current_language == 'he' else 'Release Year:' }}</strong> {{ movie.year or ('לא זמין' if current_language == 'he' else 'N/A') }}</p>
+                <p><strong>{{ 'ז\'אנר:' if current_language == 'he' else 'Genre:' }}</strong> {{ movie.genre or ('לא זמין' if current_language == 'he' else 'N/A') }}</p>
+                <p><strong>{{ 'דירוג IMDb:' if current_language == 'he' else 'IMDb Rating:' }}</strong> {{ movie.imdbRating or ('לא זמין' if current_language == 'he' else 'N/A') }}</p>
+                {# Add category display if needed #}
+                 {% if movie.category and movie.category != 'ללא' %}
+                     <p><strong>{{ 'קטגוריה:' if current_language == 'he' else 'Category:' }}</strong> {{ movie.category }}</p>
+                 {% endif %}
             </div>
 
             <div class="movie-actions">
                  {# --- WATCH TRAILER BUTTON --- #}
                  {# Use the correct class for CSS styling as updated in movie.css #}
                  <button id="watch-trailer-button" class="watch-trailer-button">
-                     <i class="fas fa-play"></i> צפייה בטריילר
+                     <i class="fas fa-play"></i> {{ 'צפייה בטריילר' if current_language == 'he' else 'Watch Trailer' }}
                      <span class="loader"></span> {# Add loader span #}
                  </button>
                  {# Optional: Add the "Add to list" button back if needed later #}
-                 {# <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> #}
+                 {# <button class="add-to-list-button"><i class="fas fa-plus"></i> {{ 'הוסף לרשימה שלי' if current_language == 'he' else 'Add to my list' }}</button> #}
             </div>
 
             {# --- TRAILER RELATED MESSAGES (These are for fetch errors, not the embed itself) --- #}
             {# These messages should probably be placed somewhere logical, like below the actions #}
-            <div id="no-trailer-message" class="no-video-message" style="display: none;">טריילר לא נמצא.</div>
-            <div id="trailer-error-message" class="no-video-message" style="display: none; color: orange;">שגיאה באחזור הטריילר.</div>
+            <div id="no-trailer-message" class="no-video-message" style="display: none;">{{ 'טריילר לא נמצא.' if current_language == 'he' else 'Trailer not found.' }}</div>
+            <div id="trailer-error-message" class="no-video-message" style="display: none; color: orange;">{{ 'שגיאה באחזור הטריילר.' if current_language == 'he' else 'Error fetching trailer.' }}</div>
 
         </div>
     </div>
@@ -152,7 +178,7 @@
 
 <footer class="site-footer-bottom">
     <div class="container">
-        <p>© {{ current_year }} סינמה פריים. כל הזכויות שמורות.</p>
+        <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
     </div>
 </footer>
 
@@ -183,7 +209,7 @@
         const user = {{ user | tojson }}; // Pass user object from Flask
         const movieData = {{ movie | tojson }}; // Pass movie object from Flask
         const imdbId = movieData ? movieData.imdbID : null;
-        const movieType = 'movie'; // Explicitly set type for CW
+        const movieType = 'movie'; // Explicitly set type for CW and History
 
         // Elements for Main Movie Player
         const mainEmbedContainer = document.getElementById('embed-container'); // Original container for main movie
@@ -203,7 +229,7 @@
             // Load existing continue watching data from localStorage if user is logged in
             if (user && user.google_id) {
                  const userId = user.google_id;
-                 const localStorageKey = `continueWatching_${userId}`;
+                 const localStorageKey = `continueWatching_${userId}`; // CW key
                  const itemKey = `movie_${imdbId}`; // Unique key for this movie
 
                  try {
@@ -213,9 +239,9 @@
                          // Check if this movie is already in the list and get its timestamp
                          if (continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number') {
                              savedTimestamp = continueWatchingItems[itemKey].timestamp;
-                              console.log(`Loaded saved timestamp for movie ${imdbId}: ${savedTimestamp} seconds.`);
+                              console.log(`Loaded saved timestamp for movie ${imdbId} from CW: ${savedTimestamp} seconds.`);
                          } else {
-                              console.log(`No saved timestamp found for movie ${imdbId}. Starting from 0.`);
+                              console.log(`No saved timestamp found for movie ${imdbId} in CW. Starting from 0.`);
                          }
                      }
                  } catch (e) {
@@ -235,26 +261,44 @@
                       console.log("No #timestamp hash found in URL.");
                  }
 
-                 // Function to save the current item's details to localStorage
+                 // Function to save the current item's details to localStorage CW list
                  // Note: Timestamp saving is unreliable with Vidsrc due to cross-origin restrictions.
                  // We'll save the *item* and the timestamp we *started* with.
+                 // This function is called once on page load and on beforeunload.
                  function saveContinueWatchingState(timestampToSave = savedTimestamp) {
-                     if (!movieData || !movieData.imdbID) {
-                          console.error("Cannot save continue watching state: Missing movie data.");
+                     if (!movieData || !movieData.imdbID || !user || !user.google_id) {
+                          console.log("Cannot save continue watching state: User not logged in or missing movie data.");
                           return;
                      }
+                      const userId = user.google_id;
+                      const localStorageKey = `continueWatching_${userId}`;
+                      const itemKey = `movie_${imdbId}`;
+
+                      // Load latest state in case it was changed in another tab/window since page load
+                      try {
+                          const currentStoredData = localStorage.getItem(localStorageKey);
+                           if(currentStoredData) continueWatchingItems = JSON.parse(currentStoredData) || {};
+                           if (typeof continueWatchingItems !== 'object' || continueWatchingItems === null) continueWatchingItems = {}; // Reset if invalid
+                      } catch (e) {
+                           console.error("Error loading CW data before saving:", e);
+                           continueWatchingItems = {}; // Reset on error
+                      }
+
+
                      continueWatchingItems[itemKey] = {
                          id: imdbId,
                          type: movieType,
                          title: movieData.title || 'כותרת לא ידועה',
                          poster: movieData.poster && movieData.poster !== 'N/A' ? movieData.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
+                         HebrewName: movieData.HebrewName || '', // Include Hebrew name
+                         HebrewPoster: movieData.HebrewPoster || '', // Include Hebrew poster
                          timestamp: timestampToSave // Save the timestamp (likely the initial one loaded or 0)
                          // Real-time timestamp updates are NOT possible here with standard Vidsrc iframe.
                      };
 
                      try {
                          localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
-                         console.log(`Saved movie ${imdbId} state to localStorage (timestamp: ${timestampToSave}).`);
+                         console.log(`Saved movie ${imdbId} state to CW (timestamp: ${timestampToSave}).`);
                           // Optional: Update the timestamp display
                           const currentTimestampDiv = document.getElementById('current-timestamp');
                           if (currentTimestampDiv) {
@@ -279,17 +323,75 @@
                  }
 
                  // Save the initial state when the page loads (or reloads from CW)
-                 saveContinueWatchingState(savedTimestamp);
+                 saveContinueWatchingState(savedTimestamp); // Saves the timestamp loaded from localStorage or URL hash
 
                  // Save the current state when the user leaves the page
                  window.addEventListener('beforeunload', () => {
                       // saveContinueWatchingState(savedTimestamp); // This saves the *initial* timestamp, not current progress
-                      console.log(`Page unload event for movie ${imdbId}. Saving initial state.`);
+                      console.log(`Page unload event for movie ${imdbId}. Saving initial state to CW.`);
+                      // Save the initial timestamp again on unload. We can't get the actual current time.
+                      saveContinueWatchingState(savedTimestamp); // Save the timestamp that the page *started* at
                  });
 
+
+                 // --- Add Movie to Viewing History (NEW) ---
+                 const historyLocalStorageKey = `viewingHistory_${userId}`; // History key
+
+                 function addMovieToViewingHistory() {
+                      if (!movieData || !movieData.imdbID || !user || !user.google_id) {
+                           console.log("Cannot add to viewing history: User not logged in or missing movie data.");
+                           return;
+                      }
+                       const userId = user.google_id;
+                       const historyLocalStorageKey = `viewingHistory_${userId}`;
+                       const itemKey = `movie_${imdbId}`;
+
+                       let viewingHistoryItems = {};
+                       try {
+                            const storedHistoryData = localStorage.getItem(historyLocalStorageKey);
+                            if (storedHistoryData) {
+                                viewingHistoryItems = JSON.parse(storedHistoryData) || {};
+                                if (typeof viewingHistoryItems !== 'object' || viewingHistoryItems === null) viewingHistoryItems = {};
+                            }
+                       } catch (e) {
+                           console.error("Error loading viewing history before adding:", e);
+                           viewingHistoryItems = {};
+                       }
+
+                       // Check if this item (movie) is already in history
+                       if (!viewingHistoryItems[itemKey]) {
+                            console.log(`Adding movie ${imdbId} to viewing history.`);
+                             viewingHistoryItems[itemKey] = {
+                                 id: imdbId,
+                                 type: movieType,
+                                 title: movieData.title || '',
+                                 poster: movieData.poster || '',
+                                 HebrewName: movieData.HebrewName || '',
+                                 HebrewPoster: movieData.HebrewPoster || '',
+                                 genre: movieData.genre || '', // Add genre
+                                 category: movieData.category && movieData.category !== 'ללא' ? movieData.category : '' // Add category (if not "ללא")
+                             };
+
+                             try {
+                                 localStorage.setItem(historyLocalStorageKey, JSON.stringify(viewingHistoryItems));
+                                 console.log(`Saved movie ${imdbId} to viewing history.`);
+                             } catch (e) {
+                                 console.error("Error saving viewing history to localStorage:", e);
+                             }
+                       } else {
+                            console.log(`Movie ${imdbId} is already in viewing history.`);
+                             // Optionally update details if needed, but for history simple presence is enough
+                             // You could update genre/category here if they might change
+                       }
+                 }
+
+                 // Add the movie to viewing history when the page loads
+                 addMovieToViewingHistory();
+
+
             } else {
-                 // User not logged in, Continue Watching tracking disabled
-                 console.log("User not logged in. Continue Watching tracking disabled for main movie player.");
+                 // User not logged in, tracking disabled
+                 console.log("User not logged in. Continue Watching and Viewing History tracking disabled for main movie player.");
                  // Hide the timestamp display if user is not logged in
                  const currentTimestampDiv = document.getElementById('current-timestamp');
                  if (currentTimestampDiv) currentTimestampDiv.style.display = 'none';
@@ -314,10 +416,13 @@
              if(mainEmbedContainer){
                  const message = document.createElement('div');
                  message.className = 'no-video-message';
-                 message.textContent = 'וידאו הסרט המלא אינו זמין עבור תוכן זה.';
+                 message.textContent = currentLanguage === 'he' ? 'וידאו הסרט המלא אינו זמין עבור תוכן זה.' : 'Full movie video is not available for this content.';
                  mainEmbedContainer.innerHTML = '';
                  mainEmbedContainer.appendChild(message);
              }
+             // Hide timestamp display if movie data or container is missing
+              const currentTimestampDiv = document.getElementById('current-timestamp');
+              if (currentTimestampDiv) currentTimestampDiv.style.display = 'none';
         }
 
         // --- 2. Watch Trailer Functionality ---
@@ -342,7 +447,7 @@
                         if (!response.ok) {
                             // Handle HTTP errors (e.g., 404 if trailer not found)
                             console.error(`HTTP error fetching trailer: ${response.status}`);
-                            trailerErrorMessageDiv.textContent = `שגיאה באחזור הטריילר: סטטוס ${response.status}`;
+                            trailerErrorMessageDiv.textContent = `${currentLanguage === 'he' ? 'שגיאה באחזור הטריילר: סטטוס' : 'Error fetching trailer: status'} ${response.status}`;
                             trailerErrorMessageDiv.style.display = 'block';
                             return null; // Signal error to the next then block
                         }
@@ -356,13 +461,13 @@
 
                         } else if (data && data.error) {
                             console.log(`API reported error: ${data.error}`);
-                            noTrailerMessageDiv.textContent = `לא נמצא טריילר עבור סרט זה.`; // Show default "not found" message
+                            noTrailerMessageDiv.textContent = currentLanguage === 'he' ? 'לא נמצא טריילר עבור סרט זה.' : 'Trailer not found for this movie.'; // Show default "not found" message
                             noTrailerMessageDiv.style.display = 'block';
 
                         } else {
                             // Handle unexpected response format
                             console.error("Unexpected response format from trailer API:", data);
-                            trailerErrorMessageDiv.textContent = 'שגיאה: קבלת תגובה לא צפויה.';
+                            trailerErrorMessageDiv.textContent = currentLanguage === 'he' ? 'שגיאה: קבלת תגובה לא צפויה.' : 'Error: Received unexpected response.';
                             trailerErrorMessageDiv.style.display = 'block';
                         }
                     })
@@ -371,7 +476,7 @@
                         console.error("Fetch error:", error);
                         watchTrailerButton.disabled = false; // Ensure button is re-enabled
                         if (loader) loader.style.display = 'none';
-                        trailerErrorMessageDiv.textContent = `שגיאה ברשת: ${error.message}`;
+                        trailerErrorMessageDiv.textContent = `${currentLanguage === 'he' ? 'שגיאת רשת:' : 'Network error:'} ${error.message}`;
                         trailerErrorMessageDiv.style.display = 'block';
                     });
             });
@@ -379,28 +484,30 @@
             console.warn("Watch Trailer button or IMDb ID not found. Hiding trailer button.");
             if(watchTrailerButton) watchTrailerButton.style.display = 'none'; // Hide button if no IMDb ID
              // No need to show "Trailer not available" message automatically, as the main video is shown
+             if(noTrailerMessageDiv) noTrailerMessageDiv.style.display = 'none';
+             if(trailerErrorMessageDiv) trailerErrorMessageDiv.style.display = 'none';
         }
 
 
     }); // End DOMContentLoaded
 
      // Search functionality (same as index.html, navigate back to index with search term) - outside DOMContentLoaded for access
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(event) {
+    const searchInputGlobal = document.getElementById('searchInput');
+    if (searchInputGlobal) {
+        searchInputGlobal.addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 const term = this.value.trim();
                 if (term) {
-                    window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                    window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(term)}`;
                 }
             }
         });
          // Optional: search button click
         document.querySelector('.search-container button').addEventListener('click', function() {
-             const term = searchInput.value.trim();
+             const term = searchInputGlobal.value.trim();
              if (term) {
-                  window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
+                  window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(term)}`;
              }
          });
     }
