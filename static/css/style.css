@@ -182,6 +182,7 @@ img { max-width: 100%; height: auto; display: block; }
 .page-greeting {
     margin-bottom: 45px;
     /* Adjusted padding/border for RTL based on original HTML */
+    /* These rules apply to desktop and mobile (when not overridden) */
     padding-left: 10px;
     border-right: 4px solid var(--primary-accent-color);
     padding-right: 20px;
@@ -307,10 +308,11 @@ img { max-width: 100%; height: auto; display: block; }
 .card-actions {
     display: flex; gap: 10px; opacity: 0; transition: opacity 0.3s 0.2s ease;
     /* Align actions based on direction */
+    /* This rule applies to desktop and mobile */
     justify-content: flex-start; /* Align to the right in RTL */
 }
-/* Adjust actions alignment for RTL */
-[dir="rtl"] .card-actions { justify-content: flex-end; }
+/* The following [dir="rtl"] rule is removed from the media query */
+/* [dir="rtl"] .card-actions { justify-content: flex-end; } */
 [dir="ltr"] .card-actions { justify-content: flex-start; }
 
 .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
@@ -324,14 +326,16 @@ img { max-width: 100%; height: auto; display: block; }
 
 .rank-number {
     position: absolute;
-    /* Adjusted for RTL */
-    left: -15px; bottom: 10px;
+    /* Adjusted for RTL - These rules apply to desktop and mobile */
+    left: -15px; bottom: 10px; /* Default / LTR */
     width: 60px; height: 60px;
     display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none;
 }
-/* Adjust rank number position for RTL */
-[dir="rtl"] .rank-number { left: -15px; right: auto; }
-[dir="ltr"] .rank-number { left: auto; right: -15px; }
+/* Adjust rank number position for RTL - This rule applies to desktop and mobile */
+/* The following [dir="rtl"] rule is removed from the media query */
+/* [dir="rtl"] .rank-number { left: -15px; right: auto; } */
+[dir="rtl"] .rank-number { left: -15px; right: auto; } /* Keeping the original desktop RTL position logic */
+[dir="ltr"] .rank-number { left: auto; right: -15px; } /* LTR adjustment */
 
 
 .rank-circle-bg {
@@ -387,8 +391,10 @@ img { max-width: 100%; height: auto; display: block; }
     padding: 0 5px;
     line-height: 1;
 }
-/* Adjust close button position for RTL */
-[dir="rtl"] .close-flash { left: 15px; right: auto; }
+/* Adjust close button position for RTL - This rule applies to desktop and mobile */
+/* The following [dir="rtl"] rule is removed from the media query */
+/* [dir="rtl"] .close-flash { left: 15px; right: auto; } */
+[dir="rtl"] .close-flash { left: auto; right: 15px; } /* Keeping the original desktop RTL position logic */
 [dir="ltr"] .close-flash { left: auto; right: 15px; }
 
 
@@ -788,6 +794,9 @@ img { max-width: 100%; height: auto; display: block; }
     #searchInput:focus {
          width: 100%; /* No width transition on focus */
     }
+     /* Text alignment for search input in mobile */
+     [dir="rtl"] #searchInput { text-align: right; }
+     [dir="ltr"] #searchInput { text-align: left; }
 
 
     .language-switcher {
@@ -813,9 +822,8 @@ img { max-width: 100%; height: auto; display: block; }
         /* Add animation for sliding/fading if desired */
         transition: transform var(--transition-medium), opacity var(--transition-medium);
         opacity: 0;
-        transform: translateX(100%); /* Start off-screen right (for LTR) */
-         /* Adjust transform for RTL */
-         /* This will be handled by the nav-open class */
+        /* Initial transform based on default direction (LTR) */
+        transform: translateX(100%);
     }
 
     /* Mobile Nav - Visible when open */
@@ -823,19 +831,13 @@ img { max-width: 100%; height: auto; display: block; }
          display: flex; /* Show nav when open */
          opacity: 1;
          transform: translateX(0); /* Slide into view */
-          /* Adjust transform origin for RTL */
-          transform-origin: left center; /* For LTR slide */
+          /* Transform origin remains default */
     }
 
     /* RTL adjustment for mobile nav slide */
-    [dir="rtl"] .main-nav.nav-open {
-         transform: translateX(0); /* Slide into view */
-          /* Needs to start translateX(-100%) in RTL and slide to 0 */
-          transform-origin: right center; /* For RTL slide */
-    }
-     [dir="rtl"] .main-nav {
+    [dir="rtl"] .main-nav {
          transform: translateX(-100%); /* Start off-screen left (for RTL) */
-     }
+    }
 
 
     .main-nav a {
@@ -858,11 +860,12 @@ img { max-width: 100%; height: auto; display: block; }
 
     .page-greeting {
         margin-bottom: 30px; /* Reduce margin */
-        padding-right: 15px; /* Adjust padding */
-        padding-left: 15px; /* Adjust padding */
+        /* Adjust padding for mobile - border side handled by global rules */
+        padding-left: 15px;
+        padding-right: 15px;
     }
-    [dir="rtl"] .page-greeting { padding-right: 15px; padding-left: 15px; }
-    [dir="ltr"] .page-greeting { padding-left: 15px; padding-right: 15px; }
+     /* Removed [dir="rtl"] .page-greeting from here to let global rule apply */
+     /* Removed [dir="ltr"] .page-greeting from here to let global rule apply */
 
 
     .page-greeting h1 {
@@ -934,7 +937,10 @@ img { max-width: 100%; height: auto; display: block; }
     .card-actions {
         gap: 8px; /* Smaller gap */
          transition: opacity 0.2s 0.1s ease;
+         /* The justify-content rule from outside the media query applies */
     }
+     /* Removed [dir="rtl"] .card-actions from here to let global rule apply */
+
      .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; } /* Keep animation */
 
     .card-actions button {
@@ -946,14 +952,18 @@ img { max-width: 100%; height: auto; display: block; }
 
 
     .rank-number {
-        width: 50px; /* Smaller rank indicator */
+        /* Adjust size for mobile */
+        width: 50px;
         height: 50px;
-         /* Adjust position - values need testing */
-         left: -10px; /* Adjust left position */
-         bottom: 8px; /* Adjust bottom position */
+         /* Adjust position for mobile, but let global RTL/LTR handle left/right */
+         /* Original desktop RTL position: left: -15px */
+         /* Original desktop LTR position: right: -15px */
+         /* Let's use adjusted mobile values */
+         bottom: 8px; /* Adjusted bottom position for mobile */
+         /* The left/right position will be handled by global [dir] rules */
     }
-     [dir="rtl"] .rank-number { left: -10px; right: auto; } /* RTL adjustment */
-     [dir="ltr"] .rank-number { left: auto; right: -10px; } /* LTR adjustment */
+    /* Removed [dir="rtl"] .rank-number from here to let global rule apply */
+    /* Removed [dir="ltr"] .rank-number from here to let global rule apply */
 
     .rank-text {
         font-size: 1.5em; /* Smaller rank font */
@@ -977,8 +987,10 @@ img { max-width: 100%; height: auto; display: block; }
 
      .close-flash {
          font-size: 1.2em; /* Adjust size */
-          /* Position adjusted above with [dir] */
+         /* Position handled by global [dir] rules */
      }
+     /* Removed [dir="rtl"] .close-flash from here to let global rule apply */
+     /* Removed [dir="ltr"] .close-flash from here to let global rule apply */
 
 
      /* Admin Form Styles (within media query) */
