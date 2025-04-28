@@ -112,10 +112,10 @@
             {# Update heading based on language #}
             <h1>{{ 'כל הסרטים' if current_language == 'he' else 'All Movies' }}</h1>
             {# Updated description #}
-            <p>{{ 'צפה בכל הסרטים הזמינים באתר וסנן לפי דירוג IMDb.' if current_language == 'he' else 'View all available movies on the site and filter by IMDb rating.' }}</p>
+            <p>{{ 'צפה בכל הסרטים הזמינים באתר וסנן לפי ז\'אנר ודירוג IMDb.' if current_language == 'he' else 'View all available movies on the site and filter by genre and IMDb rating.' }}</p>
         </div>
 
-        <!-- Filter Container - Only includes Rating filter -->
+        <!-- Filter Container - Includes Rating and Genre filters -->
         <div class="filter-container">
             <div class="filter-group">
                  <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMdb):' }}</label>
@@ -124,7 +124,17 @@
                      {# Options will be populated by JavaScript #}
                  </select>
              </div>
-             {# Removed Genre and Year filter groups #}
+
+             {# --- ADDED GENRE FILTER GROUP --- #}
+             <div class="filter-group">
+                 <label for="genreFilter">{{ 'ז\'אנר:' if current_language == 'he' else 'Genre:' }}</label>
+                 <select id="genreFilter">
+                      <option value="">{{ 'כל הז\'אנרים' if current_language == 'he' else 'All Genres' }}</option>
+                     {# Options will be populated by JavaScript #}
+                 </select>
+             </div>
+             {# --- END ADDED GENRE FILTER GROUP --- #}
+
          </div>
 
 
@@ -142,14 +152,15 @@
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
                      {# data-id is crucial for JS mapping. Other data attributes are added just in case other scripts use them. #}
+                     {# ADDED data-genre attribute #}
                      <a href="{{ url_for('movie_details', imdb_id=movie.imdbID) }}"
                         class="item-card-link catalog-item"
                         data-id="{{ movie.imdbID }}"
                         data-type="movie"
-                        {# Removed genre and year data attributes #}
                         data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower | trim }}"
                         data-title-en="{{ movie.get('title', movie.get('HebrewName', '')) | lower | trim }}"
-                        data-imdb-rating="{{ movie.get('imdbRating', '') | lower | trim }}">
+                        data-imdb-rating="{{ movie.get('imdbRating', '') | lower | trim }}"
+                        data-genre="{{ movie.get('genre', '') | lower | trim }}"> {# ADDED genre data attribute #}
 
                         {# Use the same item-card structure as index.html for consistent look, but movies.css will handle grid layout #}
                         <div class="item-card" tabindex="0">
@@ -205,6 +216,14 @@
          const allMoviesData = {{ movies | tojson }};
          console.log("Loaded allMoviesData:", allMoviesData); // Log the loaded data
 
+         // Define the list of available genres
+         const availableGenres = [
+            "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime",
+            "Documentary", "Drama", "Family", "Fantasy", "Film-Noir", "History",
+            "Horror", "Music", "Musical", "Mystery", "Romance", "Sci-Fi",
+            "Sport", "Thriller", "War", "Western"
+         ];
+
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOMContentLoaded fired on movies page.");
@@ -243,6 +262,7 @@
             // --- Filtering and Search Functionality ---
             const searchInput = document.getElementById('searchInput');
             const ratingFilter = document.getElementById('ratingFilter');
+            const genreFilter = document.getElementById('genreFilter'); // Get the genre filter dropdown
             const noResultsMessage = document.getElementById('noResultsMessage');
 
             // Map IMDb IDs to their corresponding DOM elements for quick access
@@ -261,19 +281,30 @@
                      option.textContent = i + "+"; // Display "1+", "2+", etc.
                      ratingFilter.appendChild(option);
                  }
-                 console.log("Rating filter populated."); // Log rating population
+                 console.log("Rating filter populated.");
 
-                // Removed Genre and Year filter population
+                // --- Populate Genre Filter ---
+                if (genreFilter) {
+                    availableGenres.forEach(genre => {
+                        const option = document.createElement('option');
+                        option.value = genre.toLowerCase(); // Use lowercase for matching
+                        option.textContent = genre; // Display the full genre name
+                        genreFilter.appendChild(option);
+                    });
+                    console.log("Genre filter populated.");
+                }
+                // --- END Populate Genre Filter ---
             }
 
 
             // Function to perform filtering and search
             function applyFiltersAndSearch() {
-                console.log("Applying filters and search..."); // Log function call
+                console.log("Applying filters and search...");
                 const searchTerm = searchInput.value.toLowerCase().trim();
                 const selectedRatingValue = parseFloat(ratingFilter.value); // Parse to number
+                const selectedGenreValue = genreFilter ? genreFilter.value : ""; // Get selected genre, default to empty if filter not found
 
-                console.log(`Filter Values - Search: "${searchTerm}", Rating: ${selectedRatingValue}`); // Log selected values
+                console.log(`Filter Values - Search: "${searchTerm}", Rating: ${selectedRatingValue}, Genre: "${selectedGenreValue}"`);
 
                 let visibleCount = 0;
 
@@ -292,44 +323,48 @@
                     const titleHe = (movie.HebrewName || movie.title || '').toLowerCase().trim();
                     const titleEn = (movie.title || movie.HebrewName || '').toLowerCase().trim();
                     const movieImdbRatingStr = (movie.imdbRating || '').toLowerCase().trim();
+                    const movieGenreStr = (movie.genre || '').toLowerCase().trim(); // Get the genre string from data
 
 
                     // --- Apply Search Filter ---
                     // Check if either Hebrew or English title contains the search term
                     const passesSearch = (titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
-                    // console.log(`  - Search ("${searchTerm}"): Passes = ${passesSearch}`); // Keep for debugging if needed
+                    // console.log(`  - Search ("${searchTerm}"): Passes = ${passesSearch}`);
 
 
                     // --- Apply Rating Filter (IMDb Rating) ---
-                    // If no rating is selected, it passes; otherwise, check if movie's parsed rating is >= selected value
-                    let passesRatingFilter = true; // Assume pass if no filter selected
-                    let movieImdbRating = NaN; // Initialize to NaN
+                    let passesRatingFilter = true;
+                    let movieImdbRating = NaN;
 
-                    if (movieImdbRatingStr && movieImdbRatingStr !== 'n/a') { // Check if rating string exists and isn't "N/A"
+                    if (movieImdbRatingStr && movieImdbRatingStr !== 'n/a') {
                          movieImdbRating = parseFloat(movieImdbRatingStr);
                     }
 
-                    if (!isNaN(selectedRatingValue)) { // Check if a valid rating number is selected
-                         // Check if the movie's rating is a valid number AND is greater than or equal to the selected value
+                    if (!isNaN(selectedRatingValue)) {
                          passesRatingFilter = (!isNaN(movieImdbRating) && movieImdbRating >= selectedRatingValue);
-                         // console.log(`  - Rating (${selectedRatingValue}+) - Movie Rating: ${movieImdbRating}, Passes = ${passesRatingFilter}`); // Keep for debugging if needed
-                    } else {
-                         // console.log(`  - Rating Filter (None Selected): Passes = ${passesRatingFilter}`); // Keep for debugging if needed
                     }
 
 
+                    // --- Apply Genre Filter ---
+                    let passesGenreFilter = true; // Assume pass if no filter selected or if genreFilter element doesn't exist
+                    if (selectedGenreValue && genreFilter) { // Only apply if a genre is selected AND the filter exists
+                        // Split the movie's genre string into an array and check if the selected genre is included
+                         const movieGenresArray = movieGenreStr.split(',').map(g => g.trim()); // Split by comma, trim spaces
+                         passesGenreFilter = movieGenresArray.includes(selectedGenreValue);
+                    }
+                    // console.log(`  - Genre ("${selectedGenreValue}") - Movie Genres: "${movieGenreStr}", Passes = ${passesGenreFilter}`);
+                    // --- END Apply Genre Filter ---
+
+
                     // A card is visible only if it passes ALL filters and search
-                    const shouldBeVisible = passesSearch && passesRatingFilter;
+                    const shouldBeVisible = passesSearch && passesRatingFilter && passesGenreFilter; // Include genre filter
 
                     if (shouldBeVisible) {
                         cardElement.style.display = ''; // Show the element
                         visibleCount++;
-                         // console.log("  - Result: Displaying movie."); // Keep for debugging if needed
                     } else {
                         cardElement.style.display = 'none'; // Hide the element
-                         // console.log("  - Result: Hiding movie."); // Keep for debugging if needed
                     }
-                    // console.groupEnd(); // Keep for debugging if needed
 
                  });
 
@@ -337,7 +372,7 @@
                 if (noResultsMessage) {
                      noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
                 }
-                 console.log(`Filtering complete. Total visible movies: ${visibleCount}.`); // Log total visible count
+                 console.log(`Filtering complete. Total visible movies: ${visibleCount}.`);
             }
 
             // Populate filters on page load
@@ -359,7 +394,7 @@
             }
 
             if (ratingFilter) { ratingFilter.addEventListener('change', applyFiltersAndSearch); console.log("Rating filter listener added."); }
-            // Removed Genre and Year filter listeners
+            if (genreFilter) { genreFilter.addEventListener('change', applyFiltersAndSearch); console.log("Genre filter listener added."); } // Add genre filter listener
 
 
              // Initial filter/search application in case there's a search term pre-filled
