@@ -140,38 +140,34 @@ def load_movies_data():
         return {}
 
 def load_series_data_for_index():
-    """Loads basic series data for index/all_series display from Firebase, adding 'type: series'.
-       Excludes nested Season/Episode data for performance."""
+    """Loads series data for index display from Firebase, adding 'type: series'."""
     try:
-        # We need top-level series info for the index/all_series card
-        # Fetch all top-level series data first
+        # We only need top-level series info for the index card
         ref = db.reference('/Series')
         series_dict = ref.get()
-
-        series_for_display = {} # Use a different name to avoid confusion with old logic
+        series_for_index = {}
         if series_dict:
             for imdb_id, details in series_dict.items():
-                 # Only include basic details for the card
-                 # Explicitly exclude the 'Seasons' key if it exists
+                 # Only include basic details for the index card
+                 # Avoid fetching nested Seasons/Episodes here for performance
                 if isinstance(details, dict):
-                    basic_details = {
+                     # Include both English and Hebrew names/posters if they exist
+                    series_for_index[imdb_id] = {
                         'imdbID': imdb_id,
                         'title': details.get('title', 'כותרת לא ידועה'),
                         'poster': details.get('poster', 'N/A'),
                         'HebrewName': details.get('HebrewName'), # Include Hebrew name
                         'HebrewPoster': details.get('HebrewPoster'), # Include Hebrew poster
-                        'category': details.get('category', 'ללא'), # Include category
-                        'type': 'series', # Add type identifier
-                         # Do NOT include 'Seasons' or other large nested structures here
+                        'category': details.get('category', 'ללא'),
+                        'type': 'series' # Add type identifier
                     }
-                    series_for_display[imdb_id] = basic_details
                 else:
-                    logging.warning(f"Skipping non-dict series entry in /Series: {imdb_id}")
+                    logging.warning(f"Skipping non-dict series entry: {imdb_id}")
 
-        logging.info(f"Loaded basic details for {len(series_for_display)} series from Firebase for display.")
-        return series_for_display if series_for_display is not None else {}
+        logging.info(f"Loaded {len(series_for_index)} series for index from Firebase.")
+        return series_for_index if series_for_index is not None else {}
     except Exception as e:
-        logging.error(f"Error loading basic series data for display from Firebase: {e}", exc_info=True)
+        logging.error(f"Error loading series for index from Firebase: {e}", exc_info=True)
         return {}
 
 
@@ -1119,29 +1115,26 @@ def all_movies():
 
 @app.route('/series') # Define the new route
 def all_series():
-    """Displays all series (basic details) from Firebase in a grid with pagination."""
+    """Displays all series from Firebase in a grid."""
     user = session.get('user')
     current_language = session.get('language', 'he') # Get language from session, default to 'he'
     current_year = datetime.datetime.utcnow().year
 
-    # Load ALL basic series data from Firebase (excluding seasons/episodes)
-    all_series_data = load_series_data_for_index() # This function is now optimized
+    # Use the existing function that loads basic series data for display
+    # load_series_data_for_index() already returns {imdbID: basic_details}
+    # with 'type: series' added, which is perfect for the grid.
+    all_series_data = load_series_data_for_index() # Includes Hebrew fields if exist
 
-    # Define how many items to show per page initially and on "Load More"
-    items_per_page = 8 # You can adjust this number
+    # Log how many series were loaded
+    logging.info(f"Rendering all_series page with {len(all_series_data)} series.")
 
-    # Log how many series were loaded (basic details)
-    logging.info(f"Rendering all_series page with {len(all_series_data)} series (basic details). Initial {items_per_page} items will be shown.")
-
-
-    # Render the new template, passing the series data, items_per_page, and current language
+    # Render the new template, passing the series data and current language
     return render_template('SeriesTV.html',
-                           series=all_series_data, # Pass all series basic data to the template
+                           series=all_series_data, # Pass series data to the template
                            user=user,
                            current_year=current_year,
                            admin_emails=ADMIN_EMAILS,
-                           current_language=current_language, # Pass the current language
-                           items_per_page=items_per_page # Pass the number of items per page
+                           current_language=current_language # Pass the current language
                            )
 
 
