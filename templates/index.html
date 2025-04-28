@@ -37,6 +37,12 @@
     <header class="site-header">
         <div class="container header-content">
 
+             {# --- Nav Toggle Button (for Mobile) --- #}
+             {# Placed first in HTML for potential flex order adjustment, hidden by default #}
+             <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
+                 <i class="fas fa-bars"></i> {# Initial icon #}
+             </button>
+
              <div class="auth-container">
                  {% if user %}
                      <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
@@ -244,6 +250,51 @@
                       }
                       // Allow the browser to proceed with the link navigation after showing spinner
                  });
+            }
+
+            // --- Mobile Nav Toggle Functionality ---
+            const navToggle = document.querySelector('.nav-toggle');
+            const mainNav = document.querySelector('.main-nav');
+            const body = document.body; // Or document.documentElement for html
+
+            if (navToggle && mainNav) {
+                 navToggle.addEventListener('click', function() {
+                      const isOpen = mainNav.classList.toggle('nav-open');
+                      // Also toggle a class on the body to prevent background scroll
+                      body.classList.toggle('nav-open');
+
+                      // Change icon
+                      const icon = navToggle.querySelector('i');
+                      if (isOpen) {
+                           icon.classList.remove('fa-bars');
+                           icon.classList.add('fa-times'); // Close icon
+                           navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'סגור תפריט ניווט' : 'Close Navigation Menu');
+                      } else {
+                           icon.classList.remove('fa-times');
+                           icon.classList.add('fa-bars'); // Hamburger icon
+                           navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
+                      }
+                 });
+
+                 // Close nav when a link inside is clicked (optional, but good UX)
+                 mainNav.querySelectorAll('a').forEach(link => {
+                     link.addEventListener('click', function() {
+                          if (mainNav.classList.contains('nav-open')) {
+                               mainNav.classList.remove('nav-open');
+                               body.classList.remove('nav-open');
+                               // Reset icon
+                               const icon = navToggle.querySelector('i');
+                               icon.classList.remove('fa-times');
+                               icon.classList.add('fa-bars');
+                               navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
+                          }
+                     });
+                 });
+                 // Close nav if clicking outside the nav (requires detecting clicks on the body/overlay)
+                 // A simple way is to add an overlay div when open, or check event target.
+                 // For now, clicking links is enough. Adding body click listener might interfere.
+            } else {
+                 console.warn("Nav toggle or main nav not found."); // Debug log
             }
 
 
