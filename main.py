@@ -1115,26 +1115,29 @@ def all_movies():
 
 @app.route('/series') # Define the new route
 def all_series():
-    """Displays all series from Firebase in a grid."""
+    """Displays all series (basic details) from Firebase in a grid with pagination."""
     user = session.get('user')
     current_language = session.get('language', 'he') # Get language from session, default to 'he'
     current_year = datetime.datetime.utcnow().year
 
-    # Use the existing function that loads basic series data for display
-    # load_series_data_for_index() already returns {imdbID: basic_details}
-    # with 'type: series' added, which is perfect for the grid.
-    all_series_data = load_series_data_for_index() # Includes Hebrew fields if exist
+    # Load ALL basic series data from Firebase (excluding seasons/episodes)
+    all_series_data = load_series_data_for_index() # This function is now optimized
 
-    # Log how many series were loaded
-    logging.info(f"Rendering all_series page with {len(all_series_data)} series.")
+    # Define how many items to show per page initially and on "Load More"
+    items_per_page = 8 # You can adjust this number
 
-    # Render the new template, passing the series data and current language
+    # Log how many series were loaded (basic details)
+    logging.info(f"Rendering all_series page with {len(all_series_data)} series (basic details). Initial {items_per_page} items will be shown.")
+
+
+    # Render the new template, passing the series data, items_per_page, and current language
     return render_template('SeriesTV.html',
-                           series=all_series_data, # Pass series data to the template
+                           series=all_series_data, # Pass all series basic data to the template
                            user=user,
                            current_year=current_year,
                            admin_emails=ADMIN_EMAILS,
-                           current_language=current_language # Pass the current language
+                           current_language=current_language, # Pass the current language
+                           items_per_page=items_per_page # Pass the number of items per page
                            )
 
 
