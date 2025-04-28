@@ -1097,21 +1097,20 @@ def all_movies():
     current_year = datetime.datetime.utcnow().year
 
     # Load ALL movies from Firebase
-    # load_movies_data() already returns a dictionary {imdbID: details}
-    # with 'type: movie' added, which is what we need.
     all_movies_data = load_movies_data() # Includes Hebrew fields if exist
 
-    # No categorization needed for this page, just pass the dictionary
-    # The template will iterate through this dictionary.
+    # Define how many items to show per page initially and on "Load More"
+    items_per_page = 15 # You can adjust this number, matching series for consistency
 
-    logging.info(f"Rendering all_movies page with {len(all_movies_data)} movies.")
+    logging.info(f"Rendering all_movies page with {len(all_movies_data)} movies. Initial {items_per_page} items will be shown.")
 
     return render_template('movies.html',
                            movies=all_movies_data, # Pass all movies
                            user=user,
                            current_year=current_year,
                            admin_emails=ADMIN_EMAILS,
-                           current_language=current_language # Pass the current language
+                           current_language=current_language, # Pass the current language
+                           items_per_page=items_per_page # ADDED: Pass the number of items per page
                            )
 
 
@@ -1128,7 +1127,7 @@ def all_series():
     all_series_data = load_series_data_for_index() # This function is now optimized
 
     # Define how many items to show per page initially and on "Load More"
-    items_per_page = 8 # You can adjust this number
+    items_per_page = 15 # You can adjust this number
 
     # Log how many series were loaded (basic details)
     logging.info(f"Rendering all_series page with {len(all_series_data)} series (basic details). Initial {items_per_page} items will be shown.")
