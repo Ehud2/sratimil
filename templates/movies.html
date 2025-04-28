@@ -160,7 +160,7 @@
                         data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower | trim }}"
                         data-title-en="{{ movie.get('title', movie.get('HebrewName', '')) | lower | trim }}"
                         data-imdb-rating="{{ movie.get('imdbRating', '') | lower | trim }}"
-                        data-genre="{{ movie.get('genre', '') | lower | trim }}"> {# ADDED genre data attribute #}
+                        data-genre="{{ movie.get('genre', '') | lower | trim }}"> {# ADDED genre data attribute - still stores English lowercase #}
 
                         {# Use the same item-card structure as index.html for consistent look, but movies.css will handle grid layout #}
                         <div class="item-card" tabindex="0">
@@ -216,12 +216,30 @@
          const allMoviesData = {{ movies | tojson }};
          console.log("Loaded allMoviesData:", allMoviesData); // Log the loaded data
 
-         // Define the list of available genres
+         // Define the list of available genres with English (value) and Hebrew (text) names
          const availableGenres = [
-            "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime",
-            "Documentary", "Drama", "Family", "Fantasy", "Film-Noir", "History",
-            "Horror", "Music", "Musical", "Mystery", "Romance", "Sci-Fi",
-            "Sport", "Thriller", "War", "Western"
+            { english: "Action", hebrew: "פעולה" },
+            { english: "Adventure", hebrew: "הרפתקאות" },
+            { english: "Animation", hebrew: "אנימציה" },
+            { english: "Biography", hebrew: "ביוגרפיה" },
+            { english: "Comedy", hebrew: "קומדיה" },
+            { english: "Crime", hebrew: "פשע" },
+            { english: "Documentary", hebrew: "דוקומנטרי" },
+            { english: "Drama", hebrew: "דרמה" },
+            { english: "Family", hebrew: "משפחה" },
+            { english: "Fantasy", hebrew: "פנטזיה" },
+            { english: "Film-Noir", hebrew: "פילם נואר" },
+            { english: "History", hebrew: "היסטוריה" },
+            { english: "Horror", hebrew: "אימה" },
+            { english: "Music", hebrew: "מוזיקה" },
+            { english: "Musical", hebrew: "מחזמר" },
+            { english: "Mystery", hebrew: "מיסתורין" },
+            { english: "Romance", hebrew: "רומנטיקה" },
+            { english: "Sci-Fi", hebrew: "מדע בדיוני" },
+            { english: "Sport", hebrew: "ספורט" },
+            { english: "Thriller", hebrew: "מתח" },
+            { english: "War", hebrew: "מלחמה" },
+            { english: "Western", hebrew: "מערבון" }
          ];
 
 
@@ -283,15 +301,15 @@
                  }
                  console.log("Rating filter populated.");
 
-                // --- Populate Genre Filter ---
+                // --- Populate Genre Filter (using Hebrew for text, English for value) ---
                 if (genreFilter) {
-                    availableGenres.forEach(genre => {
+                    availableGenres.forEach(genreObj => { // Iterate through objects
                         const option = document.createElement('option');
-                        option.value = genre.toLowerCase(); // Use lowercase for matching
-                        option.textContent = genre; // Display the full genre name
+                        option.value = genreObj.english.toLowerCase(); // Use lowercase English for value
+                        option.textContent = genreObj.hebrew; // Use Hebrew for display text
                         genreFilter.appendChild(option);
                     });
-                    console.log("Genre filter populated.");
+                    console.log("Genre filter populated with Hebrew text.");
                 }
                 // --- END Populate Genre Filter ---
             }
@@ -302,9 +320,10 @@
                 console.log("Applying filters and search...");
                 const searchTerm = searchInput.value.toLowerCase().trim();
                 const selectedRatingValue = parseFloat(ratingFilter.value); // Parse to number
-                const selectedGenreValue = genreFilter ? genreFilter.value : ""; // Get selected genre, default to empty if filter not found
+                // Get the lowercase English value from the genre filter
+                const selectedGenreValue = genreFilter ? genreFilter.value : "";
 
-                console.log(`Filter Values - Search: "${searchTerm}", Rating: ${selectedRatingValue}, Genre: "${selectedGenreValue}"`);
+                console.log(`Filter Values - Search: "${searchTerm}", Rating: ${selectedRatingValue}, Genre (Value): "${selectedGenreValue}"`);
 
                 let visibleCount = 0;
 
@@ -323,13 +342,13 @@
                     const titleHe = (movie.HebrewName || movie.title || '').toLowerCase().trim();
                     const titleEn = (movie.title || movie.HebrewName || '').toLowerCase().trim();
                     const movieImdbRatingStr = (movie.imdbRating || '').toLowerCase().trim();
-                    const movieGenreStr = (movie.genre || '').toLowerCase().trim(); // Get the genre string from data
+                    // Get the movie's genre string (English, lowercase) from data
+                    const movieGenreStr = (movie.genre || '').toLowerCase().trim();
 
 
                     // --- Apply Search Filter ---
                     // Check if either Hebrew or English title contains the search term
                     const passesSearch = (titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
-                    // console.log(`  - Search ("${searchTerm}"): Passes = ${passesSearch}`);
 
 
                     // --- Apply Rating Filter (IMDb Rating) ---
@@ -347,12 +366,13 @@
 
                     // --- Apply Genre Filter ---
                     let passesGenreFilter = true; // Assume pass if no filter selected or if genreFilter element doesn't exist
-                    if (selectedGenreValue && genreFilter) { // Only apply if a genre is selected AND the filter exists
-                        // Split the movie's genre string into an array and check if the selected genre is included
+                    // Only apply if a genre is selected AND the filter exists AND the selected value is not empty ("כל הז'אנרים")
+                    if (selectedGenreValue && genreFilter && selectedGenreValue !== "") {
+                        // Split the movie's genre string (which is English) into an array and check if the selected *lowercase English value* is included
                          const movieGenresArray = movieGenreStr.split(',').map(g => g.trim()); // Split by comma, trim spaces
                          passesGenreFilter = movieGenresArray.includes(selectedGenreValue);
                     }
-                    // console.log(`  - Genre ("${selectedGenreValue}") - Movie Genres: "${movieGenreStr}", Passes = ${passesGenreFilter}`);
+                     // console.log(`  - Genre ("${selectedGenreValue}") - Movie Genres: "${movieGenreStr}", Passes = ${passesGenreFilter}`);
                     // --- END Apply Genre Filter ---
 
 
