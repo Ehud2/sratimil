@@ -124,7 +124,7 @@
         <!-- Filter Container - Includes Rating, Genre, and Year filters -->
         <div class="filter-container">
             <div class="filter-group">
-                 <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMdb):' }}</label>
+                 <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMDb):' }}</label> {# Corrected typo 'IMdb' -> 'IMDb' #}
                  <select id="ratingFilter">
                       <option value="">{{ 'כל הדירוגים' if current_language == 'he' else 'All Ratings' }}</option>
                      {# Options will be populated by JavaScript #}
@@ -158,7 +158,7 @@
         <div class="all-movies-grid">
             {# Iterate through the 'movies' dictionary passed from main.py #}
             {% for imdb_id, movie in movies.items() %}
-                 {# Ensure item has basic properties needed for display and linking #}
+                 {# Ensure item has basic properties needed for display and linking ##}
                  {% if movie and movie.get('imdbID') and (movie.get('title') or movie.get('HebrewName')) %}
                      {# Determine display title and poster based on current language #}
                      {% set display_title = movie.get('HebrewName', movie.get('title', '')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', '')) %}
@@ -168,8 +168,9 @@
 
                      {# data-id is crucial for JS mapping. Other data attributes are added just in case other scripts use them. #}
                      {# data-genre is already there, ADDED data-year attribute #}
+                     {# ADDED hidden-item-by-pagination class for JS pagination #}
                      <a href="{{ url_for('movie_details', imdb_id=movie.imdbID) }}"
-                        class="item-card-link catalog-item"
+                        class="item-card-link catalog-item hidden-item-by-pagination" {# ADDED class here #}
                         data-id="{{ movie.imdbID }}"
                         data-type="movie"
                         data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower | trim }}"
@@ -203,9 +204,19 @@
                     </a> {# End of anchor tag wrapper #}
                 {% endif %}
             {% endfor %}
+
+             {# ADDED Load More Button #}
+             <div id="loadMoreButton" class="load-more-button" role="button" aria-label="{{ 'טען עוד סרטים' if current_language == 'he' else 'Load More Movies' }}" tabindex="0">
+                 <i class="fas fa-sync-alt"></i> {# Or another suitable icon like fa-arrow-down #}
+                 <span>{{ 'טען עוד' if current_language == 'he' else 'Load More' }}</span>
+             </div>
+
+
         </div>
 
-        <div id="noResultsMessage" style="display: none;">
+        {# --- Moved No Results Message outside grid but still within main content --- #}
+        {# This ensures it doesn't take up a grid space when displayed #}
+        <div id="noResultsMessage" style="display: none; text-align: center; margin-top: 20px;"> {# Added basic styling #}
             {% if current_language == 'he' %}
             לא נמצאו תוצאות התואמות את הסינון או החיפוש שלך.
             {% else %}
@@ -222,16 +233,21 @@
     </footer>
 
     <script>
-         // Pass current_language from Flask to JavaScript
+         // Pass current_language and items_per_page from Flask to JavaScript
          const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
          const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+         const itemsPerPage = {{ items_per_page | tojson }}; // ADDED: Get items per page from Flask
+
+         let currentlyDisplayedCount = 0; // ADDED: Keep track of how many items are displayed *by pagination*
 
          // Pass the full movie data from Flask to JavaScript
          // Note: This converts the Python dictionary to a JavaScript object
+         // This was here before, needed for filtering logic
          const allMoviesData = {{ movies | tojson }};
          console.log("Loaded allMoviesData:", allMoviesData); // Log the loaded data
 
          // Define the list of available genres with English (value) and Hebrew (text) names
+         // This was here before, needed for genre filter
          const availableGenres = [
             { english: "Action", hebrew: "פעולה" },
             { english: "Adventure", hebrew: "הרפתקאות" },
@@ -334,34 +350,87 @@
             }
 
 
-            // --- Filtering and Search Functionality ---
+            // --- Filtering, Search, AND Pagination Functionality ---
             const searchInput = document.getElementById('searchInput');
             const ratingFilter = document.getElementById('ratingFilter');
             const genreFilter = document.getElementById('genreFilter');
             const yearFilter = document.getElementById('yearFilter');
             const noResultsMessage = document.getElementById('noResultsMessage');
-             const movieGrid = document.querySelector('.all-movies-grid');
+            // Select ALL movie card links once (excluding the load more button)
+            const allItemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item'); // Changed to movie items
+            const loadMoreButton = document.getElementById('loadMoreButton'); // ADDED: Select the button
 
 
             // Map IMDb IDs to their corresponding DOM elements for quick access
+            // This was here before for filtering
             const movieCardElements = {};
-            document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item').forEach(card => {
+            allItemCardLinks.forEach(card => { // Use allItemCardLinks here
                  movieCardElements[card.dataset.id] = card;
             });
 
+            console.log(`Found ${allItemCardLinks.length} movie items in the DOM.`);
 
-            // Function to populate filter dropdowns
+
+             // ADDED: Function to show a range of items (handles pagination)
+            function showItems(startIndex, endIndex) {
+                 let itemsShownInBatch = 0;
+                 // Filter for items that are currently *not* hidden by the search/filter styles
+                 const currentlySearchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none');
+
+                 for (let i = startIndex; i < endIndex && i < currentlySearchVisibleItems.length; i++) {
+                      // For pagination, we remove the 'hidden-item-by-pagination' class
+                      currentlySearchVisibleItems[i].classList.remove('hidden-item-by-pagination');
+                       itemsShownInBatch++;
+                 }
+                 console.log(`Attempted to display batch for pagination from index ${startIndex} to ${endIndex} among search-visible. Shown in batch: ${itemsShownInBatch}`);
+                 currentlyDisplayedCount += itemsShownInBatch; // Update the global count based on items actually shown *by pagination*
+            }
+
+             // ADDED: Function to hide all series items for pagination reset
+            function hideAllMovieItemsForPagination() {
+                 allItemCardLinks.forEach(link => {
+                      // Only hide items by adding the pagination class if they are currently visible (not hidden by style.display)
+                      if (link.style.display !== 'none') {
+                           link.classList.add('hidden-item-by-pagination'); // Hide by adding pagination hidden class
+                      }
+                 });
+                 currentlyDisplayedCount = 0; // Reset count when hiding all for pagination
+                 console.log("Hid all movie items for pagination.");
+            }
+
+            // ADDED: Function to update the visibility of the Load More button
+            function updateLoadMoreButtonVisibility() {
+                 const isFilteringOrSearching = searchInput.value.trim() !== '' || ratingFilter.value !== '' || (genreFilter && genreFilter.value !== '') || (yearFilter && yearFilter.value !== '');
+
+                 // Count total items *not* hidden by search/filters (using style.display)
+                 const totalSearchFilterVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none').length;
+
+                 // Hide the button if no items are visible *after* filtering OR if all search/filter visible items are currently displayed by pagination
+                 if (totalSearchFilterVisibleItems === 0 || currentlyDisplayedCount >= totalSearchFilterVisibleItems) {
+                      if (loadMoreButton) loadMoreButton.style.display = 'none';
+                      console.log(`Hide Load More: Total search/filter visible=${totalSearchFilterVisibleItems}, currentlyDisplayedCount=${currentlyDisplayedCount}`);
+                 } else {
+                      if (loadMoreButton) loadMoreButton.style.display = ''; // Restore display
+                       console.log(`Show Load More: currentlyDisplayedCount=${currentlyDisplayedCount}, totalSearchFilterVisibleItems=${totalSearchFilterVisibleItems}`);
+                 }
+            }
+
+
+            // Function to populate filter dropdowns (Exists from previous version)
             function populateFilters() {
                 // Populate Rating Filter (1-10)
-                for (let i = 1; i <= 10; i++) {
-                     const option = document.createElement('option');
-                     option.value = i; // Numerical value
-                     option.textContent = i + "+"; // Display "1+", "2+", etc.
-                     ratingFilter.appendChild(option);
-                 }
-                 console.log("Rating filter populated.");
+                if (ratingFilter) { // Ensure element exists
+                     for (let i = 1; i <= 10; i++) {
+                         const option = document.createElement('option');
+                         option.value = i; // Numerical value
+                         option.textContent = i + "+"; // Display "1+", "2+", etc.
+                         ratingFilter.appendChild(option);
+                     }
+                    console.log("Rating filter populated.");
+                } else { console.warn("Rating filter element not found."); }
 
-                // Populate Genre Filter (using Hebrew for text, English for value)
+
+                // Populate Genre Filter (using Hebrew for text, English for value) (Exists from previous version)
                 if (genreFilter) {
                     // Get all unique genres from the loaded movies data
                     const uniqueGenres = new Set();
@@ -383,56 +452,61 @@
                     });
 
                     console.log("Genre filter populated with unique genres from data.");
-                }
+                } else { console.warn("Genre filter element not found.");}
 
-                // --- Populate Year Filter ---
+
+                // --- Populate Year Filter --- (Exists from previous version)
                 if (yearFilter) {
-                    let minYear = new Date().getFullYear(); // Initialize with current year
-                    const currentYear = new Date().getFullYear() + 1; // Up to next year
-                    let actualMinYear = currentYear; // Track the earliest year found
+                    let currentYear = new Date().getFullYear();
+                    let minYear = currentYear; // Initialize with current year
 
-                    // Find the minimum year in the loaded movie data
+                    // Find the minimum valid year in the loaded movie data
                     Object.values(allMoviesData).forEach(movie => {
                         const movieYearStr = (movie.year || '').trim();
                         const movieYear = parseInt(movieYearStr, 10);
-                        if (!isNaN(movieYear) && movieYear > 0) {
-                             // Only consider years that are not in the future relative to currentYear
-                            if (movieYear < actualMinYear && movieYear <= currentYear) {
-                                actualMinYear = movieYear;
-                            } else if (movieYear <= currentYear && actualMinYear > currentYear) {
-                                // Handle case where all movies are in the past relative to initial minYear (currentYear)
-                                actualMinYear = movieYear;
+                        if (!isNaN(movieYear) && movieYear > 1888) { // Consider years after the first known movie
+                             if (movieYear < minYear) {
+                                minYear = movieYear;
                             }
                         }
                     });
 
-                     // Set the start year for the loop, ensuring it's not before actualMinYear but not too far back
-                    const loopStartYear = Math.min(currentYear, Math.max(1900, actualMinYear)); // Loop down from currentYear, but not past actualMinYear or 1900
-
-                     console.log(`Calculated min year from data: ${actualMinYear}, Loop Start Year: ${loopStartYear}, Current Year + 1: ${currentYear}`);
-
-
-                    // Populate dropdown from loopStartYear down to actualMinYear (inclusive)
-                    for (let year = loopStartYear; year >= actualMinYear; year--) {
-                         if (year >= 1888) { // Movies before 1888 are extremely rare
-                             const option = document.createElement('option');
-                             option.value = year; // Value is the year number (e.g., 2023)
-                              // Display text is year + "+" (e.g., "2023+")
-                             option.textContent = year + "+";
-                             yearFilter.appendChild(option);
+                    // If no valid years found, default to a reasonable past year like 1900
+                    if (minYear === currentYear && Object.values(allMoviesData).length > 0) {
+                         // No valid year found in data, but there are movies. Maybe set a default range?
+                         // Or just populate from a reasonable start year if data years are messy.
+                         // Let's populate from 1900 down to current year if no minYear found.
+                         if (Object.values(allMoviesData).every(movie => isNaN(parseInt((movie.year || '').trim(), 10)) || parseInt((movie.year || '').trim(), 10) <= 0 || parseInt((movie.year || '').trim(), 10) < 1888 )) {
+                              minYear = 1900; // Fallback if no valid years are found in data
                          }
+                    } else if (Object.values(allMoviesData).length === 0) {
+                         minYear = currentYear; // No movies, no years needed, but populate dropdown anyway? Maybe from 1900.
+                         minYear = 1900; // Populate from 1900 even if no movies
+                    }
+
+
+                     console.log(`Calculated min year from data: ${minYear}, Current Year: ${currentYear}`);
+
+
+                    // Populate dropdown from current year down to calculated minYear (inclusive)
+                    for (let year = currentYear; year >= minYear; year--) {
+                         const option = document.createElement('option');
+                         option.value = year; // Value is the year number (e.g., 2023)
+                          // Display text is year + "+" (e.g., "2023+")
+                         option.textContent = year + "+";
+                         yearFilter.appendChild(option);
                     }
                     console.log("Year filter populated with year+ text.");
-                }
+                } else { console.warn("Year filter element not found."); }
                 // --- END Populate Year Filter ---
             }
 
 
-            // Function to perform filtering and search
+            // Function to perform filtering and search (Modified to integrate with pagination)
             function applyFiltersAndSearch() {
                 console.log("Applying filters and search...");
                 const searchTerm = searchInput.value.toLowerCase().trim();
-                const selectedRatingValue = parseFloat(ratingFilter.value);
+                const selectedRatingValue = parseFloat(ratingFilter ? ratingFilter.value : "");
                 const selectedGenreValue = genreFilter ? genreFilter.value : "";
                 const selectedYearValueStr = yearFilter ? yearFilter.value : "";
                 const selectedYearValue = selectedYearValueStr ? parseInt(selectedYearValueStr, 10) : NaN;
@@ -440,13 +514,16 @@
 
                 console.log(`Filter Values - Search: "${searchTerm}", Rating: ${selectedRatingValue}, Genre (Value): "${selectedGenreValue}", Year (Value): "${selectedYearValueStr}" (${selectedYearValue})`);
 
-                let visibleCount = 0;
+                let totalSearchFilterVisibleCount = 0; // Count items that pass search and filters (before pagination hides them)
 
-                // Iterate through the raw data object
-                 Object.values(allMoviesData).forEach(movie => {
-                    const cardElement = movieCardElements[movie.imdbID];
-                    if (!cardElement) {
-                         console.warn(`DOM element not found for movie ID: ${movie.imdbID}. Skipping.`);
+                // Iterate through ALL movie items
+                 allItemCardLinks.forEach(cardElement => { // Loop through the DOM elements directly
+                    const movieImdbID = cardElement.dataset.id;
+                    const movie = allMoviesData[movieImdbID]; // Get the full data from the JS object
+
+                    if (!movie) {
+                         console.warn(`Data not found for movie ID: ${movieImdbID}. Skipping filter check.`);
+                         cardElement.style.display = 'none'; // Hide the element if data is missing
                          return;
                     }
 
@@ -458,7 +535,7 @@
 
 
                     // --- Apply Search Filter ---
-                    const passesSearch = (titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
+                    const passesSearch = (searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
 
 
                     // --- Apply Rating Filter (IMDb Rating) ---
@@ -467,6 +544,7 @@
                     if (movieImdbRatingStr && movieImdbRatingStr !== 'n/a') {
                          movieImdbRating = parseFloat(movieImdbRatingStr);
                     }
+                    // Only apply if a valid rating number is selected (NaN check)
                     if (!isNaN(selectedRatingValue)) {
                          passesRatingFilter = (!isNaN(movieImdbRating) && movieImdbRating >= selectedRatingValue);
                     }
@@ -474,8 +552,11 @@
 
                     // --- Apply Genre Filter ---
                     let passesGenreFilter = true;
-                    if (selectedGenreValue && genreFilter && selectedGenreValue !== "") {
+                    // Only apply if a genre is selected
+                    if (selectedGenreValue && selectedGenreValue !== "") {
                          const movieGenresArray = movieGenreStr.split(',').map(g => g.trim());
+                         // Check if the movie's genre string contains the selected genre value
+                         // Use .split(',').map().includes() for more robust checking against comma-separated genres
                          passesGenreFilter = movieGenresArray.includes(selectedGenreValue);
                     }
 
@@ -489,23 +570,36 @@
                     }
 
 
-                    // A card is visible only if it passes ALL filters and search
-                    const shouldBeVisible = passesSearch && passesRatingFilter && passesGenreFilter && passesYearFilter;
+                    // Determine if the item passes all filters and search
+                    const passesAllFiltersAndSearch = passesSearch && passesRatingFilter && passesGenreFilter && passesYearFilter;
 
-                    if (shouldBeVisible) {
-                        cardElement.style.display = '';
-                        visibleCount++;
+                    // --- IMPORTANT: Update the DOM element's display property based SOLELY on filters/search ---
+                    // This property will be used by the pagination logic to know which items *can* be shown
+                    if (passesAllFiltersAndSearch) {
+                        cardElement.style.display = ''; // Show the element
+                        totalSearchFilterVisibleCount++;
                     } else {
-                        cardElement.style.display = 'none';
+                        cardElement.style.display = 'none'; // Hide the element
                     }
 
                  });
 
-                // Update the "No results" message
+                // Update the "No results" message based on how many items passed filters/search
                 if (noResultsMessage) {
-                     noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                     noResultsMessage.style.display = totalSearchFilterVisibleCount === 0 ? 'block' : 'none';
                 }
-                 console.log(`Filtering complete. Total visible movies: ${visibleCount}.`);
+                 console.log(`Filtering and search complete. Total items passing filters/search: ${totalSearchFilterVisibleCount}.`);
+
+                // --- Re-apply Pagination after Filter/Search ---
+                // Regardless of filter/search terms, reset pagination state
+                hideAllMovieItemsForPagination(); // This hides all items currently NOT hidden by style.display and resets currentlyDisplayedCount
+                // Now, show the first batch *among the items currently visible by style.display* (those that passed filters/search)
+                showItems(0, itemsPerPage); // showItems function automatically works only on visible ones
+                 // currentlyDisplayedCount is updated inside showItems
+
+                // Update Load More button visibility based on the new state
+                updateLoadMoreButtonVisibility();
+
             }
 
             // Populate filters on page load
@@ -524,14 +618,43 @@
                  console.log("Search input listeners added.");
             }
 
+            // Ensure filter listeners exist before adding them
             if (ratingFilter) { ratingFilter.addEventListener('change', applyFiltersAndSearch); console.log("Rating filter listener added."); }
             if (genreFilter) { genreFilter.addEventListener('change', applyFiltersAndSearch); console.log("Genre filter listener added."); }
             if (yearFilter) { yearFilter.addEventListener('change', applyFiltersAndSearch); console.log("Year filter listener added."); }
 
 
-             // Initial filter/search application in case there's a search term pre-filled
-             // or to ensure 'No results' is shown if the loaded list is empty
+             // --- ADDED: Initial Load (Pagination) ---
+             // Add the initial 'hidden-item-by-pagination' class to all items initially
+             // This is done after populating filters but before applying them, so all items start hidden by pagination
+             hideAllMovieItemsForPagination(); // This also resets currentlyDisplayedCount
+             // Display the first batch of items (showItems will only show those not hidden by initial search/filters, if any were set)
+             // Call applyFiltersAndSearch to first handle any initial filter/search state and then trigger the initial showItems within it.
              applyFiltersAndSearch();
+
+
+            // --- ADDED: Load More Button Click Handler ---
+            if (loadMoreButton) {
+                 loadMoreButton.addEventListener('click', function() {
+                      // showItems function handles getting the list of items that are currently NOT hidden by style.display
+                      // and continues showing from the current currentlyDisplayedCount index.
+                      showItems(currentlyDisplayedCount, currentlyDisplayedCount + itemsPerPage);
+
+                      // Check if the button should be hidden *after* showing the new batch
+                      updateLoadMoreButtonVisibility();
+                 });
+
+                 // Also handle keyboard activation for accessibility
+                 loadMoreButton.addEventListener('keypress', function(event) {
+                     if (event.key === 'Enter' || event.key === ' ') { // Enter or Space key
+                         event.preventDefault(); // Prevent default scroll/action
+                         loadMoreButton.click(); // Trigger the click handler
+                     }
+                 });
+
+            } else {
+                 console.warn("Load More button #loadMoreButton not found on movies page.");
+            }
 
 
         }); // End DOMContentLoaded
