@@ -162,7 +162,7 @@
                  {% if movie and movie.get('imdbID') and (movie.get('title') or movie.get('HebrewName')) %}
                      {# Determine display title and poster based on current language #}
                      {% set display_title = movie.get('HebrewName', movie.get('title', '')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', '')) %}
-                     {% set display_poster = movie.get('HebrewPoster', movie.get('poster', '')) if current_language == 'he' else movie.get('poster', movie.get('HebbrewPoster', '')) %} {# Corrected typo HebrewPoster #}
+                     {% set display_poster = movie.get('HebrewPoster', movie.get('poster', '')) if current_language == 'he' else movie.get('poster', movie.get('HebrewPoster', '')) %}
                      {% set alt_text = movie.get('HebrewName', movie.get('title', 'Unknown Title')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', 'Unknown Title')) %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
@@ -191,8 +191,6 @@
                                          {# Use determined display title #}
                                          {{ display_title if display_title else ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
                                     </h3>
-                                     {# Add subtitle for Movies on this page if needed (e.g., "Movie"), or omit like index.html #}
-                                     {# Omitting for now for a cleaner grid view #}
                                     <div class="card-actions">
                                         {# Add to list button - pass both Hebrew and English details #}
                                         <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ movie.imdbID }}" data-type="movie" data-title="{{ movie.get('title', '') }}" data-poster="{{ movie.get('poster', '') }}" data-hebrew-name="{{ movie.get('HebrewName', '') }}" data-hebrew-poster="{{ movie.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
@@ -234,7 +232,6 @@
          console.log("Loaded allMoviesData:", allMoviesData); // Log the loaded data
 
          // Define the list of available genres with English (value) and Hebrew (text) names
-         // Keep this list updated with the genres you use for movies
          const availableGenres = [
             { english: "Action", hebrew: "פעולה" },
             { english: "Adventure", hebrew: "הרפתקאות" },
@@ -257,15 +254,14 @@
             { english: "Sport", hebrew: "ספורט" },
             { english: "Thriller", hebrew: "מתח" },
             { english: "War", hebrew: "מלחמה" },
-            { english: "Western", hebrew: "מערבון" },
-            { english: "Short", hebrew: "קצר" } // Added Short, add others if needed
+            { english: "Western", hebrew: "מערבון" }
          ];
 
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOMContentLoaded fired on movies page.");
 
-            // --- Loading Spinner Logic ---
+            // --- Loading Spinner Logic (Copy from index.html) ---
             const spinner = document.getElementById('loading-spinner');
             const visualHideDelay = 200; // Corresponds to var(--transition-fast)
             if (spinner) {
@@ -283,7 +279,7 @@
                  }, visualHideDelay + 100);
             }
 
-            // --- Language Switcher Spinner ---
+            // --- Language Switcher Spinner (Copy from index.html) ---
             const languageSwitcherLink = document.querySelector('.language-switcher a');
             if (languageSwitcherLink) {
                  languageSwitcherLink.addEventListener('click', function(event) {
@@ -295,16 +291,18 @@
                  });
             }
 
-            // --- Mobile Nav Toggle Functionality (Copied from index.html) ---
+            // --- Mobile Nav Toggle Functionality (Copy from index.html) ---
             const navToggle = document.querySelector('.nav-toggle');
             const mainNav = document.querySelector('.main-nav');
-            const body = document.body;
+            const body = document.body; // Or document.documentElement for html
 
             if (navToggle && mainNav) {
                  navToggle.addEventListener('click', function() {
                       const isOpen = mainNav.classList.toggle('nav-open');
+                      // Also toggle a class on the body to prevent background scroll
                       body.classList.toggle('nav-open');
 
+                      // Change icon
                       const icon = navToggle.querySelector('i');
                       if (isOpen) {
                            icon.classList.remove('fa-bars');
@@ -332,7 +330,7 @@
                      });
                  });
             } else {
-                 console.warn("Nav toggle or main nav not found.");
+                 console.warn("Nav toggle or main nav not found."); // Debug log
             }
 
 
@@ -342,6 +340,8 @@
             const genreFilter = document.getElementById('genreFilter');
             const yearFilter = document.getElementById('yearFilter');
             const noResultsMessage = document.getElementById('noResultsMessage');
+             const movieGrid = document.querySelector('.all-movies-grid');
+
 
             // Map IMDb IDs to their corresponding DOM elements for quick access
             const movieCardElements = {};
@@ -353,65 +353,74 @@
             // Function to populate filter dropdowns
             function populateFilters() {
                 // Populate Rating Filter (1-10)
-                if (ratingFilter) {
-                    for (let i = 1; i <= 10; i++) {
-                         const option = document.createElement('option');
-                         option.value = i; // Numerical value
-                         option.textContent = i + "+"; // Display "1+", "2+", etc.
-                         ratingFilter.appendChild(option);
-                     }
-                     console.log("Rating filter populated.");
-                }
-
+                for (let i = 1; i <= 10; i++) {
+                     const option = document.createElement('option');
+                     option.value = i; // Numerical value
+                     option.textContent = i + "+"; // Display "1+", "2+", etc.
+                     ratingFilter.appendChild(option);
+                 }
+                 console.log("Rating filter populated.");
 
                 // Populate Genre Filter (using Hebrew for text, English for value)
                 if (genreFilter) {
-                    // Sort genres alphabetically by Hebrew name
-                     const sortedGenres = [...availableGenres].sort((a, b) => a.hebrew.localeCompare(b.hebrew));
-
-                    sortedGenres.forEach(genreObj => {
-                        const option = document.createElement('option');
-                        option.value = genreObj.english.toLowerCase(); // Use lowercase English for value
-                        option.textContent = genreObj.hebrew; // Use Hebrew for display text
-                        genreFilter.appendChild(option);
+                    // Get all unique genres from the loaded movies data
+                    const uniqueGenres = new Set();
+                    Object.values(allMoviesData).forEach(movie => {
+                         const movieGenres = (movie.genre || '').split(',').map(g => g.trim()).filter(g => g !== '');
+                         movieGenres.forEach(g => uniqueGenres.add(g.toLowerCase()));
                     });
-                    console.log("Genre filter populated with Hebrew text.");
+
+                    // Find matching Hebrew names for the unique English genres
+                    const sortedGenres = Array.from(uniqueGenres).sort(); // Sort English values alphabetically
+
+                    sortedGenres.forEach(englishGenre => {
+                         const genreObj = availableGenres.find(g => g.english.toLowerCase() === englishGenre);
+                         const displayGenre = genreObj ? genreObj.hebrew : englishGenre.charAt(0).toUpperCase() + englishGenre.slice(1); // Use Hebrew if found, else Capitalize English
+                         const option = document.createElement('option');
+                         option.value = englishGenre; // Use lowercase English for value
+                         option.textContent = displayGenre; // Use Hebrew or Capitalized English for display text
+                         genreFilter.appendChild(option);
+                    });
+
+                    console.log("Genre filter populated with unique genres from data.");
                 }
 
                 // --- Populate Year Filter ---
                 if (yearFilter) {
-                    let minYear = new Date().getFullYear();
-                    const currentYear = 2025; // As requested
+                    let minYear = new Date().getFullYear(); // Initialize with current year
+                    const currentYear = new Date().getFullYear() + 1; // Up to next year
+                    let actualMinYear = currentYear; // Track the earliest year found
 
                     // Find the minimum year in the loaded movie data
                     Object.values(allMoviesData).forEach(movie => {
                         const movieYearStr = (movie.year || '').trim();
                         const movieYear = parseInt(movieYearStr, 10);
                         if (!isNaN(movieYear) && movieYear > 0) {
-                            if (movieYear < minYear) {
-                                minYear = movieYear;
+                             // Only consider years that are not in the future relative to currentYear
+                            if (movieYear < actualMinYear && movieYear <= currentYear) {
+                                actualMinYear = movieYear;
+                            } else if (movieYear <= currentYear && actualMinYear > currentYear) {
+                                // Handle case where all movies are in the past relative to initial minYear (currentYear)
+                                actualMinYear = movieYear;
                             }
                         }
                     });
 
-                     // Adjust minYear if it's somehow in the future or too far in the past
-                     const absoluteMinYear = 1900;
-                     if (minYear < absoluteMinYear) {
-                          minYear = absoluteMinYear;
-                     } else if (minYear > currentYear) {
-                         minYear = currentYear; // If all movies are somehow future, default to current year range
-                     }
-                     console.log(`Calculated min year from data: ${minYear}, Max year: ${currentYear}`);
+                     // Set the start year for the loop, ensuring it's not before actualMinYear but not too far back
+                    const loopStartYear = Math.min(currentYear, Math.max(1900, actualMinYear)); // Loop down from currentYear, but not past actualMinYear or 1900
+
+                     console.log(`Calculated min year from data: ${actualMinYear}, Loop Start Year: ${loopStartYear}, Current Year + 1: ${currentYear}`);
 
 
-                    // Populate dropdown from currentYear down to minYear (inclusive)
-                    for (let year = currentYear; year >= minYear; year--) {
-                        const option = document.createElement('option');
-                        option.value = year; // Value is the year number (e.g., 2023)
-                        // --- CHANGE HERE: Add '+' to the display text ---
-                        option.textContent = year + "+"; // Display text is year + "+" (e.g., "2023+")
-                        // --- END CHANGE ---
-                        yearFilter.appendChild(option);
+                    // Populate dropdown from loopStartYear down to actualMinYear (inclusive)
+                    for (let year = loopStartYear; year >= actualMinYear; year--) {
+                         if (year >= 1888) { // Movies before 1888 are extremely rare
+                             const option = document.createElement('option');
+                             option.value = year; // Value is the year number (e.g., 2023)
+                              // Display text is year + "+" (e.g., "2023+")
+                             option.textContent = year + "+";
+                             yearFilter.appendChild(option);
+                         }
                     }
                     console.log("Year filter populated with year+ text.");
                 }
@@ -423,7 +432,7 @@
             function applyFiltersAndSearch() {
                 console.log("Applying filters and search...");
                 const searchTerm = searchInput.value.toLowerCase().trim();
-                const selectedRatingValue = ratingFilter ? parseFloat(ratingFilter.value) : NaN;
+                const selectedRatingValue = parseFloat(ratingFilter.value);
                 const selectedGenreValue = genreFilter ? genreFilter.value : "";
                 const selectedYearValueStr = yearFilter ? yearFilter.value : "";
                 const selectedYearValue = selectedYearValueStr ? parseInt(selectedYearValueStr, 10) : NaN;
@@ -458,7 +467,6 @@
                     if (movieImdbRatingStr && movieImdbRatingStr !== 'n/a') {
                          movieImdbRating = parseFloat(movieImdbRatingStr);
                     }
-                    // Only filter if a valid rating value is selected from the dropdown
                     if (!isNaN(selectedRatingValue)) {
                          passesRatingFilter = (!isNaN(movieImdbRating) && movieImdbRating >= selectedRatingValue);
                     }
@@ -466,10 +474,8 @@
 
                     // --- Apply Genre Filter ---
                     let passesGenreFilter = true;
-                    // Only filter if a specific genre value is selected (not empty)
-                    if (selectedGenreValue && selectedGenreValue !== "") {
+                    if (selectedGenreValue && genreFilter && selectedGenreValue !== "") {
                          const movieGenresArray = movieGenreStr.split(',').map(g => g.trim());
-                         // Check if *any* of the movie's genres match the selected filter value
                          passesGenreFilter = movieGenresArray.includes(selectedGenreValue);
                     }
 
