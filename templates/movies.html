@@ -43,6 +43,12 @@
     <header class="site-header">
         <div class="container header-content">
 
+             {# --- Nav Toggle Button (for Mobile) --- #}
+             {# Placed first in HTML for potential flex order adjustment, hidden by default #}
+             <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
+                 <i class="fas fa-bars"></i> {# Initial icon #}
+             </button>
+
              <div class="auth-container">
                  {% if user %}
                      <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
@@ -118,7 +124,7 @@
         <!-- Filter Container - Includes Rating, Genre, and Year filters -->
         <div class="filter-container">
             <div class="filter-group">
-                 <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMdb):' }}</label>
+                 <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMDb):' }}</label>
                  <select id="ratingFilter">
                       <option value="">{{ 'כל הדירוגים' if current_language == 'he' else 'All Ratings' }}</option>
                      {# Options will be populated by JavaScript #}
@@ -226,6 +232,7 @@
          console.log("Loaded allMoviesData:", allMoviesData); // Log the loaded data
 
          // Define the list of available genres with English (value) and Hebrew (text) names
+         // Keeping this here as it's specific to the movies/series pages filtering
          const availableGenres = [
             { english: "Action", hebrew: "פעולה" },
             { english: "Adventure", hebrew: "הרפתקאות" },
@@ -285,6 +292,47 @@
                  });
             }
 
+            // --- Mobile Nav Toggle Functionality ---
+            const navToggle = document.querySelector('.nav-toggle');
+            const mainNav = document.querySelector('.main-nav');
+            const body = document.body;
+
+            if (navToggle && mainNav) {
+                 navToggle.addEventListener('click', function() {
+                      const isOpen = mainNav.classList.toggle('nav-open');
+                      body.classList.toggle('nav-open');
+
+                      // Change icon
+                      const icon = navToggle.querySelector('i');
+                      if (isOpen) {
+                           icon.classList.remove('fa-bars');
+                           icon.classList.add('fa-times'); // Close icon
+                           navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'סגור תפריט ניווט' : 'Close Navigation Menu');
+                      } else {
+                           icon.classList.remove('fa-times');
+                           icon.classList.add('fa-bars'); // Hamburger icon
+                           navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
+                      }
+                 });
+
+                 // Close nav when a link inside is clicked (optional, but good UX)
+                 mainNav.querySelectorAll('a').forEach(link => {
+                     link.addEventListener('click', function() {
+                          if (mainNav.classList.contains('nav-open')) {
+                               mainNav.classList.remove('nav-open');
+                               body.classList.remove('nav-open');
+                               // Reset icon
+                               const icon = navToggle.querySelector('i');
+                               icon.classList.remove('fa-times');
+                               icon.classList.add('fa-bars');
+                               navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
+                          }
+                     });
+                 });
+            } else {
+                 console.warn("Nav toggle or main nav not found."); // Debug log
+            }
+
 
             // --- Filtering and Search Functionality ---
             const searchInput = document.getElementById('searchInput');
@@ -303,13 +351,16 @@
             // Function to populate filter dropdowns
             function populateFilters() {
                 // Populate Rating Filter (1-10)
-                for (let i = 1; i <= 10; i++) {
-                     const option = document.createElement('option');
-                     option.value = i; // Numerical value
-                     option.textContent = i + "+"; // Display "1+", "2+", etc.
-                     ratingFilter.appendChild(option);
-                 }
-                 console.log("Rating filter populated.");
+                if (ratingFilter) {
+                    for (let i = 1; i <= 10; i++) {
+                         const option = document.createElement('option');
+                         option.value = i; // Numerical value
+                         option.textContent = i + "+"; // Display "1+", "2+", etc.
+                         ratingFilter.appendChild(option);
+                     }
+                     console.log("Rating filter populated.");
+                }
+
 
                 // Populate Genre Filter (using Hebrew for text, English for value)
                 if (genreFilter) {
@@ -352,9 +403,7 @@
                     for (let year = currentYear; year >= minYear; year--) {
                         const option = document.createElement('option');
                         option.value = year; // Value is the year number (e.g., 2023)
-                        // --- CHANGE HERE: Add '+' to the display text ---
                         option.textContent = year + "+"; // Display text is year + "+" (e.g., "2023+")
-                        // --- END CHANGE ---
                         yearFilter.appendChild(option);
                     }
                     console.log("Year filter populated with year+ text.");
@@ -367,7 +416,7 @@
             function applyFiltersAndSearch() {
                 console.log("Applying filters and search...");
                 const searchTerm = searchInput.value.toLowerCase().trim();
-                const selectedRatingValue = parseFloat(ratingFilter.value);
+                const selectedRatingValue = ratingFilter ? parseFloat(ratingFilter.value) : NaN;
                 const selectedGenreValue = genreFilter ? genreFilter.value : "";
                 const selectedYearValueStr = yearFilter ? yearFilter.value : "";
                 const selectedYearValue = selectedYearValueStr ? parseInt(selectedYearValueStr, 10) : NaN;
