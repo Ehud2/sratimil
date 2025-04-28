@@ -18,6 +18,54 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
     {# Included loading spinner styles directly in style.css #}
+
+    <style>
+        /* Style for the Load More button container */
+        .load-more-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center; /* Center the button */
+        }
+
+        /* Style the Load More button to look like a card */
+        .load-more-button {
+            /* Re-use item-card styles */
+            width: var(--card-width);
+            height: var(--card-height); /* Match card height */
+            border: 2px dashed var(--primary-accent-color); /* Dashed border to indicate action */
+            border-radius: var(--card-border-radius);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: border-color 0.3s ease, transform 0.1s ease;
+            background-color: var(--background-color-light); /* Match card background or slightly different */
+             color: var(--primary-accent-color); /* Use accent color for text/icon */
+            font-family: var(--font-body);
+            font-size: 1.2em;
+            font-weight: 600;
+            text-align: center;
+            user-select: none; /* Prevent text selection */
+        }
+
+        .load-more-button:hover {
+            border-color: var(--text-heading-color); /* Change border on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        .load-more-button i {
+            font-size: 2em; /* Larger icon */
+            margin-bottom: 10px;
+             color: var(--primary-accent-color); /* Ensure icon color */
+        }
+
+         /* Hide items initially */
+         .item-card-link.hidden-item-by-pagination {
+             display: none;
+         }
+
+    </style>
 </head>
 <body>
     <!-- Loading Spinner - Copy from movies.html -->
@@ -129,7 +177,9 @@
 
 
                      {# Wrap card in an anchor tag linking to the series details page #}
-                    <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link catalog-item" data-id="{{ item.imdbID }}" data-type="series" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}"> {# Added data attributes for search with both languages #}
+                     {# Add data attributes for search with both languages #}
+                     {# The 'hidden-item-by-pagination' class will be added by JS initially #}
+                    <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link catalog-item" data-id="{{ item.imdbID }}" data-type="series" data-title-he="{{ item.get('HebrewName', '') | lower }}" data-title-en="{{ item.get('title', '') | lower }}">
                         {# Use the same item-card structure as index.html/movies.html #}
                         <div class="item-card" tabindex="0">
                             <div class="card-image-container">
@@ -157,6 +207,16 @@
             {% endfor %}
         </div>
 
+        {# Add the "Load More" button/area after the grid #}
+        {# It will be styled to look like a card #}
+         <div class="load-more-container">
+             <div id="loadMoreButton" class="load-more-button" role="button" aria-label="{{ 'טען עוד סדרות' if current_language == 'he' else 'Load More Series' }}" tabindex="0">
+                 <i class="fas fa-sync-alt"></i> {# Or another suitable icon like fa-arrow-down #}
+                 <span>{{ 'טען עוד' if current_language == 'he' else 'Load More' }}</span>
+             </div>
+         </div>
+
+
         <div id="noResultsMessage" style="display: none;">
             {% if current_language == 'he' %}
             לא נמצאו תוצאות התואמות את החיפוש שלך.
@@ -174,10 +234,12 @@
     </footer>
 
     <script>
-         // Pass current_language from Flask to JavaScript
-         const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
-         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+        // Pass current_language and items_per_page from Flask to JavaScript
+        const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
+        const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+        const itemsPerPage = {{ items_per_page | tojson }}; // Get items per page from Flask
 
+        let currentlyDisplayedCount = 0; // Keep track of how many items are displayed
 
         // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -196,6 +258,7 @@
                      }
                 });
                  setTimeout(() => {
+                     // Fallback in case transitionend doesn't fire
                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
                           spinner.style.display = 'none';
                           console.log("Spinner hidden via timeout fallback on series page.");
@@ -209,63 +272,148 @@
             const languageSwitcherLink = document.querySelector('.language-switcher a');
             if (languageSwitcherLink) {
                  languageSwitcherLink.addEventListener('click', function(event) {
-                      // Prevent default behavior immediately so we can show the spinner
-                      // event.preventDefault(); // Don't prevent default, let the browser navigate
-                      // Show the spinner
+                      // Don't prevent default, just show spinner before navigating
                       const spinner = document.getElementById('loading-spinner');
                       if (spinner) {
                           spinner.classList.remove('hidden');
                           spinner.style.display = 'flex'; // Ensure it's flex for centering
                            console.log("Spinner shown by language switcher click.");
                       }
-                      // Allow the browser to proceed with the link navigation after showing spinner
                  });
             }
 
 
-            // --- Search Filter Functionality - Adapted for series page ---
+            // --- Pagination and Search Filter Functionality ---
+
             const searchInput = document.getElementById('searchInput');
-             const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            // Select ALL series card links once
+            const allItemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item');
+            const loadMoreButton = document.getElementById('loadMoreButton');
+
+            console.log(`Found ${allItemCardLinks.length} series items in the DOM.`);
+
+            // Function to show a range of items
+            function showItems(startIndex, endIndex) {
+                 for (let i = startIndex; i < endIndex && i < allItemCardLinks.length; i++) {
+                      allItemCardLinks[i].style.display = ''; // Restore display (e.g., grid item default)
+                      allItemCardLinks[i].classList.remove('hidden-item-by-pagination'); // Remove the initial hidden class
+                 }
+                 console.log(`Displayed items from index ${startIndex} to ${endIndex - 1}.`);
+            }
+
+            // Function to hide all items
+            function hideAllItems() {
+                 allItemCardLinks.forEach(link => {
+                      link.style.display = 'none';
+                 });
+                 console.log("Hid all items.");
+            }
+
+            // Function to update the visibility of the Load More button
+            function updateLoadMoreButtonVisibility() {
+                 // Only show load more button if not searching AND there are more items to display
+                 const isSearching = searchInput.value.trim() !== '';
+                 const allItemsDisplayed = currentlyDisplayedCount >= allItemCardLinks.length;
+
+                 if (isSearching || allItemsDisplayed) {
+                      loadMoreButton.style.display = 'none';
+                      console.log(`Hide Load More: Searching=${isSearching}, All items displayed=${allItemsDisplayed}`);
+                 } else {
+                      loadMoreButton.style.display = ''; // Restore display (e.g., flex from CSS)
+                      console.log(`Show Load More: currentlyDisplayedCount=${currentlyDisplayedCount}, totalItems=${allItemCardLinks.length}`);
+                 }
+            }
+
+
+            // --- Initial Load ---
+            // Hide all items first
+            hideAllItems();
+            // Display the first batch
+            showItems(0, itemsPerPage);
+            currentlyDisplayedCount = itemsPerPage;
+            // Update the Load More button visibility
+            updateLoadMoreButtonVisibility();
+
+
+            // --- Load More Button Click Handler ---
+            if (loadMoreButton) {
+                 loadMoreButton.addEventListener('click', function() {
+                      const nextBatchEndIndex = currentlyDisplayedCount + itemsPerPage;
+                      showItems(currentlyDisplayedCount, nextBatchEndIndex);
+                      currentlyDisplayedCount = nextBatchEndIndex; // Update the count
+                      updateLoadMoreButtonVisibility(); // Check if button should now be hidden
+                 });
+                 // Also handle keyboard activation for accessibility
+                 loadMoreButton.addEventListener('keypress', function(event) {
+                     if (event.key === 'Enter' || event.key === ' ') { // Enter or Space key
+                         event.preventDefault(); // Prevent default scroll/action
+                         loadMoreButton.click(); // Trigger the click handler
+                     }
+                 });
+
+            } else {
+                 console.warn("Load More button #loadMoreButton not found on series page.");
+            }
+
+
+            // --- Search Filter Functionality ---
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-                    // Select the anchor tag wrappers for the series cards
-                    const itemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item'); // Target only cards within the grid and has catalog-item class
-                    let anyVisible = false;
-                    itemCardLinks.forEach(link => {
+                    const searchTerm = this.value.toLowerCase().trim(); // Trim whitespace
+
+                    let visibleCount = 0; // Count how many items match the search
+
+                    // Iterate through ALL items (not just currently displayed ones)
+                    allItemCardLinks.forEach(link => {
                          // Get title based on current language from data attributes
                          // Fallback to the other language title if the preferred one is missing
-                         const titleHe = link.dataset.titleHe || link.dataset.titleEn || '';
-                         const titleEn = link.dataset.titleEn || link.dataset.titleHe || '';
+                         const titleHe = link.dataset.titleHe || '';
+                         const titleEn = link.dataset.titleEn || '';
 
-                         const title = currentLanguage === 'he' ? titleHe : titleEn;
+                         // Search in both titles if a search term is present
+                         const matchesSearch = searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm);
 
-
-                         if (title.includes(searchTerm)) {
-                             link.style.display = ''; // Show the link (and thus the card)
-                             anyVisible = true;
+                         if (matchesSearch) {
+                             link.style.display = ''; // Show the item if it matches search (or search is empty)
+                             visibleCount++;
                          } else {
-                             link.style.display = 'none'; // Hide the link (and thus the card)
+                             link.style.display = 'none'; // Hide the item if it doesn't match
                          }
-
                     });
-                    const noResultsMessage = document.getElementById('noResultsMessage');
+
+                    // Update the "No results found" message
                     if (noResultsMessage) {
-                         noResultsMessage.style.display = anyVisible ? 'none' : 'block';
+                         noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
                     }
+
+                    // Update Load More button visibility based on search state
+                    updateLoadMoreButtonVisibility();
+
+                     // Reset pagination state when search is active
+                     if (searchTerm !== '') {
+                         currentlyDisplayedCount = allItemCardLinks.length; // Effectively mark all as 'displayed' for pagination purposes when searching
+                     } else {
+                          // If search term is cleared, reset pagination and re-apply initial display
+                          hideAllItems();
+                          currentlyDisplayedCount = 0; // Reset count
+                          showItems(0, itemsPerPage);
+                          currentlyDisplayedCount = itemsPerPage; // Update count after showing initial batch
+                     }
+                     updateLoadMoreButtonVisibility(); // Update button visibility again after potentially resetting pagination
+
+
                 });
 
-                 // Handle search button click (does the same as input for now)
+                 // Handle search button click (triggers the input event)
                  document.querySelector('.search-container button').addEventListener('click', function() {
-                      // Trigger the input event manually to ensure filtering happens
-                     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                  });
 
                  // Handle Enter key on search input
                  searchInput.addEventListener('keypress', function(event) {
                      if (event.key === 'Enter') {
                          event.preventDefault(); // Prevent default form submission/page reload
-                          // Trigger the input event manually to ensure filtering happens
                           searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                      }
                  });
