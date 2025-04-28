@@ -47,7 +47,7 @@
                      <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
                           {# Replace the base64 string with your desired image URL or placeholder #}
                           {# Use url_for for your static image #}
-                          <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
+                         <img src="imageurlhere" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
                      </a>
                  {% endif %}
              </div>
@@ -108,7 +108,7 @@
             <p>{{ 'מה נראה היום?' if current_language == 'he' else 'What should we watch today?' }}</p>
         </div>
 
-        {# The "Continue Watching" section will be added here by JavaScript if applicable #}
+        {# The "Continue Watching" section #}
         <section id="continueWatchingSection" class="category-section" style="display: none;">
             <h2>{{ 'המשך צפייה' if current_language == 'he' else 'Continue Watching' }}</h2>
             <div class="item-row" id="continueWatchingRow">
@@ -122,6 +122,22 @@
                 {% endif %}
              </div>
         </section>
+
+        {# --- NEW: Recommended for You section --- #}
+         <section id="recommendedSection" class="category-section" style="display: none;">
+             <h2>{{ 'מומלץ בשבילך' if current_language == 'he' else 'Recommended for You' }}</h2>
+             <div class="item-row" id="recommendedRow">
+                 {# Recommended items will be populated here by JavaScript #}
+             </div>
+             <div id="noRecommendationsMessage" style="display: none; color: #aaa; text-align: center; padding: 20px;">
+                 {% if current_language == 'he' %}
+                 אין המלצות זמינות כרגע. צפה ביותר תוכן כדי לקבל המלצות!
+                 {% else %}
+                 No recommendations available at the moment. Watch more content to get recommendations!
+                 {% endif %}
+             </div>
+         </section>
+        {# --- END NEW: Recommended for You section --- #}
 
 
         {% for category_name, items_in_category in categories.items() %}
@@ -250,7 +266,8 @@
             // --- Search Filter Functionality ---
             const searchInput = document.getElementById('searchInput');
             const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
-            const catalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Get all catalog items
+            // Select *all* catalog items, including future recommended items (they will have the 'catalog-item' class)
+            const catalogItems = document.querySelectorAll('.catalog-item'); // Simplified selector
 
 
             if (searchInput) {
@@ -258,7 +275,10 @@
                     const searchTerm = this.value.toLowerCase();
                     let anyVisible = false;
 
-                    catalogItems.forEach(link => {
+                    // Re-select items in case new sections were added (like recommendations)
+                    const currentCatalogItems = document.querySelectorAll('.catalog-item');
+
+                    currentCatalogItems.forEach(link => {
                          // Get title based on current language from data attributes
                          // Fallback to the other language title if the preferred one is missing
                          const titleHe = link.dataset.titleHe || link.dataset.titleEn || '';
@@ -315,13 +335,13 @@
 
             if (user && user.google_id) {
                 const userId = user.google_id;
-                const localStorageKey = `continueWatching_${userId}`;
+                const cwLocalStorageKey = `continueWatching_${userId}`;
 
                 let continueWatchingItems = {}; // Raw data from localStorage
                 const uniqueValidItemsMap = new Map(); // Map to hold the cleaned, consolidated items (one entry per movie/series)
 
                 try {
-                    const storedData = localStorage.getItem(localStorageKey);
+                    const storedData = localStorage.getItem(cwLocalStorageKey);
                     if (storedData) {
                         try {
                              continueWatchingItems = JSON.parse(storedData) || {};
@@ -338,6 +358,7 @@
 
                     // --- Helper to determine season/episode, preferring latest_* ---
                     function getEpisodeInfo(item) {
+                         // Prioritize latest_* fields first (new format)
                          const season = item.latest_season || item.season;
                          const episode = item.latest_episode || item.episode;
                          // Return as numbers if possible, default to 0 if not valid
@@ -404,7 +425,7 @@
                                 // Keep the one with the later season, or later episode if seasons are the same
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
                                      // The current item represents a *later* episode for this series
-                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E{episodeNum} (was S${existingSeason}E{existingEpisode}).`);
+                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E${episodeNum} (was S${existingSeason}E${existingEpisode}).`);
                                     // Update the map entry with the later episode details
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
@@ -455,7 +476,7 @@
                     // By converting the Map back to an object, keys like series_ttXXXXXXX_SxE are automatically discarded.
                     const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap); // Convert Map back to object
                     try {
-                         localStorage.setItem(localStorageKey, JSON.stringify(cleanedContinueWatchingItems));
+                         localStorage.setItem(cwLocalStorageKey, JSON.stringify(cleanedContinueWatchingItems));
                          console.log(`CW: Saved cleaned continue watching data to localStorage.`);
                     } catch (e) {
                          console.error("CW: Error saving cleaned continue watching data:", e);
@@ -521,7 +542,13 @@
 
                             itemLink.href = href;
                             itemLink.classList.add('item-card-link');
-                            itemLink.classList.add('continue-watching-item');
+                            itemLink.classList.add('continue-watching-item'); // Specific class for CW for easy selection
+                             // Add data attributes for search if needed (already on .catalog-item, but CW items don't have it by default)
+                             itemLink.dataset.id = item.id;
+                             itemLink.dataset.type = item.type;
+                             itemLink.dataset.titleHe = item.HebrewName || '';
+                             itemLink.dataset.titleEn = item.title || '';
+
 
                             // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
@@ -544,6 +571,7 @@
                              // Update aria-label based on language and title
                              playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'המשך צפייה ב' : 'Continue watching ') + titleText);
                              playButton.innerHTML = '<i class="fas fa-play"></i>';
+                             // Play button inside the link already navigates, prevent default to stop duplicate navigation
                              playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
 
 
@@ -573,19 +601,18 @@
                                   e.stopPropagation();
 
                                    // Get the canonical key for this item to remove from the map
-                                   const itemKeyToRemove = `${item.type}_${item.id}`;
+                                   const itemKeyToRemove = `${item.type}_${item.id}${item.type === 'series' ? '_S' + item.latest_season + 'E' + item.latest_episode : ''}`; // Reconstruct the *exact* key used in CW history
 
-                                   if (uniqueValidItemsMap.has(itemKeyToRemove)) {
-                                        uniqueValidItemsMap.delete(itemKeyToRemove); // Remove from the map
+                                   if (continueWatchingItems[itemKeyToRemove]) { // Check the raw object, not the uniqueValidItemsMap for removal
+                                        delete continueWatchingItems[itemKeyToRemove]; // Remove from the object
                                         try {
-                                             // Save the *current state of the map* back to localStorage
-                                             // This is the cleaned state, so old keys won't be added back.
-                                             localStorage.setItem(localStorageKey, JSON.stringify(Object.fromEntries(uniqueValidItemsMap)));
+                                             // Save the *updated object* back to localStorage
+                                             localStorage.setItem(cwLocalStorageKey, JSON.stringify(continueWatchingItems));
                                              itemLink.remove(); // Remove the element from the DOM
                                              console.log(`CW: Removed item ${itemKeyToRemove} from continue watching.`);
 
-                                             // Check if the section should be hidden
-                                             if (uniqueValidItemsMap.size === 0) {
+                                             // Re-evaluate visibility of CW section
+                                             if (Object.keys(continueWatchingItems).length === 0) { // Check if the object is empty
                                                  continueWatchingSection.style.display = 'none';
                                                   noContinueWatchingMessage.style.display = 'block';
                                              }
@@ -594,13 +621,20 @@
                                             console.error("CW: Error saving continue watching data after removing item:", e);
                                         }
                                    } else {
-                                       // This case should not happen if the display logic is correct,
-                                       // but if the item somehow exists in the DOM but not the map,
-                                       // it means something is out of sync. Log a warning.
-                                        console.warn("CW: Item element in DOM not found in uniqueValidItemsMap:", itemKeyToRemove, item);
+                                       // Log a warning if the item key wasn't found in the raw data
+                                        console.warn("CW: Item key to remove not found in localStorage data:", itemKeyToRemove);
                                    }
                               });
                              actionsDiv.appendChild(removeButton);
+
+                             // Add info button linking to details page
+                             const infoButton = document.createElement('button');
+                             infoButton.classList.add('info-button');
+                             infoButton.setAttribute('aria-label', currentLanguage === 'he' ? 'עוד פרטים' : 'More info');
+                             infoButton.innerHTML = '<i class="fas fa-info-circle"></i>';
+                             // Info button inside the link also navigates, prevent default to stop duplicate navigation
+                             infoButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+                             // The containing <a> tag handles the navigation for both play and info button clicks
 
 
                             imageContainer.appendChild(img);
@@ -609,15 +643,15 @@
                              if (subtitleText) {
                                 overlay.appendChild(subtitleElement);
                              }
-                            overlay.appendChild(actionsDiv);
+                            overlay.appendChild(actionsDiv); // Actions div contains remove/info buttons
                             imageContainer.appendChild(overlay);
                             itemCard.appendChild(imageContainer);
                             itemLink.appendChild(itemCard);
                             continueWatchingRow.appendChild(itemLink);
                         });
 
-                        // Show/hide sections based on uniqueValidItemsMap size
-                         if (uniqueValidItemsMap.size > 0) {
+                        // Show/hide sections based on whether there are items to display
+                         if (validItemsToDisplay.length > 0) {
                              continueWatchingSection.style.display = 'block';
                              noContinueWatchingMessage.style.display = 'none'; // Hide the "No items" message
                          } else {
@@ -644,6 +678,317 @@
                 console.log("CW: User not logged in. Continue Watching hidden.");
                  continueWatchingSection.style.display = 'none';
                  noContinueWatchingMessage.style.display = 'none'; // Hide empty message too if not logged in
+            }
+
+
+             // --- NEW: Recommended for You Functionality ---
+            const recommendedSection = document.getElementById('recommendedSection');
+            const recommendedRow = document.getElementById('recommendedRow');
+            const noRecommendationsMessage = document.getElementById('noRecommendationsMessage');
+
+            // Load all content data from Flask (already available as categories)
+            // We need a flat list of all unique movies and series
+            const allContentItems = {}; // Use an object keyed by type_id for quick lookup and uniqueness
+            {% for category_name, items_in_category in categories.items() %}
+                 {% for item in items_in_category %}
+                      // Ensure item is valid and add to the map if not already present
+                      if (item && item.id && item.type) {
+                          const key = `${item.type}_${item.id}`;
+                          if (!allContentItems[key]) { // Add only if key doesn't exist
+                              allContentItems[key] = {
+                                 id: item.id,
+                                 type: item.type,
+                                 title: item.title || '',
+                                 poster: item.poster || '',
+                                 HebrewName: item.HebrewName || '',
+                                 HebrewPoster: item.HebrewPoster || '',
+                                 // Genre and Category are NOT available in the 'item' object passed from Flask's categorize_content
+                                 // We need the FULL movie/series data for genre/category.
+                                 // Let's pass the full data from Flask instead of just categorized display items.
+                                 // ** Correction Required in Flask: Pass all movies and all series as separate lists/objects **
+                                 // For now, let's assume the full data including genre/category is available in allContentItems.
+                                 // This will require a backend change or a different approach if we strictly only use 'categories'.
+
+                                 // Re-evaluating: Flask's `index` route currently passes `categories`, which contains only
+                                 // basic display info (id, title, poster, Hebrew fields, type, category). It *does* include category!
+                                 // But does it include Genre? Let's check `categorize_content` in main.py...
+                                 // `categorize_content` takes `movies_data` (full movie details including genre)
+                                 // and `series_data_for_index` (basic details, *not* full series, but might include genre if stored).
+                                 // Let's assume `genre` is available in the `item` object within the `categories` loop.
+                                 genre: item.genre || '', // Assuming genre is available in `item`
+                                 category: item.category || 'ללא', // Assuming category is available in `item`
+                              };
+                          }
+                      } else {
+                          console.warn("Recommendations: Skipping invalid item passed from Flask:", item);
+                      }
+                 {% endfor %}
+            {% endfor %}
+             console.log("Recommendations: Collected all available content items:", allContentItems);
+
+
+            if (user && user.google_id) {
+                 const userId = user.google_id;
+                 const historyLocalStorageKey = `viewingHistory_${userId}`; // Key used in movie/series pages
+
+                 let viewingHistory = {};
+                 try {
+                     const storedHistory = localStorage.getItem(historyLocalStorageKey);
+                     if (storedHistory) {
+                          viewingHistory = JSON.parse(storedHistory) || {};
+                           if (typeof viewingHistory !== 'object' || viewingHistory === null) {
+                               console.warn("History: localStorage data is not an object. Resetting history.");
+                                viewingHistory = {};
+                           }
+                     }
+                 } catch (e) {
+                     console.error("History: Error loading viewing history from localStorage:", e);
+                     viewingHistory = {}; // Reset on error
+                 }
+
+                 const historyItems = Object.values(viewingHistory);
+                 console.log("Recommendations: Loaded viewing history items:", historyItems);
+
+                 if (historyItems.length > 0) {
+                     // --- Analyze Viewing History ---
+                     const viewedGenresCount = {}; // { genre: count }
+                     let viewedMovieCount = 0;
+                     let viewedSeriesCount = 0;
+                     const viewedCategoriesCount = {}; // { category: count }
+
+                     historyItems.forEach(item => {
+                          // Count content type
+                          if (item.type === 'movie') viewedMovieCount++;
+                          else if (item.type === 'series') viewedSeriesCount++;
+
+                          // Count genres (split comma-separated string)
+                          const genres = item.genre.split(',').map(g => g.trim()).filter(g => g !== '');
+                          genres.forEach(genre => {
+                              const lowerGenre = genre.toLowerCase();
+                              viewedGenresCount[lowerGenre] = (viewedGenresCount[lowerGenre] || 0) + 1;
+                          });
+
+                          // Count non-"ללא" categories
+                          if (item.category && item.category !== 'ללא') {
+                               viewedCategoriesCount[item.category] = (viewedCategoriesCount[item.category] || 0) + 1;
+                          }
+                     });
+
+                     console.log("Recommendations: Viewing History Analysis - Genres:", viewedGenresCount, "Movies:", viewedMovieCount, "Series:", viewedSeriesCount, "Categories:", viewedCategoriesCount);
+
+                     // Determine preferred content type (movie or series, or none if counts are equal/zero)
+                     let preferredType = null;
+                     if (viewedMovieCount > viewedSeriesCount) preferredType = 'movie';
+                     else if (viewedSeriesCount > viewedMovieCount) preferredType = 'series';
+
+                     console.log("Recommendations: Preferred type based on history:", preferredType);
+
+
+                     // --- Score All Available Items ---
+                     const scoredItems = [];
+                      const viewedItemKeys = new Set(Object.keys(viewingHistory)); // Set of keys from history (e.g., 'movie_tt123', 'series_tt456')
+
+                     Object.values(allContentItems).forEach(item => {
+                          const itemKey = `${item.type}_${item.id}`;
+
+                          // Skip items that are already in the viewing history
+                          if (viewedItemKeys.has(itemKey)) {
+                              console.log(`Recommendations: Skipping item in history: ${itemKey}`);
+                              return;
+                          }
+
+                          let score = 0;
+
+                          // Genre Matching Score
+                          const itemGenres = item.genre.split(',').map(g => g.trim().toLowerCase()).filter(g => g !== '');
+                          itemGenres.forEach(genre => {
+                               if (viewedGenresCount[genre]) {
+                                   // Add points based on how many times this genre was viewed
+                                   // A simple count is sufficient for scoring
+                                   score += viewedGenresCount[genre];
+                               }
+                          });
+
+                          // Content Type Matching Score
+                          // Add a bonus if the item's type matches the user's preferred type
+                           if (preferredType && item.type === preferredType) {
+                                score += 3; // Give a moderate bonus for type preference
+                           } else if (viewedMovieCount > 0 && viewedSeriesCount > 0) {
+                                // If the user watched both, maybe a smaller bonus for the less preferred type?
+                                // Or just no bonus. Let's stick to a bonus ONLY for the preferred type for simplicity.
+                           }
+
+
+                          // Category Matching Score (only for non-"ללא" categories)
+                          if (item.category && item.category !== 'ללא') {
+                               if (viewedCategoriesCount[item.category]) {
+                                   // Add points based on how many times this category was viewed
+                                   score += viewedCategoriesCount[item.category] * 5; // Give a higher bonus for specific category matches
+                               }
+                          }
+
+
+                          // Consider adding a small random factor to break ties? Or sort by year/rating?
+                          // For now, simple score based on matches is fine.
+                          // Add items with a positive score to the list
+                          if (score > 0) {
+                               scoredItems.push({
+                                   ...item, // Include all original item data
+                                   score: score
+                               });
+                          }
+                     });
+
+                      console.log("Recommendations: Scored items (positive score only):", scoredItems);
+
+
+                     // --- Sort and Select Top Recommendations ---
+                     // Sort by score descending
+                     scoredItems.sort((a, b) => b.score - a.score);
+
+                     // Select top N items (e.g., top 15)
+                     const topRecommendations = scoredItems.slice(0, 15); // Get top 15 recommended items
+
+                     console.log("Recommendations: Top 15 recommendations:", topRecommendations);
+
+
+                     // --- Display Recommendations ---
+                     const recommendedRow = document.getElementById('recommendedRow');
+                     const noRecommendationsMessage = document.getElementById('noRecommendationsMessage');
+
+
+                     if (topRecommendations.length > 0) {
+                         recommendedRow.innerHTML = ''; // Clear placeholder
+
+                         topRecommendations.forEach(item => {
+                            const itemLink = document.createElement('a');
+                             // Determine the correct URL based on item type
+                            const href = item.type === 'movie' ? `${movieDetailsBaseUrl}${item.id}` : `${seriesDetailsBaseUrl}${item.id}`;
+
+                            itemLink.href = href;
+                            itemLink.classList.add('item-card-link');
+                             itemLink.classList.add('catalog-item'); // Add catalog-item class for search to work on it
+
+                             // Add data attributes for search
+                             itemLink.dataset.id = item.id;
+                             itemLink.dataset.type = item.type;
+                             itemLink.dataset.titleHe = item.HebrewName || '';
+                             itemLink.dataset.titleEn = item.title || '';
+
+
+                            // Create the item card structure (similar to other sections)
+                            const itemCard = document.createElement('div');
+                            itemCard.classList.add('item-card');
+                            itemCard.setAttribute('tabindex', '0');
+
+                            const imageContainer = document.createElement('div');
+                            imageContainer.classList.add('card-image-container');
+
+                            // Use Hebrew poster if language is HE, otherwise English, fallback to default
+                            const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
+                            const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
+
+
+                            const img = document.createElement('img');
+                            img.src = displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl;
+                            img.alt = displayTitle || (currentLanguage === 'he' ? 'פריט לא ידוע' : 'Unknown Item');
+                            img.setAttribute('loading', 'lazy');
+
+
+                            const overlay = document.createElement('div');
+                            overlay.classList.add('card-overlay');
+
+                             const playButton = document.createElement('button');
+                             playButton.classList.add('play-button');
+                             playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'צפה ב' : 'Watch ') + (displayTitle || ''));
+                             playButton.innerHTML = '<i class="fas fa-play"></i>';
+                             // Play button inside the link already navigates, prevent default to stop duplicate navigation
+                             playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+
+
+                            const titleElement = document.createElement('h3');
+                            titleElement.classList.add('card-title');
+                            titleElement.textContent = displayTitle || (currentLanguage === 'he' ? 'כותרת לא ידועה' : 'Unknown Title');
+
+                            // Add subtitle for Series
+                            let subtitleText = '';
+                            if (item.type === 'series') {
+                                subtitleText = currentLanguage === 'he' ? 'סדרה' : 'Series';
+                            } else if (item.type === 'movie') {
+                                subtitleText = currentLanguage === 'he' ? 'סרט' : 'Movie';
+                            }
+                             const subtitleElement = document.createElement('p');
+                             subtitleElement.classList.add('card-subtitle');
+                             subtitleElement.textContent = subtitleText;
+                             subtitleElement.style.fontSize = '0.8em';
+                             subtitleElement.style.color = '#ccc';
+                             subtitleElement.style.marginTop = '5px';
+
+
+                            const actionsDiv = document.createElement('div');
+                            actionsDiv.classList.add('card-actions');
+
+                             // Add to list button (if applicable) - pass needed data
+                             const addToListButton = document.createElement('button');
+                             addToListButton.classList.add('add-to-list-button');
+                             addToListButton.setAttribute('aria-label', currentLanguage === 'he' ? 'הוסף לרשימה' : 'Add to list');
+                             addToListButton.innerHTML = '<i class="fas fa-plus"></i>';
+                             addToListButton.dataset.id = item.id;
+                             addToListButton.dataset.type = item.type;
+                             addToListButton.dataset.title = item.title || '';
+                             addToListButton.dataset.poster = item.poster || '';
+                             addToListButton.dataset.hebrewName = item.HebrewName || '';
+                             addToListButton.dataset.hebrewPoster = item.HebrewPoster || '';
+                              addToListButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); /* TODO: Implement add to list */ console.log("Add to list clicked for", item.id); });
+                              actionsDiv.appendChild(addToListButton);
+
+
+                             // Info button linking to details page (already handled by the <a> tag, but keep structure)
+                             const infoButton = document.createElement('button');
+                             infoButton.classList.add('info-button');
+                             infoButton.setAttribute('aria-label', currentLanguage === 'he' ? 'עוד פרטים' : 'More info');
+                             infoButton.innerHTML = '<i class="fas fa-info-circle"></i>';
+                             infoButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+                             actionsDiv.appendChild(infoButton);
+
+
+                            imageContainer.appendChild(img);
+                             overlay.appendChild(playButton);
+                            overlay.appendChild(titleElement);
+                             if (subtitleText) {
+                                overlay.appendChild(subtitleElement);
+                             }
+                            overlay.appendChild(actionsDiv);
+                            imageContainer.appendChild(overlay);
+                            itemCard.appendChild(imageContainer);
+                            itemLink.appendChild(itemCard);
+                            recommendedRow.appendChild(itemLink);
+
+                         });
+
+                         recommendedSection.style.display = 'block';
+                         noRecommendationsMessage.style.display = 'none';
+
+                     } else {
+                          console.log("Recommendations: No recommendations found based on history.");
+                         recommendedSection.style.display = 'block'; // Show the section header
+                         recommendedRow.innerHTML = ''; // Ensure row is empty
+                         noRecommendationsMessage.style.display = 'block'; // Show "No recommendations" message
+                     }
+
+                 } else {
+                      console.log("Recommendations: No viewing history found for this user.");
+                     // Hide the section if no history
+                     recommendedSection.style.display = 'none';
+                      noRecommendationsMessage.style.display = 'none'; // Also hide the "No recommendations" message placeholder
+                 }
+
+
+            } else {
+                 console.log("Recommendations: User not logged in. Recommendations hidden.");
+                 // Hide the section if user is not logged in
+                 recommendedSection.style.display = 'none';
+                 noRecommendationsMessage.style.display = 'none'; // Also hide the "No recommendations" message placeholder
             }
 
 
