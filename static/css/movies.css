@@ -10,6 +10,11 @@
     flex-grow: 1; /* Same as index */
 }
 
+.item-card-link.hidden-item-by-pagination {
+    display: none;
+}
+
+
 /* Style for the page heading */
 .page-heading {
     margin-bottom: 20px; /* Reduced margin to make space for filters */
