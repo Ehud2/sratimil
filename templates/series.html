@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -130,7 +129,7 @@
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
                          {# Replace the base64 string with your desired image URL or placeholder #}
-                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAABR1BMVEX////lQzU0o1NCgO/2twQ9fu9rl/FynvPt8v0xee72tADlQTMwolDkPS7kOyv2uADkNCL98O8ln0kpoEwanUPkNibkMR3nVEjp9ez3zMntioPrenL+9vX++vr74uD73Zj3+v7f7+P519T2xMHwmZP40c7ukYroYFXnUUXzsq3xpaDkOzb98dj/+/HA0vn74auRsvX868VVjPDM2/rK5dGDw5NjtXmn1LJXsG/B4MlMrGZCfffi8eX1u7fsgXrpaF/jKA7re3PyqZXqb2XujDvyoiv1syHpYz3sf0D3wDTwlzPnVT350XTrc0H63Z7nWTD4y1z++ej3w0mnwvf4zm2auPbe5/yFtFzJvUyeul5psF3WvUGVyqKuulXjvTSz0J2ixd1TnrRKo4xMjdtPl79Jn5lGpnFJiORhs3ZKkslJm6Y+pGd8quAEW6SpAAAHw0lEQVR4nO2b2X/bRBCAZUVJG12WddnO4cZOYjtp0yP1FZPELYVCIUAPChTcQjlKKPz/z8i3LUurlbUrrf2b76V9SKX9MrMzu2OX4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAk0yhlM/v7+fzh4XMbtKLIcpO4eL4siLZDlof5y+PlOz2wUUpk/TaopPZL3ckW7MUSUrNIEmKatlKZ+uikPQaI1A6qEiaqrjcZjwVVVOz5VLSK12IUtlZvDtynpaS84NLJ5k5ztoqht3YUrWzx0u0KUuXihVCbyhpKZdLsiUPO1aY8E0H0tpegmQtdWxUaQlwVB5tMx7HwratLKo3QNG2GN6PuweqGs2vF0dLOkpaxI98NXx98XTUKkym6s6WTcSvh2IzGMbDrEXKL9UL4zZru/FYi1hh3KgpphrHzhONWIaOkB4xlKmFavQS6oFdTlpsxKFCOENHaNtsXJT3yWfoCPtx0nI9jsg1CTdqZSdpO46uYGfVBVc+glkWysz+qkewRK+KqhUWTm2ZFDVBpcpCBHcroRu9NCTo59QsC4LcVqjLhKJamnP/r2az2api25aK+PWwkaLchY1tJ6ma3SkfHWYyO30ymcOjcsXWfAZWSpYJwQxuGXX0UuW8R+XfyW9JmsfUio09yHGYm1DSUluIi17+8dxklZE96Nx48fyqRwHrLbimV4ykKFfAmTlJlnSBcS7JlKcmkEqVDUGug5GjinqA+bRCZ3R0YGUP4tRRSeuEGAkeDS7RrKQotxt8mJHs41CPLFRUhlKUOw7s9YoUelL2RFNSrAhmAo9dCx1KyswIcp8GhdB6stBzmRE8SX92GxlEi5ER2cLcEtOfVxGK1nbSK4yKIAjpp1/c9t2DnaQXGJV7Yk9R+NInUxUmxiuReCb0SX/lqSipTH70F4Y7ojBUfPr1fKZK2n7SC4zM1cjQydRv5hStraTXF5kTYUJ6rm1IqaXfhNwDUZh2dLUN+zDp9UXnasbQ1TZUJj4qikhamCWdnrSNFaij7iR1tQ2Vmc9sI3Br3nDcNlYihKN271IctA31MunVEeDEI4TjtmGvQgg9tuG4bSjZpFdHgm/9DJ3N+N1F0qsjwXNfQ2czniS9OhJ4Fpohz/EecXMjIjdoCr5w9/spxFuYhpvr0Vjbo2h4xz9JBfEOruFaNNZvUjT0LaU9MLdhZMPNHygaep1oRrzEfEZ0w7sUDa/8DcWr2AxfUTT8HmF4Ly7D9fsUDRHtUHwQmyHNdvHSfxvillLGDRENX3wRm+EGPcETlCHumS264ekeGC5u6C8oiLgPYduQiRiugWEUmKilVA3Z6Ic0DZ8jDOM709A0ZONcSrHjs3G3oGrIxP2Q6rmUiTs+1dsTE3OazdcUDcnM2qIa0rzjE5mXRjZ8SNMQdclP421EvHkpypDmrA1RTEXhxzM8w40bGKCCSHNe6l9MxXdt45rce276+62fknuNBz6fHwriT7zMmzli73nov1mptkPOp9SIwhvewagTe81rf0OqzYLz3ojis5/5PjKxIG74lxq6pdRzI4q/8EP0LqG3oDrKJtVCw81/n0YQ3/JjSAXxFapnknmFP64LlNMkJoLEdiLCj+qptM9smjpNgp/GLJJ4x11UktL85KnPyXSaOk1iFpkn8Y5TxJFmc4/EG5BMp+kb3g2JYoMKIdXr75Bxmo6bxKxiLeoL9pAhpHqxGPLM3SRm8zRyPb2PKqTUe0WP4beG3noKOoqtaI9HHNjiSVKu//8tZpuEK08bUR6+h/CLKUl7JzfxnVM1/RWjdEXEeW2N8jdNJpwI7iZBTvEGcgJA+14x5lcdbbi4IrLK0L7eT5ELEFx4L6IjSPvyO003KIi8wYc/v+1tBAyp6J/YJqAKzQBZb4Z85sM1ZJGJNYQcd2YGJipv1kP1/t8+CRCMNYQcd20EKxo8fhhrbfN9gGKsIeS4cwxDp+C08U6pxYYp8+bvqANp3CHkuGZgsekhm63gKWqtrvd/X/q/f3yCCGE8B7YpWoHFZujYbqL2Y67Z0kf5IMt/+ivG1gsnS8MoNoN163qr6d07io6ePvWbks2//ArqJvXpxTw49XQsafL1Zi03DmYuVzzrNmRTdyeC+eFvz6ZI9cN7X+pYW3Ekaeimybdb141Gq9XmdVM3PNPc4P/xylTaU1If2lgFdcZzCOpH9I/zbSOJHO2RCz7aLIL54dSVqTG3wimKYfIUH6PtahsxXQu9CFFtwiAb76cVE9qEA5p0FJ0DzqRtxDS6iFtxcsBJqspQVxwdcDbjmlwkoGh+XF9nQdApN3MnE0LozgGHBUHncoBs4REwjP+SdhtyHv50g4UZdhJCkQaFzSibeN/QiYkm8c24yLiOKrU22SOc3iD39RxS1E1yYZRZ2oITajypMOrt86RlfOgaJIqqITMZwAHnjcipKoccJcdO7TqSo2w2GCuhHtSu9UVz1dCvI3/TIRaKdXmB9uj8mzr78RuRa7bNcIE0AkbHDFLsyqb3xNAjeqbcXZ7wTVHstnifuehYTjZM3m8mvhTkzurXvKl7eMr9IXG70a0tWXJ60Bvh11u82UfXB38ajltzBeRmyBWLtdrZWa1WO18xMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAQ/wNhUPDo3tE+ZAAAAABJRU5ErkJggg==" alt="Sign in with Google" loading="lazy">
+                         <img src="imageurlhere" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
@@ -398,46 +397,71 @@
 
             let continueWatchingItems = {}; // Cache loaded CW items
             const userId = user && user.google_id ? user.google_id : null;
-            const localStorageKey = `continueWatching_${userId}`;
+            const localStorageCWKey = `continueWatching_${userId}`;
+            const localStorageHistoryKey = `viewingHistory_${userId}`; // New key for history
 
-            // Load existing continue watching data on page load
-            function loadContinueWatchingData() {
+            // Load existing continue watching and history data on page load
+            function loadUserData() {
                  if (!userId) return;
                  try {
-                     const storedData = localStorage.getItem(localStorageKey);
-                     if (storedData) {
-                         continueWatchingItems = JSON.parse(storedData) || {};
+                     const storedCWData = localStorage.getItem(localStorageCWKey);
+                     if (storedCWData) {
+                         continueWatchingItems = JSON.parse(storedCWData) || {};
                           if (typeof continueWatchingItems !== 'object' || continueWatchingItems === null) {
-                              console.warn("localStorage data for continue watching is not an object. Resetting.");
+                              console.warn("CW: localStorage data is not an object. Resetting.");
                                continueWatchingItems = {};
                           }
-                         console.log("Loaded continue watching data for series:", continueWatchingItems);
+                         console.log("CW: Loaded continue watching data for series:", continueWatchingItems);
+                     } else {
+                         continueWatchingItems = {};
+                         console.log("CW: No continue watching data found for this user.");
                      }
+
+                     // Load history data
+                      const storedHistoryData = localStorage.getItem(localStorageHistoryKey);
+                      if (storedHistoryData) {
+                           // We don't need to cache history here, it's used on index.html.
+                           // Just ensuring it can be read without errors is sufficient for this page.
+                           try {
+                                const historyTest = JSON.parse(storedHistoryData);
+                                if (typeof historyTest !== 'object' || historyTest === null) throw new Error("History data is not an object");
+                                console.log("History: Loaded viewing history data.");
+                           } catch (e) {
+                               console.error("History: Error parsing viewing history data from localStorage:", e);
+                                // Optionally clear corrupted history
+                                localStorage.removeItem(localStorageHistoryKey);
+                                console.log("History: Cleared corrupted history data.");
+                           }
+                      } else {
+                          console.log("History: No viewing history data found for this user.");
+                      }
+
+
                  } catch (e) {
-                     console.error("Error loading continue watching data from localStorage:", e);
-                      continueWatchingItems = {}; // Reset on error
+                     console.error("Error loading user data from localStorage:", e);
+                      continueWatchingItems = {}; // Reset CW on error
+                      // History handling is done within its specific block above
                  }
             }
 
-            // Function to save the current episode's details to localStorage
-            // timestampToSave here is the timestamp we started playback at, NOT current player time.
+            // Function to save the current episode's details to CW (timestampToSave is the *initial* one)
             function saveContinueWatchingState(season, episode, timestampToSave = 0) {
                 if (!userId || !seriesData || !seriesData.imdbID) {
-                     console.log("Cannot save continue watching state: User not logged in or missing series data.");
+                     console.log("CW: Cannot save state: User not logged in or missing series data.");
                      return;
                 }
 
                  const episodeData = findEpisodeByNumbers(season, episode)?.data;
 
                  if (!episodeData) {
-                     console.error(`Cannot save continue watching state: Episode S${season}E${episode} data not found.`);
+                     console.error(`CW: Cannot save state: Episode S${season}E${episode} data not found.`);
                      return;
                  }
 
-                // Unique key for this specific episode
-                const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
+                // Unique key for this specific episode in CW
+                const itemKey = `series_${seriesImdbId}_S${season}E${episode}`; // Format specific to CW
 
-                // Create or update the item entry
+                // Create or update the item entry in the CW cache
                 continueWatchingItems[itemKey] = {
                     id: seriesImdbId, // Save series ID
                     type: 'series',
@@ -449,44 +473,68 @@
                     timestamp: timestampToSave // Save the timestamp (likely the initial one loaded or 0)
                      // Note: Real-time timestamp updates are NOT possible here with standard Vidsrc iframe.
                 };
-                currentEpisodeKey = itemKey; // Store the key of the currently playing episode
+                currentEpisodeKey = itemKey; // Store the key of the currently playing episode for CW
+
 
                 try {
-                    localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
-                    console.log(`Saved episode S${season}E${episode} state for series ${seriesImdbId} to localStorage (timestamp: ${timestampToSave}).`);
+                    localStorage.setItem(localStorageCWKey, JSON.stringify(continueWatchingItems));
+                    console.log(`CW: Saved episode S${season}E${episode} state for series ${seriesImdbId} to localStorage.`);
 
                      // Optional: Update the timestamp display
                      if (currentEpisodeTimestampDiv) {
-                         currentEpisodeTimestampDiv.textContent = `שמירה: S${season}E${episode} @ ${formatTime(timestampToSave)}`;
+                         currentEpisodeTimestampDiv.textContent = `CW Saved: S${season}E${episode} @ ${formatTime(timestampToSave)}`;
                          currentEpisodeTimestampDiv.style.display = 'block';
                      }
 
                 } catch (e) {
-                    console.error("Error saving continue watching data to localStorage:", e);
+                    console.error("CW: Error saving continue watching data to localStorage:", e);
                 }
             }
 
-             // Function to remove the current episode from localStorage
-             function removeContinueWatchingState(season, episode) {
-                 if (!userId || !seriesData || !seriesData.imdbID || !season || !episode) {
-                      console.log("Cannot remove continue watching state: User not logged in or missing data.");
+            // Function to add/update the series in Viewing History
+            function addSeriesToHistory() {
+                 if (!userId || !seriesData || !seriesData.imdbID) {
+                      console.log("History: Cannot save state: User not logged in or missing series data.");
                       return;
                  }
-                 const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
-                  if (continueWatchingItems[itemKey]) {
-                       delete continueWatchingItems[itemKey];
-                       try {
-                            localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
-                            console.log(`Removed episode ${itemKey} from continue watching.`);
-                            if(currentEpisodeKey === itemKey) {
-                                 currentEpisodeKey = null; // Clear current key if removed
-                                 currentEpisodeTimestampDiv.style.display = 'none';
-                            }
-                       } catch (e) {
-                           console.error("Error removing continue watching data from localStorage:", e);
-                       }
-                  }
-             }
+
+                 const seriesKey = `series_${seriesImdbId}`; // Key for history (just series ID)
+
+                 let viewingHistoryItems = {};
+                 try {
+                      const storedHistoryData = localStorage.getItem(localStorageHistoryKey);
+                      if (storedHistoryData) {
+                           viewingHistoryItems = JSON.parse(storedHistoryData) || {};
+                            if (typeof viewingHistoryItems !== 'object' || viewingHistoryItems === null) {
+                                console.warn("History: localStorage data is not an object. Resetting.");
+                                viewingHistoryItems = {};
+                           }
+                      }
+                 } catch (e) {
+                     console.error("History: Error loading viewing history data from localStorage:", e);
+                     viewingHistoryItems = {}; // Reset on error
+                 }
+
+
+                 // Add or update the series entry in history
+                 viewingHistoryItems[seriesKey] = {
+                     id: seriesImdbId,
+                     type: 'series',
+                     genre: seriesData.genre || '', // Save series genre
+                     category: seriesData.category || 'ללא', // Save series category
+                     // Optionally add title, poster, etc. if needed for recommendation display directly from history (less efficient than loading from data)
+                     // title: seriesData.title || seriesData.HebrewName || '',
+                     // poster: seriesData.poster || seriesData.HebrewPoster || ''
+                 };
+
+                 try {
+                     localStorage.setItem(localStorageHistoryKey, JSON.stringify(viewingHistoryItems));
+                     console.log(`History: Added/Updated series ${seriesImdbId} to viewing history.`);
+                 } catch (e) {
+                     console.error("History: Error saving viewing history data to localStorage:", e);
+                 }
+            }
+
 
             // Handle episode item click - This is where the iframe is created/updated
             function handleEpisodeClick(event) {
@@ -510,9 +558,9 @@
                  // --- Update URL with Season and Episode Numbers ---
                  if (seriesImdbId && season && episode) {
                       // Check localStorage for a saved timestamp for THIS specific episode
-                      const itemKey = `series_${seriesImdbId}_S${season}E${episode}`;
-                      const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
-                       console.log(`Timestamp loaded from localStorage for S${season}E${episode}: ${savedEpisodeTimestamp}`);
+                      const itemKeyForTimestamp = `series_${seriesImdbId}_S${season}E${episode}`; // Key format used for CW timestamps
+                      const savedEpisodeTimestamp = continueWatchingItems[itemKeyForTimestamp] && typeof continueWatchingItems[itemKeyForTimestamp].timestamp === 'number' ? continueWatchingItems[itemKeyForTimestamp].timestamp : 0;
+                       console.log(`CW: Timestamp loaded from localStorage for S${season}E${episode}: ${savedEpisodeTimestamp}`);
 
 
                      // Construct the new URL using series ID, season, episode, and loaded timestamp
@@ -524,9 +572,13 @@
                       // Update current episode tracking variables
                      currentSeason = season;
                      currentEpisode = episode;
-                      // Save the state immediately upon clicking/starting a new episode
-                      // This saves the *episode identity* and the timestamp it *started* with (from localStorage or 0)
+
+                      // Save the state to Continue Watching (saves the episode identity and start timestamp)
                      saveContinueWatchingState(currentSeason, currentEpisode, savedEpisodeTimestamp);
+
+                     // ADD THIS: Add the series to viewing history (only the series, not episode)
+                     addSeriesToHistory();
+
 
                  } else {
                       console.warn("Cannot update URL or save state, missing series IMDb ID, season, or episode number.");
@@ -680,11 +732,12 @@
                   // The last saved state (on episode click/load) is the most recent we have.
                   // Real-time saving requires access to player.currentTime, which is not possible here.
                   // No extra action needed here for saving with the current implementation.
+                  // History is saved on episode click.
              });
 
 
             // Initial setup on page load
-            loadContinueWatchingData(); // Load existing CW data
+            loadUserData(); // Load existing CW *and* History data
             populateSeasons(); // Populate the season dropdown
 
             // Auto-select season and episode from URL hash or default
@@ -706,7 +759,7 @@
                                    targetEpisodeNum = initialEpisodeFromUrl;
                                    console.log(`Found episode data for S${targetSeasonNum}E${targetEpisodeNum}.`);
                                     // If episode found by URL path, check localStorage for its specific timestamp
-                                    const itemKey = `series_${seriesImdbId}_S${targetSeasonNum}E${targetEpisodeNum}`;
+                                    const itemKey = `series_${seriesImdbId}_S${targetSeasonNum}E${targetEpisodeNum}`; // CW key format
                                     const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
 
                                     // If URL hash had a timestamp, it takes precedence. Otherwise, use the one from localStorage.
@@ -727,10 +780,12 @@
                           // 2. If no URL path numbers or episode not found by path, fall back to the first episode of the first season
                           if (targetSeasonNum === null || targetEpisodeNum === null) {
                                console.log("Falling back to selecting the first available season/episode.");
-                               const firstSeasonNum = seasonNumbers[1];
+                               const firstSeasonNum = seasonNumbers[0]; // Use index 0 for the first element after sorting
                                // Get episode numbers for the first season, convert to numbers, sort, take the first one
                                const episodesInFirstSeason = seriesData.Seasons[firstSeasonNum]?.Episodes || {};
-                               const firstEpisodeNum = Object.keys(episodesInFirstSeason).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b)[0];
+                               const firstEpisodeNumbers = Object.keys(episodesInFirstSeason).map(Number).filter(num => !isNaN(num)).sort((a, b) => a - b);
+                               const firstEpisodeNum = firstEpisodeNumbers.length > 0 ? firstEpisodeNumbers[0] : undefined;
+
 
                                if (firstSeasonNum !== undefined && firstEpisodeNum !== undefined) {
                                     // Check if episode data exists for the first episode
@@ -741,7 +796,7 @@
                                          console.log(`Defaulting to first episode S${targetSeasonNum}E${targetEpisodeNum}.`);
 
                                          // If defaulting, check localStorage for this first episode's timestamp
-                                         const itemKey = `series_${seriesImdbId}_S${targetSeasonNum}E${targetEpisodeNum}`;
+                                         const itemKey = `series_${seriesImdbId}_S${targetSeasonNum}E${targetEpisodeNum}`; // CW key format
                                          const savedEpisodeTimestamp = continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number' ? continueWatchingItems[itemKey].timestamp : 0;
 
                                          // If URL hash had a timestamp, it takes precedence. Otherwise, use the one from localStorage.
