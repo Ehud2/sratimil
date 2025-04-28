@@ -218,7 +218,7 @@
     <script>
          // Pass current_language from Flask to JavaScript
          const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
-         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}"; // No need for manual quotes due to tojson filter
+         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
 
          // Pass the full movie data from Flask to JavaScript
          // Note: This converts the Python dictionary to a JavaScript object
@@ -290,7 +290,7 @@
             const searchInput = document.getElementById('searchInput');
             const ratingFilter = document.getElementById('ratingFilter');
             const genreFilter = document.getElementById('genreFilter');
-            const yearFilter = document.getElementById('yearFilter'); // Get the year filter dropdown
+            const yearFilter = document.getElementById('yearFilter');
             const noResultsMessage = document.getElementById('noResultsMessage');
 
             // Map IMDb IDs to their corresponding DOM elements for quick access
@@ -313,7 +313,7 @@
 
                 // Populate Genre Filter (using Hebrew for text, English for value)
                 if (genreFilter) {
-                    availableGenres.forEach(genreObj => { // Iterate through objects
+                    availableGenres.forEach(genreObj => {
                         const option = document.createElement('option');
                         option.value = genreObj.english.toLowerCase(); // Use lowercase English for value
                         option.textContent = genreObj.hebrew; // Use Hebrew for display text
@@ -324,50 +324,40 @@
 
                 // --- Populate Year Filter ---
                 if (yearFilter) {
-                    let minYear = new Date().getFullYear(); // Start with current year or later
+                    let minYear = new Date().getFullYear();
                     const currentYear = 2025; // As requested
 
                     // Find the minimum year in the loaded movie data
                     Object.values(allMoviesData).forEach(movie => {
                         const movieYearStr = (movie.year || '').trim();
-                         // Use parseInt to handle ranges like "2008–2013" by taking the first number
                         const movieYear = parseInt(movieYearStr, 10);
-                        if (!isNaN(movieYear) && movieYear > 0) { // Ensure it's a valid positive number
+                        if (!isNaN(movieYear) && movieYear > 0) {
                             if (movieYear < minYear) {
                                 minYear = movieYear;
                             }
                         }
                     });
 
-                     // If no valid years were found, default minYear to a reasonable value (e.g., 1900) or just 2025 if minYear remains unchanged
-                     if (minYear === new Date().getFullYear()) { // If minYear didn't update, maybe no movies or only future ones?
-                         // Check if all movies have invalid/future years. If so, default to a sensible past year or current year.
-                         // A safer approach is to just set a floor if minYear is too high.
-                         if (minYear > currentYear) {
-                              minYear = currentYear; // If somehow minimum is future, reset to current
-                         }
-                         // Optionally, add a hardcoded floor if Firebase could return bizarre years
-                         const absoluteMinYear = 1900; // Arbitrary but reasonable start for movies
-                         if (minYear < absoluteMinYear) {
-                              minYear = absoluteMinYear;
-                         } else if (minYear > currentYear) {
-                             // If somehow minYear is still greater than currentYear (e.g., no movies found),
-                             // populate only up to the current year. The loop below handles this.
-                         }
-
-
+                     // Adjust minYear if it's somehow in the future or too far in the past
+                     const absoluteMinYear = 1900;
+                     if (minYear < absoluteMinYear) {
+                          minYear = absoluteMinYear;
+                     } else if (minYear > currentYear) {
+                         minYear = currentYear; // If all movies are somehow future, default to current year range
                      }
                      console.log(`Calculated min year from data: ${minYear}, Max year: ${currentYear}`);
 
 
-                    // Populate dropdown from minYear up to currentYear (inclusive)
-                    for (let year = currentYear; year >= minYear; year--) { // Iterate backwards for newer years first
+                    // Populate dropdown from currentYear down to minYear (inclusive)
+                    for (let year = currentYear; year >= minYear; year--) {
                         const option = document.createElement('option');
-                        option.value = year; // Use the year number as value
-                        option.textContent = year; // Display the year number
+                        option.value = year; // Value is the year number (e.g., 2023)
+                        // --- CHANGE HERE: Add '+' to the display text ---
+                        option.textContent = year + "+"; // Display text is year + "+" (e.g., "2023+")
+                        // --- END CHANGE ---
                         yearFilter.appendChild(option);
                     }
-                    console.log("Year filter populated.");
+                    console.log("Year filter populated with year+ text.");
                 }
                 // --- END Populate Year Filter ---
             }
@@ -379,9 +369,7 @@
                 const searchTerm = searchInput.value.toLowerCase().trim();
                 const selectedRatingValue = parseFloat(ratingFilter.value);
                 const selectedGenreValue = genreFilter ? genreFilter.value : "";
-                // Get the selected year value (it's a string or empty)
                 const selectedYearValueStr = yearFilter ? yearFilter.value : "";
-                 // Parse the selected year value to an integer, if selected
                 const selectedYearValue = selectedYearValueStr ? parseInt(selectedYearValueStr, 10) : NaN;
 
 
@@ -391,21 +379,17 @@
 
                 // Iterate through the raw data object
                  Object.values(allMoviesData).forEach(movie => {
-                    const cardElement = movieCardElements[movie.imdbID]; // Get the corresponding DOM element
+                    const cardElement = movieCardElements[movie.imdbID];
                     if (!cardElement) {
                          console.warn(`DOM element not found for movie ID: ${movie.imdbID}. Skipping.`);
-                         return; // Skip if DOM element is missing
+                         return;
                     }
-
-                    // Get data points directly from the movie data object, always lowercase and trim where applicable
-                    // const movieImdbId = movie.imdbID; // Keep original ID for logging
-                    // const movieTitle = movie.title || movie.HebrewName || 'Untitled'; // Get a display title for logs
 
                     const titleHe = (movie.HebrewName || movie.title || '').toLowerCase().trim();
                     const titleEn = (movie.title || movie.HebrewName || '').toLowerCase().trim();
                     const movieImdbRatingStr = (movie.imdbRating || '').toLowerCase().trim();
                     const movieGenreStr = (movie.genre || '').toLowerCase().trim();
-                    const movieYearStr = (movie.year || '').trim(); // Get the movie's year string
+                    const movieYearStr = (movie.year || '').trim();
 
 
                     // --- Apply Search Filter ---
@@ -431,27 +415,23 @@
                     }
 
                     // --- Apply Year Filter ---
-                    let passesYearFilter = true; // Assume pass if no filter selected or if yearFilter element doesn't exist
-                    // Only apply if a year is selected AND the filter exists AND the selected value is not empty ("כל השנים") AND the selected value is a valid number
-                    if (selectedYearValueStr && yearFilter && selectedYearValueStr !== "" && !isNaN(selectedYearValue)) {
-                         // Try to parse the movie's year. Handle ranges by taking the first number.
+                    let passesYearFilter = true;
+                    // Apply only if a valid year number is selected (NaN check)
+                    if (!isNaN(selectedYearValue)) {
                          const movieYear = parseInt(movieYearStr, 10);
-
-                         // If the movie's year is a valid number, check if it's >= the selected year
+                         // Check if movie year is a valid number AND is greater than or equal to the selected year
                          passesYearFilter = (!isNaN(movieYear) && movieYear >= selectedYearValue);
                     }
-                     // console.log(`  - Year ("${selectedYearValue}") - Movie Year: "${movieYearStr}" (${parseInt(movieYearStr, 10)}), Passes = ${passesYearFilter}`);
-                    // --- END Apply Year Filter ---
 
 
                     // A card is visible only if it passes ALL filters and search
-                    const shouldBeVisible = passesSearch && passesRatingFilter && passesGenreFilter && passesYearFilter; // Include year filter
+                    const shouldBeVisible = passesSearch && passesRatingFilter && passesGenreFilter && passesYearFilter;
 
                     if (shouldBeVisible) {
-                        cardElement.style.display = ''; // Show the element
+                        cardElement.style.display = '';
                         visibleCount++;
                     } else {
-                        cardElement.style.display = 'none'; // Hide the element
+                        cardElement.style.display = 'none';
                     }
 
                  });
@@ -469,12 +449,10 @@
             // Add event listeners to filters and search input
             if (searchInput) {
                  searchInput.addEventListener('input', applyFiltersAndSearch);
-                  // Handle search button click (does the same as input)
                  document.querySelector('.search-container button').addEventListener('click', applyFiltersAndSearch);
-                 // Handle Enter key on search input
                  searchInput.addEventListener('keypress', function(event) {
                      if (event.key === 'Enter') {
-                         event.preventDefault(); // Prevent default form submission/page reload
+                         event.preventDefault();
                          applyFiltersAndSearch();
                      }
                  });
@@ -483,7 +461,7 @@
 
             if (ratingFilter) { ratingFilter.addEventListener('change', applyFiltersAndSearch); console.log("Rating filter listener added."); }
             if (genreFilter) { genreFilter.addEventListener('change', applyFiltersAndSearch); console.log("Genre filter listener added."); }
-            if (yearFilter) { yearFilter.addEventListener('change', applyFiltersAndSearch); console.log("Year filter listener added."); } // Add year filter listener
+            if (yearFilter) { yearFilter.addEventListener('change', applyFiltersAndSearch); console.log("Year filter listener added."); }
 
 
              // Initial filter/search application in case there's a search term pre-filled
