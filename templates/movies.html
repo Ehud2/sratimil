@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {# Use conditional title #}
     <title>{{ 'כל הסרטים' if current_language == 'he' else 'All Movies' }}</title>
-    {# Link the main style sheet first for shared styles like header, footer, etc. ##}
+    {# Link the main style sheet first for shared styles like header, footer, etc. #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {# Link the specific movie page style sheet after the main one #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movies.css') }}">
@@ -218,7 +218,7 @@
     <script>
          // Pass current_language from Flask to JavaScript
          const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
-         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}"; // No need for manual quotes due to tojson filter
+         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
 
          // Pass the full movie data from Flask to JavaScript
          // Note: This converts the Python dictionary to a JavaScript object
@@ -468,20 +468,6 @@
              // or to ensure 'No results' is shown if the loaded list is empty
              applyFiltersAndSearch();
 
-             // --- Add Viewing History Tracking (Movie Page) ---
-             // This script runs *only* on the movies.html page.
-             // When a user visits this page, it counts as a "view" of this movie page.
-             const user = {{ user | tojson }}; // Access the user object passed from Flask
-             const movieData = {{ movies | tojson }}; // Use the movies data to look up current movie details
-
-             // Get the IMDb ID from the URL path (e.g., /movie/tt1234567)
-             // This requires parsing the URL pathname, which might be complex.
-             // Instead, we can simply check if the movieData object (which should contain the details
-             // of the specific movie being displayed if this were the movie DETAILS page) is available.
-             // BUT WAIT, this script is on movies.html (ALL MOVIES PAGE), not the DETAILS page.
-             // Viewing history should be tracked when the user clicks into a *specific* movie's page.
-             // **Therefore, the viewing history logic should be on movie.html and series.html.**
-             // I will move this logic to those files.
 
         }); // End DOMContentLoaded
     </script>
