@@ -1,29 +1,20 @@
 /* movies.css */
+/* This file is linked AFTER style.css in the HTML */
+/* It provides specific styles for the movies and series grid pages */
 
-/* Import shared styles from style.css */
-/* Note: Importing inside a CSS file is less common than linking in HTML */
-/* If style.css is linked in HTML BEFORE movies.css, styles will inherit/cascade correctly */
-/* @import url("style.css"); */
-
-
-/* Styles specific to the All Movies page */
-
-/* Ensure main content padding and margin on the movies page */
+/* Ensure main content padding and margin on these pages */
 .movies-page-content {
     padding-top: 40px; /* Same as index */
     padding-bottom: 50px; /* Same as index */
     flex-grow: 1; /* Same as index */
 }
 
-.item-card-link.hidden-item-by-pagination {
-    display: none; /* Keep this if pagination is implemented later */
-}
-
-
 /* Style for the page heading */
 .page-heading {
-    margin-bottom: 20px; /* Reduced margin to make space for filters */
+    margin-bottom: 20px; /* Reduced margin to make space for filters/content */
     /* Border and padding controlled by global/direction-specific rules in style.css */
+    /* The [dir] rules for .page-greeting in style.css define the border side */
+    /* Example: [dir="rtl"] .page-greeting sets border-right */
 }
 
 
@@ -38,11 +29,11 @@
 .page-heading p {
     font-size: 1.1em;
     color: var(--text-color);
-     margin-bottom: 20px; /* Add margin below paragraph to space from filters */
+     margin-bottom: 20px; /* Add margin below paragraph */
 }
 
 
-/* Styles for the filter container */
+/* Styles for the filter container (movies page only, but defined here) */
 .filter-container {
     display: flex; /* Use flexbox for layout */
     flex-wrap: wrap; /* Allow items to wrap to the next line on smaller screens */
@@ -98,7 +89,7 @@
 }
 
 
-/* Styles for the movie grid container */
+/* Styles for the movie/series grid container */
 .all-movies-grid {
     display: grid;
     /* Use grid-template-columns for responsive layout */
@@ -107,7 +98,7 @@
     grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
     gap: var(--card-gap); /* Use the same gap defined in style.css */
     justify-content: center; /* Center items horizontally if they don't fill the grid */
-    padding-bottom: 30px; /* Add padding similar to item-row */
+    padding-bottom: 30px; /* Add padding similar to index item-row */
     margin-bottom: -30px; /* Counteract the padding */
 }
 
@@ -117,9 +108,76 @@
     display: block; /* Important for the card to take grid space */
     text-decoration: none; /* Remove underline from the link */
     color: inherit; /* Inherit text color */
-    /* Add a transition for smooth hiding/showing if desired (works on opacity/transform) */
-    /* transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; */
 }
+
+
+/* --- Styles for the Load More Button (Series Page) --- */
+.load-more-button {
+    /* Re-use item-card dimensions */
+    width: var(--card-width); /* Match card width from root variable */
+    height: var(--card-height); /* Match card height from root variable */
+
+    /* Grid item properties */
+    display: flex; /* Keep flex for centering content inside */
+    flex-direction: column; /* Stack icon and text */
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
+     /* Needs to occupy a grid cell */
+    grid-column: auto; /* Default, but ensures it behaves as a grid item */
+    grid-row: auto; /* Default */
+
+    /* Appearance */
+    border: 2px dashed var(--primary-accent-color); /* Dashed border to indicate action */
+    border-radius: var(--border-radius-md); /* Use standard border-radius variable */
+    cursor: pointer;
+    transition: border-color var(--transition-fast), transform var(--transition-fast), background-color var(--transition-fast); /* Add transition for background */
+    background-color: var(--card-bg-color); /* Match card background or slightly different */
+    color: var(--primary-accent-color); /* Use accent color for text/icon */
+    font-family: var(--font-body);
+    font-size: 1.2em;
+    font-weight: 600;
+    text-align: center;
+    user-select: none; /* Prevent text selection */
+    outline: none; /* Remove default outline on focus */
+
+    position: relative;
+    z-index: 1; /* Ensure it's above background if needed */
+     /* Add a small lift on focus */
+     &:focus {
+         border-color: var(--text-heading-color);
+         transform: translateY(-2px);
+         background-color: rgba(102, 252, 241, 0.1); /* Subtle background change on focus */
+     }
+}
+
+.load-more-button:hover {
+    border-color: var(--text-heading-color); /* Change border on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+    background-color: rgba(102, 252, 241, 0.1); /* Subtle background change on hover */
+}
+
+.load-more-button i {
+    font-size: 2em; /* Larger icon */
+    margin-bottom: 10px;
+    color: var(--primary-accent-color); /* Ensure icon color */
+     transition: color var(--transition-fast);
+}
+
+.load-more-button:hover i {
+     color: var(--text-heading-color); /* Change icon color on hover */
+}
+
+
+/* Style for items hidden by pagination script */
+/* This class is added/removed by JavaScript to control visibility */
+.item-card-link.hidden-item-by-pagination {
+    display: none; /* Hide the item */
+}
+
+
+/* Style for the "No results found" message specific to this page if needed */
+/* #noResultsMessage { ... } */
+/* (The style is already in style.css and applies globally, which is fine) */
 
 
 /* ========================================= */
@@ -127,7 +185,8 @@
 /* ========================================= */
 
 @media (max-width: 768px) {
-    /* Adjustments copied from style.css */
+    /* Adjustments copied from style.css and movies.css */
+    /* Note: These override values from style.css :root and outside this media query */
     :root {
         --container-padding: 15px;
         --card-width: 180px;
@@ -136,54 +195,35 @@
         --header-height: 60px;
     }
 
-    .container {
-        padding: 0 var(--container-padding);
-    }
-
-    .site-header {
-        height: var(--header-height);
-    }
-
+    .container { padding: 0 var(--container-padding); }
+    .site-header { height: var(--header-height); }
     .header-content {
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 10px;
-        gap: 10px;
+        flex-wrap: wrap; justify-content: space-between; align-items: center;
+        padding: 0 10px; gap: 10px;
     }
 
     /* Mobile Nav Toggle - Show button */
     .nav-toggle {
         display: flex;
-        background: none;
-        border: none;
-        color: var(--text-color);
-        font-size: 1.5em;
-        cursor: pointer;
-        padding: 5px;
-        align-items: center;
-        justify-content: center;
-        transition: color var(--transition-fast);
-        flex-shrink: 0;
+        background: none; border: none; color: var(--text-color);
+        font-size: 1.5em; cursor: pointer; padding: 5px;
+        align-items: center; justify-content: center;
+        transition: color var(--transition-fast); flex-shrink: 0;
     }
     .nav-toggle:hover { color: var(--primary-accent-color); }
-
 
     .auth-container { flex-shrink: 0; }
 
     .search-container {
-        flex-grow: 1;
-        order: 3;
-        max-width: calc(100% - (40px + 10px) * 2 - 10px); /* Adjust max width */
+        flex-grow: 1; order: 3;
+        max-width: calc(100% - (40px + 10px) * 2 - 10px);
         flex-basis: 150px;
     }
-    #searchInput {
-        width: 100%;
-        max-width: none;
-        padding: 8px 12px;
-    }
+    #searchInput { width: 100%; max-width: none; padding: 8px 12px; }
     #searchInput:focus { width: 100%; }
-    /* Text alignment for search input in mobile - handled by global rules */
+    /* Text alignment for search input in mobile - handled by global rules in style.css */
+    /* [dir="rtl"] #searchInput { text-align: right; } - Defined in style.css */
+    /* [dir="ltr"] #searchInput { text-align: left; } - Defined in style.css */
 
 
     .language-switcher { flex-shrink: 0; }
@@ -191,168 +231,123 @@
     /* Mobile Nav - Styles for overlay and appearance */
     .main-nav {
         display: none; /* Hidden by default */
-        position: fixed;
-        top: var(--header-height);
-        left: 0;
-        width: 100%;
-        height: calc(100vh - var(--header-height));
+        position: fixed; top: var(--header-height); left: 0;
+        width: 100%; height: calc(100vh - var(--header-height));
         background-color: var(--bg-secondary);
-        flex-direction: column;
-        align-items: center;
-        padding: 20px 0;
-        overflow-y: auto;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-        z-index: 999;
+        flex-direction: column; align-items: center; padding: 20px 0;
+        overflow-y: auto; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); z-index: 999;
         transition: transform var(--transition-medium), opacity var(--transition-medium);
-        opacity: 0;
-        transform: translateX(100%); /* Start off-screen right (LTR default) */
+        opacity: 0; transform: translateX(100%); /* LTR default */
     }
-    [dir="rtl"] .main-nav { transform: translateX(-100%); /* Start off-screen left (RTL) */ }
+    /* RTL slide animation start position */
+    [dir="rtl"] .main-nav { transform: translateX(-100%); }
+    /* Slide into view state for both directions */
+    .main-nav.nav-open { display: flex; opacity: 1; transform: translateX(0); }
 
-    .main-nav.nav-open {
-        display: flex; /* Show when open */
-        opacity: 1;
-        transform: translateX(0); /* Slide into view */
-    }
 
     .main-nav a {
-        width: 100%;
-        text-align: center;
-        padding: 15px 20px;
-        font-size: 1.2em;
-        border-bottom: 1px solid rgba(69, 162, 158, 0.2);
-        border-radius: 0;
-        gap: 10px;
-        justify-content: center; /* Center icon and text */
-        direction: inherit;
+        width: 100%; text-align: center; padding: 15px 20px; font-size: 1.2em;
+        border-bottom: 1px solid rgba(69, 162, 158, 0.2); border-radius: 0; gap: 10px;
+        justify-content: center; direction: inherit;
     }
-     .main-nav a:last-child { border-bottom: none; }
+    .main-nav a:last-child { border-bottom: none; }
 
 
-    /* Movies page specific adjustments for mobile */
+    /* Movies/Series page specific adjustments for mobile */
     .movies-page-content {
-         padding-top: 20px; /* Adjust top padding */
-         padding-bottom: 30px; /* Adjust bottom padding */
+         padding-top: 20px; padding-bottom: 30px; /* Adjust padding */
     }
 
     .page-heading {
         margin-bottom: 15px; /* Adjust margin */
         /* Border and padding handled by global/direction-specific rules in style.css */
-         padding-left: 15px; /* Adjust padding for mobile */
-         padding-right: 15px; /* Adjust padding for mobile */
+        /* [dir="rtl"] .page-greeting sets border-right and padding - applies here */
+        /* [dir="ltr"] .page-greeting sets border-left and padding - applies here */
+        /* Only adjust padding here if needed, but global rule is likely fine */
+         padding-left: 15px; padding-right: 15px; /* Adjust padding for mobile page heading */
     }
 
-    .page-heading h1 {
-        font-size: 1.8em; /* Smaller font size */
-    }
-    .page-heading p {
-        font-size: 1em; /* Smaller font size */
-        margin-bottom: 15px; /* Adjust margin */
-    }
+    .page-heading h1 { font-size: 1.8em; /* Smaller font size */ }
+    .page-heading p { font-size: 1em; margin-bottom: 15px; /* Adjust margin */ }
 
-    /* Filter container adjustments for mobile */
+    /* Filter container adjustments for mobile (Applies only to movies page) */
     .filter-container {
-        flex-direction: column; /* Stack filters vertically */
-        align-items: flex-start; /* Align items to the start */
-        gap: 15px; /* Reduce gap when stacked */
-        margin-bottom: 30px; /* Adjust margin */
-        padding: 0 15px; /* Adjust padding */
+        flex-direction: column; align-items: flex-start; gap: 15px;
+        margin-bottom: 30px; padding: 0 15px;
     }
-
-    .filter-group {
-        flex-direction: column; /* Stack label and select vertically */
-        align-items: flex-start;
-        gap: 5px;
-        width: 100%; /* Make filter group take full width */
-    }
-
-    .filter-group label {
-         width: 100%; /* Label takes full width */
-         font-size: 0.9em; /* Smaller label font */
-         color: var(--text-color); /* Use body text color for labels */
-    }
-
-     .filter-group select {
-         width: 100%; /* Select takes full width */
-         max-width: none; /* Remove max-width constraint */
-         padding: 8px; /* Adjust padding */
-         font-size: 0.9em; /* Smaller font size */
-     }
+    .filter-group { flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; }
+    .filter-group label { width: 100%; font-size: 0.9em; color: var(--text-color); }
+    .filter-group select { width: 100%; max-width: none; padding: 8px; font-size: 0.9em; }
 
 
-    /* Movie grid adjustments for mobile */
+    /* Movie/Series grid adjustments for mobile */
     .all-movies-grid {
-        /* Use mobile card size and gap */
+        /* Use mobile card size and gap from :root overridden above */
         grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
         gap: var(--card-gap);
-         padding-bottom: 20px; /* Adjust padding */
-         margin-bottom: -20px; /* Adjust margin */
+        padding-bottom: 20px; /* Adjust padding */
+        margin-bottom: -20px; /* Adjust margin */
     }
 
      /* Item Card adjustments for mobile */
-    .item-card {
-        width: var(--card-width); /* Use mobile card width */
-    }
-    .card-image-container {
-        height: var(--card-height); /* Use mobile card height */
-    }
+    .item-card { width: var(--card-width); }
+    .card-image-container { height: var(--card-height); }
 
-    .card-overlay { padding: 10px; /* Smaller padding */ }
+    .card-overlay { padding: 10px; }
 
-    .play-button {
-        width: 40px; height: 40px; font-size: 1.2em; /* Smaller button */
-    }
+    .play-button { width: 40px; height: 40px; font-size: 1.2em; }
     .play-button:hover { transform: translate(-50%, -50%) scale(1.1); }
 
     .card-title {
-        font-size: 1em; margin-bottom: 5px; /* Smaller title font */
-         transition: transform 0.2s 0.05s ease, opacity 0.2s 0.05s ease;
+        font-size: 1em; margin-bottom: 5px;
+        transition: transform 0.2s 0.05s ease, opacity 0.2s 0.05s ease;
     }
-     .item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; }
+    .item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; }
 
-
-    .card-subtitle {
-         font-size: 0.7em; /* Smaller subtitle font */
-         margin-top: 3px; margin-bottom: 8px;
-     }
+    .card-subtitle { font-size: 0.7em; margin-top: 3px; margin-bottom: 8px; }
 
     .card-actions {
-        gap: 8px; /* Smaller gap */
-         transition: opacity 0.2s 0.1s ease;
-        /* justify-content handled by global rule based on [dir] */
+        gap: 8px;
+        transition: opacity 0.2s 0.1s ease;
+        /* justify-content handled by global rule based on [dir] in style.css */
+        /* [dir="rtl"] .card-actions { justify-content: flex-end; } - Defined in style.css */
+        /* [dir="ltr"] .card-actions { justify-content: flex-start; } - Defined in style.css */
     }
-     .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
+    .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
 
-    .card-actions button {
-        width: 28px; height: 28px; font-size: 0.7em; /* Smaller buttons */
-    }
+    .card-actions button { width: 28px; height: 28px; font-size: 0.7em; }
     .card-actions button:hover { transform: scale(1.1); }
 
+    /* Rank number adjustment - handled by global [dir] rules, adjust size/bottom here */
+    .rank-number { width: 50px; height: 50px; bottom: 8px; }
+    /* left/right position handled by global [dir] rules in style.css */
+    /* [dir="rtl"] .rank-number { left: -15px; right: auto; } - Defined in style.css */
+    /* [dir="ltr"] .rank-number { left: auto; right: -15px; } - Defined in style.css */
 
-    .rank-number {
-        width: 50px; height: 50px; /* Adjust size */
-        bottom: 8px; /* Adjust bottom position */
-        /* left/right handled by global [dir] rules */
+    .rank-text { font-size: 1.5em; }
+
+    /* Load More Button adjustments for mobile */
+    .load-more-button {
+        width: var(--card-width); /* Keep same size as other cards */
+        height: var(--card-height);
+         /* Other styles are proportional */
+         font-size: 1em; /* Adjust font size */
+         border-radius: var(--border-radius-md); /* Use standard radius */
     }
-    .rank-text { font-size: 1.5em; /* Smaller rank font */ }
-
+     .load-more-button i {
+         font-size: 1.8em; /* Adjust icon size */
+         margin-bottom: 8px; /* Adjust margin */
+     }
 
     /* No results message adjustment */
-    #noResultsMessage {
-         margin: 40px auto;
-         padding: 20px;
-         font-size: 1em;
-         max-width: 90%;
-    }
+    #noResultsMessage { margin: 40px auto; padding: 20px; font-size: 1em; max-width: 90%; }
 
      /* Flash message adjustments */
      .flash-messages { padding: 10px 0; }
-     .alert {
-          padding: 10px 15px;
-          margin-bottom: 10px;
-          font-size: 0.9em;
-     }
-     /* close-flash position handled by global [dir] rules */
+     .alert { padding: 10px 15px; margin-bottom: 10px; font-size: 0.9em; }
+     /* close-flash position handled by global [dir] rules in style.css */
+     /* [dir="rtl"] .close-flash { left: auto; right: 15px; } - Defined in style.css */
+     /* [dir="ltr"] .close-flash { left: auto; right: 15px; } - Defined in style.css */
 
 
 } /* End of @media (max-width: 768px) */
