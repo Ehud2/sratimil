@@ -140,34 +140,38 @@ def load_movies_data():
         return {}
 
 def load_series_data_for_index():
-    """Loads series data for index display from Firebase, adding 'type: series'."""
+    """Loads basic series data for index/all_series display from Firebase, adding 'type: series'.
+       Excludes nested Season/Episode data for performance."""
     try:
-        # We only need top-level series info for the index card
+        # We need top-level series info for the index/all_series card
+        # Fetch all top-level series data first
         ref = db.reference('/Series')
         series_dict = ref.get()
-        series_for_index = {}
+
+        series_for_display = {} # Use a different name to avoid confusion with old logic
         if series_dict:
             for imdb_id, details in series_dict.items():
-                 # Only include basic details for the index card
-                 # Avoid fetching nested Seasons/Episodes here for performance
+                 # Only include basic details for the card
+                 # Explicitly exclude the 'Seasons' key if it exists
                 if isinstance(details, dict):
-                     # Include both English and Hebrew names/posters if they exist
-                    series_for_index[imdb_id] = {
+                    basic_details = {
                         'imdbID': imdb_id,
                         'title': details.get('title', 'כותרת לא ידועה'),
                         'poster': details.get('poster', 'N/A'),
                         'HebrewName': details.get('HebrewName'), # Include Hebrew name
                         'HebrewPoster': details.get('HebrewPoster'), # Include Hebrew poster
-                        'category': details.get('category', 'ללא'),
-                        'type': 'series' # Add type identifier
+                        'category': details.get('category', 'ללא'), # Include category
+                        'type': 'series', # Add type identifier
+                         # Do NOT include 'Seasons' or other large nested structures here
                     }
+                    series_for_display[imdb_id] = basic_details
                 else:
-                    logging.warning(f"Skipping non-dict series entry: {imdb_id}")
+                    logging.warning(f"Skipping non-dict series entry in /Series: {imdb_id}")
 
-        logging.info(f"Loaded {len(series_for_index)} series for index from Firebase.")
-        return series_for_index if series_for_index is not None else {}
+        logging.info(f"Loaded basic details for {len(series_for_display)} series from Firebase for display.")
+        return series_for_display if series_for_display is not None else {}
     except Exception as e:
-        logging.error(f"Error loading series for index from Firebase: {e}", exc_info=True)
+        logging.error(f"Error loading basic series data for display from Firebase: {e}", exc_info=True)
         return {}
 
 
