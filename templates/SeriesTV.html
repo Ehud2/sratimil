@@ -20,24 +20,20 @@
     {# Included loading spinner styles directly in style.css #}
 
     <style>
-        /* Style for the Load More button container */
-        .load-more-container {
-            margin-top: 30px;
-            display: flex;
-            justify-content: center; /* Center the button */
-        }
-
-        /* Style the Load More button to look like a card */
+        /* Style for the Load More button when it's a grid item */
         .load-more-button {
             /* Re-use item-card styles */
-            width: var(--card-width);
+            /* Grid item properties */
+            display: flex; /* Keep flex for centering content inside */
+            flex-direction: column; /* Stack icon and text */
+            justify-content: center; /* Center vertically */
+            align-items: center; /* Center horizontally */
+
+            /* Appearance */
+            width: 100%; /* Take full width of the grid cell */
             height: var(--card-height); /* Match card height */
             border: 2px dashed var(--primary-accent-color); /* Dashed border to indicate action */
             border-radius: var(--card-border-radius);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             cursor: pointer;
             transition: border-color 0.3s ease, transform 0.1s ease;
             background-color: var(--background-color-light); /* Match card background or slightly different */
@@ -47,6 +43,10 @@
             font-weight: 600;
             text-align: center;
             user-select: none; /* Prevent text selection */
+
+            /* Ensure it doesn't overlap with card overlay via z-index if necessary, but unlikely here */
+            position: relative; /* Needed for z-index if used, or just good practice for interactive elements */
+            z-index: 1; /* Above default content */
         }
 
         .load-more-button:hover {
@@ -64,6 +64,10 @@
          .item-card-link.hidden-item-by-pagination {
              display: none;
          }
+
+         /* Ensure grid gap applies around the button too */
+         /* This should be handled by the .all-movies-grid gap property */
+
 
     </style>
 </head>
@@ -205,16 +209,15 @@
                     </a> {# End of anchor tag wrapper #}
                 {% endif %}
             {% endfor %}
-        </div>
 
-        {# Add the "Load More" button/area after the grid #}
-        {# It will be styled to look like a card #}
-         <div class="load-more-container">
+            {# Add the "Load More" button/area directly inside the grid #}
+            {# It will be styled to look like a card and occupy a grid cell #}
              <div id="loadMoreButton" class="load-more-button" role="button" aria-label="{{ 'טען עוד סדרות' if current_language == 'he' else 'Load More Series' }}" tabindex="0">
                  <i class="fas fa-sync-alt"></i> {# Or another suitable icon like fa-arrow-down #}
                  <span>{{ 'טען עוד' if current_language == 'he' else 'Load More' }}</span>
              </div>
-         </div>
+
+        </div>
 
 
         <div id="noResultsMessage" style="display: none;">
@@ -239,7 +242,7 @@
         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
         const itemsPerPage = {{ items_per_page | tojson }}; // Get items per page from Flask
 
-        let currentlyDisplayedCount = 0; // Keep track of how many items are displayed
+        let currentlyDisplayedCount = 0; // Keep track of how many items are displayed *by pagination*
 
         // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -287,51 +290,53 @@
 
             const searchInput = document.getElementById('searchInput');
             const noResultsMessage = document.getElementById('noResultsMessage');
-            // Select ALL series card links once
+            // Select ALL series card links once (excluding the load more button)
             const allItemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item');
-            const loadMoreButton = document.getElementById('loadMoreButton');
+            const loadMoreButton = document.getElementById('loadMoreButton'); // Select the button
 
             console.log(`Found ${allItemCardLinks.length} series items in the DOM.`);
 
             // Function to show a range of items
             function showItems(startIndex, endIndex) {
+                 let itemsShownInBatch = 0;
                  for (let i = startIndex; i < endIndex && i < allItemCardLinks.length; i++) {
                       allItemCardLinks[i].style.display = ''; // Restore display (e.g., grid item default)
-                      allItemCardLinks[i].classList.remove('hidden-item-by-pagination'); // Remove the initial hidden class
+                      // allItemCardLinks[i].classList.remove('hidden-item-by-pagination'); // Class isn't strictly needed if we use style.display
+                       itemsShownInBatch++;
                  }
-                 console.log(`Displayed items from index ${startIndex} to ${endIndex - 1}.`);
+                 console.log(`Displayed ${itemsShownInBatch} items starting from index ${startIndex}. Total displayed now: ${currentlyDisplayedCount + itemsShownInBatch}`);
+                 currentlyDisplayedCount += itemsShownInBatch; // Update the global count
             }
 
-            // Function to hide all items
-            function hideAllItems() {
+            // Function to hide all series items
+            function hideAllSeriesItems() {
                  allItemCardLinks.forEach(link => {
                       link.style.display = 'none';
                  });
-                 console.log("Hid all items.");
+                 currentlyDisplayedCount = 0; // Reset count when hiding all
+                 console.log("Hid all series items.");
             }
 
             // Function to update the visibility of the Load More button
             function updateLoadMoreButtonVisibility() {
-                 // Only show load more button if not searching AND there are more items to display
                  const isSearching = searchInput.value.trim() !== '';
                  const allItemsDisplayed = currentlyDisplayedCount >= allItemCardLinks.length;
 
                  if (isSearching || allItemsDisplayed) {
-                      loadMoreButton.style.display = 'none';
+                      if (loadMoreButton) loadMoreButton.style.display = 'none';
                       console.log(`Hide Load More: Searching=${isSearching}, All items displayed=${allItemsDisplayed}`);
                  } else {
-                      loadMoreButton.style.display = ''; // Restore display (e.g., flex from CSS)
+                      if (loadMoreButton) loadMoreButton.style.display = ''; // Restore display (e.g., grid item default)
                       console.log(`Show Load More: currentlyDisplayedCount=${currentlyDisplayedCount}, totalItems=${allItemCardLinks.length}`);
                  }
             }
 
 
             // --- Initial Load ---
-            // Hide all items first
-            hideAllItems();
+            // Hide all series items first
+            hideAllSeriesItems();
             // Display the first batch
             showItems(0, itemsPerPage);
-            currentlyDisplayedCount = itemsPerPage;
             // Update the Load More button visibility
             updateLoadMoreButtonVisibility();
 
@@ -339,10 +344,12 @@
             // --- Load More Button Click Handler ---
             if (loadMoreButton) {
                  loadMoreButton.addEventListener('click', function() {
+                      const nextBatchStartIndex = currentlyDisplayedCount; // Start from the current count
                       const nextBatchEndIndex = currentlyDisplayedCount + itemsPerPage;
-                      showItems(currentlyDisplayedCount, nextBatchEndIndex);
-                      currentlyDisplayedCount = nextBatchEndIndex; // Update the count
-                      updateLoadMoreButtonVisibility(); // Check if button should now be hidden
+                      showItems(nextBatchStartIndex, nextBatchEndIndex); // showItems function updates currentlyDisplayedCount
+
+                      // Check if the button should be hidden *after* showing the new batch
+                      updateLoadMoreButtonVisibility();
                  });
                  // Also handle keyboard activation for accessibility
                  loadMoreButton.addEventListener('keypress', function(event) {
@@ -364,7 +371,7 @@
 
                     let visibleCount = 0; // Count how many items match the search
 
-                    // Iterate through ALL items (not just currently displayed ones)
+                    // Iterate through ALL series items
                     allItemCardLinks.forEach(link => {
                          // Get title based on current language from data attributes
                          // Fallback to the other language title if the preferred one is missing
@@ -387,22 +394,17 @@
                          noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
                     }
 
-                    // Update Load More button visibility based on search state
-                    updateLoadMoreButtonVisibility();
-
-                     // Reset pagination state when search is active
+                     // Handle Load More button visibility and pagination reset based on search state
                      if (searchTerm !== '') {
-                         currentlyDisplayedCount = allItemCardLinks.length; // Effectively mark all as 'displayed' for pagination purposes when searching
+                         // If searching, hide the load more button and effectively "display" all items that match the search
+                         currentlyDisplayedCount = allItemCardLinks.length; // Set count to max to hide load more
+                         updateLoadMoreButtonVisibility();
                      } else {
                           // If search term is cleared, reset pagination and re-apply initial display
-                          hideAllItems();
-                          currentlyDisplayedCount = 0; // Reset count
-                          showItems(0, itemsPerPage);
-                          currentlyDisplayedCount = itemsPerPage; // Update count after showing initial batch
+                          hideAllSeriesItems(); // This also resets currentlyDisplayedCount to 0
+                          showItems(0, itemsPerPage); // showItems updates currentlyDisplayedCount
+                          updateLoadMoreButtonVisibility(); // Update button visibility
                      }
-                     updateLoadMoreButtonVisibility(); // Update button visibility again after potentially resetting pagination
-
-
                 });
 
                  // Handle search button click (triggers the input event)
