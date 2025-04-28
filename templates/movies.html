@@ -27,6 +27,7 @@
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
                 {# Fallback to default profile image if user or picture is missing #}
+                {# Use url_for for your static image #}
                 <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
             {% endif %}
         </div>
@@ -53,7 +54,7 @@
                      <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
                           {# Replace the base64 string with your desired image URL or placeholder #}
                           {# Use url_for for your static image #}
-                          <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
+                          <img src="imageurlhere" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
                      </a>
                  {% endif %}
              </div>
@@ -218,7 +219,7 @@
     <script>
          // Pass current_language from Flask to JavaScript
          const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
-         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
+         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}"; // No need for manual quotes due to tojson filter
 
          // Pass the full movie data from Flask to JavaScript
          // Note: This converts the Python dictionary to a JavaScript object
