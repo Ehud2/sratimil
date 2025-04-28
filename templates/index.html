@@ -47,7 +47,7 @@
                      <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
                           {# Replace the base64 string with your desired image URL or placeholder #}
                           {# Use url_for for your static image #}
-                          <img src="imageurlhere" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
+                          <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
                      </a>
                  {% endif %}
              </div>
@@ -123,22 +123,6 @@
              </div>
         </section>
 
-        {# --- NEW Recommended for You Section --- #}
-        <section id="recommendedSection" class="category-section" style="display: none;">
-            <h2>{{ 'מומלץ בשבילך' if current_language == 'he' else 'Recommended for You' }}</h2>
-            <div class="item-row" id="recommendedRow">
-                {# Recommended items will be populated here by JavaScript #}
-            </div>
-             <div id="noRecommendationsMessage" style="display: none; color: #aaa; text-align: center; padding: 20px;">
-                {% if current_language == 'he' %}
-                 לא נמצאו המלצות עבורך כרגע. צפה בעוד תוכן כדי לשפר את ההמלצות!
-                {% else %}
-                 No recommendations found for you right now. Watch more content to improve recommendations!
-                {% endif %}
-             </div>
-        </section>
-        {# --- END NEW Recommended for You Section --- #}
-
 
         {% for category_name, items_in_category in categories.items() %}
             {% if items_in_category %}
@@ -151,7 +135,7 @@
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
                              {# Make sure the URL includes the language parameter if needed, but the backend sets session, so not strictly necessary in URL #}
-                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}" data-genre="{{ item.get('genre', '') | lower | trim }}" data-category="{{ item.get('category', 'ללא') | lower | trim }}"> {# Added data attributes for search and Recommendation logic #}
+                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}"> {# Added data attributes for search with both languages #}
                                 <div class="item-card" tabindex="0"> {# Moved data-title/id/type to the link #}
                                     <div class="card-image-container">
                                         {# Use Hebrew poster if language is HE and Hebrew poster exists, otherwise use English poster, fallback to default #}
@@ -266,20 +250,15 @@
             // --- Search Filter Functionality ---
             const searchInput = document.getElementById('searchInput');
             const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
-            // Select ALL catalog items, including those potentially added by JS later (like recommendations)
-            // We will dynamically filter based on which items are currently visible in standard sections
-            const allCatalogItems = document.querySelectorAll('.catalog-item'); // Get all catalog items initially
+            const catalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Get all catalog items
+
 
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
-                    let anyVisibleInCatalogSections = false;
+                    let anyVisible = false;
 
-                    // Get all items currently displayed in standard category sections
-                    const currentCatalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection):not(#recommendedSection) .item-card-link.catalog-item');
-
-
-                    currentCatalogItems.forEach(link => {
+                    catalogItems.forEach(link => {
                          // Get title based on current language from data attributes
                          // Fallback to the other language title if the preferred one is missing
                          const titleHe = link.dataset.titleHe || link.dataset.titleEn || '';
@@ -290,36 +269,16 @@
 
                          if (title.includes(searchTerm)) {
                              link.style.display = ''; // Show the link (and thus the card)
-                             anyVisibleInCatalogSections = true;
+                             anyVisible = true;
                          } else {
                              link.style.display = 'none'; // Hide the link (and thus the card)
                          }
                     });
 
                     // Update no results message visibility
-                    // Only show 'no results' if NO items are visible in the standard categories *after* filtering
                     if (noResultsMessage) {
-                         noResultsMessage.style.display = anyVisibleInCatalogSections ? 'none' : 'block';
+                         noResultsMessage.style.display = anyVisible ? 'none' : 'block';
                     }
-
-                    // Hide recommendations and continue watching sections when searching
-                    const continueWatchingSection = document.getElementById('continueWatchingSection');
-                    const recommendedSection = document.getElementById('recommendedSection');
-                    if (searchTerm.length > 0) {
-                         if (continueWatchingSection) continueWatchingSection.style.display = 'none';
-                         if (recommendedSection) recommendedSection.style.display = 'none';
-                         // Also hide their specific "no items" messages if visible
-                         if (document.getElementById('noContinueWatchingMessage')) document.getElementById('noContinueWatchingMessage').style.display = 'none';
-                         if (document.getElementById('noRecommendationsMessage')) document.getElementById('noRecommendationsMessage').style.display = 'none';
-
-                    } else {
-                         // Show CW and Recommendations sections again when search is cleared
-                         // Their visibility will be determined by their own JS logic later
-                         if (continueWatchingSection) continueWatchingSection.style.display = ''; // Set back to default display handled by CW JS
-                         if (recommendedSection) recommendedSection.style.display = ''; // Set back to default display handled by Recommendation JS
-                    }
-
-
                 });
 
                 // Handle search button click (does the same as input for now)
@@ -436,17 +395,17 @@
                             if (uniqueValidItemsMap.has(canonicalKey)) {
                                 const existingItem = uniqueValidItemsMap.get(canonicalKey);
                                 // Get episode info for the item currently in the map
-                                // Use latest_* from map item for comparison
-                                const existingSeason = existingItem.latest_season ? parseInt(existingItem.latest_season, 10) : 0;
-                                const existingEpisode = existingItem.latest_episode ? parseInt(existingItem.latest_episode, 10) : 0;
+                                const existingEpisodeInfo = getEpisodeInfo(existingItem); // Should use latest_* from map item
+                                const existingSeason = existingEpisodeInfo ? existingEpisodeInfo.season : 0; // Default to 0 if no info
+                                const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0; // Default to 0 if no info
 
 
-                                // Compare the current item's episode (from localStorage) with the one already in the map (which represents the latest seen so far)
+                                // Compare the current episode with the one already in the map
                                 // Keep the one with the later season, or later episode if seasons are the same
-                                // The logic here should be: if the *current* item (from the localStorage loop) is *later* than the one we have for this series in the map, update the map.
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
+                                     // The current item represents a *later* episode for this series
                                      console.log(`CW: Updating series ${item.id} to S${seasonNum}E{episodeNum} (was S${existingSeason}E{existingEpisode}).`);
-                                    // Update the map entry with the details from the *current* item
+                                    // Update the map entry with the later episode details
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
@@ -456,12 +415,12 @@
                                         HebrewPoster: item.HebrewPoster, // Keep Hebrew
                                         latest_season: seasonNum, // Store as latest_* in the canonical format
                                         latest_episode: episodeNum, // Store as latest_* in the canonical format
-                                         // Use the timestamp from the *current* item being processed if it's valid, otherwise keep the existing one if it's also valid and > 0
-                                        timestamp: timestamp > 0 ? timestamp : (existingItem.timestamp > 0 ? existingItem.timestamp : 0),
+                                         // Use the timestamp from the *latest* episode found, even if it's from an old entry format
+                                        timestamp: timestamp,
                                         // Add other series details needed for the card if any beyond title/poster
                                     });
                                 } else {
-                                    // The existing item in the map is already the latest or equal. Do nothing to the map entry.
+                                    // The existing item in the map is already the latest or equal. Do nothing.
                                      // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E{episodeNum}.`); // Debug log
                                 }
                             } else {
@@ -476,7 +435,7 @@
                                     HebrewPoster: item.HebrewPoster, // Keep Hebrew
                                     latest_season: seasonNum, // Store as latest_*
                                     latest_episode: episodeNum, // Store as latest_*
-                                     timestamp: timestamp, // Store timestamp from the item
+                                     timestamp: timestamp, // Store timestamp
                                     // Add other series details needed for the card if any beyond title/poster
                                 });
                             }
@@ -493,7 +452,7 @@
 
                     // Optional: Save the cleaned, consolidated data back to localStorage
                     // This effectively migrates old per-episode data to the new per-series-latest format over time.
-                    // By converting the Map back to an object, old keys like series_ttXXXXXXX_SxE are automatically discarded if they weren't the latest processed.
+                    // By converting the Map back to an object, keys like series_ttXXXXXXX_SxE are automatically discarded.
                     const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap); // Convert Map back to object
                     try {
                          localStorage.setItem(localStorageKey, JSON.stringify(cleanedContinueWatchingItems));
@@ -522,7 +481,7 @@
                             let subtitleText = '';
 
                             // Select title and poster based on current language
-                            const displayTitle = currentLanguage === 'he' ? item.HebbrewName || item.title : item.title || item.HebrewName; // Corrected typo HebrewName
+                            const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
                             const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
 
 
@@ -562,13 +521,7 @@
 
                             itemLink.href = href;
                             itemLink.classList.add('item-card-link');
-                            itemLink.classList.add('continue-watching-item'); // Add this class for specific styling if needed
-                            // Add data attributes for search to CW items too
-                             itemLink.dataset.id = item.id;
-                             itemLink.dataset.type = item.type;
-                             itemLink.dataset.titleHe = (item.HebrewName || item.title || '').toLowerCase(); // Corrected typo
-                             itemLink.dataset.titleEn = (item.title || item.HebrewName || '').toLowerCase();
-
+                            itemLink.classList.add('continue-watching-item');
 
                             // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
@@ -619,31 +572,20 @@
                                   e.preventDefault();
                                   e.stopPropagation();
 
-                                   // Get the unique key for this item to remove from localStorage *CW*
-                                   // For movies, it's movie_id. For series, it's series_id_SxE.
-                                   // Need to reconstruct the exact key used for this item in localStorage CW
-                                   let keyToRemove;
-                                   if(item.type === 'movie') {
-                                       keyToRemove = `movie_${item.id}`;
-                                   } else if (item.type === 'series' && item.latest_season && item.latest_episode) {
-                                        keyToRemove = `series_${item.id}_S${item.latest_season}E${item.latest_episode}`;
-                                   } else {
-                                        console.warn("CW: Cannot determine key to remove for item:", item);
-                                        return; // Don't attempt removal if key can't be determined
-                                   }
+                                   // Get the canonical key for this item to remove from the map
+                                   const itemKeyToRemove = `${item.type}_${item.id}`;
 
-
-                                   if (continueWatchingItems[keyToRemove]) {
-                                        delete continueWatchingItems[keyToRemove]; // Remove from the cached object
+                                   if (uniqueValidItemsMap.has(itemKeyToRemove)) {
+                                        uniqueValidItemsMap.delete(itemKeyToRemove); // Remove from the map
                                         try {
-                                             // Save the updated cached object back to localStorage
-                                             localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
+                                             // Save the *current state of the map* back to localStorage
+                                             // This is the cleaned state, so old keys won't be added back.
+                                             localStorage.setItem(localStorageKey, JSON.stringify(Object.fromEntries(uniqueValidItemsMap)));
                                              itemLink.remove(); // Remove the element from the DOM
-                                             console.log(`CW: Removed item ${keyToRemove} from continue watching.`);
+                                             console.log(`CW: Removed item ${itemKeyToRemove} from continue watching.`);
 
-                                             // Check if the CW section should be hidden
-                                             const remainingCWItems = Object.keys(continueWatchingItems).length; // Count keys in the updated cache
-                                             if (remainingCWItems === 0) {
+                                             // Check if the section should be hidden
+                                             if (uniqueValidItemsMap.size === 0) {
                                                  continueWatchingSection.style.display = 'none';
                                                   noContinueWatchingMessage.style.display = 'block';
                                              }
@@ -653,11 +595,9 @@
                                         }
                                    } else {
                                        // This case should not happen if the display logic is correct,
-                                       // but if the item somehow exists in the DOM but not the cached CW object,
+                                       // but if the item somehow exists in the DOM but not the map,
                                        // it means something is out of sync. Log a warning.
-                                        console.warn("CW: Item element in DOM not found in cached continueWatchingItems:", keyToRemove, item);
-                                        // As a fallback, just remove from DOM
-                                        itemLink.remove();
+                                        console.warn("CW: Item element in DOM not found in uniqueValidItemsMap:", itemKeyToRemove, item);
                                    }
                               });
                              actionsDiv.appendChild(removeButton);
@@ -676,9 +616,8 @@
                             continueWatchingRow.appendChild(itemLink);
                         });
 
-                        // Show/hide sections based on remaining items in the *cached object*
-                         const finalRemainingCWItemsCount = Object.keys(continueWatchingItems).length;
-                         if (finalRemainingCWItemsCount > 0) {
+                        // Show/hide sections based on uniqueValidItemsMap size
+                         if (uniqueValidItemsMap.size > 0) {
                              continueWatchingSection.style.display = 'block';
                              noContinueWatchingMessage.style.display = 'none'; // Hide the "No items" message
                          } else {
@@ -702,582 +641,16 @@
                 }
 
             } else {
-                console.log("User not logged in. Continue Watching hidden.");
+                console.log("CW: User not logged in. Continue Watching hidden.");
                  continueWatchingSection.style.display = 'none';
                  noContinueWatchingMessage.style.display = 'none'; // Hide empty message too if not logged in
             }
 
 
-            // --- Recommendation Functionality (Client-Side) ---
-            const recommendedSection = document.getElementById('recommendedSection');
-            const recommendedRow = document.getElementById('recommendedRow');
-            const noRecommendationsMessage = document.getElementById('noRecommendationsMessage');
-             const defaultRecCount = 15; // How many recommendations to show
-
-            if (user && user.google_id) {
-                 const userId = user.google_id;
-                 const localStorageHistoryKey = `viewingHistory_${userId}`;
-
-                 let viewingHistoryItems = {};
-
-                 try {
-                      const storedHistoryData = localStorage.getItem(localStorageHistoryKey);
-                      if (storedHistoryData) {
-                          viewingHistoryItems = JSON.parse(storedHistoryData) || {};
-                           if (typeof viewingHistoryItems !== 'object' || viewingHistoryItems === null) {
-                               console.warn("History: localStorage data is not an object. Resetting.");
-                                viewingHistoryItems = {};
-                           }
-                          console.log("History: Loaded viewing history:", viewingHistoryItems);
-                      }
-
-                      const historyItemsArray = Object.values(viewingHistoryItems);
-
-                     if (historyItemsArray.length === 0) {
-                          console.log("History: No viewing history found. Cannot generate recommendations.");
-                           recommendedSection.style.display = 'none';
-                           noRecommendationsMessage.style.display = 'block'; // Show 'no history' message
-
-                     } else {
-                          console.log(`History: Generating recommendations based on ${historyItemsArray.length} watched items.`);
-
-                          // 1. Analyze Preferences from History
-                          const preferences = {
-                                genres: {},
-                                types: { movie: 0, series: 0 },
-                                categories: {} // For non-"ללא" categories
-                          };
-                          let totalGenresWatched = 0;
-                          let totalCategoriesWatched = 0;
-                          let totalItemsWatched = historyItemsArray.length;
-
-
-                          historyItemsArray.forEach(item => {
-                              // Ensure item has type, genre, category
-                              if (!item || typeof item !== 'object' || !item.type) return;
-
-                              // Count type preference
-                              if (item.type === 'movie' || item.type === 'series') {
-                                   preferences.types[item.type] = (preferences.types[item.type] || 0) + 1;
-                              }
-
-                              // Count genre preferences
-                              const genres = (item.genre || '').toLowerCase().split(',').map(g => g.trim()).filter(g => g.length > 0);
-                              genres.forEach(genre => {
-                                   preferences.genres[genre] = (preferences.genres[genre] || 0) + 1;
-                                   totalGenresWatched++;
-                              });
-
-                              // Count category preferences (only if not "ללא")
-                              const category = (item.category || 'ללא').toLowerCase().trim();
-                              if (category !== 'ללא' && category !== 'null') { // Also handle 'null' string just in case
-                                   preferences.categories[category] = (preferences.categories[category] || 0) + 1;
-                                   totalCategoriesWatched++;
-                              }
-                          });
-
-                           console.log("History: User Preferences (Counts):", preferences);
-                           console.log(`History: Total Genres Watched: ${totalGenresWatched}, Total Categories Watched (non-'ללא'): ${totalCategoriesWatched}, Total Items Watched: ${totalItemsWatched}`);
-
-
-                          // 2. Calculate Preference Weights (using percentages)
-                          const preferenceWeights = {
-                                genres: {},
-                                types: { movie: 0, series: 0 },
-                                categories: {}
-                          };
-
-                          // Genre weights
-                          for (const genre in preferences.genres) {
-                              if (totalGenresWatched > 0) {
-                                  preferenceWeights.genres[genre] = preferences.genres[genre] / totalGenresWatched;
-                              }
-                          }
-                           // Type weights
-                           if (totalItemsWatched > 0) {
-                                preferenceWeights.types.movie = preferences.types.movie / totalItemsWatched;
-                                preferenceWeights.types.series = preferences.types.series / totalItemsWatched;
-                           }
-                           // Category weights
-                           for (const category in preferences.categories) {
-                                if (totalCategoriesWatched > 0) {
-                                     preferenceWeights.categories[category] = preferences.categories[category] / totalCategoriesWatched;
-                                }
-                           }
-
-                           console.log("History: User Preferences (Weights):", preferenceWeights);
-
-
-                          // 3. Flatten all available content items
-                          // The 'categories' variable from Flask contains all movies and series
-                          // We need a single list of all items, removing the category grouping
-                           let allContentItems = [];
-                           // Add items from standard categories (these come from categorize_content which merges movies/series)
-                          for (const category in {{ categories | tojson }}) { // Loop through categories passed from Flask
-                               const itemsInCategory = {{ categories | tojson }}[category];
-                               if (Array.isArray(itemsInCategory)) {
-                                   itemsInCategory.forEach(item => {
-                                        // Ensure basic structure for recommendations and add to list if not already present
-                                        // Use a Map to keep track of unique items by id and type
-                                         const key = `${item.type}_${item.id}`;
-                                         if (!allContentItemsMap.has(key)) {
-                                              allContentItemsMap.set(key, item);
-                                         }
-                                   });
-                               }
-                          }
-                           // Add any items from allMoviesData or allSeriesData that might NOT be in a displayed category
-                           // (e.g. if they had category 'ללא') - though categorize_content should include them in movies/series data passed in.
-                           // Let's rely on the categorized data for simplicity, assuming it covers all items we *want* to recommend.
-                           // Create the map first, then extract values as an array
-                            const allContentItemsMap = new Map(); // Map to store all unique items by type_id
-
-                            // Since Flask passes `categories` which already combines movies and series
-                            // from `load_movies_data` and `load_series_data_for_index`, we can
-                            // iterate through the `categories` object, extract all items, and flatten them.
-                            // Ensure we get the genre and category details which were added in Flask
-                            // (load_movies_data and load_series_data_for_index might need to ensure these are present
-                            // in the basic info passed to categorize_content). Let's assume they are.
-                            for (const categoryName in {{ categories | tojson }}) {
-                                const items = {{ categories | tojson }}[categoryName];
-                                if (Array.isArray(items)) {
-                                    items.forEach(item => {
-                                         // Item structure from Flask: { id: imdb_id, title: ..., poster: ..., HebrewName: ..., HebrewPoster: ..., type: ..., category: ..., genre: ...? }
-                                         // The `genre` and `category` fields ARE included by load_movies_data and load_series_data_for_index
-                                         // and thus should be available in the `item` objects within `categories`.
-                                        if (item && item.id && item.type) {
-                                            const key = `${item.type}_${item.id}`;
-                                            if (!allContentItemsMap.has(key)) {
-                                                allContentItemsMap.set(key, item);
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-                           allContentItems = Array.from(allContentItemsMap.values());
-                           console.log(`History: Flattened ${allContentItems.length} total content items available for recommendation.`);
-
-
-                          // 4. Filter out items already in Viewing History
-                          const recommendableItems = allContentItems.filter(item => {
-                              const historyKey = `${item.type}_${item.id}`;
-                              return !viewingHistoryItems[historyKey]; // Keep item if NOT in history
-                          });
-                           console.log(`History: Filtered down to ${recommendableItems.length} items not in viewing history.`);
-
-
-                          // 5. Calculate Scores and Rank
-                          const scoredItems = recommendableItems.map(item => {
-                              let score = 0;
-
-                               // Score based on Genre match
-                               const itemGenres = (item.genre || '').toLowerCase().split(',').map(g => g.trim()).filter(g => g.length > 0);
-                               let genreScore = 0;
-                               itemGenres.forEach(genre => {
-                                    if (preferenceWeights.genres[genre]) {
-                                         genreScore += preferenceWeights.genres[genre]; // Add weight for matching genre
-                                    }
-                               });
-                               // Simple scoring: just sum genre weights. Could also multiply or use other methods.
-                               score += genreScore;
-
-
-                              // Score based on Type match
-                              if (item.type === 'movie' && preferenceWeights.types.movie > 0) {
-                                   score += preferenceWeights.types.movie; // Add weight for matching movie type
-                              } else if (item.type === 'series' && preferenceWeights.types.series > 0) {
-                                   score += preferenceWeights.types.series; // Add weight for matching series type
-                              }
-
-
-                              // Score based on Category match (only for non-"ללא")
-                              const itemCategory = (item.category || 'ללא').toLowerCase().trim();
-                               if (itemCategory !== 'ללא' && itemCategory !== 'null') {
-                                    if (preferenceWeights.categories[itemCategory]) {
-                                         score += preferenceWeights.categories[itemCategory]; // Add weight for matching category
-                                    }
-                               }
-
-                              // Return the item along with its calculated score
-                              return { item: item, score: score };
-                          });
-
-                          // Sort items by score descending
-                          scoredItems.sort((a, b) => b.score - a.score);
-
-                           // Filter out items with zero score if desired, but taking top N is usually enough
-                           const topRecommendations = scoredItems.filter(scoredItem => scoredItem.score > 0).slice(0, defaultRecCount);
-                           console.log(`History: Identified top ${topRecommendations.length} recommendations with score > 0.`);
-
-
-                          // 6. Display Top Recommendations
-                          if (topRecommendations.length > 0) {
-                              recommendedRow.innerHTML = ''; // Clear previous content
-
-                              topRecommendations.forEach(scoredItem => {
-                                  const item = scoredItem.item;
-
-                                  // Use similar card creation logic as Continue Watching
-                                  const itemLink = document.createElement('a');
-                                  let href = '#';
-                                  let titleText = '';
-                                  let subtitleText = '';
-
-                                  // Select title and poster based on current language
-                                  const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
-                                  const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
-
-                                  // Construct the correct URL and subtitle based on item type
-                                  if (item.type === 'movie') {
-                                       href = `${movieDetailsBaseUrl}${item.id}`;
-                                       titleText = displayTitle || (currentLanguage === 'he' ? 'סרט לא ידוע' : 'Unknown Movie');
-                                       subtitleText = currentLanguage === 'he' ? 'סרט' : 'Movie';
-                                  } else if (item.type === 'series') {
-                                       href = `${seriesDetailsBaseUrl}${item.id}`; // Link to series main page
-                                       titleText = displayTitle || (currentLanguage === 'he' ? 'סדרה לא ידועה' : 'Unknown Series');
-                                       subtitleText = currentLanguage === 'he' ? 'סדרה' : 'Series'; // Just display "Series"
-                                  } else {
-                                       console.warn("Rec: Skipping item with unknown type for display:", item);
-                                       return;
-                                  }
-
-                                  itemLink.href = href;
-                                  itemLink.classList.add('item-card-link');
-                                  itemLink.classList.add('recommended-item'); // Add a specific class
-                                   // Add data attributes for search to recommended items
-                                  itemLink.dataset.id = item.id;
-                                  itemLink.dataset.type = item.type;
-                                  itemLink.dataset.titleHe = (item.HebrewName || item.title || '').toLowerCase();
-                                  itemLink.dataset.titleEn = (item.title || item.HebrewName || '').toLowerCase();
-
-
-                                  const itemCard = document.createElement('div');
-                                  itemCard.classList.add('item-card');
-                                  itemCard.setAttribute('tabindex', '0');
-
-                                  const imageContainer = document.createElement('div');
-                                  imageContainer.classList.add('card-image-container');
-
-                                  const img = document.createElement('img');
-                                  img.src = displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl;
-                                  img.alt = titleText;
-                                  img.setAttribute('loading', 'lazy');
-
-                                  const overlay = document.createElement('div');
-                                  overlay.classList.add('card-overlay');
-
-                                   const playButton = document.createElement('button');
-                                   playButton.classList.add('play-button');
-                                   playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'צפה ב' : 'Watch ') + titleText);
-                                   playButton.innerHTML = '<i class="fas fa-play"></i>';
-                                   playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
-
-
-                                  const titleElement = document.createElement('h3');
-                                  titleElement.classList.add('card-title');
-                                  titleElement.textContent = titleText;
-
-                                   const subtitleElement = document.createElement('p');
-                                   subtitleElement.classList.add('card-subtitle');
-                                   subtitleElement.textContent = subtitleText;
-                                   subtitleElement.style.fontSize = '0.8em';
-                                   subtitleElement.style.color = '#ccc';
-                                   subtitleElement.style.marginTop = '5px';
-
-
-                                   const actionsDiv = document.createElement('div');
-                                   actionsDiv.classList.add('card-actions');
-
-                                   // Optional: Add "Not Interested" or "Add to List" buttons
-                                   // Example: Add to List button (if you implement list saving)
-                                   const addToListButton = document.createElement('button');
-                                   addToListButton.classList.add('add-to-list-button');
-                                   addToListButton.setAttribute('aria-label', currentLanguage === 'he' ? 'הוסף לרשימה' : 'Add to list');
-                                   addToListButton.innerHTML = '<i class="fas fa-plus"></i>';
-                                   addToListButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); /* Implement Add to List logic */ });
-                                   actionsDiv.appendChild(addToListButton);
-
-
-                                  imageContainer.appendChild(img);
-                                   overlay.appendChild(playButton);
-                                  overlay.appendChild(titleElement);
-                                   if (subtitleText) {
-                                       overlay.appendChild(subtitleElement);
-                                   }
-                                  overlay.appendChild(actionsDiv);
-                                  imageContainer.appendChild(overlay);
-                                  itemCard.appendChild(imageContainer);
-                                  itemLink.appendChild(itemCard);
-                                  recommendedRow.appendChild(itemLink);
-                              });
-
-                               recommendedSection.style.display = 'block';
-                               noRecommendationsMessage.style.display = 'none';
-
-
-                          } else {
-                               console.log("History: No recommendations found with score > 0.");
-                                recommendedSection.style.display = 'none';
-                                noRecommendationsMessage.style.display = 'block'; // Show 'no recommendations' message
-                          }
-
-
-                     } // End else (history exists)
-
-                 } catch (e) {
-                     console.error("History: Error processing or displaying recommendations:", e);
-                     recommendedSection.style.display = 'none';
-                     noRecommendationsMessage.style.display = 'block'; // Show message on error
-                     if (currentLanguage === 'he') {
-                          noRecommendationsMessage.textContent = 'שגיאה בטעינת המלצות.';
-                     } else {
-                           noRecommendationsMessage.textContent = 'Error loading recommendations.';
-                     }
-                 }
-
-
-            } else {
-                console.log("User not logged in. Recommendations hidden.");
-                recommendedSection.style.display = 'none';
-                 noRecommendationsMessage.style.display = 'none'; // Hide message if not logged in
-            }
-
-
-             // Initial load of Continue Watching data and display
-             // This should be called after all relevant elements and variables are set up
-             loadContinueWatching();
-             // Initial load of History and display recommendations
-             // This is called within the recommendations logic above if user is logged in.
-
-
         }); // End DOMContentLoaded
 
-
-         // Refactored Continue Watching display logic into a function
-         function loadContinueWatching() {
-             const user = {{ user | tojson }};
-             const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id='') }}";
-             const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id='') }}";
-             const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
-             const currentLanguage = {{ current_language | tojson }}; // Ensure language is available here
-
-             const continueWatchingSection = document.getElementById('continueWatchingSection');
-             const continueWatchingRow = document.getElementById('continueWatchingRow');
-             const noContinueWatchingMessage = document.getElementById('noContinueWatchingMessage');
-
-             if (!(user && user.google_id)) {
-                  console.log("User not logged in. CW display skipped.");
-                  continueWatchingSection.style.display = 'none';
-                  noContinueWatchingMessage.style.display = 'none';
-                  return;
-             }
-
-             const userId = user.google_id;
-             const localStorageKey = `continueWatching_${userId}`;
-
-             let continueWatchingItems = {};
-             const uniqueValidItemsMap = new Map();
-
-             try {
-                 const storedData = localStorage.getItem(localStorageKey);
-                 if (storedData) {
-                     try {
-                          continueWatchingItems = JSON.parse(storedData) || {};
-                          if (typeof continueWatchingItems !== 'object' || continueWatchingItems === null) {
-                             console.warn("CW (loadFunc): localStorage data is not an object. Resetting.");
-                              continueWatchingItems = {};
-                         }
-                     } catch (parseError) {
-                          console.error("CW (loadFunc): Error parsing data from localStorage:", parseError);
-                          continueWatchingItems = {};
-                     }
-                 }
-
-                 function getEpisodeInfo(item) {
-                      const season = item.latest_season || item.season;
-                      const episode = item.latest_episode || item.episode;
-                      const seasonNum = season ? parseInt(season, 10) : 0;
-                      const episodeNum = episode ? parseInt(episode, 10) : 0;
-                      if (isNaN(seasonNum) || isNaN(episodeNum) || seasonNum < 1 || episodeNum < 1) {
-                           return null;
-                      }
-                      return { season: seasonNum, episode: episodeNum };
-                 }
-
-                 Object.values(continueWatchingItems).forEach(item => {
-                     if (!item || typeof item !== 'object' || !item.id || !item.type || !(item.title || item.HebrewName)) {
-                         // console.warn("CW (loadFunc): Skipping invalid item:", item); // Too noisy
-                         return;
-                     }
-
-                     const canonicalKey = `${item.type}_${item.id}`;
-
-                     if (item.type === 'movie') {
-                          uniqueValidItemsMap.set(canonicalKey, {
-                             id: item.id, type: 'movie',
-                             title: item.title, poster: item.poster, HebrewName: item.HebrewName, HebrewPoster: item.HebrewPoster,
-                             timestamp: typeof item.timestamp === 'number' ? item.timestamp : 0,
-                         });
-                     } else if (item.type === 'series') {
-                         const episodeInfo = getEpisodeInfo(item);
-                         if (!episodeInfo) {
-                             // console.warn("CW (loadFunc): Skipping series item missing episode info:", item); // Too noisy
-                             return;
-                         }
-                         const seasonNum = episodeInfo.season;
-                         const episodeNum = episodeInfo.episode;
-                         const timestamp = typeof item.timestamp === 'number' ? item.timestamp : 0;
-
-                         if (uniqueValidItemsMap.has(canonicalKey)) {
-                             const existingItem = uniqueValidItemsMap.get(canonicalKey);
-                             const existingSeason = existingItem.latest_season ? parseInt(existingItem.latest_season, 10) : 0;
-                             const existingEpisode = existingItem.latest_episode ? parseInt(existingItem.latest_episode, 10) : 0;
-
-                              if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
-                                   uniqueValidItemsMap.set(canonicalKey, {
-                                       id: item.id, type: 'series',
-                                       title: item.title, poster: item.poster, HebrewName: item.HebrewName, HebrewPoster: item.HebrewPoster,
-                                       latest_season: seasonNum, latest_episode: episodeNum,
-                                       timestamp: timestamp > 0 ? timestamp : (existingItem.timestamp > 0 ? existingItem.timestamp : 0),
-                                   });
-                              } else {
-                                  // Existing item is newer or same, ensure timestamp is kept if current is 0
-                                  if (timestamp > 0 && existingItem.timestamp === 0) {
-                                       existingItem.timestamp = timestamp; // Update timestamp if current one is valid and map one is not
-                                       uniqueValidItemsMap.set(canonicalKey, existingItem); // Re-set to update map
-                                  }
-                               }
-                         } else {
-                              uniqueValidItemsMap.set(canonicalKey, {
-                                  id: item.id, type: 'series',
-                                  title: item.title, poster: item.poster, HebrewName: item.HebrewName, HebrewPoster: item.HebrewPoster,
-                                  latest_season: seasonNum, latest_episode: episodeNum, timestamp: timestamp,
-                              });
-                         }
-                     }
-                 });
-
-                 const validItemsToDisplay = Array.from(uniqueValidItemsMap.values());
-
-                 // Save the cleaned data back
-                 try {
-                      localStorage.setItem(localStorageKey, JSON.stringify(Object.fromEntries(uniqueValidItemsMap)));
-                      // console.log(`CW (loadFunc): Saved cleaned data.`); // Too noisy
-                 } catch (e) {
-                      console.error("CW (loadFunc): Error saving cleaned data:", e);
-                 }
-
-
-                 if (validItemsToDisplay.length > 0) {
-                      validItemsToDisplay.sort((a, b) => {
-                          const titleA = (currentLanguage === 'he' ? a.HebrewName || a.title : a.title || a.HebrewName) || '';
-                          const titleB = (currentLanguage === 'he' ? b.HebrewName || b.title : b.title || b.HebrewName) || '';
-                          return titleA.localeCompare(titleB);
-                      });
-
-                     continueWatchingRow.innerHTML = ''; // Clear previous content
-
-                     validItemsToDisplay.forEach(item => {
-                         const itemLink = document.createElement('a');
-                         let href = '#';
-                         let titleText = '';
-                         let subtitleText = '';
-
-                         const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
-                         const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
-
-                         if (item.type === 'movie') {
-                              href = `${movieDetailsBaseUrl}${item.id}`;
-                              if (item.timestamp > 0) href += `#timestamp=${item.timestamp}`; else if (item.timestamp === 0) href += `#timestamp=0`;
-                              titleText = displayTitle || (currentLanguage === 'he' ? 'סרט לא ידוע' : 'Unknown Movie');
-                              subtitleText = currentLanguage === 'he' ? 'סרט' : 'Movie';
-                         } else if (item.type === 'series' && item.id && item.latest_season && item.latest_episode) {
-                              href = `${seriesDetailsBaseUrl}${item.id}/${item.latest_season}/${item.latest_episode}`;
-                              if (item.timestamp > 0) href += `#timestamp=${item.timestamp}`; else if (item.timestamp === 0) href += `#timestamp=0`;
-                              titleText = displayTitle || (currentLanguage === 'he' ? 'סדרה לא ידועה' : 'Unknown Series');
-                              subtitleText = currentLanguage === 'he' ? `עונה ${item.latest_season}, פרק ${item.latest_episode}` : `Season ${item.latest_season}, Episode ${item.latest_episode}`;
-                         } else {
-                              return;
-                         }
-
-                         itemLink.href = href;
-                         itemLink.classList.add('item-card-link');
-                         itemLink.classList.add('continue-watching-item');
-                         itemLink.dataset.id = item.id;
-                         itemLink.dataset.type = item.type;
-                         itemLink.dataset.titleHe = (item.HebrewName || item.title || '').toLowerCase();
-                         itemLink.dataset.titleEn = (item.title || item.HebrewName || '').toLowerCase();
-
-
-                         const itemCard = document.createElement('div'); itemCard.classList.add('item-card'); itemCard.setAttribute('tabindex', '0');
-                         const imageContainer = document.createElement('div'); imageContainer.classList.add('card-image-container');
-                         const img = document.createElement('img'); img.src = displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl; img.alt = titleText; img.setAttribute('loading', 'lazy');
-                         const overlay = document.createElement('div'); overlay.classList.add('card-overlay');
-                         const playButton = document.createElement('button'); playButton.classList.add('play-button'); playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'המשך צפייה ב' : 'Continue watching ') + titleText); playButton.innerHTML = '<i class="fas fa-play"></i>'; playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
-                         const titleElement = document.createElement('h3'); titleElement.classList.add('card-title'); titleElement.textContent = titleText;
-                         const subtitleElement = document.createElement('p'); subtitleElement.classList.add('card-subtitle'); subtitleElement.textContent = subtitleText; subtitleElement.style.fontSize = '0.8em'; subtitleElement.style.color = '#ccc'; subtitleElement.style.marginTop = '5px';
-                         const actionsDiv = document.createElement('div'); actionsDiv.classList.add('card-actions');
-
-                         const removeButton = document.createElement('button');
-                         removeButton.classList.add('remove-from-cw-button');
-                         removeButton.setAttribute('aria-label', currentLanguage === 'he' ? 'הסר מ\'המשך צפייה\'' : 'Remove from Continue Watching');
-                         removeButton.innerHTML = '<i class="fas fa-times"></i>';
-                         removeButton.addEventListener('click', (e) => {
-                             e.preventDefault(); e.stopPropagation();
-                             let keyToRemove;
-                             if(item.type === 'movie') keyToRemove = `movie_${item.id}`;
-                             else if (item.type === 'series' && item.latest_season && item.latest_episode) keyToRemove = `series_${item.id}_S${item.latest_season}E${item.latest_episode}`;
-                             else { console.warn("CW (loadFunc): Cannot determine key to remove for item:", item); return; }
-
-                             if (continueWatchingItems[keyToRemove]) {
-                                  delete continueWatchingItems[keyToRemove];
-                                  try {
-                                       localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
-                                       itemLink.remove();
-                                       const remainingCWItems = Object.keys(continueWatchingItems).length;
-                                       if (remainingCWItems === 0) {
-                                           continueWatchingSection.style.display = 'none';
-                                            noContinueWatchingMessage.style.display = 'block';
-                                       }
-                                  } catch (e) { console.error("CW (loadFunc): Error saving after removing:", e); }
-                             } else {
-                                  console.warn("CW (loadFunc): Item in DOM not found in cached CW for removal:", keyToRemove, item);
-                                  itemLink.remove();
-                             }
-                         });
-                         actionsDiv.appendChild(removeButton);
-
-
-                         imageContainer.appendChild(img); overlay.appendChild(playButton); overlay.appendChild(titleElement);
-                         if (subtitleText) overlay.appendChild(subtitleElement);
-                         overlay.appendChild(actionsDiv); imageContainer.appendChild(overlay); itemCard.appendChild(imageContainer); itemLink.appendChild(itemCard); continueWatchingRow.appendChild(itemLink);
-                     });
-
-                     const finalRemainingCWItemsCount = Object.keys(continueWatchingItems).length;
-                      if (finalRemainingCWItemsCount > 0) {
-                          continueWatchingSection.style.display = 'block';
-                          noContinueWatchingMessage.style.display = 'none';
-                      } else {
-                           continueWatchingSection.style.display = 'none';
-                           noContinueWatchingMessage.style.display = 'block';
-                           console.log("CW (loadFunc): No items to display after processing.");
-                      }
-
-                 } else {
-                     console.log("CW (loadFunc): No valid data found.");
-                      continueWatchingSection.style.display = 'none';
-                      noContinueWatchingMessage.style.display = 'block';
-                 }
-
-             } catch (e) {
-                 console.error("CW (loadFunc): Error:", e);
-                 continueWatchingSection.style.display = 'none';
-                 noContinueWatchingMessage.style.display = 'block';
-             }
-         }
-        // End Refactored CW display function
-
-
+        {# If you have a separate static/js/script.js, link it here AFTER this script block #}
+        {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
     </script>
 </body>
 </html>
