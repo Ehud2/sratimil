@@ -124,7 +124,7 @@
         <!-- Filter Container - Includes Rating, Genre, and Year filters -->
         <div class="filter-container">
             <div class="filter-group">
-                 <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMDb):' }}</label>
+                 <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMdb):' }}</label>
                  <select id="ratingFilter">
                       <option value="">{{ 'כל הדירוגים' if current_language == 'he' else 'All Ratings' }}</option>
                      {# Options will be populated by JavaScript #}
@@ -162,7 +162,7 @@
                  {% if movie and movie.get('imdbID') and (movie.get('title') or movie.get('HebrewName')) %}
                      {# Determine display title and poster based on current language #}
                      {% set display_title = movie.get('HebrewName', movie.get('title', '')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', '')) %}
-                     {% set display_poster = movie.get('HebrewPoster', movie.get('poster', '')) if current_language == 'he' else movie.get('poster', movie.get('HebrewPoster', '')) %}
+                     {% set display_poster = movie.get('HebrewPoster', movie.get('poster', '')) if current_language == 'he' else movie.get('poster', movie.get('HebbrewPoster', '')) %} {# Corrected typo HebrewPoster #}
                      {% set alt_text = movie.get('HebrewName', movie.get('title', 'Unknown Title')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', 'Unknown Title')) %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
@@ -191,6 +191,8 @@
                                          {# Use determined display title #}
                                          {{ display_title if display_title else ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
                                     </h3>
+                                     {# Add subtitle for Movies on this page if needed (e.g., "Movie"), or omit like index.html #}
+                                     {# Omitting for now for a cleaner grid view #}
                                     <div class="card-actions">
                                         {# Add to list button - pass both Hebrew and English details #}
                                         <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ movie.imdbID }}" data-type="movie" data-title="{{ movie.get('title', '') }}" data-poster="{{ movie.get('poster', '') }}" data-hebrew-name="{{ movie.get('HebrewName', '') }}" data-hebrew-poster="{{ movie.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
@@ -232,7 +234,7 @@
          console.log("Loaded allMoviesData:", allMoviesData); // Log the loaded data
 
          // Define the list of available genres with English (value) and Hebrew (text) names
-         // Keeping this here as it's specific to the movies/series pages filtering
+         // Keep this list updated with the genres you use for movies
          const availableGenres = [
             { english: "Action", hebrew: "פעולה" },
             { english: "Adventure", hebrew: "הרפתקאות" },
@@ -255,7 +257,8 @@
             { english: "Sport", hebrew: "ספורט" },
             { english: "Thriller", hebrew: "מתח" },
             { english: "War", hebrew: "מלחמה" },
-            { english: "Western", hebrew: "מערבון" }
+            { english: "Western", hebrew: "מערבון" },
+            { english: "Short", hebrew: "קצר" } // Added Short, add others if needed
          ];
 
 
@@ -292,7 +295,7 @@
                  });
             }
 
-            // --- Mobile Nav Toggle Functionality ---
+            // --- Mobile Nav Toggle Functionality (Copied from index.html) ---
             const navToggle = document.querySelector('.nav-toggle');
             const mainNav = document.querySelector('.main-nav');
             const body = document.body;
@@ -302,7 +305,6 @@
                       const isOpen = mainNav.classList.toggle('nav-open');
                       body.classList.toggle('nav-open');
 
-                      // Change icon
                       const icon = navToggle.querySelector('i');
                       if (isOpen) {
                            icon.classList.remove('fa-bars');
@@ -330,7 +332,7 @@
                      });
                  });
             } else {
-                 console.warn("Nav toggle or main nav not found."); // Debug log
+                 console.warn("Nav toggle or main nav not found.");
             }
 
 
@@ -364,7 +366,10 @@
 
                 // Populate Genre Filter (using Hebrew for text, English for value)
                 if (genreFilter) {
-                    availableGenres.forEach(genreObj => {
+                    // Sort genres alphabetically by Hebrew name
+                     const sortedGenres = [...availableGenres].sort((a, b) => a.hebrew.localeCompare(b.hebrew));
+
+                    sortedGenres.forEach(genreObj => {
                         const option = document.createElement('option');
                         option.value = genreObj.english.toLowerCase(); // Use lowercase English for value
                         option.textContent = genreObj.hebrew; // Use Hebrew for display text
@@ -403,7 +408,9 @@
                     for (let year = currentYear; year >= minYear; year--) {
                         const option = document.createElement('option');
                         option.value = year; // Value is the year number (e.g., 2023)
+                        // --- CHANGE HERE: Add '+' to the display text ---
                         option.textContent = year + "+"; // Display text is year + "+" (e.g., "2023+")
+                        // --- END CHANGE ---
                         yearFilter.appendChild(option);
                     }
                     console.log("Year filter populated with year+ text.");
@@ -451,6 +458,7 @@
                     if (movieImdbRatingStr && movieImdbRatingStr !== 'n/a') {
                          movieImdbRating = parseFloat(movieImdbRatingStr);
                     }
+                    // Only filter if a valid rating value is selected from the dropdown
                     if (!isNaN(selectedRatingValue)) {
                          passesRatingFilter = (!isNaN(movieImdbRating) && movieImdbRating >= selectedRatingValue);
                     }
@@ -458,8 +466,10 @@
 
                     // --- Apply Genre Filter ---
                     let passesGenreFilter = true;
-                    if (selectedGenreValue && genreFilter && selectedGenreValue !== "") {
+                    // Only filter if a specific genre value is selected (not empty)
+                    if (selectedGenreValue && selectedGenreValue !== "") {
                          const movieGenresArray = movieGenreStr.split(',').map(g => g.trim());
+                         // Check if *any* of the movie's genres match the selected filter value
                          passesGenreFilter = movieGenresArray.includes(selectedGenreValue);
                     }
 
