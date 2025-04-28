@@ -46,8 +46,8 @@
                  {% else %}
                      <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
                           {# Replace the base64 string with your desired image URL or placeholder #}
-                          {# Use url_for for your static image #}
-                          <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
+                          {# Use 'imageurlhere' placeholder as requested #}
+                          <img src="imageurlhere" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
                      </a>
                  {% endif %}
              </div>
@@ -122,6 +122,22 @@
                 {% endif %}
              </div>
         </section>
+
+        {# --- New Section for Recommended For You --- #}
+        <section id="recommendedSection" class="category-section" style="display: none;">
+            <h2>{{ 'מומלץ בשבילך' if current_language == 'he' else 'Recommended For You' }}</h2>
+            <div class="item-row" id="recommendedRow">
+                {# Recommended items will be populated here by JavaScript #}
+            </div>
+            <div id="noRecommendationsMessage" style="display: none; color: #aaa; text-align: center; padding: 20px;">
+                 {% if current_language == 'he' %}
+                 לא נמצאו המלצות עבורך כרגע. צפה בעוד תוכן כדי לקבל המלצות מותאמות אישית!
+                 {% else %}
+                 No recommendations found for you right now. Watch more content to get personalized recommendations!
+                 {% endif %}
+             </div>
+        </section>
+        {# --- End Recommended For You Section --- #}
 
 
         {% for category_name, items_in_category in categories.items() %}
@@ -250,15 +266,20 @@
             // --- Search Filter Functionality ---
             const searchInput = document.getElementById('searchInput');
             const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
-            const catalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Get all catalog items
+            // Select ALL catalog items, including Continue Watching and Recommended (once populated)
+            // The filter should apply across all visible item rows.
+            const allCatalogItemsContainer = document.querySelector('.main-content'); // Select a parent container
 
 
-            if (searchInput) {
+            if (searchInput && allCatalogItemsContainer) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
                     let anyVisible = false;
+                    // Get all currently displayed catalog items within the main content area
+                    const currentCatalogItems = allCatalogItemsContainer.querySelectorAll('.item-card-link.catalog-item');
 
-                    catalogItems.forEach(link => {
+
+                    currentCatalogItems.forEach(link => {
                          // Get title based on current language from data attributes
                          // Fallback to the other language title if the preferred one is missing
                          const titleHe = link.dataset.titleHe || link.dataset.titleEn || '';
@@ -297,12 +318,13 @@
                 });
 
             } else {
-                 console.warn("Search input #searchInput not found.");
+                 console.warn("Search input #searchInput or allCatalogItemsContainer not found.");
             }
 
 
             // --- Continue Watching Functionality (Client-Side) ---
-            const user = {{ user | tojson }}; // Pass user object from Flask
+            // User object passed from Flask - check for login status
+            const user = {{ user | tojson }};
 
             // Corrected URL generation - get base paths and append dynamically in JS
             const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id='') }}"; // Gets /movie/
@@ -313,19 +335,21 @@
             const continueWatchingRow = document.getElementById('continueWatchingRow');
             const noContinueWatchingMessage = document.getElementById('noContinueWatchingMessage');
 
+            // Check if user is logged in to proceed with CW logic
             if (user && user.google_id) {
                 const userId = user.google_id;
-                const localStorageKey = `continueWatching_${userId}`;
+                const localStorageKey = `continueWatching_${userId}`; // CW key
+
 
                 let continueWatchingItems = {}; // Raw data from localStorage
-                const uniqueValidItemsMap = new Map(); // Map to hold the cleaned, consolidated items (one entry per movie/series)
+                // Map to hold the cleaned, consolidated items (one entry per movie/series, latest episode for series)
+                const uniqueValidItemsMap = new Map();
 
                 try {
                     const storedData = localStorage.getItem(localStorageKey);
                     if (storedData) {
                         try {
                              continueWatchingItems = JSON.parse(storedData) || {};
-                              // Ensure it's an object, default to empty if parsing fails or results in non-object
                               if (typeof continueWatchingItems !== 'object' || continueWatchingItems === null) {
                                   console.warn("CW: localStorage data is not an object. Resetting.");
                                    continueWatchingItems = {};
@@ -340,10 +364,8 @@
                     function getEpisodeInfo(item) {
                          const season = item.latest_season || item.season;
                          const episode = item.latest_episode || item.episode;
-                         // Return as numbers if possible, default to 0 if not valid
                          const seasonNum = season ? parseInt(season, 10) : 0;
                          const episodeNum = episode ? parseInt(episode, 10) : 0;
-
                          if (isNaN(seasonNum) || isNaN(episodeNum) || seasonNum < 1 || episodeNum < 1) {
                               return null; // Invalid episode info
                          }
@@ -360,20 +382,21 @@
                             return; // Skip this item
                         }
 
-                        // Determine canonical key (movie_id or series_id)
+                        // Determine canonical key (movie_id or series_id) - NOTE: CW keys used episode SxE suffix previously.
+                        // We will migrate towards just series_id for the map key, tracking latest within the value.
                         const canonicalKey = `${item.type}_${item.id}`;
+
 
                         if (item.type === 'movie') {
                              // For movies, just add/overwrite. The key is already unique per movie.
                             uniqueValidItemsMap.set(canonicalKey, {
                                 id: item.id,
                                 type: 'movie',
-                                title: item.title, // Keep both English
-                                poster: item.poster, // Keep both English
-                                HebrewName: item.HebrewName, // Keep Hebrew
-                                HebrewPoster: item.HebrewPoster, // Keep Hebrew
+                                title: item.title,
+                                poster: item.poster,
+                                HebrewName: item.HebrewName,
+                                HebrewPoster: item.HebrewPoster,
                                 timestamp: typeof item.timestamp === 'number' ? item.timestamp : 0, // Ensure timestamp is a number
-                                // Add other movie details needed for the card if any beyond title/poster
                             });
 
                         } else if (item.type === 'series') {
@@ -400,43 +423,40 @@
                                 const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0; // Default to 0 if no info
 
 
-                                // Compare the current episode with the one already in the map
+                                // Compare the current item's episode with the one already in the map
                                 // Keep the one with the later season, or later episode if seasons are the same
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
                                      // The current item represents a *later* episode for this series
-                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E{episodeNum} (was S${existingSeason}E{existingEpisode}).`);
+                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E${episodeNum} (was S${existingSeason}E${existingEpisode}).`);
                                     // Update the map entry with the later episode details
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
-                                        title: item.title, // Keep both English
-                                        poster: item.poster, // Keep both English
-                                        HebrewName: item.HebrewName, // Keep Hebrew
-                                        HebrewPoster: item.HebrewPoster, // Keep Hebrew
+                                        title: item.title,
+                                        poster: item.poster,
+                                        HebrewName: item.HebrewName,
+                                        HebrewPoster: item.HebrewPoster,
                                         latest_season: seasonNum, // Store as latest_* in the canonical format
                                         latest_episode: episodeNum, // Store as latest_* in the canonical format
                                          // Use the timestamp from the *latest* episode found, even if it's from an old entry format
-                                        timestamp: timestamp,
-                                        // Add other series details needed for the card if any beyond title/poster
+                                        timestamp: timestamp, // This timestamp is for the episode SxE
                                     });
                                 } else {
                                     // The existing item in the map is already the latest or equal. Do nothing.
-                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E{episodeNum}.`); // Debug log
                                 }
                             } else {
                                 // No entry for this series yet, add this one (converted to canonical format)
-                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E{episodeNum}.`);
+                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E${episodeNum}.`);
                                 uniqueValidItemsMap.set(canonicalKey, {
                                     id: item.id,
                                     type: 'series',
-                                    title: item.title, // Keep both English
-                                    poster: item.poster, // Keep both English
-                                    HebrewName: item.HebrewName, // Keep Hebrew
-                                    HebrewPoster: item.HebrewPoster, // Keep Hebrew
+                                    title: item.title,
+                                    poster: item.poster,
+                                    HebrewName: item.HebrewName,
+                                    HebrewPoster: item.HebrewPoster,
                                     latest_season: seasonNum, // Store as latest_*
                                     latest_episode: episodeNum, // Store as latest_*
-                                     timestamp: timestamp, // Store timestamp
-                                    // Add other series details needed for the card if any beyond title/poster
+                                     timestamp: timestamp, // Store timestamp for SxE
                                 });
                             }
 
@@ -456,7 +476,7 @@
                     const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap); // Convert Map back to object
                     try {
                          localStorage.setItem(localStorageKey, JSON.stringify(cleanedContinueWatchingItems));
-                         console.log(`CW: Saved cleaned continue watching data to localStorage.`);
+                         console.log(`CW: Saved cleaned continue watching data to localStorage. Total unique items: ${Object.keys(cleanedContinueWatchingItems).length}`);
                     } catch (e) {
                          console.error("CW: Error saving cleaned continue watching data:", e);
                     }
@@ -466,7 +486,7 @@
                     if (validItemsToDisplay.length > 0) {
                         // Sort items alphabetically by the *displayed* title
                          validItemsToDisplay.sort((a, b) => {
-                             const titleA = (currentLanguage === 'he' ? a.HebrewName || a.title : a.title || a.HebrewName) || '';
+                             const titleA = (currentLanguage === 'he' ? a.HebbrewName || a.title : a.title || a.HebrewName) || '';
                              const titleB = (currentLanguage === 'he' ? b.HebrewName || b.title : b.title || b.HebrewName) || '';
                              return titleA.localeCompare(titleB);
                          });
@@ -514,14 +534,21 @@
                                  subtitleText = currentLanguage === 'he' ? `עונה ${item.latest_season}, פרק ${item.latest_episode}` : `Season ${item.latest_season}, Episode ${item.latest_episode}`;
 
                             } else {
-                                 // This case should not be reached if processing logic is correct, but defensive check.
                                  console.warn("CW: Displaying invalid or incomplete item after processing:", item);
                                  return; // Skip this item
                             }
 
                             itemLink.href = href;
                             itemLink.classList.add('item-card-link');
+                            itemLink.classList.add('catalog-item'); // Add catalog-item class for search filter to target it
                             itemLink.classList.add('continue-watching-item');
+
+                             // Add data attributes for search filter
+                            itemLink.dataset.id = item.id;
+                            itemLink.dataset.type = item.type;
+                            itemLink.dataset.titleHe = item.HebrewName || item.title || ''; // Add Hebrew title data
+                            itemLink.dataset.titleEn = item.title || item.HebrewName || ''; // Add English title data
+
 
                             // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
@@ -532,8 +559,8 @@
                             imageContainer.classList.add('card-image-container');
 
                             const img = document.createElement('img');
-                            img.src = displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl; // Use determined poster URL
-                            img.alt = titleText; // Use determined title for alt text
+                            img.src = displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl;
+                            img.alt = titleText;
                             img.setAttribute('loading', 'lazy');
 
                             const overlay = document.createElement('div');
@@ -541,7 +568,6 @@
 
                              const playButton = document.createElement('button');
                              playButton.classList.add('play-button');
-                             // Update aria-label based on language and title
                              playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'המשך צפייה ב' : 'Continue watching ') + titleText);
                              playButton.innerHTML = '<i class="fas fa-play"></i>';
                              playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
@@ -549,12 +575,12 @@
 
                             const titleElement = document.createElement('h3');
                             titleElement.classList.add('card-title');
-                            titleElement.textContent = titleText; // Use determined title
+                            titleElement.textContent = titleText;
 
 
                              const subtitleElement = document.createElement('p');
                              subtitleElement.classList.add('card-subtitle');
-                             subtitleElement.textContent = subtitleText; // Use determined subtitle
+                             subtitleElement.textContent = subtitleText;
                              subtitleElement.style.fontSize = '0.8em';
                              subtitleElement.style.color = '#ccc';
                              subtitleElement.style.marginTop = '5px';
@@ -565,7 +591,6 @@
 
                              const removeButton = document.createElement('button');
                               removeButton.classList.add('remove-from-cw-button');
-                              // Update aria-label based on language
                               removeButton.setAttribute('aria-label', currentLanguage === 'he' ? 'הסר מ\'המשך צפייה\'' : 'Remove from Continue Watching');
                               removeButton.innerHTML = '<i class="fas fa-times"></i>';
                               removeButton.addEventListener('click', (e) => {
@@ -589,14 +614,12 @@
                                                  continueWatchingSection.style.display = 'none';
                                                   noContinueWatchingMessage.style.display = 'block';
                                              }
+                                             // Note: Removing from CW does NOT remove from history
 
                                         } catch (e) {
                                             console.error("CW: Error saving continue watching data after removing item:", e);
                                         }
                                    } else {
-                                       // This case should not happen if the display logic is correct,
-                                       // but if the item somehow exists in the DOM but not the map,
-                                       // it means something is out of sync. Log a warning.
                                         console.warn("CW: Item element in DOM not found in uniqueValidItemsMap:", itemKeyToRemove, item);
                                    }
                               });
@@ -619,10 +642,10 @@
                         // Show/hide sections based on uniqueValidItemsMap size
                          if (uniqueValidItemsMap.size > 0) {
                              continueWatchingSection.style.display = 'block';
-                             noContinueWatchingMessage.style.display = 'none'; // Hide the "No items" message
+                             noContinueWatchingMessage.style.display = 'none';
                          } else {
                              continueWatchingSection.style.display = 'none';
-                             noContinueWatchingMessage.style.display = 'block'; // Show the "No items" message
+                             noContinueWatchingMessage.style.display = 'block';
                              console.log("CW: No valid continue watching items to display after processing.");
                          }
 
@@ -630,24 +653,342 @@
                     } else {
                         console.log("CW: No valid continue watching data found for this user.");
                          continueWatchingSection.style.display = 'none';
-                         noContinueWatchingMessage.style.display = 'block'; // Show "No items" message if no data
+                         noContinueWatchingMessage.style.display = 'block';
                     }
 
                 } catch (e) {
                     console.error("CW: Error loading, processing or displaying continue watching data:", e);
-                    // Hide the section on error
                     continueWatchingSection.style.display = 'none';
-                    noContinueWatchingMessage.style.display = 'block'; // Show empty message on error
+                    noContinueWatchingMessage.style.display = 'block';
                 }
 
             } else {
                 console.log("CW: User not logged in. Continue Watching hidden.");
                  continueWatchingSection.style.display = 'none';
-                 noContinueWatchingMessage.style.display = 'none'; // Hide empty message too if not logged in
+                 noContinueWatchingMessage.style.display = 'none';
+            }
+
+
+            // --- Recommendation Logic (Client-Side) ---
+            // User object already available from Flask
+            const recommendedSection = document.getElementById('recommendedSection');
+            const recommendedRow = document.getElementById('recommendedRow');
+            const noRecommendationsMessage = document.getElementById('noRecommendationsMessage');
+
+            // Full content data passed from Flask
+            // movies contains {imdbID: movie_details} including genre/category
+            const allMoviesData = {{ movies | tojson }};
+            // series_data_for_index contains {imdbID: basic_details} including genre/category
+            const allSeriesDataForIndex = {{ series_data_for_index | tojson }}; // Use this as it has category
+
+
+            if (user && user.google_id) {
+                const userId = user.google_id;
+                const historyLocalStorageKey = `viewingHistory_${userId}`; // NEW key for history
+
+                let viewingHistoryItems = {}; // Raw history data
+
+                try {
+                    const storedHistoryData = localStorage.getItem(historyLocalStorageKey);
+                    if (storedHistoryData) {
+                         try {
+                             viewingHistoryItems = JSON.parse(storedHistoryData) || {};
+                             if (typeof viewingHistoryItems !== 'object' || viewingHistoryItems === null) {
+                                 console.warn("Recommendations: History data is not an object. Resetting.");
+                                 viewingHistoryItems = {};
+                             }
+                         } catch(parseError) {
+                             console.error("Recommendations: Error parsing history data from localStorage:", parseError);
+                             viewingHistoryItems = {}; // Reset on parse error
+                         }
+                    }
+                    console.log("Recommendations: Loaded history data:", viewingHistoryItems);
+
+                    const historyItemsList = Object.values(viewingHistoryItems);
+
+                    if (historyItemsList.length === 0) {
+                         console.log("Recommendations: No viewing history found for this user.");
+                         recommendedSection.style.display = 'none'; // Hide section
+                         noRecommendationsMessage.style.display = 'block'; // Show empty message
+                    } else {
+                         // --- Analyze History & Calculate Preferences ---
+                         const preferenceCounts = {
+                             types: { movie: 0, series: 0 },
+                             genres: {},
+                             categories: {} // Only non-"ללא" categories
+                         };
+                         let totalHistoryItems = 0;
+
+                         historyItemsList.forEach(item => {
+                             if (!item || !item.type || !item.id) {
+                                 console.warn("Recommendations: Skipping invalid history item:", item);
+                                 return;
+                             }
+                             totalHistoryItems++;
+
+                             // Count type preference
+                             if (item.type in preferenceCounts.types) {
+                                 preferenceCounts.types[item.type]++;
+                             } else {
+                                  console.warn(`Recommendations: Unknown item type in history: ${item.type}`);
+                             }
+
+                             // Count genre preferences
+                             if (item.genre && typeof item.genre === 'string') {
+                                  const genres = item.genre.toLowerCase().split(',').map(g => g.trim()).filter(g => g); // Split, trim, filter empty
+                                  genres.forEach(g => {
+                                       preferenceCounts.genres[g] = (preferenceCounts.genres[g] || 0) + 1;
+                                  });
+                             }
+
+                             // Count category preferences (only if not "ללא")
+                              const itemCategory = (item.category || '').trim();
+                              if (itemCategory && itemCategory !== 'ללא') {
+                                   preferenceCounts.categories[itemCategory] = (preferenceCounts.categories[itemCategory] || 0) + 1;
+                              }
+                         });
+
+                         console.log("Recommendations: Preference Counts:", preferenceCounts);
+                         console.log("Recommendations: Total items in history:", totalHistoryItems);
+
+
+                         // --- Calculate Recommendation Scores for Unwatched Content ---
+                         const recommendedItemsWithScores = [];
+                         const watchedItemKeys = new Set(Object.keys(viewingHistoryItems)); // Set of "type_id" keys for quick lookup
+
+                         // Combine all available movies and series from Flask data into one list
+                         const allAvailableItems = [];
+                         // Add movies
+                         Object.values(allMoviesData).forEach(movie => {
+                             // Ensure basic details and type exist
+                             if (movie && movie.imdbID && movie.type === 'movie' && (movie.title || movie.HebrewName)) {
+                                 allAvailableItems.push(movie);
+                             } else {
+                                  console.warn("Recommendations: Skipping invalid movie data from Flask:", movie);
+                             }
+                         });
+                         // Add series (using data_for_index which has category)
+                         Object.values(allSeriesDataForIndex).forEach(series => {
+                             // Ensure basic details and type exist
+                             if (series && series.imdbID && series.type === 'series' && (series.title || series.HebrewName)) {
+                                 allAvailableItems.push(series);
+                             } else {
+                                  console.warn("Recommendations: Skipping invalid series data from Flask:", series);
+                             }
+                         });
+
+                         console.log(`Recommendations: Total available items to consider: ${allAvailableItems.length}`);
+
+
+                         allAvailableItems.forEach(item => {
+                             const itemKey = `${item.type}_${item.id}`;
+
+                             // Skip if item is already in viewing history
+                             if (watchedItemKeys.has(itemKey)) {
+                                  // console.log(`Recommendations: Skipping watched item ${itemKey}.`);
+                                 return;
+                             }
+
+                             let score = 0;
+
+                             // Add score based on content type preference
+                             if (item.type in preferenceCounts.types) {
+                                 score += preferenceCounts.types[item.type];
+                             }
+
+                             // Add score based on genre preferences
+                              const itemGenreStr = (item.genre || '').toLowerCase().trim();
+                             if (itemGenreStr) {
+                                  const itemGenres = itemGenreStr.split(',').map(g => g.trim()).filter(g => g);
+                                  itemGenres.forEach(g => {
+                                      // Add the count for this genre from user history
+                                      score += preferenceCounts.genres[g] || 0; // Add 0 if user has no history for this genre
+                                  });
+                             }
+
+                             // Add score based on category preference (only if not "ללא")
+                             const itemCategory = (item.category || '').trim();
+                              if (itemCategory && itemCategory !== 'ללא' && itemCategory in preferenceCounts.categories) {
+                                   score += preferenceCounts.categories[itemCategory];
+                              }
+
+                             // Only add to recommendations if score is > 0 (meaning at least one matching preference)
+                             // Or maybe add all with score > 0? Or maybe just add items with score > threshold?
+                             // Let's add any item with a score > 0, and then sort. This includes items with just one matching genre.
+                             if (score > 0) {
+                                 // Also add the original item data needed for display
+                                  recommendedItemsWithScores.push({ item: item, score: score });
+                             }
+                         });
+
+                         console.log(`Recommendations: Found ${recommendedItemsWithScores.length} items with score > 0.`);
+
+
+                         // --- Sort and Select Top N ---
+                         const numberOfRecommendations = 15; // Or any desired number
+                         recommendedItemsWithScores.sort((a, b) => b.score - a.score); // Sort descending by score
+                         const topRecommendedItems = recommendedItemsWithScores.slice(0, numberOfRecommendations).map(entry => entry.item); // Get top items, extracting the item object
+
+                         console.log(`Recommendations: Selected top ${topRecommendedItems.length} items.`);
+
+
+                         // --- Display Recommended Items ---
+                         recommendedRow.innerHTML = ''; // Clear previous content
+
+                         if (topRecommendedItems.length > 0) {
+                             topRecommendedItems.forEach(item => {
+                                  // Use the same structure and display logic as other category items
+                                  const itemLink = document.createElement('a');
+                                   let href = '#';
+                                   let titleText = '';
+                                   let subtitleText = '';
+
+                                   const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
+                                   const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
+
+
+                                   if (item.type === 'movie') {
+                                        href = `${movieDetailsBaseUrl}${item.id}`;
+                                        titleText = displayTitle || (currentLanguage === 'he' ? 'סרט לא ידוע' : 'Unknown Movie');
+                                        subtitleText = currentLanguage === 'he' ? 'סרט' : 'Movie';
+                                   } else if (item.type === 'series') {
+                                        // For recommendations, we link to the base series page, not a specific episode
+                                        href = `${seriesDetailsBaseUrl}${item.id}`;
+                                        titleText = displayTitle || (currentLanguage === 'he' ? 'סדרה לא ידועה' : 'Unknown Series');
+                                        subtitleText = currentLanguage === 'he' ? 'סדרה' : 'Series';
+                                   } else {
+                                        console.warn("Recommendations: Skipping item with unknown type for display:", item);
+                                        return;
+                                   }
+
+                                   itemLink.href = href;
+                                   itemLink.classList.add('item-card-link');
+                                   itemLink.classList.add('catalog-item'); // Add catalog-item for search
+                                   itemLink.classList.add('recommended-item');
+
+                                   // Add data attributes for search filter
+                                   itemLink.dataset.id = item.id;
+                                   itemLink.dataset.type = item.type;
+                                   itemLink.dataset.titleHe = item.HebrewName || item.title || '';
+                                   itemLink.dataset.titleEn = item.title || item.HebrewName || '';
+
+
+                                   const itemCard = document.createElement('div');
+                                   itemCard.classList.add('item-card');
+                                   itemCard.setAttribute('tabindex', '0');
+
+                                   const imageContainer = document.createElement('div');
+                                   imageContainer.classList.add('card-image-container');
+
+                                   const img = document.createElement('img');
+                                   img.src = displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl;
+                                   img.alt = titleText;
+                                   img.setAttribute('loading', 'lazy');
+
+                                   const overlay = document.createElement('div');
+                                   overlay.classList.add('card-overlay');
+
+                                    const playButton = document.createElement('button');
+                                    playButton.classList.add('play-button');
+                                    playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'צפה ב' : 'Watch ') + titleText);
+                                    playButton.innerHTML = '<i class="fas fa-play"></i>';
+                                    playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+
+
+                                   const titleElement = document.createElement('h3');
+                                   titleElement.classList.add('card-title');
+                                   titleElement.textContent = titleText;
+
+                                    const subtitleElement = document.createElement('p');
+                                    subtitleElement.classList.add('card-subtitle');
+                                    subtitleElement.textContent = subtitleText;
+                                    subtitleElement.style.fontSize = '0.8em';
+                                    subtitleElement.style.color = '#ccc';
+                                    subtitleElement.style.marginTop = '5px';
+
+
+                                    const actionsDiv = document.createElement('div');
+                                    actionsDiv.classList.add('card-actions');
+
+                                    // Add to list button (if needed later)
+                                    const addToListButton = document.createElement('button');
+                                    addToListButton.classList.add('add-to-list-button');
+                                    addToListButton.setAttribute('aria-label', currentLanguage === 'he' ? 'הוסף לרשימה' : 'Add to list');
+                                    addToListButton.innerHTML = '<i class="fas fa-plus"></i>';
+                                    addToListButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }); // Prevent click
+                                    actionsDiv.appendChild(addToListButton); // TODO: Implement add to list logic
+
+                                    // Info button links to the item details page
+                                    const infoButton = document.createElement('button');
+                                    infoButton.classList.add('info-button');
+                                    infoButton.setAttribute('aria-label', currentLanguage === 'he' ? 'עוד פרטים' : 'More info');
+                                    infoButton.innerHTML = '<i class="fas fa-info-circle"></i>';
+                                     infoButton.addEventListener('click', (e) => {
+                                         e.preventDefault();
+                                         e.stopPropagation();
+                                         window.location.href = itemLink.href; // Navigate via the link's href
+                                     });
+                                    actionsDiv.appendChild(infoButton);
+
+
+                                   imageContainer.appendChild(img);
+                                   overlay.appendChild(playButton);
+                                   overlay.appendChild(titleElement);
+                                    if (subtitleText) {
+                                      overlay.appendChild(subtitleElement);
+                                    }
+                                   overlay.appendChild(actionsDiv);
+                                   imageContainer.appendChild(overlay);
+                                   itemCard.appendChild(imageContainer);
+                                   itemLink.appendChild(itemCard);
+                                   recommendedRow.appendChild(itemLink);
+                             });
+
+                             recommendedSection.style.display = 'block'; // Show the section
+                             noRecommendationsMessage.style.display = 'none'; // Hide no results message
+
+                         } else {
+                              console.log("Recommendations: No recommended items found with score > 0.");
+                              recommendedSection.style.display = 'none'; // Hide section
+                              noRecommendationsMessage.style.display = 'block'; // Show no results message
+                         }
+                    }
+
+
+                } catch (e) {
+                    console.error("Recommendations: Error loading, analyzing, or displaying data:", e);
+                    recommendedSection.style.display = 'none'; // Hide section on error
+                    noRecommendationsMessage.style.display = 'block'; // Show error/empty message
+                }
+
+            } else {
+                console.log("Recommendations: User not logged in. Recommendations hidden.");
+                 recommendedSection.style.display = 'none';
+                 noRecommendationsMessage.style.display = 'none';
             }
 
 
         }); // End DOMContentLoaded
+
+         // Search functionality (same as movie.html and series.html, navigate back to index with search term) - outside DOMContentLoaded for access
+         const searchInputGlobal = document.getElementById('searchInput');
+         if (searchInputGlobal) {
+             searchInputGlobal.addEventListener('keypress', function(event) {
+                 if (event.key === 'Enter') {
+                     event.preventDefault();
+                     const term = this.value.trim();
+                     if (term) {
+                         window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(term)}`;
+                     }
+                 }
+             });
+              document.querySelector('.search-container button').addEventListener('click', function() {
+                   const term = searchInputGlobal.value.trim();
+                   if (term) {
+                        window.location.href = `{{ url_for('index') }}?s=${encodeURIComponent(term)}`;
+                   }
+               });
+         }
 
         {# If you have a separate static/js/script.js, link it here AFTER this script block #}
         {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
