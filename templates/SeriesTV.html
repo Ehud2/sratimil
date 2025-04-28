@@ -10,7 +10,8 @@
     {# Link the main style sheet first for shared styles like header, footer, etc. #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {# Link the specific movie page style sheet after the main one (grid styles are useful) #}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/movies.css') }}"> {# Reusing movies.css for grid layout #}
+    {# This file now also includes styles for the load more button and mobile adjustments #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movies.css') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,57 +20,9 @@
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
     {# Included loading spinner styles directly in style.css #}
 
-    <style>
-        /* Style for the Load More button when it's a grid item */
-        .load-more-button {
-            /* Re-use item-card styles */
-            /* Grid item properties */
-            display: flex; /* Keep flex for centering content inside */
-            flex-direction: column; /* Stack icon and text */
-            justify-content: center; /* Center vertically */
-            align-items: center; /* Center horizontally */
+    {# REMOVED INLINE STYLES - Moved to movies.css #}
+    {# <style> ... </style> #}
 
-            /* Appearance */
-            width: 100%; /* Take full width of the grid cell */
-            height: var(--card-height); /* Match card height */
-            border: 2px dashed var(--primary-accent-color); /* Dashed border to indicate action */
-            border-radius: var(--card-border-radius);
-            cursor: pointer;
-            transition: border-color 0.3s ease, transform 0.1s ease;
-            background-color: var(--background-color-light); /* Match card background or slightly different */
-             color: var(--primary-accent-color); /* Use accent color for text/icon */
-            font-family: var(--font-body);
-            font-size: 1.2em;
-            font-weight: 600;
-            text-align: center;
-            user-select: none; /* Prevent text selection */
-
-            /* Ensure it doesn't overlap with card overlay via z-index if necessary, but unlikely here */
-            position: relative; /* Needed for z-index if used, or just good practice for interactive elements */
-            z-index: 1; /* Above default content */
-        }
-
-        .load-more-button:hover {
-            border-color: var(--text-heading-color); /* Change border on hover */
-            transform: translateY(-2px); /* Slight lift effect */
-        }
-
-        .load-more-button i {
-            font-size: 2em; /* Larger icon */
-            margin-bottom: 10px;
-             color: var(--primary-accent-color); /* Ensure icon color */
-        }
-
-         /* Hide items initially */
-         .item-card-link.hidden-item-by-pagination {
-             display: none;
-         }
-
-         /* Ensure grid gap applies around the button too */
-         /* This should be handled by the .all-movies-grid gap property */
-
-
-    </style>
 </head>
 <body>
     <!-- Loading Spinner - Copy from movies.html -->
@@ -90,9 +43,14 @@
         </p>
     </div>
 
-    <!-- Header - Copy from movies.html -->
+    <!-- Header - Copy from movies.html, ADDED Nav Toggle -->
     <header class="site-header">
         <div class="container header-content">
+
+             {# --- Nav Toggle Button (for Mobile) - Copy from movies.html --- #}
+             <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
+                 <i class="fas fa-bars"></i> {# Initial icon #}
+             </button>
 
              <div class="auth-container">
                  {% if user %}
@@ -114,10 +72,8 @@
                <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
             </div>
 
-             {# --- Add Language Switcher Here (after Search) --- #}
+             {# --- Add Language Switcher Here (after Search) - Copy from movies.html --- #}
              <div class="language-switcher">
-                 {# Link to the set_language route. Show the name of the *current* language as per request. #}
-                 {# The href points to the *target* language (opposite of current) #}
                  <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
                       <i class="fas fa-globe"></i>
                       {% if current_language == 'he' %}
@@ -139,8 +95,6 @@
                 {% endif %}
             </nav>
 
-
-            {# Removed the header-spacer div #}
         </div>
     </header>
 
@@ -166,6 +120,10 @@
             <p>{{ 'צפה בכל הסדרות הזמינות באתר.' if current_language == 'he' else 'View all available series on the site.' }}</p> {# Changed description #}
         </div>
 
+        {# Filters are not implemented on this page, so skip the filter container #}
+        {# <!-- Filter Container ... --> #}
+
+
         {# Container for the series grid - Reusing the movies grid class #}
         <div class="all-movies-grid"> {# Reusing the same grid layout class #}
             {# Iterate through the 'series' dictionary passed from main.py #}
@@ -183,7 +141,7 @@
                      {# Wrap card in an anchor tag linking to the series details page #}
                      {# Add data attributes for search with both languages #}
                      {# The 'hidden-item-by-pagination' class will be added by JS initially #}
-                    <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link catalog-item" data-id="{{ item.imdbID }}" data-type="series" data-title-he="{{ item.get('HebrewName', '') | lower }}" data-title-en="{{ item.get('title', '') | lower }}">
+                    <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link catalog-item hidden-item-by-pagination" data-id="{{ item.imdbID }}" data-type="series" data-title-he="{{ item.get('HebrewName', '') | lower }}" data-title-en="{{ item.get('title', '') | lower }}">
                         {# Use the same item-card structure as index.html/movies.html #}
                         <div class="item-card" tabindex="0">
                             <div class="card-image-container">
@@ -244,7 +202,7 @@
 
         let currentlyDisplayedCount = 0; // Keep track of how many items are displayed *by pagination*
 
-        // JavaScript to hide the loading spinner once the page is loaded
+        // JavaScript to hide the loading spinner once the page is loaded (Copy from movies.html)
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOMContentLoaded fired on series page."); // Debug log
             const spinner = document.getElementById('loading-spinner');
@@ -271,11 +229,10 @@
                 console.warn("Spinner element #loading-spinner not found on series page.");
             }
 
-            // --- Show spinner on language switcher click ---
+            // --- Show spinner on language switcher click (Copy from movies.html) ---
             const languageSwitcherLink = document.querySelector('.language-switcher a');
             if (languageSwitcherLink) {
                  languageSwitcherLink.addEventListener('click', function(event) {
-                      // Don't prevent default, just show spinner before navigating
                       const spinner = document.getElementById('loading-spinner');
                       if (spinner) {
                           spinner.classList.remove('hidden');
@@ -283,6 +240,48 @@
                            console.log("Spinner shown by language switcher click.");
                       }
                  });
+            }
+
+            // --- Mobile Nav Toggle Functionality (Copy from movies.html) ---
+            const navToggle = document.querySelector('.nav-toggle');
+            const mainNav = document.querySelector('.main-nav');
+            const body = document.body; // Or document.documentElement for html
+
+            if (navToggle && mainNav) {
+                 navToggle.addEventListener('click', function() {
+                      const isOpen = mainNav.classList.toggle('nav-open');
+                      // Also toggle a class on the body to prevent background scroll
+                      body.classList.toggle('nav-open');
+
+                      // Change icon
+                      const icon = navToggle.querySelector('i');
+                      if (isOpen) {
+                           icon.classList.remove('fa-bars');
+                           icon.classList.add('fa-times'); // Close icon
+                           navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'סגור תפריט ניווט' : 'Close Navigation Menu');
+                      } else {
+                           icon.classList.remove('fa-times');
+                           icon.classList.add('fa-bars'); // Hamburger icon
+                           navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
+                      }
+                 });
+
+                 // Close nav when a link inside is clicked (optional, but good UX)
+                 mainNav.querySelectorAll('a').forEach(link => {
+                     link.addEventListener('click', function() {
+                          if (mainNav.classList.contains('nav-open')) {
+                               mainNav.classList.remove('nav-open');
+                               body.classList.remove('nav-open');
+                               // Reset icon
+                               const icon = navToggle.querySelector('i');
+                               icon.classList.remove('fa-times');
+                               icon.classList.add('fa-bars');
+                               navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
+                          }
+                     });
+                 });
+            } else {
+                 console.warn("Nav toggle or main nav not found."); // Debug log
             }
 
 
@@ -300,42 +299,55 @@
             function showItems(startIndex, endIndex) {
                  let itemsShownInBatch = 0;
                  for (let i = startIndex; i < endIndex && i < allItemCardLinks.length; i++) {
-                      allItemCardLinks[i].style.display = ''; // Restore display (e.g., grid item default)
-                      // allItemCardLinks[i].classList.remove('hidden-item-by-pagination'); // Class isn't strictly needed if we use style.display
-                       itemsShownInBatch++;
+                      // Only show items that are NOT hidden by the search filter
+                      // This check prevents pagination from showing items that shouldn't be visible based on search
+                      if (allItemCardLinks[i].style.display !== 'none') { // Check if the item is currently hidden by search
+                           allItemCardLinks[i].classList.remove('hidden-item-by-pagination'); // Make visible by removing pagination hidden class
+                            itemsShownInBatch++;
+                      }
                  }
-                 console.log(`Displayed ${itemsShownInBatch} items starting from index ${startIndex}. Total displayed now: ${currentlyDisplayedCount + itemsShownInBatch}`);
-                 currentlyDisplayedCount += itemsShownInBatch; // Update the global count
+                 console.log(`Attempted to display batch from index ${startIndex} to ${endIndex}. Shown in batch: ${itemsShownInBatch}`);
+                 currentlyDisplayedCount += itemsShownInBatch; // Update the global count based on items actually shown
             }
 
-            // Function to hide all series items
-            function hideAllSeriesItems() {
+            // Function to hide all series items for pagination reset
+            function hideAllSeriesItemsForPagination() {
                  allItemCardLinks.forEach(link => {
-                      link.style.display = 'none';
+                      // Only hide items if they are NOT already hidden by the search filter
+                      // This ensures search-hidden items remain hidden
+                      if (link.style.display !== 'none') {
+                           link.classList.add('hidden-item-by-pagination'); // Hide by adding pagination hidden class
+                      }
                  });
-                 currentlyDisplayedCount = 0; // Reset count when hiding all
-                 console.log("Hid all series items.");
+                 currentlyDisplayedCount = 0; // Reset count when hiding all for pagination
+                 console.log("Hid all series items for pagination.");
             }
+
 
             // Function to update the visibility of the Load More button
             function updateLoadMoreButtonVisibility() {
                  const isSearching = searchInput.value.trim() !== '';
-                 const allItemsDisplayed = currentlyDisplayedCount >= allItemCardLinks.length;
+                 // Count how many items are currently *visible* (not hidden by search AND not hidden by pagination)
+                 const visibleItemsCount = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none' && !link.classList.contains('hidden-item-by-pagination')).length;
+                 // Count total items *not* hidden by search
+                 const totalSearchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none').length;
 
-                 if (isSearching || allItemsDisplayed) {
+
+                 // Hide the button if searching OR if all search-visible items are currently displayed by pagination
+                 if (isSearching || currentlyDisplayedCount >= totalSearchVisibleItems) {
                       if (loadMoreButton) loadMoreButton.style.display = 'none';
-                      console.log(`Hide Load More: Searching=${isSearching}, All items displayed=${allItemsDisplayed}`);
+                      console.log(`Hide Load More: Searching=${isSearching}, currentlyDisplayedCount=${currentlyDisplayedCount}, totalSearchVisibleItems=${totalSearchVisibleItems}`);
                  } else {
-                      if (loadMoreButton) loadMoreButton.style.display = ''; // Restore display (e.g., grid item default)
-                      console.log(`Show Load More: currentlyDisplayedCount=${currentlyDisplayedCount}, totalItems=${allItemCardLinks.length}`);
+                      if (loadMoreButton) loadMoreButton.style.display = ''; // Restore display
+                       console.log(`Show Load More: currentlyDisplayedCount=${currentlyDisplayedCount}, totalSearchVisibleItems=${totalSearchVisibleItems}`);
                  }
             }
 
 
-            // --- Initial Load ---
-            // Hide all series items first
-            hideAllSeriesItems();
-            // Display the first batch
+            // --- Initial Load (Pagination) ---
+            // Add the initial 'hidden-item-by-pagination' class to all items initially
+            hideAllSeriesItemsForPagination(); // This also resets currentlyDisplayedCount
+            // Display the first batch of items
             showItems(0, itemsPerPage);
             // Update the Load More button visibility
             updateLoadMoreButtonVisibility();
@@ -344,13 +356,24 @@
             // --- Load More Button Click Handler ---
             if (loadMoreButton) {
                  loadMoreButton.addEventListener('click', function() {
-                      const nextBatchStartIndex = currentlyDisplayedCount; // Start from the current count
-                      const nextBatchEndIndex = currentlyDisplayedCount + itemsPerPage;
-                      showItems(nextBatchStartIndex, nextBatchEndIndex); // showItems function updates currentlyDisplayedCount
+                      // Calculate the index to start showing from.
+                      // We need to find the index *among the items not hidden by search*
+                      const searchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none');
+                      const nextBatchStartIndexInVisibleList = currentlyDisplayedCount; // Index within the search-visible list
+                      const nextBatchEndIndexInVisibleList = currentlyDisplayedCount + itemsPerPage;
+
+                      let itemsShownInBatch = 0;
+                      for (let i = nextBatchStartIndexInVisibleList; i < nextBatchEndIndexInVisibleList && i < searchVisibleItems.length; i++) {
+                           searchVisibleItems[i].classList.remove('hidden-item-by-pagination'); // Make visible
+                           itemsShownInBatch++;
+                      }
+
+                      currentlyDisplayedCount += itemsShownInBatch; // Update the global count
 
                       // Check if the button should be hidden *after* showing the new batch
                       updateLoadMoreButtonVisibility();
                  });
+
                  // Also handle keyboard activation for accessibility
                  loadMoreButton.addEventListener('keypress', function(event) {
                      if (event.key === 'Enter' || event.key === ' ') { // Enter or Space key
@@ -369,42 +392,45 @@
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase().trim(); // Trim whitespace
 
-                    let visibleCount = 0; // Count how many items match the search
+                    let searchMatchCount = 0; // Count how many items match the search
 
                     // Iterate through ALL series items
                     allItemCardLinks.forEach(link => {
                          // Get title based on current language from data attributes
-                         // Fallback to the other language title if the preferred one is missing
                          const titleHe = link.dataset.titleHe || '';
                          const titleEn = link.dataset.titleEn || '';
 
-                         // Search in both titles if a search term is present
+                         // Check if the item matches the search term
                          const matchesSearch = searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm);
 
                          if (matchesSearch) {
-                             link.style.display = ''; // Show the item if it matches search (or search is empty)
-                             visibleCount++;
+                             link.style.display = ''; // Show the item via direct style manipulation
+                             searchMatchCount++;
                          } else {
-                             link.style.display = 'none'; // Hide the item if it doesn't match
+                             link.style.display = 'none'; // Hide the item via direct style manipulation
                          }
                     });
 
-                    // Update the "No results found" message
+                    // Update the "No results found" message based on search results
                     if (noResultsMessage) {
-                         noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                         noResultsMessage.style.display = searchMatchCount === 0 ? 'block' : 'none';
                     }
 
-                     // Handle Load More button visibility and pagination reset based on search state
-                     if (searchTerm !== '') {
-                         // If searching, hide the load more button and effectively "display" all items that match the search
-                         currentlyDisplayedCount = allItemCardLinks.length; // Set count to max to hide load more
-                         updateLoadMoreButtonVisibility();
-                     } else {
-                          // If search term is cleared, reset pagination and re-apply initial display
-                          hideAllSeriesItems(); // This also resets currentlyDisplayedCount to 0
-                          showItems(0, itemsPerPage); // showItems updates currentlyDisplayedCount
-                          updateLoadMoreButtonVisibility(); // Update button visibility
+                     // --- Re-apply Pagination after Search ---
+                     // Regardless of search term (empty or not), reset pagination state
+                     hideAllSeriesItemsForPagination(); // This hides all items with the pagination class and resets currentlyDisplayedCount
+                     // Now, show the first batch *among the items currently visible by search*
+                     const searchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none');
+                     let itemsShownInBatch = 0;
+                     for(let i = 0; i < itemsPerPage && i < searchVisibleItems.length; i++) {
+                          searchVisibleItems[i].classList.remove('hidden-item-by-pagination'); // Make visible via pagination
+                          itemsShownInBatch++;
                      }
+                     currentlyDisplayedCount = itemsShownInBatch; // Update count based on what was just shown
+
+                     // Update Load More button visibility based on the new state
+                     updateLoadMoreButtonVisibility();
+
                 });
 
                  // Handle search button click (triggers the input event)
