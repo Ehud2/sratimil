@@ -253,17 +253,43 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .item-card:hover, .item-card:focus-within { transform: scale(1.05) translateY(-8px); box-shadow: 0 15px 35px var(--shadow-color); z-index: 10; outline: none; }
 
+/* Style for placeholder cards */
+.item-card-link.placeholder-card .item-card {
+    opacity: 0.8; /* Slightly faded */
+    pointer-events: none; /* Disable hover effects on card */
+    cursor: default; /* Change cursor */
+}
+.item-card-link.placeholder-card .item-card:hover,
+.item-card-link.placeholder-card .item-card:focus-within {
+     transform: none; /* Disable scale effect */
+     box-shadow: 0 8px 20px var(--shadow-color); /* Keep original shadow */
+     outline: none;
+}
+
+
 .card-image-container {
     width: 100%; height: var(--card-height); position: relative; overflow: hidden; border-radius: var(--border-radius-md);
 }
 .card-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--transition-medium); }
 .item-card:hover .card-image-container img, .item-card:focus-within .card-image-container img { transform: scale(1.1); }
+/* Disable image scale on placeholder cards */
+.item-card-link.placeholder-card .item-card .card-image-container img {
+     transform: none;
+}
+
 
 .card-overlay {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 10%, rgba(0, 0, 0, 0.6) 50%, transparent 100%);
     opacity: 0; transition: opacity var(--transition-medium); display: flex; flex-direction: column; justify-content: flex-end; padding: 15px; pointer-events: none;
 }
 .item-card:hover .card-overlay, .item-card:focus-within .card-overlay { opacity: 1; pointer-events: auto; }
+/* Keep overlay visible on placeholder cards */
+.item-card-link.placeholder-card .item-card .card-overlay {
+     opacity: 1;
+     pointer-events: auto; /* Allow message span to be clickable if needed, though usually text */
+     background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 10%, rgba(0, 0, 0, 0.8) 50%, rgba(0, 0, 0, 0.6) 100%); /* Slightly darker overlay */
+}
+
 
 .play-button {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background-color: rgba(255, 255, 255, 0.2);
@@ -276,6 +302,11 @@ img { max-width: 100%; height: auto; display: block; }
 .item-card:hover .play-button, .item-card:focus-within .play-button { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .play-button:hover { background-color: rgba(255, 255, 255, 0.4); transform: translate(-50%, -50%) scale(1.1); }
 .play-button i { margin-left: 3px; }
+/* Hide play button on placeholder cards */
+.item-card-link.placeholder-card .item-card .play-button {
+     display: none;
+}
+
 
 .card-title {
     font-family: var(--font-heading); font-size: 1.1em; font-weight: 600; color: var(--text-heading-color); margin-bottom: 10px;
@@ -286,8 +317,16 @@ img { max-width: 100%; height: auto; display: block; }
     text-align: inherit;
 }
 .item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; }
+/* Title always visible on placeholder cards */
+.item-card-link.placeholder-card .item-card .card-title {
+     transform: translateY(0);
+     opacity: 1;
+     font-size: 1em; /* Slightly smaller for placeholder */
+     color: rgba(255, 255, 255, 0.9);
+}
 
-/* New style for subtitle on card overlay (Series only) */
+
+/* New style for subtitle on card overlay (Series only, and Movie on trending) */
 .card-subtitle {
      font-family: var(--font-body);
      font-size: 0.8em;
@@ -303,6 +342,12 @@ img { max-width: 100%; height: auto; display: block; }
      transition: inherit;
      transition-delay: 0.15s; /* Slightly later than title */
 }
+/* Subtitle always visible on placeholder cards */
+.item-card-link.placeholder-card .item-card .card-subtitle {
+     transform: translateY(0);
+     opacity: 1;
+     color: rgba(204, 204, 204, 0.8);
+}
 
 
 .card-actions {
@@ -313,9 +358,39 @@ img { max-width: 100%; height: auto; display: block; }
 }
 /* The following [dir="rtl"] rule is removed from the media query */
 /* [dir="rtl"] .card-actions { justify-content: flex-end; } */
+[dir="rtl"] .card-actions { justify-content: flex-end; } /* Keeping the original desktop RTL position logic */
 [dir="ltr"] .card-actions { justify-content: flex-start; }
 
 .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
+
+/* Hide action buttons on placeholder cards */
+.item-card-link.placeholder-card .item-card .card-actions {
+     display: none; /* Hide the actions container */
+     /* Instead, display the placeholder message */
+     opacity: 1; /* Keep overlay visible */
+     justify-content: center; /* Center message */
+     align-items: center;
+     flex-grow: 1; /* Allow message to take space */
+     font-size: 1.1em;
+     color: var(--text-muted-color); /* Use accent color for message */
+     text-align: center;
+     text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+     /* Make the placeholder message visible */
+     display: flex;
+}
+
+/* Style for the placeholder message span */
+.item-card-link.placeholder-card .item-card .card-overlay .placeholder-message {
+     display: block; /* Make it visible */
+     pointer-events: none; /* Not clickable */
+     margin-top: auto; /* Push to bottom if needed, though flex handles it */
+}
+/* Hide default action buttons within placeholder card's actions div */
+.item-card-link.placeholder-card .item-card .card-actions button {
+    display: none;
+}
+
+
 .card-actions button {
     background-color: rgba(40, 40, 40, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); color: var(--text-heading-color);
     width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
@@ -327,23 +402,26 @@ img { max-width: 100%; height: auto; display: block; }
 .rank-number {
     position: absolute;
     /* Adjusted for RTL - These rules apply to desktop and mobile */
-    left: -15px; bottom: 10px; /* Default / LTR */
+    /* Use left: -15px for RTL, right: -15px for LTR */
+    /* Left/Right position should be outside media query for consistency */
     width: 60px; height: 60px;
     display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none;
+     /* Style enhancement: Add a backdrop filter for better visibility */
+     backdrop-filter: blur(3px);
+     border-radius: 50%;
 }
-/* Adjust rank number position for RTL - This rule applies to desktop and mobile */
-/* The following [dir="rtl"] rule is removed from the media query */
-/* [dir="rtl"] .rank-number { left: -15px; right: auto; } */
-[dir="rtl"] .rank-number { left: -15px; right: auto; } /* Keeping the original desktop RTL position logic */
-[dir="ltr"] .rank-number { left: auto; right: -15px; } /* LTR adjustment */
+/* Adjust rank number position based on direction */
+[dir="rtl"] .rank-number { left: -15px; right: auto; bottom: 10px; }
+[dir="ltr"] .rank-number { left: auto; right: -15px; bottom: 10px; }
 
 
 .rank-circle-bg {
     width: 100%; height: 100%; position: absolute; transform: rotate(-90deg); stroke-linecap: round;
 }
-.rank-circle-bg path { fill: none; stroke: rgba(11, 12, 16, 0.7); stroke-width: 4; }
+/* Style enhancement: Make circle stroke more prominent */
+.rank-circle-bg path { fill: none; stroke: rgba(102, 252, 241, 0.7); /* Use primary accent color */ stroke-width: 5; /* Thicker stroke */ }
 .rank-text {
-    font-family: var(--font-heading); font-size: 1.8em; font-weight: 700; color: var(--primary-accent-color);
+    font-family: var(--font-heading); font-size: 1.8em; font-weight: 700; color: var(--text-heading-color); /* Use white for text */
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8); line-height: 1; z-index: 1;
 }
 
@@ -579,23 +657,6 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 
-.omdb-search-input button {
-    padding: 10px 20px;
-    background-color: var(--primary-accent-color);
-    color: var(--bg-secondary);
-    border: none;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    font-family: var(--font-heading);
-    font-size: 1em;
-    transition: background-color var(--transition-fast);
-}
-
-.omdb-search-input button:hover {
-    background-color: var(--secondary-accent-color);
-}
-
-/* Renamed from #omdbResults for clarity */
 #omdbMovieResults, #omdbSeriesResults {
     list-style: none;
     padding: 0;
@@ -926,6 +987,13 @@ img { max-width: 100%; height: auto; display: block; }
          transition: transform 0.2s 0.05s ease, opacity 0.2s 0.05s ease;
     }
      .item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; } /* Keep animation */
+     /* Always visible on placeholder cards */
+     .item-card-link.placeholder-card .item-card .card-title {
+         transform: translateY(0);
+         opacity: 1;
+          font-size: 0.9em; /* Even smaller for placeholder on mobile */
+          color: rgba(255, 255, 255, 0.9);
+     }
 
 
      .card-subtitle {
@@ -933,6 +1001,13 @@ img { max-width: 100%; height: auto; display: block; }
          margin-top: 3px; /* Adjust margin */
          margin-bottom: 8px; /* Adjust margin */
      }
+     /* Always visible on placeholder cards */
+     .item-card-link.placeholder-card .item-card .card-subtitle {
+         transform: translateY(0);
+         opacity: 1;
+         color: rgba(204, 204, 204, 0.8);
+     }
+
 
     .card-actions {
         gap: 8px; /* Smaller gap */
@@ -940,6 +1015,11 @@ img { max-width: 100%; height: auto; display: block; }
          /* The justify-content rule from outside the media query applies */
     }
      /* Removed [dir="rtl"] .card-actions from here to let global rule apply */
+      /* Always visible on placeholder cards */
+     .item-card-link.placeholder-card .item-card .card-actions {
+          opacity: 1;
+     }
+
 
      .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; } /* Keep animation */
 
@@ -950,17 +1030,12 @@ img { max-width: 100%; height: auto; display: block; }
     }
      .card-actions button:hover { transform: scale(1.1); } /* Keep scale effect */
 
-
     .rank-number {
         /* Adjust size for mobile */
         width: 50px;
         height: 50px;
-         /* Adjust position for mobile, but let global RTL/LTR handle left/right */
-         /* Original desktop RTL position: left: -15px */
-         /* Original desktop LTR position: right: -15px */
-         /* Let's use adjusted mobile values */
+         /* Position handled by global [dir] rules */
          bottom: 8px; /* Adjusted bottom position for mobile */
-         /* The left/right position will be handled by global [dir] rules */
     }
     /* Removed [dir="rtl"] .rank-number from here to let global rule apply */
     /* Removed [dir="ltr"] .rank-number from here to let global rule apply */
@@ -968,6 +1043,15 @@ img { max-width: 100%; height: auto; display: block; }
     .rank-text {
         font-size: 1.5em; /* Smaller rank font */
     }
+     /* Style enhancement: Adjust rank text color on mobile */
+     .rank-text {
+          color: var(--text-heading-color); /* Keep white text */
+     }
+      .rank-circle-bg path {
+          stroke: rgba(102, 252, 241, 0.7); /* Keep accent color for stroke */
+          stroke-width: 5;
+      }
+
 
     #noResultsMessage {
          margin: 40px auto; /* Adjust margin */
