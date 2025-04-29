@@ -129,124 +129,6 @@
              </div>
         </section>
 
-        {# --- NEW: Top Trending Movies Section --- #}
-        {% if top_movies_week %}
-            <section class="category-section">
-                <h2>{{ 'הסרטים הנצפים ביותר השבוע' if current_language == 'he' else 'Top Trending Movies This Week' }}</h2>
-                <div class="item-row">
-                     {% set is_ranked_category = True %} {# Flag for ranking numbers #}
-                    {% for item in top_movies_week %}
-                         {# Check if item is a placeholder or links to actual content #}
-                         {% set item_link = '#' if item.is_placeholder else url_for('movie_details', imdb_id=item.id) %}
-                         {# Add 'placeholder-card' class if needed for styling #}
-                        <a href="{{ item_link }}" class="item-card-link catalog-item {% if item.is_placeholder %}placeholder-card{% endif %}" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}" {% if item.is_placeholder %}onclick="return false;"{% endif %}> {# Disable link click for placeholders #}
-                            <div class="item-card" tabindex="0">
-                                <div class="card-image-container">
-                                    {# Use Hebrew poster if language is HE and Hebrew poster exists, otherwise use English poster, fallback to default #}
-                                    {% set item_poster = (item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') and item.get('HebrewPoster') != 'N/A' else item.get('poster') if item.get('poster') and item.get('poster') != 'N/A' else default_poster_url) %}
-                                    <img src="{{ item_poster }}" alt="{{ item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) }}" loading="lazy">
-                                    {% if is_ranked_category and loop.index <= 15 %}
-                                        <span class="rank-number">
-                                            <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
-                                            <span class="rank-text">{{ loop.index }}</span>
-                                        </span>
-                                    {% endif %}
-                                    <div class="card-overlay">
-                                         {# Play button logic: Show only if NOT a placeholder #}
-                                        {% if not item.is_placeholder %}
-                                            <button class="play-button" aria-label="{{ ('צפה ב' + (item.get('HebrewName', item.get('title', ''))) if current_language == 'he' else ('Watch ' + (item.get('title', item.get('HebrewName', ''))))) }}"><i class="fas fa-play"></i></button>
-                                        {% endif %}
-                                        <h3 class="card-title">
-                                             {# Use Hebrew title if language is HE and Hebrew title exists, otherwise use English title, fallback to placeholder text #}
-                                             {{ item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) or ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
-                                             {# Add placeholder text if it's a placeholder item AND no name is available #}
-                                             {% if item.is_placeholder and not (item.get('HebrewName') or item.get('title')) %}
-                                                  {{ item.placeholder_text }}
-                                             {% endif %}
-                                        </h3>
-                                        {# Add subtitle for Movies here if needed (e.g., "Movie") #}
-                                        <p class="card-subtitle" style="font-size: 0.8em; color: #ccc; margin-top: 5px;">{{ 'סרט' if current_language == 'he' else 'Movie' }}</p>
-
-                                        <div class="card-actions">
-                                            {# Added data attributes for JS to identify the item for adding/removing from lists #}
-                                            {# Pass both Hebrew and English details as data attributes #}
-                                            {# Show action buttons only if NOT a placeholder #}
-                                            {% if not item.is_placeholder %}
-                                                 <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
-                                                  {# The info button might also link to the movie page #}
-                                                 <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
-                                            {% else %}
-                                                 {# Display a placeholder message or icon if it's a placeholder card #}
-                                                 <span class="placeholder-message">{{ item.placeholder_text }}</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </a> {# End of anchor tag wrapper #}
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
-
-        {# --- NEW: Top Trending Series Section --- #}
-         {% if top_series_week %}
-            <section class="category-section">
-                <h2>{{ 'הסדרות הנצפות ביותר השבוע' if current_language == 'he' else 'Top Trending Series This Week' }}</h2>
-                <div class="item-row">
-                     {% set is_ranked_category = True %} {# Flag for ranking numbers #}
-                    {% for item in top_series_week %}
-                         {# Check if item is a placeholder or links to actual content #}
-                         {# For series, the link should go to the main series page if found, not a specific episode #}
-                         {% set item_link = '#' if item.is_placeholder else url_for('series_details', imdb_id=item.id) %}
-                         {# Add 'placeholder-card' class if needed for styling #}
-                        <a href="{{ item_link }}" class="item-card-link catalog-item {% if item.is_placeholder %}placeholder-card{% endif %}" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}" {% if item.is_placeholder %}onclick="return false;"{% endif %}> {# Disable link click for placeholders #}
-                            <div class="item-card" tabindex="0">
-                                <div class="card-image-container">
-                                    {# Use Hebrew poster if language is HE and Hebrew poster exists, otherwise use English poster, fallback to default #}
-                                     {% set item_poster = (item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') and item.get('HebrewPoster') != 'N/A' else item.get('poster') if item.get('poster') and item.get('poster') != 'N/A' else default_poster_url) %}
-                                    <img src="{{ item_poster }}" alt="{{ item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) }}" loading="lazy">
-                                    {% if is_ranked_category and loop.index <= 15 %}
-                                        <span class="rank-number">
-                                            <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
-                                            <span class="rank-text">{{ loop.index }}</span>
-                                        </span>
-                                    {% endif %}
-                                    <div class="card-overlay">
-                                         {# Play button logic: Show only if NOT a placeholder. For series, play button on index links to the main series page. #}
-                                        {% if not item.is_placeholder %}
-                                            <button class="play-button" aria-label="{{ ('צפה ב' + (item.get('HebrewName', item.get('title', ''))) if current_language == 'he' else ('Watch ' + (item.get('title', item.get('HebrewName', ''))))) }}"><i class="fas fa-play"></i></button>
-                                        {% endif %}
-                                        <h3 class="card-title">
-                                             {# Use Hebrew title if language is HE and Hebrew title exists, otherwise use English title, fallback to placeholder text #}
-                                             {{ item.get('HebbrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) or ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
-                                              {# Add placeholder text if it's a placeholder item AND no name is available #}
-                                             {% if item.is_placeholder and not (item.get('HebrewName') or item.get('title')) %}
-                                                  {{ item.placeholder_text }}
-                                             {% endif %}
-                                        </h3>
-                                         {# Add subtitle for Series on index page (e.g., "Series") #}
-                                         <p class="card-subtitle" style="font-size: 0.8em; color: #ccc; margin-top: 5px;">{{ 'סדרה' if current_language == 'he' else 'Series' }}</p>
-                                        <div class="card-actions">
-                                            {# Show action buttons only if NOT a placeholder #}
-                                            {% if not item.is_placeholder %}
-                                                 <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
-                                                 {# The info button might also link to the series page #}
-                                                 <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
-                                            {% else %}
-                                                 {# Display a placeholder message or icon if it's a placeholder card #}
-                                                 <span class="placeholder-message">{{ item.placeholder_text }}</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </a> {# End of anchor tag wrapper #}
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
-
 
         {% for category_name, items_in_category in categories.items() %}
             {% if items_in_category %}
@@ -255,8 +137,7 @@
                 <section class="category-section">
                     <h2>{{ category_name }}</h2> {# Keep Hebrew category name as defined #}
                     <div class="item-row">
-                        {# is_ranked_category is False for these general categories #}
-                        {% set is_ranked_category = False %}
+                        {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
                              {# Make sure the URL includes the language parameter if needed, but the backend sets session, so not strictly necessary in URL #}
@@ -264,9 +145,14 @@
                                 <div class="item-card" tabindex="0"> {# Moved data-title/id/type to the link #}
                                     <div class="card-image-container">
                                         {# Use Hebrew poster if language is HE and Hebrew poster exists, otherwise use English poster, fallback to default #}
-                                        {% set item_poster = (item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') and item.get('HebrewPoster') != 'N/A' else item.get('poster') if item.get('poster') and item.get('poster') != 'N/A' else default_poster_url) %}
-                                        <img src="{{ item_poster }}" alt="{{ item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) }}" loading="lazy">
-                                        {# Ranking logic removed from here as it's only for Top sections now #}
+                                        {% set item_poster = (item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') else item.get('poster')) %}
+                                        <img src="{{ item_poster if item_poster and item_poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) }}" loading="lazy">
+                                        {% if is_ranked_category and loop.index <= 15 %}
+                                            <span class="rank-number">
+                                                <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
+                                                <span class="rank-text">{{ loop.index }}</span>
+                                            </span>
+                                        {% endif %}
                                         <div class="card-overlay">
                                              {# The play button now also links to the movie/series page #}
                                             <button class="play-button" aria-label="{{ ('צפה ב' + (item.get('HebrewName', item.get('title', ''))) if current_language == 'he' else ('Watch ' + (item.get('title', item.get('HebrewName', ''))))) }}"><i class="fas fa-play"></i></button>
@@ -312,8 +198,7 @@
     <script>
         // Pass current_language from Flask to JavaScript
         const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
-        // Pass default poster URL from Flask to JavaScript
-        const defaultPosterUrl = {{ default_poster_url | tojson }};
+        const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
 
 
         // JavaScript to hide the loading spinner once the page is loaded
@@ -416,8 +301,7 @@
             // --- Search Filter Functionality ---
             const searchInput = document.getElementById('searchInput');
             const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
-            // Select all catalog items, excluding placeholder cards from filtering
-            const catalogItems = document.querySelectorAll('.category-section .item-card-link.catalog-item:not(.placeholder-card)');
+            const catalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Get all catalog items
 
 
             if (searchInput) {
@@ -436,46 +320,16 @@
 
                          if (title.includes(searchTerm)) {
                              link.style.display = ''; // Show the link (and thus the card)
-                             // Keep the parent section visible if any item within it is visible
-                             link.closest('.category-section').style.display = '';
                              anyVisible = true;
                          } else {
                              link.style.display = 'none'; // Hide the link (and thus the card)
                          }
                     });
 
-                    // After filtering items, check if any section became empty and hide it
-                    document.querySelectorAll('.category-section').forEach(section => {
-                         // Exclude the Continue Watching section from hiding based on search filter
-                         if (section.id === 'continueWatchingSection') {
-                              return;
-                         }
-                         // Check if *any* item link inside this section is visible (not display: none)
-                         const itemsInSection = section.querySelectorAll('.item-card-link.catalog-item:not(.placeholder-card)');
-                         let sectionHasVisibleItems = false;
-                         itemsInSection.forEach(item => {
-                              if (item.style.display !== 'none') {
-                                   sectionHasVisibleItems = true;
-                              }
-                         });
-
-                         // Hide the section if no non-placeholder items are visible
-                         if (!sectionHasVisibleItems) {
-                              section.style.display = 'none';
-                         } else {
-                              // Ensure the section is visible if it has visible items
-                              section.style.display = '';
-                         }
-                    });
-
-
                     // Update no results message visibility
-                    // Only show 'no results' if *all* non-CW sections are hidden OR
-                    // if all filterable items are hidden across all non-CW sections.
-                     const allCatalogItemsHidden = Array.from(catalogItems).every(item => item.style.display === 'none');
-                     if (noResultsMessage) {
-                         noResultsMessage.style.display = allCatalogItemsHidden ? 'block' : 'none';
-                     }
+                    if (noResultsMessage) {
+                         noResultsMessage.style.display = anyVisible ? 'none' : 'block';
+                    }
                 });
 
                 // Handle search button click (does the same as input for now)
@@ -558,10 +412,7 @@
                         }
 
                         // Determine canonical key (movie_id or series_id)
-                        // Note: For series, the key should be just the series ID, not including episode.
-                        // The CW entry should represent the *latest* episode watched for that series.
-                         const canonicalKey = `${item.type}_${item.id}`;
-
+                        const canonicalKey = `${item.type}_${item.id}`;
 
                         if (item.type === 'movie') {
                              // For movies, just add/overwrite. The key is already unique per movie.
@@ -600,16 +451,12 @@
                                 const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0; // Default to 0 if no info
 
 
-                                // Compare the current item (representing a watched episode) with the one already in the map (representing the latest watched episode for this series)
-                                // Keep the one that represents the later season, or later episode if seasons are the same.
-                                // Also, if the episode is the same but the timestamp is later, update it.
-                                if (seasonNum > existingSeason ||
-                                   (seasonNum === existingSeason && episodeNum > existingEpisode) ||
-                                   (seasonNum === existingSeason && episodeNum === existingEpisode && timestamp > existingItem.timestamp)
-                                ) {
-                                     // The current item represents a *later* point in the series
+                                // Compare the current episode with the one already in the map
+                                // Keep the one with the later season, or later episode if seasons are the same
+                                if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
+                                     // The current item represents a *later* episode for this series
                                      console.log(`CW: Updating series ${item.id} to S${seasonNum}E{episodeNum} (was S${existingSeason}E{existingEpisode}).`);
-                                    // Update the map entry with the later episode details and timestamp
+                                    // Update the map entry with the later episode details
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
@@ -619,13 +466,13 @@
                                         HebrewPoster: item.HebrewPoster, // Keep Hebrew
                                         latest_season: seasonNum, // Store as latest_* in the canonical format
                                         latest_episode: episodeNum, // Store as latest_* in the canonical format
-                                         // Use the timestamp from the *latest* point found
+                                         // Use the timestamp from the *latest* episode found, even if it's from an old entry format
                                         timestamp: timestamp,
                                         // Add other series details needed for the card if any beyond title/poster
                                     });
                                 } else {
                                     // The existing item in the map is already the latest or equal. Do nothing.
-                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not newer than S${seasonNum}E{episodeNum} with its timestamp.`); // Debug log
+                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E{episodeNum}.`); // Debug log
                                 }
                             } else {
                                 // No entry for this series yet, add this one (converted to canonical format)
@@ -657,7 +504,6 @@
                     // Optional: Save the cleaned, consolidated data back to localStorage
                     // This effectively migrates old per-episode data to the new per-series-latest format over time.
                     // By converting the Map back to an object, keys like series_ttXXXXXXX_SxE are automatically discarded.
-                    // Note: Using Object.fromEntries is fine here as the keys in uniqueValidItemsMap are the canonical keys (movie_id, series_id), not the old sXe keys.
                     const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap); // Convert Map back to object
                     try {
                          localStorage.setItem(localStorageKey, JSON.stringify(cleanedContinueWatchingItems));
@@ -672,10 +518,9 @@
                         // Sort items alphabetically by the *displayed* title
                          validItemsToDisplay.sort((a, b) => {
                              const titleA = (currentLanguage === 'he' ? a.HebrewName || a.title : a.title || a.HebrewName) || '';
-                             const titleB = (currentLanguage === 'he' ? b.HebrewName || b.title : a.title || b.HebrewName) || ''; // Fixed typo here
+                             const titleB = (currentLanguage === 'he' ? b.HebrewName || b.title : b.title || b.HebrewName) || '';
                              return titleA.localeCompare(titleB);
                          });
-
 
                         // Clear previous content
                         continueWatchingRow.innerHTML = '';
@@ -727,7 +572,7 @@
 
                             itemLink.href = href;
                             itemLink.classList.add('item-card-link');
-                            itemLink.classList.add('continue-watching-item'); // Add specific class for CW items
+                            itemLink.classList.add('continue-watching-item');
 
                             // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
@@ -750,8 +595,7 @@
                              // Update aria-label based on language and title
                              playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'המשך צפייה ב' : 'Continue watching ') + titleText);
                              playButton.innerHTML = '<i class="fas fa-play"></i>';
-                              // Play button on CW section should navigate directly
-                             // No need to preventDefault/stopPropagation here, the link handles navigation
+                             playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
 
 
                             const titleElement = document.createElement('h3');
@@ -837,7 +681,7 @@
                     } else {
                         console.log("CW: No valid continue watching data found for this user.");
                          continueWatchingSection.style.display = 'none';
-                         noContinueWatchingMessage.style.display = 'block'; // Show empty message if no data
+                         noContinueWatchingMessage.style.display = 'block'; // Show "No items" message if no data
                     }
 
                 } catch (e) {
