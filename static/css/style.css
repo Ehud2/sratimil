@@ -235,25 +235,16 @@ img { max-width: 100%; height: auto; display: block; }
     margin-bottom: -30px; gap: var(--card-gap); scroll-snap-type: x mandatory; position: relative;
 }
 /* Adjust gradients for RTL */
-[dir="rtl"] .item-row::before {
+.item-row::before {
     content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
     /* Adjusted for RTL */
-    right: 0; left: auto; background: linear-gradient(to left, var(--bg-color), transparent);
+    right: 0; background: linear-gradient(to left, var(--bg-color), transparent);
 }
-[dir="ltr"] .item-row::before {
-     content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
-     left: 0; right: auto; background: linear-gradient(to right, var(--bg-color), transparent);
-}
-[dir="rtl"] .item-row::after {
+.item-row::after {
     content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
     /* Adjusted for RTL */
-    left: 0; right: auto; background: linear-gradient(to right, var(--bg-color), transparent);
+    left: 0; background: linear-gradient(to right, var(--bg-color), transparent);
 }
-[dir="ltr"] .item-row::after {
-     content: ''; position: absolute; top: 0; bottom: 30px; width: 60px; z-index: 2; pointer-events: none;
-     right: 0; left: auto; background: linear-gradient(to left, var(--bg-color), transparent);
-}
-
 
 .item-card {
     background-color: var(--card-bg-color); border-radius: var(--border-radius-md); width: var(--card-width); flex-shrink: 0;
@@ -320,7 +311,8 @@ img { max-width: 100%; height: auto; display: block; }
     /* This rule applies to desktop and mobile */
     justify-content: flex-start; /* Align to the right in RTL */
 }
-[dir="rtl"] .card-actions { justify-content: flex-end; }
+/* The following [dir="rtl"] rule is removed from the media query */
+/* [dir="rtl"] .card-actions { justify-content: flex-end; } */
 [dir="ltr"] .card-actions { justify-content: flex-start; }
 
 .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
@@ -332,32 +324,24 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .card-actions button:hover { background-color: rgba(60, 60, 60, 0.9); transform: scale(1.1); }
 
-/* --- Rank Number Styling (Applies to Trending Sections) --- */
 .rank-number {
     position: absolute;
     /* Adjusted for RTL - These rules apply to desktop and mobile */
-    /* The left/right positioning is handled by the [dir] rules below */
-    bottom: 10px; /* Vertical position */
+    left: -15px; bottom: 10px; /* Default / LTR */
     width: 60px; height: 60px;
     display: flex; justify-content: center; align-items: center; z-index: 5; pointer-events: none;
 }
-/* Adjust rank number position for RTL/LTR */
-[dir="rtl"] .rank-number { left: auto; right: -15px; }
-[dir="ltr"] .rank-number { left: -15px; right: auto; }
+/* Adjust rank number position for RTL - This rule applies to desktop and mobile */
+/* The following [dir="rtl"] rule is removed from the media query */
+/* [dir="rtl"] .rank-number { left: -15px; right: auto; } */
+[dir="rtl"] .rank-number { left: -15px; right: auto; } /* Keeping the original desktop RTL position logic */
+[dir="ltr"] .rank-number { left: auto; right: -15px; } /* LTR adjustment */
+
 
 .rank-circle-bg {
-    width: 100%; height: 100%; position: absolute; /*transform: rotate(-90deg);*/ stroke-linecap: round;
+    width: 100%; height: 100%; position: absolute; transform: rotate(-90deg); stroke-linecap: round;
 }
 .rank-circle-bg path { fill: none; stroke: rgba(11, 12, 16, 0.7); stroke-width: 4; }
-
-/* Optional: Add an inner circle path */
-.rank-circle-bg .circle {
-    stroke-dasharray: 100; /* Roughly 100% of stroke length */
-    stroke-dashoffset: 0;
-    /* Animation or fill could go here if needed */
-     stroke: var(--primary-accent-color); /* Use accent color for circle */
-}
-
 .rank-text {
     font-family: var(--font-heading); font-size: 1.8em; font-weight: 700; color: var(--primary-accent-color);
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8); line-height: 1; z-index: 1;
@@ -372,8 +356,6 @@ img { max-width: 100%; height: auto; display: block; }
     text-align: center; font-size: 1.2em; color: var(--text-color); margin: 60px auto; padding: 25px;
     background-color: var(--bg-secondary); border-radius: var(--border-radius-md); max-width: 450px;
     border: 1px solid var(--border-color); display: none;
-     /* Ensure text alignment follows document direction */
-    text-align: inherit;
 }
 
 .flash-messages {
@@ -409,8 +391,10 @@ img { max-width: 100%; height: auto; display: block; }
     padding: 0 5px;
     line-height: 1;
 }
-/* Adjust close button position for RTL/LTR */
-[dir="rtl"] .close-flash { left: auto; right: 15px; }
+/* Adjust close button position for RTL - This rule applies to desktop and mobile */
+/* The following [dir="rtl"] rule is removed from the media query */
+/* [dir="rtl"] .close-flash { left: 15px; right: auto; } */
+[dir="rtl"] .close-flash { left: auto; right: 15px; } /* Keeping the original desktop RTL position logic */
 [dir="ltr"] .close-flash { left: auto; right: 15px; }
 
 
@@ -493,84 +477,6 @@ img { max-width: 100%; height: auto; display: block; }
     visibility: hidden;
     /* display: none will be added by JS after transition */
 }
-
-
-/* --- Placeholder style for unavailable trending items --- */
-.item-card-link.unavailable .item-card {
-    background-color: var(--bg-secondary); /* Darker background */
-    opacity: 0.7; /* Slightly dimmed */
-    cursor: default; /* No pointer cursor */
-    transition: none; /* No hover animation */
-}
-.item-card-link.unavailable .item-card:hover,
-.item-card-link.unavailable .item-card:focus-within {
-    transform: none;
-    box-shadow: 0 8px 20px var(--shadow-color); /* Keep base shadow */
-    outline: none;
-}
-
-.item-card-link.unavailable .card-image-container {
-    background-color: var(--card-bg-color); /* Ensure background for placeholder */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    text-align: center;
-     /* Ensure text alignment follows document direction */
-    direction: inherit;
-}
-
-.unavailable-item-placeholder {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    height: 100%; /* Take full height of container */
-    width: 100%; /* Take full width */
-    padding: 10px;
-}
-
-.unavailable-item-placeholder .fas {
-    font-size: 3em;
-    color: var(--text-muted-color);
-    margin-bottom: 10px;
-}
-
-.unavailable-item-placeholder .placeholder-text {
-    font-size: 0.9em;
-    color: var(--text-color);
-    margin-bottom: 10px;
-}
-
-.unavailable-item-placeholder .placeholder-title {
-     font-family: var(--font-heading);
-     font-size: 1.1em;
-     font-weight: 600;
-     color: var(--text-heading-color);
-     word-break: break-word; /* Allow long titles to break */
-}
-
-
-.item-card-link.unavailable .card-image-container img {
-    display: none; /* Hide the image if placeholder */
-}
-
-.item-card-link.unavailable .card-overlay {
-    display: none; /* Hide overlay if placeholder */
-}
-.item-card-link.unavailable .rank-number {
-     /* Optional: adjust rank number style for unavailable items */
-     opacity: 0.5;
-}
-.item-card-link.unavailable .rank-circle-bg path {
-     stroke: rgba(69, 162, 158, 0.3); /* Muted circle color */
-}
-.item-card-link.unavailable .rank-text {
-     color: rgba(102, 252, 241, 0.5); /* Muted text color */
-}
-
 
 /* --- Styles for add.html - included in style.css for simplicity --- */
 /* Ideally these would be in static/css/add.css */
@@ -875,9 +781,9 @@ img { max-width: 100%; height: auto; display: block; }
      .search-container {
          flex-grow: 1; /* Allow search to take remaining space */
          order: 3; /* Put search in the middle row */
-         /* On mobile, let search take full width minus fixed elements */
-         width: 100%;
-         max-width: none;
+         max-width: calc(100% - (40px + 10px) * 2 - 10px); /* Adjust max width considering other elements */
+         /* Ensure it doesn't shrink too much */
+         flex-basis: 150px; /* Minimum width */
      }
     #searchInput {
         width: 100%; /* Make search input fluid */
@@ -984,8 +890,8 @@ img { max-width: 100%; height: auto; display: block; }
          margin-bottom: -20px; /* Adjust margin */
     }
      /* Remove gradients on mobile rows */
-     [dir] .item-row::before,
-     [dir] .item-row::after {
+     .item-row::before,
+     .item-row::after {
          display: none;
      }
 
@@ -1050,27 +956,18 @@ img { max-width: 100%; height: auto; display: block; }
         width: 50px;
         height: 50px;
          /* Adjust position for mobile, but let global RTL/LTR handle left/right */
+         /* Original desktop RTL position: left: -15px */
+         /* Original desktop LTR position: right: -15px */
+         /* Let's use adjusted mobile values */
          bottom: 8px; /* Adjusted bottom position for mobile */
          /* The left/right position will be handled by global [dir] rules */
     }
-     /* Rank number position handled by global [dir] rules */
-
+    /* Removed [dir="rtl"] .rank-number from here to let global rule apply */
+    /* Removed [dir="ltr"] .rank-number from here to let global rule apply */
 
     .rank-text {
         font-size: 1.5em; /* Smaller rank font */
     }
-
-     /* Placeholder style for unavailable trending items (within media query) */
-     .unavailable-item-placeholder .fas {
-         font-size: 2em; /* Smaller icon */
-     }
-     .unavailable-item-placeholder .placeholder-text {
-         font-size: 0.8em; /* Smaller text */
-     }
-      .unavailable-item-placeholder .placeholder-title {
-          font-size: 1em; /* Smaller title */
-      }
-
 
     #noResultsMessage {
          margin: 40px auto; /* Adjust margin */
