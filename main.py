@@ -74,8 +74,7 @@ FIREBASE_SERVICE_ACCOUNT_KEY_PATH = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY
 FIREBASE_DATABASE_URL = os.environ.get('FIREBASE_DATABASE_URL', 'https://supernovarsil-default-rtdb.firebaseio.com/') # Replace if different
 
 # Initialize Firebase Admin SDK
-# Use a flag to track initialization status
-FIREBASE_INITIALIZED = False
+FIREBASE_INITIALIZED = False # Ensure this is set outside the try block
 try:
     # Check if app is already initialized (prevents errors in debug/reloader mode)
     if not firebase_admin._apps:
@@ -91,17 +90,103 @@ try:
             firebase_admin.initialize_app(cred, {
                 'databaseURL': FIREBASE_DATABASE_URL
             })
-            FIREBASE_INITIALIZED = True
+            FIREBASE_INITIALIZED = True # Set to True only on success
             logging.info("Firebase initialized successfully.")
         else:
              logging.error("Firebase initialization failed due to missing credential file.")
+             FIREBASE_INITIALIZED = False # Explicitly set to False on failure
     else:
         logging.info("Firebase already initialized.")
         # Assume already initialized means it was successful previously
-        FIREBASE_INITIALIZED = True
+        # In a real scenario, might want a more robust check
+        FIREBASE_INITIALIZED = True # Assume True if already initialized
+
 except Exception as e:
     logging.error(f"Error initializing Firebase: {e}", exc_info=True)
-    FIREBASE_INITIALIZED = False
+    FIREBASE_INITIALIZED = False # Ensure False on exception
+
+
+# --- Keep Alive Thread ---
+WEBSITE_URL = "https://moviesil.onrender.com/"  # כתובת האתר שלך
+INTERVAL_MINUTES = 4  # זמן בין בקשות בשביל לשמור על האתר ער (בדקות)
+
+def keep_website_alive(url, interval_minutes):
+    """
+    שולח בקשת HTTP לכתובת ה-URL כל פרק זמן מוגדר כדי למנוע כיבוי.
+    """
+    interval_seconds = interval_minutes * 60
+    print(f"[*] החל תהליך רקע לשמירה על האתר {url} פעיל. שליחת בקשה כל {interval_minutes} דקות.")
+    while True:
+        time.sleep(interval_seconds) # המתן את פרק הזמן המוגדר
+        try:
+            # שלח בקשת GET פשוטה
+            response = requests.get(url)
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # בדוק את קוד הסטטוס של התגובה
+            if response.status_code == 200:
+                print(f"[{current_time}] בקשת 'Keep-Alive' ל- {url} הצליחה. סטטוס: {response.status_code}")
+            else:
+                print(f"[{current_time}] בקשת 'Keep-Alive' ל- {url} נכשלה או החזירה סטטוס שאינו 200. סטטוס: {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            # טיפול בשגיאות שקשורות לבקשה (למשל, בעיות רשת)
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{current_time}] שגיאה בבקשת 'Keep-Alive' ל- {url}: {e}")
+        except Exception as e:
+            # טיפול בשגיאות אחרות בלתי צפויות
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{current_time}] שגיאה בלתי צפויה בתהליך 'Keep-Alive' ל- {url}: {e}")
+
+
+# --- New function for daily update thread ---
+def daily_trending_update_thread(interval_hours=24):
+    """Background thread function to update trending data daily."""
+    # Wait a bit on startup before the first update attempt, to allow app resources to settle
+    # Also avoids potential race condition if app starts before network is fully ready
+    initial_delay_seconds = 60 # Wait 1 minute initially
+    logging.info(f"Trending update thread starting. Initial delay of {initial_delay_seconds} seconds.")
+    time.sleep(initial_delay_seconds)
+
+    # Perform the first update on startup after delay
+    logging.info("Performing initial trending data update.")
+    update_trending_data_in_firebase()
+    logging.info("Initial trending data update complete.")
+
+
+    # Calculate interval in seconds
+    interval_seconds = interval_hours * 3600
+
+    logging.info(f"Daily trending update thread running. Next update in {interval_hours} hours ({interval_seconds} seconds).")
+    while True:
+        # Sleep for the interval, check Firebase status before attempting update
+        time.sleep(interval_seconds)
+        if FIREBASE_INITIALIZED:
+            logging.info("Performing scheduled daily trending data update.")
+            update_trending_data_in_firebase()
+            logging.info(f"Scheduled daily trending update complete. Next update in {interval_hours} hours.")
+        else:
+            logging.warning("Firebase not initialized. Skipping scheduled daily trending update.")
+
+
+# --- Start background threads IF Firebase initialized successfully ---
+# THIS BLOCK IS MOVED HERE, OUTSIDE the if __name__ == '__main__': block
+# This ensures the threads are started when the module is imported by Gunicorn
+if FIREBASE_INITIALIZED:
+    logging.info("Firebase initialized. Starting background threads.")
+    # Start the Keep Alive thread
+    keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_URL, INTERVAL_MINUTES), daemon=True)
+    keep_alive_thread.start()
+    logging.info("Keep alive thread started.")
+
+    # Start the Daily Trending Update thread
+    # It will perform the first update after a short delay, then run daily
+    trending_update_thread = threading.Thread(target=daily_trending_update_thread, daemon=True)
+    trending_update_thread.start()
+    logging.info("Daily trending update thread started.")
+else:
+    # This error message will appear early if Firebase fails
+    logging.error("Background threads NOT started due to Firebase initialization failure.")
 
 
 # --- Categories ---
@@ -312,7 +397,7 @@ def load_trending_data_for_display(trending_movies_ids, trending_series_ids):
     # Load details for trending series
     for imdb_id in trending_series_ids:
         # Note: For series, load_full_series_details is needed if you want seasons/episodes
-        # but for the *index card display*, load_series_data_for_index provides the basic info.
+        # but for the index card display, load_series_data_for_index provides the basic info.
         # However, load_full_series_details handles the 'series' type check better. Let's use that.
         series_details = load_full_series_details(imdb_id) # Use existing function
 
@@ -778,7 +863,7 @@ def movie_details(imdb_id):
                            movie=movie, # movie object should contain video_url if needed for playback
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAALS, # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
                            current_language=current_language # Pass the current language
                            )
 
@@ -1298,46 +1383,6 @@ def all_series():
                            )
 
 
-# --- Keep Alive Thread ---
-WEBSITE_URL = "https://moviesil.onrender.com/"  # כתובת האתר שלך
-INTERVAL_MINUTES = 4  # זמן בין בקשות בשביל לשמור על האתר ער (בדקות)
-
-def keep_website_alive(url, interval_minutes):
-    """
-    שולח בקשת HTTP לכתובת ה-URL כל פרק זמן מוגדר כדי למנוע כיבוי.
-    """
-    interval_seconds = interval_minutes * 60
-    print(f"[*] החל תהליך רקע לשמירה על האתר {url} פעיל. שליחת בקשה כל {interval_minutes} דקות.")
-    while True:
-        time.sleep(interval_seconds) # המתן את פרק הזמן המוגדר
-        try:
-            # שלח בקשת GET פשוטה
-            response = requests.get(url)
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            # בדוק את קוד הסטטוס של התגובה
-            if response.status_code == 200:
-                print(f"[{current_time}] בקשת 'Keep-Alive' ל- {url} הצליחה. סטטוס: {response.status_code}")
-            else:
-                print(f"[{current_time}] בקשת 'Keep-Alive' ל- {url} נכשלה או החזירה סטטוס שאינו 200. סטטוס: {response.status_code}")
-
-        except requests.exceptions.RequestException as e:
-            # טיפול בשגיאות שקשורות לבקשה (למשל, בעיות רשת)
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[{current_time}] שגיאה בבקשת 'Keep-Alive' ל- {url}: {e}")
-        except Exception as e:
-            # טיפול בשגיאות אחרות בלתי צפויות
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[{current_time}] שגיאה בלתי צפויה בתהליך 'Keep-Alive' ל- {url}: {e}")
-
-# --- הוסף את הקוד הבא בחלק הראשי של הסקריפט שלך, לפני שהשרת מתחיל לרוץ ---
-
-# יצירת אובייקט Thread
-# daemon=True גורם ל-thread להיסגר אוטומטית כשהתוכנית הראשית נסגרת
-# The Keep Alive thread should *not* be daemon if you want to ensure it tries to keep the app awake on platforms that stop non-daemon threads.
-# However, for simple hosting like Render/Heroku where the main process exiting kills everything, daemon is fine. Let's keep it daemon.
-# We will start this thread inside the conditional block for running the app.
-
 
 # --- TMDB API Functions (for Trailers) ---
 def get_trailer_from_imdb(imdb_id, tmdb_api_key):
@@ -1346,7 +1391,7 @@ def get_trailer_from_imdb(imdb_id, tmdb_api_key):
          logging.warning("TMDB_API_KEY is not set. Cannot fetch trailer.")
          return None
 
-    find_url = f"https://api.themoviedb.org/3/find/{imdb_id}"
+    find_url = f"{TMDB_BASE_URL}/find/{imdb_id}"
     params = {'external_source': 'imdb_id'}
 
     # Use the retry helper for the find request
@@ -1387,9 +1432,6 @@ def get_trailer_from_imdb(imdb_id, tmdb_api_key):
 
     logging.info(f"No YouTube trailer found on TMDB for movie ID: {movie_id} (IMDb ID: {imdb_id})")
     return None # No suitable trailer found
-
-
-
 
 
 @app.route('/api/get_trailer/<imdb_id>')
@@ -1651,6 +1693,11 @@ def update_trending_data_in_firebase():
     logging.info("Starting trending data update from TMDB...")
     start_time = time.time()
 
+    # Ensure TMDB API key is set before making external calls
+    if not TMDB_API_KEY or TMDB_API_KEY == 'YOUR_TMDB_API_KEY':
+         logging.error("TMDB_API_KEY is not set. Skipping trending data update.")
+         return
+
     trending_movies_tmdb_ids = get_trending_movies_tmdb()
     trending_series_tmdb_ids = get_trending_tv_tmdb()
 
@@ -1682,17 +1729,24 @@ def update_trending_data_in_firebase():
         logging.info("Cleared existing /Top data in Firebase.")
 
         # Save new lists
+        # Save only if there are valid IDs to save
         if trending_movies_imdb_ids:
              db.reference('/Top/Movies').set(trending_movies_imdb_ids)
              logging.info(f"Saved {len(trending_movies_imdb_ids)} trending movie IMDb IDs to Firebase /Top/Movies.")
         else:
              logging.warning("No trending movie IMDb IDs to save.")
+             # Still set an empty list or None? Setting empty list is safer.
+             db.reference('/Top/Movies').set([])
+
 
         if trending_series_imdb_ids:
              db.reference('/Top/Series').set(trending_series_imdb_ids)
              logging.info(f"Saved {len(trending_series_imdb_ids)} trending series IMDb IDs to Firebase /Top/Series.")
         else:
              logging.warning("No trending series IMDb IDs to save.")
+             # Set empty list
+             db.reference('/Top/Series').set([])
+
 
         end_time = time.time()
         duration = end_time - start_time
@@ -1702,35 +1756,6 @@ def update_trending_data_in_firebase():
         logging.error(f"Error saving trending data to Firebase: {e}", exc_info=True)
         # Consider alerting on critical failure
 
-# --- New function for daily update thread ---
-def daily_trending_update_thread(interval_hours=24):
-    """Background thread function to update trending data daily."""
-    # Wait a bit on startup before the first update attempt, to allow app resources to settle
-    # Also avoids potential race condition if app starts before network is fully ready
-    initial_delay_seconds = 60 # Wait 1 minute initially
-    logging.info(f"Trending update thread starting. Initial delay of {initial_delay_seconds} seconds.")
-    time.sleep(initial_delay_seconds)
-
-    # Perform the first update on startup after delay
-    update_trending_data_in_firebase()
-
-    # Calculate interval in seconds
-    interval_seconds = interval_hours * 3600
-
-    logging.info(f"Daily trending update thread running. Next update in {interval_hours} hours ({interval_seconds} seconds).")
-    while True:
-        # Sleep for the interval, check Firebase status before attempting update
-        time.sleep(interval_seconds)
-        if FIREBASE_INITIALIZED:
-            logging.info("Performing scheduled daily trending data update.")
-            update_trending_data_in_firebase()
-            logging.info(f"Scheduled daily trending update complete. Next update in {interval_hours} hours.")
-        else:
-            logging.warning("Firebase not initialized. Skipping scheduled daily trending update.")
-
-# Start the daily update thread if Firebase is initialized
-# This will be called within the __main__ block
-trending_update_thread = threading.Thread(target=daily_trending_update_thread, daemon=True)
 
 
 # --- Error Handlers ---
@@ -1761,45 +1786,21 @@ def internal_server_error(e):
 
 
 if __name__ == '__main__':
-    # Ensure Firebase is initialized before running the app and starting threads
-    # The try/except block with _apps check handles reloader
-    # Also check if initialization actually succeeded before running
-    if firebase_admin._apps and FIREBASE_INITIALIZED:
-        # Check if Firebase creds were successfully loaded
-        # This check firebase_admin._apps['[DEFAULT]'].options.get('credential') is more robust
-        # than just checking if firebase_admin._apps is not empty, as initialization might
-        # have failed without raising an immediate exception if cred was None.
-        try:
-            # Attempt to access the default app's options. This will raise an exception if not initialized correctly.
-             default_app_creds = firebase_admin._apps['[DEFAULT]'].options.get('credential')
-             if default_app_creds is not None:
-                logging.info("Firebase default app credential check passed. Starting app.")
+    # This block runs ONLY when the script is executed directly (e.g., `python main.py`)
+    # It does NOT run when Gunicorn imports the `app` object (`gunicorn main:app`)
+    # The threads are ALREADY started above this block if FIREBASE_INITIALIZED is True
 
-                # Start the Keep Alive thread
-                keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_URL, INTERVAL_MINUTES), daemon=True)
-                keep_alive_thread.start()
-                logging.info("Keep alive thread started.")
-
-                # Start the Daily Trending Update thread
-                # It will perform the first update after a short delay, then run daily
-                trending_update_thread.start()
-                logging.info("Daily trending update thread started.")
-
-                # Run the Flask application
-                port = int(os.environ.get('PORT', 5000))
-                # debug=True should only be used in development
-                app.run(host='0.0.0.0', port=port, debug=True)
-             else:
-                 logging.error("Application not started: Firebase default app credential is None.")
-                 sys.exit(1) # Exit if Firebase couldn't initialize credentials correctly
-        except KeyError:
-            # If firebase_admin._apps['[DEFAULT]'] doesn't exist, it wasn't initialized correctly.
-            logging.error("Application not started: Firebase default app was not initialized.")
-            sys.exit(1) # Exit if Firebase initialization failed
-        except Exception as e:
-             logging.error(f"Application not started: Unexpected error during Firebase check: {e}", exc_info=True)
-             sys.exit(1) # Exit on other unexpected errors
-
+    logging.info("Running script directly (__main__).")
+    if FIREBASE_INITIALIZED:
+         logging.info("Firebase initialized. Running Flask development server.")
+         port = int(os.environ.get('PORT', 5000))
+         # Note: When running locally with app.run(debug=True), Flask's reloader might cause
+         # the module to be imported multiple times, potentially starting threads multiple times
+         # unless handling is added. Daemon=True helps cleanup, but it's a known behavior
+         # difference between Flask's dev server and production servers like Gunicorn.
+         # Ensure debug is False in production environments!
+         app.run(host='0.0.0.0', port=port, debug=True) # השאר את זה עבור הרצה מקומית בלבד
     else:
-        logging.error("Application not started because Firebase initialization failed.")
-        sys.exit(1) # Exit if Firebase initialization failed upfront
+        logging.error("Local development server not started: Firebase initialization failed.")
+        # You might want to explicitly exit or handle this case for local testing
+        sys.exit(1) # Exit on fatal error for local dev too
