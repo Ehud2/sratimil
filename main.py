@@ -44,7 +44,7 @@ app.config['GOOGLE_DISCOVERY_URL'] = (
 )
 
 # Replace with your actual OMDB API key from environment variables
-OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '4ea6447b') # THIS IS A SECRET! MUST BE IN ENV VAR!
+OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '6e705a15') # THIS IS A SECRET! MUST BE IN ENV VAR!
 
 # List of admin emails
 ADMIN_EMAILS = ['ehudverbin@gmail.com', 'guykresco@gmail.com']
