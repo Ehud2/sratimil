@@ -129,7 +129,126 @@
              </div>
         </section>
 
+        {# --- New: Trending Movies Section --- #}
+        {% if trending_movies %}
+        <section class="category-section">
+             <h2>{{ 'הסרטים הנצפים ביותר השבוע' if current_language == 'he' else 'Top Movies This Week' }}</h2>
+            <div class="item-row">
+                {% for item in trending_movies %}
+                     {# Check if the item is a placeholder for an unavailable item #}
+                     {% set is_unavailable = item.get('unavailable', False) %}
+                     {# Determine the URL based on item type and availability #}
+                     {% set item_url = '#' if is_unavailable else (url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id)) %}
+                     {# Determine display title and poster based on language and availability #}
+                     {% set display_title = item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) %}
+                     {% set display_poster = item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') else item.get('poster') %}
 
+                    <a href="{{ item_url }}" class="item-card-link catalog-item {{ 'unavailable' if is_unavailable }}" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}">
+                        <div class="item-card" tabindex="0">
+                            <div class="card-image-container">
+                                 {% if is_unavailable %}
+                                     {# Display placeholder content for unavailable items #}
+                                     <div class="unavailable-item-placeholder">
+                                          <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                                          <p class="placeholder-text">
+                                              {{ 'פריט זה אינו זמין לצפייה כרגע.' if current_language == 'he' else 'This item is not available for watching currently.' }}
+                                          </p>
+                                          <h3 class="placeholder-title">
+                                               {{ display_title or ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
+                                          </h3>
+                                     </div>
+                                 {% else %}
+                                     {# Display actual poster for available items #}
+                                    <img src="{{ display_poster if display_poster and display_poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ display_title or ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}" loading="lazy">
+                                     {# Display Rank Number #}
+                                    <span class="rank-number">
+                                        <svg viewbox="0 0 36 36" class="rank-circle-bg"><path class="circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
+                                        <span class="rank-text">{{ loop.index }}</span>
+                                    </span>
+                                     {# Overlay content for available items #}
+                                    <div class="card-overlay">
+                                        <button class="play-button" aria-label="{{ ('צפה ב' + (display_title or '')) if current_language == 'he' else ('Watch ' + (display_title or '')) }}"><i class="fas fa-play"></i></button>
+                                        <h3 class="card-title">{{ display_title or ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}</h3>
+                                         {# Add subtitle for Series on index page (e.g., "Series") - NOT applicable for this section (Movies) #}
+                                        <div class="card-actions">
+                                            {# Added data attributes for JS to identify the item for adding/removing from lists #}
+                                            {# Pass both Hebrew and English details as data attributes #}
+                                            <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
+                                             {# The info button also links to the movie/series page #}
+                                            <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
+                                        </div>
+                                    </div>
+                                 {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+         {# --- New: Trending Series Section --- #}
+         {% if trending_series %}
+         <section class="category-section">
+              <h2>{{ 'הסדרות הנצפות ביותר השבוע' if current_language == 'he' else 'Top Series This Week' }}</h2>
+             <div class="item-row">
+                 {% for item in trending_series %}
+                      {# Check if the item is a placeholder for an unavailable item #}
+                     {% set is_unavailable = item.get('unavailable', False) %}
+                      {# Determine the URL based on item type and availability #}
+                     {% set item_url = '#' if is_unavailable else (url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id)) %}
+                      {# Determine display title and poster based on language and availability #}
+                     {% set display_title = item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) %}
+                     {% set display_poster = item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') else item.get('poster') %}
+
+
+                     <a href="{{ item_url }}" class="item-card-link catalog-item {{ 'unavailable' if is_unavailable }}" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebbrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}">
+                         <div class="item-card" tabindex="0">
+                             <div class="card-image-container">
+                                 {% if is_unavailable %}
+                                     {# Display placeholder content for unavailable items #}
+                                     <div class="unavailable-item-placeholder">
+                                          <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                                           <p class="placeholder-text">
+                                               {{ 'פריט זה אינו זמין לצפייה כרגע.' if current_language == 'he' else 'This item is not available for watching currently.' }}
+                                           </p>
+                                          <h3 class="placeholder-title">
+                                                {{ display_title or ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
+                                          </h3>
+                                     </div>
+                                 {% else %}
+                                      {# Display actual poster for available items #}
+                                     <img src="{{ display_poster if display_poster and display_poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ display_title or ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}" loading="lazy">
+                                      {# Display Rank Number #}
+                                     <span class="rank-number">
+                                         <svg viewbox="0 0 36 36" class="rank-circle-bg"><path class="circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
+                                         <span class="rank-text">{{ loop.index }}</span>
+                                     </span>
+                                      {# Overlay content for available items #}
+                                     <div class="card-overlay">
+                                         <button class="play-button" aria-label="{{ ('צפה ב' + (display_title or '')) if current_language == 'he' else ('Watch ' + (display_title or '')) }}"><i class="fas fa-play"></i></button>
+                                         <h3 class="card-title">{{ display_title or ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}</h3>
+                                          {# Add subtitle for Series #}
+                                          <p class="card-subtitle">{{ 'סדרה' if current_language == 'he' else 'Series' }}</p>
+                                         <div class="card-actions">
+                                             {# Added data attributes for JS to identify the item for adding/removing from lists #}
+                                             {# Pass both Hebrew and English details as data attributes #}
+                                             <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
+                                              {# The info button also links to the movie/series page #}
+                                             <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
+                                         </div>
+                                     </div>
+                                 {% endif %}
+                             </div>
+                         </div>
+                     </a>
+                 {% endfor %}
+             </div>
+         </section>
+         {% endif %}
+
+
+        {# Standard Categories (excluding trending ones) #}
         {% for category_name, items_in_category in categories.items() %}
             {% if items_in_category %}
                  {# Display category name based on language if you have translations #}
@@ -137,7 +256,7 @@
                 <section class="category-section">
                     <h2>{{ category_name }}</h2> {# Keep Hebrew category name as defined #}
                     <div class="item-row">
-                        {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
+                         {# No rank number for standard categories #}
                         {% for item in items_in_category %}
                              {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
                              {# Make sure the URL includes the language parameter if needed, but the backend sets session, so not strictly necessary in URL #}
@@ -147,12 +266,7 @@
                                         {# Use Hebrew poster if language is HE and Hebrew poster exists, otherwise use English poster, fallback to default #}
                                         {% set item_poster = (item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') else item.get('poster')) %}
                                         <img src="{{ item_poster if item_poster and item_poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) }}" loading="lazy">
-                                        {% if is_ranked_category and loop.index <= 15 %}
-                                            <span class="rank-number">
-                                                <svg viewbox="0 0 36 36" class="rank-circle-bg"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path></svg>
-                                                <span class="rank-text">{{ loop.index }}</span>
-                                            </span>
-                                        {% endif %}
+
                                         <div class="card-overlay">
                                              {# The play button now also links to the movie/series page #}
                                             <button class="play-button" aria-label="{{ ('צפה ב' + (item.get('HebrewName', item.get('title', ''))) if current_language == 'he' else ('Watch ' + (item.get('title', item.get('HebrewName', ''))))) }}"><i class="fas fa-play"></i></button>
@@ -301,7 +415,8 @@
             // --- Search Filter Functionality ---
             const searchInput = document.getElementById('searchInput');
             const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
-            const catalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Get all catalog items
+            // Select ALL catalog items, including those in trending sections
+            const catalogItems = document.querySelectorAll('.catalog-item');
 
 
             if (searchInput) {
@@ -317,12 +432,15 @@
 
                          const title = currentLanguage === 'he' ? titleHe : titleEn;
 
+                         // Also get the unavailable flag
+                         const isUnavailable = link.classList.contains('unavailable');
 
-                         if (title.includes(searchTerm)) {
+                         // Hide unavailable items during search, or if the title doesn't match
+                         if (isUnavailable || !title.includes(searchTerm)) {
+                             link.style.display = 'none'; // Hide the link (and thus the card)
+                         } else {
                              link.style.display = ''; // Show the link (and thus the card)
                              anyVisible = true;
-                         } else {
-                             link.style.display = 'none'; // Hide the link (and thus the card)
                          }
                     });
 
@@ -356,9 +474,8 @@
             const user = {{ user | tojson }}; // Pass user object from Flask
 
             // Corrected URL generation - get base paths and append dynamically in JS
-            const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id='') }}"; // Gets /movie/
-            const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id='') }}"; // Gets /series/
-
+            const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id='DUMMY') }}".replace('DUMMY', ''); // Gets /movie/
+            const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id='DUMMY', season_number=1, episode_number=1) }}".replace('/1/1', '').replace('DUMMY', ''); // Gets /series/
 
             const continueWatchingSection = document.getElementById('continueWatchingSection');
             const continueWatchingRow = document.getElementById('continueWatchingRow');
@@ -532,7 +649,7 @@
                             let subtitleText = '';
 
                             // Select title and poster based on current language
-                            const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
+                            const displayTitle = currentLanguage === 'he' ? item.HebbrewName || item.title : item.title || item.HebrewName;
                             const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
 
 
@@ -573,6 +690,12 @@
                             itemLink.href = href;
                             itemLink.classList.add('item-card-link');
                             itemLink.classList.add('continue-watching-item');
+                            // Add data attributes for search
+                             itemLink.dataset.id = item.id;
+                             itemLink.dataset.type = item.type;
+                             itemLink.dataset.titleHe = (item.HebrewName || item.title || '').toLowerCase();
+                             itemLink.dataset.titleEn = (item.title || item.HebrewName || '').toLowerCase();
+
 
                             // Create the item card structure (rest remains similar)
                             const itemCard = document.createElement('div');
@@ -595,6 +718,7 @@
                              // Update aria-label based on language and title
                              playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'המשך צפייה ב' : 'Continue watching ') + titleText);
                              playButton.innerHTML = '<i class="fas fa-play"></i>';
+                              // Prevent click on the button from navigating the link
                              playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
 
 
@@ -606,6 +730,7 @@
                              const subtitleElement = document.createElement('p');
                              subtitleElement.classList.add('card-subtitle');
                              subtitleElement.textContent = subtitleText; // Use determined subtitle
+                             // Keep inline styles for subtitle positioning/sizing for consistency
                              subtitleElement.style.fontSize = '0.8em';
                              subtitleElement.style.color = '#ccc';
                              subtitleElement.style.marginTop = '5px';
@@ -619,6 +744,7 @@
                               // Update aria-label based on language
                               removeButton.setAttribute('aria-label', currentLanguage === 'he' ? 'הסר מ\'המשך צפייה\'' : 'Remove from Continue Watching');
                               removeButton.innerHTML = '<i class="fas fa-times"></i>';
+                               // Prevent click on the button from navigating the link and stop propagation
                               removeButton.addEventListener('click', (e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -653,6 +779,20 @@
                               });
                              actionsDiv.appendChild(removeButton);
 
+                              // Add the info button (navigates the link)
+                              const infoButton = document.createElement('button');
+                              infoButton.classList.add('info-button');
+                               infoButton.setAttribute('aria-label', currentLanguage === 'he' ? 'עוד פרטים' : 'More info');
+                              infoButton.innerHTML = '<i class="fas fa-info-circle"></i>';
+                               // This button should navigate the parent link
+                              infoButton.addEventListener('click', (e) => {
+                                   e.preventDefault(); // Prevent the button's default action
+                                   e.stopPropagation(); // Stop propagation so it doesn't trigger the parent link click handler itself
+                                   // Manually trigger navigation of the parent link
+                                   window.location.href = itemLink.href;
+                              });
+                             actionsDiv.appendChild(infoButton);
+
 
                             imageContainer.appendChild(img);
                              overlay.appendChild(playButton);
@@ -681,7 +821,7 @@
                     } else {
                         console.log("CW: No valid continue watching data found for this user.");
                          continueWatchingSection.style.display = 'none';
-                         noContinueWatchingMessage.style.display = 'block'; // Show "No items" message if no data
+                         noContinueWatchingMessage.style.display = 'block'; // Show empty message on error
                     }
 
                 } catch (e) {
