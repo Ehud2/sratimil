@@ -47,7 +47,7 @@ app.config['GOOGLE_DISCOVERY_URL'] = (
 OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '6e705a15') # THIS IS A SECRET! MUST BE IN ENV VAR!
 
 # List of admin emails
-ADMIN_EMAILS = ['ehudverbin@gmail.com', 'guykresco@gmail.com']
+ADMIN_EMAILS = ['ehudverbin@gmail.com', 'guykresco@gmail.com', "kaylidji@gmail.com"]
 
 
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31)
