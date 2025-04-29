@@ -3,15 +3,16 @@ import traceback
 import os
 import requests
 import json
-import re # Import re for regex validation
-import random # Import random for jitter in retry
+import re
+import random
 from flask import Flask, render_template, session, redirect, url_for, flash, request, abort, jsonify
 from authlib.integrations.flask_client import OAuth
 import firebase_admin
 from firebase_admin import credentials, db
-import logging # Import logging for better error handling
+import logging
 import threading
 import time
+import sys # Import sys for exit on fatal error
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -33,7 +34,7 @@ TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500' # Standard size for post
 # Retry Configuration for TMDB API Calls within Flask app
 # Using lower retries/delay than the standalone script to keep web requests responsive
 TMDB_MAX_RETRIES = 3 # Fewer retries for a live web request
-TMDB_BASE_DELAY_SECONDS = 1 # Shorter initial delay for web requests
+TMDB_BASE_DELAY_SECONDS = 0.5 # Shorter initial delay for web requests (adjust if needed)
 
 
 # Replace these with your actual Google OAuth credentials from environment variables
@@ -73,14 +74,15 @@ FIREBASE_SERVICE_ACCOUNT_KEY_PATH = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY
 FIREBASE_DATABASE_URL = os.environ.get('FIREBASE_DATABASE_URL', 'https://supernovarsil-default-rtdb.firebaseio.com/') # Replace if different
 
 # Initialize Firebase Admin SDK
+# Use a flag to track initialization status
+FIREBASE_INITIALIZED = False
 try:
     # Check if app is already initialized (prevents errors in debug/reloader mode)
     if not firebase_admin._apps:
         # Check if the service account file exists
         if not os.path.exists(FIREBASE_SERVICE_ACCOUNT_KEY_PATH):
             logging.error(f"Firebase service account key file not found at {FIREBASE_SERVICE_ACCOUNT_KEY_PATH}")
-            # You might want to exit or raise an exception here in production
-            # For now, just log and continue (will likely fail Firebase ops later)
+            # This is a critical error, app should likely not run Firebase ops
             cred = None # Set cred to None so initialization fails
         else:
             cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
@@ -89,14 +91,17 @@ try:
             firebase_admin.initialize_app(cred, {
                 'databaseURL': FIREBASE_DATABASE_URL
             })
+            FIREBASE_INITIALIZED = True
             logging.info("Firebase initialized successfully.")
         else:
              logging.error("Firebase initialization failed due to missing credential file.")
     else:
         logging.info("Firebase already initialized.")
+        # Assume already initialized means it was successful previously
+        FIREBASE_INITIALIZED = True
 except Exception as e:
     logging.error(f"Error initializing Firebase: {e}", exc_info=True)
-    # Handle error - maybe abort app startup or provide a fallback
+    FIREBASE_INITIALIZED = False
 
 
 # --- Categories ---
@@ -119,6 +124,9 @@ CATEGORIES = [
 
 def load_movies_data():
     """Loads all movies from Firebase, adding 'type: movie'."""
+    if not FIREBASE_INITIALIZED:
+         logging.error("Firebase not initialized. Cannot load movie data.")
+         return {}
     try:
         ref = db.reference('/Movies')
         movies = ref.get()
@@ -140,6 +148,9 @@ def load_movies_data():
 def load_series_data_for_index():
     """Loads basic series data for index/all_series display from Firebase, adding 'type: series'.
        Excludes nested Season/Episode data for performance."""
+    if not FIREBASE_INITIALIZED:
+         logging.error("Firebase not initialized. Cannot load basic series data.")
+         return {}
     try:
         # We need top-level series info for the index/all_series card
         # Fetch all top-level series data first
@@ -175,6 +186,9 @@ def load_series_data_for_index():
 
 def load_series_list_for_add_page():
     """Loads basic series info for the add page dropdown."""
+    if not FIREBASE_INITIALIZED:
+         logging.error("Firebase not initialized. Cannot load series list for add page.")
+         return []
     try:
         ref = db.reference('/Series')
         series_dict = ref.get() # Gets dictionary {imdb_id: series_details}
@@ -198,7 +212,10 @@ def load_series_list_for_add_page():
 
 
 def load_full_series_details(imdb_id):
-    """Loads all details for a single series, including seasons and episodes."""
+    """Loads all details for a single series, including seasons and episodes from Firebase."""
+    if not FIREBASE_INITIALIZED:
+         logging.error(f"Firebase not initialized. Cannot load full series details for ID {imdb_id}.")
+         return None
     try:
         ref = db.reference(f'/Series/{imdb_id}')
         series_details = ref.get()
@@ -214,6 +231,9 @@ def load_full_series_details(imdb_id):
 
 def load_movie_details(imdb_id):
     """Loads details for a single movie from Firebase."""
+    if not FIREBASE_INITIALIZED:
+         logging.error(f"Firebase not initialized. Cannot load movie details for ID {imdb_id}.")
+         return None
     try:
         ref = db.reference(f'/Movies/{imdb_id}')
         movie_details = ref.get()
@@ -226,14 +246,120 @@ def load_movie_details(imdb_id):
         logging.error(f"Error loading movie details for ID {imdb_id}: {e}", exc_info=True)
         return None
 
+# --- New function to load trending IDs from Firebase ---
+def load_trending_ids():
+    """Loads trending movie and series IMDb IDs from Firebase /Top."""
+    if not FIREBASE_INITIALIZED:
+         logging.error("Firebase not initialized. Cannot load trending IDs.")
+         return [], [] # Return empty lists
+
+    try:
+        ref_movies = db.reference('/Top/Movies')
+        trending_movies_ids = ref_movies.get() or [] # Default to empty list if None
+        if not isinstance(trending_movies_ids, list):
+             logging.warning(f"Firebase /Top/Movies is not a list, resetting. Data: {trending_movies_ids}")
+             trending_movies_ids = [] # Ensure it's a list
+
+        ref_series = db.reference('/Top/Series')
+        trending_series_ids = ref_series.get() or [] # Default to empty list if None
+        if not isinstance(trending_series_ids, list):
+             logging.warning(f"Firebase /Top/Series is not a list, resetting. Data: {trending_series_ids}")
+             trending_series_ids = [] # Ensure it's a list
+
+        logging.info(f"Loaded {len(trending_movies_ids)} trending movie IDs and {len(trending_series_ids)} trending series IDs from Firebase.")
+        return trending_movies_ids, trending_series_ids
+    except Exception as e:
+        logging.error(f"Error loading trending IDs from Firebase: {e}", exc_info=True)
+        return [], [] # Return empty lists on error
+
+
+# --- New function to load details for trending items ---
+def load_trending_data_for_display(trending_movies_ids, trending_series_ids):
+    """
+    Loads details for trending items by looking them up in the main /Movies and /Series paths.
+    Creates a minimal placeholder if not found.
+    """
+    trending_movies_details = []
+    trending_series_details = []
+
+    # Load details for trending movies
+    for imdb_id in trending_movies_ids:
+        movie_details = load_movie_details(imdb_id) # Use existing function to get full details
+        if movie_details:
+             # Found in main database, add full details (ensure type is movie)
+             if movie_details.get('type') == 'movie' or movie_details.get('type') is None: # Handle old data without type
+                 movie_details['type'] = 'movie' # Ensure type is set for rendering
+                 trending_movies_details.append(movie_details)
+             else:
+                  logging.warning(f"Trending movie ID {imdb_id} found in /Movies but has unexpected type '{movie_details.get('type')}'. Skipping.")
+                  # Optionally add a placeholder here if desired, or just skip
+        else:
+            # Not found in main database, create a placeholder
+            # Fetch minimal info from OMDB/TMDB just for title/poster if possible?
+            # Or just use ID and mark as missing? Let's create a minimal placeholder
+            # using just the ID, as we don't want to spam external APIs just for placeholders.
+            logging.warning(f"Trending movie ID {imdb_id} not found in /Movies. Creating placeholder.")
+            trending_movies_details.append({
+                'imdbID': imdb_id,
+                'type': 'movie',
+                'title': f'ID {imdb_id} - לא זמין', # Generic placeholder title
+                'poster': 'N/A', # Mark poster as N/A
+                'HebrewName': f'מזהה {imdb_id} - לא זמין',
+                'HebrewPoster': 'N/A',
+                'unavailable': True # Flag to indicate this is a placeholder for a missing item
+            })
+
+    # Load details for trending series
+    for imdb_id in trending_series_ids:
+        # Note: For series, load_full_series_details is needed if you want seasons/episodes
+        # but for the *index card display*, load_series_data_for_index provides the basic info.
+        # However, load_full_series_details handles the 'series' type check better. Let's use that.
+        series_details = load_full_series_details(imdb_id) # Use existing function
+
+        if series_details:
+             # Found in main database, add relevant details for index card (ensure type is series)
+             if series_details.get('type') == 'series' or series_details.get('type') is None: # Handle old data without type
+                 # Construct basic details needed for the card display
+                 basic_series_details = {
+                     'imdbID': imdb_id,
+                     'type': 'series', # Ensure type is set
+                     'title': series_details.get('title', f'ID {imdb_id} - כותרת לא ידועה'),
+                     'poster': series_details.get('poster', 'N/A'),
+                     'HebrewName': series_details.get('HebrewName'),
+                     'HebrewPoster': series_details.get('HebrewPoster'),
+                     # We don't need Seasons/Episodes here, just the top-level info
+                 }
+                 trending_series_details.append(basic_series_details)
+             else:
+                  logging.warning(f"Trending series ID {imdb_id} found in /Series but has unexpected type '{series_details.get('type')}'. Skipping.")
+
+        else:
+            # Not found in main database, create a placeholder
+            logging.warning(f"Trending series ID {imdb_id} not found in /Series. Creating placeholder.")
+            trending_series_details.append({
+                'imdbID': imdb_id,
+                'type': 'series',
+                'title': f'ID {imdb_id} - לא זמין', # Generic placeholder title
+                'poster': 'N/A', # Mark poster as N/A
+                'HebrewName': f'מזהה {imdb_id} - לא זמין',
+                'HebrewPoster': 'N/A',
+                'unavailable': True # Flag to indicate this is a placeholder for a missing item
+            })
+
+    logging.info(f"Prepared {len(trending_movies_details)} trending movie details and {len(trending_series_details)} trending series details for display.")
+    return trending_movies_details, trending_series_details
+
 
 def categorize_content(movies_data, series_data):
     """Categorizes movies and series loaded from Firebase for index display."""
     categorized_items = {}
     # Initialize categories excluding "ללא" as it's typically not a display category
-    for cat in CATEGORIES:
-        if cat != "ללא":
-            categorized_items[cat] = []
+    # and also exclude the specific trending category names that will be separate sections
+    display_categories = [cat for cat in CATEGORIES if cat != "ללא"]
+
+
+    for cat in display_categories:
+        categorized_items[cat] = []
 
     all_items = {}
     if movies_data:
@@ -244,7 +370,7 @@ def categorize_content(movies_data, series_data):
     if not all_items:
         logging.info("No movies or series data to categorize.")
         # Ensure all display categories exist, even if empty
-        return {cat: [] for cat in CATEGORIES if cat != "ללא"}
+        return {cat: [] for cat in display_categories}
 
 
     # all_items now contains {imdb_id: {details_including_type}}
@@ -265,7 +391,8 @@ def categorize_content(movies_data, series_data):
 
         # Add to the correct category list if category is valid and not "ללא"
         # We need id, title, poster, type, and Hebrew fields for the item cards on index.html
-        if category in CATEGORIES and category != "ללא" and item_type in ['movie', 'series']:
+        # Only add if the category is one of the standard ones (not 'ללא')
+        if category in display_categories and item_type in ['movie', 'series']:
              categorized_items[category].append({
                 "id": imdb_id,
                 "title": title, # Include English title
@@ -276,8 +403,11 @@ def categorize_content(movies_data, series_data):
              })
         elif category == "ללא":
             pass # Don't display 'ללא' category on index
+        # Don't add items belonging to the special 'Top Trending' lists here either
         else:
-             logging.warning(f"Item {imdb_id} ('{title}') has invalid/unknown category '{category}' or type '{item_type}'. Skipping index display.")
+             # If the category is valid but not one of the display_categories (like 'ללא'),
+             # it won't be added. Also skips items with invalid type.
+             logging.debug(f"Item {imdb_id} ('{title}') with category '{category}' and type '{item_type}' is not added to standard display categories.")
              pass # Skip invalid categories or types
 
     # Optional: If you want to ensure categories with no items are still shown,
@@ -580,10 +710,22 @@ def index():
     greeting = get_greeting(user, current_language) # Pass language to greeting function again
 
     # Load all content from Firebase for the index page
+    # NOTE: Loading ALL movies/series here might be inefficient for very large databases.
+    # A better approach for large data would be to only load what's needed for the *initial* view
+    # or implement proper pagination server-side. For now, keeping existing loading logic.
     movies_data = load_movies_data() # Includes type: 'movie' and Hebrew fields if exist
     series_data_for_index = load_series_data_for_index() # Includes type: 'series' and Hebrew fields if exist
 
-    # Categorize them for standard display sections
+    # --- Load and Prepare Trending Data ---
+    trending_movies_ids, trending_series_ids = load_trending_ids()
+    # Load details for trending items, getting from main database or creating placeholders
+    trending_movies_details, trending_series_details = load_trending_data_for_display(
+        trending_movies_ids, trending_series_ids
+    )
+    logging.info(f"Displaying {len(trending_movies_details)} trending movies and {len(trending_series_details)} trending series.")
+
+
+    # Categorize them for standard display sections (EXCLUDING the trending ones now)
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
@@ -592,9 +734,12 @@ def index():
     # However, keeping it consistent with previous logic of passing *something* related to admin.
 
     # Pass the user object, categorized data, and current language to the template.
+    # Also pass the specific trending lists.
     # The 'continue watching' logic is handled client-side using localStorage.
     return render_template('index.html',
                            greeting=greeting,
+                           trending_movies=trending_movies_details, # Pass trending movies data
+                           trending_series=trending_series_details, # Pass trending series data
                            categories=categories, # All categoried content for display and JS lookup
                            current_year=current_year,
                            user=user,
@@ -633,7 +778,7 @@ def movie_details(imdb_id):
                            movie=movie, # movie object should contain video_url if needed for playback
                            user=user,
                            current_year=current_year,
-                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           admin_emails=ADMIN_EMAALS, # Pass the list of admin emails
                            current_language=current_language # Pass the current language
                            )
 
@@ -780,20 +925,23 @@ def add_content():
                     logging.warning(f"Could not find TMDB movie info for IMDb ID {imdb_id} or type mismatch. Skipping Hebrew details.")
                 # --- END NEW CODE ---
 
-
                 # Save movie data to Firebase under /Movies/{imdb_id}
                 # Use set here as adding a movie usually means a new entry
-                ref = db.reference(f'/Movies/{imdb_id}')
-                ref.set(movie_data)
-                logging.info(f"Movie '{movie_data['title']}' ({imdb_id}) added to Firebase.")
+                if FIREBASE_INITIALIZED:
+                    ref = db.reference(f'/Movies/{imdb_id}')
+                    ref.set(movie_data)
+                    logging.info(f"Movie '{movie_data['title']}' ({imdb_id}) added to Firebase.")
 
-                # --- Update Flash Message for Movie ---
-                flash_message = f'סרט "{movie_data.get("title", imdb_id)}" נוסף בהצלחה!'
-                if not (movie_data.get('HebrewName') or movie_data.get('HebrewPoster')):
-                     flash_message += ' אזהרה: לא ניתן היה להשיג שם עברי או פוסטר עברי מ-TMDb.'
-                     flash(flash_message, 'warning')
+                    # --- Update Flash Message for Movie ---
+                    flash_message = f'סרט "{movie_data.get("title", imdb_id)}" נוסף בהצלחה!'
+                    if not (movie_data.get('HebrewName') or movie_data.get('HebrewPoster')):
+                         flash_message += ' אזהרה: לא ניתן היה להשיג שם עברי או פוסטר עברי מ-TMDb.'
+                         flash(flash_message, 'warning')
+                    else:
+                         flash(flash_message, 'success')
                 else:
-                     flash(flash_message, 'success')
+                     flash('שגיאה: Firebase אינו מאותחל, לא ניתן לשמור את הסרט.', 'error')
+                     logging.error("Firebase not initialized, unable to save movie.")
 
 
             elif content_type == 'series':
@@ -956,24 +1104,28 @@ def add_content():
 
                  # Save series data (including Seasons/Episodes and new Hebrew fields) to Firebase
                  # Use update instead of set to potentially preserve manual video_urls if re-adding or partial updates happen
-                 ref = db.reference(f'/Series/{series_imdb_id}')
-                 ref.update(series_data)
-                 logging.info(f"Series '{series_data.get('title', series_imdb_id)}' ({series_imdb_id}) added/updated in Firebase with {len(seasons_data)} seasons and Hebrew details.")
+                 if FIREBASE_INITIALIZED:
+                     ref = db.reference(f'/Series/{series_imdb_id}')
+                     ref.update(series_data)
+                     logging.info(f"Series '{series_data.get('title', series_imdb_id)}' ({series_imdb_id}) added/updated in Firebase with {len(seasons_data)} seasons and Hebrew details.")
 
-                 # --- Update Flash Message for Series ---
-                 flash_message = f'סדרה "{series_data.get("title", series_imdb_id)}" נוספה/עודכנה בהצלחה!'
-                 # Combine warnings
-                 warnings = []
-                 if not (series_data.get('HebrewName') or series_data.get('HebrewPoster')):
-                      warnings.append('לא ניתן היה להשיג שם עברי או פוסטר עברי מ-TMDb')
-                 if not all_episodes_fetched_successfully:
-                      warnings.append('לא ניתן היה להשיג פרטים עבור כל הפרקים/עונות מ-OMDb')
+                     # --- Update Flash Message for Series ---
+                     flash_message = f'סדרה "{series_data.get("title", series_imdb_id)}" נוספה/עודכנה בהצלחה!'
+                     # Combine warnings
+                     warnings = []
+                     if not (series_data.get('HebrewName') or series_data.get('HebrewPoster')):
+                          warnings.append('לא ניתן היה להשיג שם עברי או פוסטר עברי מ-TMDb')
+                     if not all_episodes_fetched_successfully:
+                          warnings.append('לא ניתן היה להשיג פרטים עבור כל הפרקים/עונות מ-OMDb')
 
-                 if warnings:
-                      flash_message += ' אזהרה: ' + '. '.join(warnings) + '.'
-                      flash(flash_message, 'warning')
+                     if warnings:
+                          flash_message += ' אזהרה: ' + '. '.join(warnings) + '.'
+                          flash(flash_message, 'warning')
+                     else:
+                          flash(flash_message, 'success')
                  else:
-                      flash(flash_message, 'success')
+                     flash('שגיאה: Firebase אינו מאותחל, לא ניתן לשמור את הסדרה.', 'error')
+                     logging.error("Firebase not initialized, unable to save series.")
 
 
             elif content_type == 'episode':
@@ -1056,10 +1208,14 @@ def add_content():
 
                  # Save episode data to Firebase under /Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}
                  # Use update instead of set to preserve existing video_url if it was added manually before
-                 ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}')
-                 ref.update(episode_data)
-                 logging.info(f"Episode S{season_number}E{episode_number} (IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_data['title']}') added/updated in series {series_imdb_id}.")
-                 flash(f'פרק "{episode_data["title"]}" (עונה {season_number}, פרק {episode_number}) נוסף/עודכן בהצלחה לסדרה!', 'success')
+                 if FIREBASE_INITIALIZED:
+                     ref = db.reference(f'/Series/{series_imdb_id}/Seasons/{season_number}/Episodes/{episode_number}')
+                     ref.update(episode_data)
+                     logging.info(f"Episode S{season_number}E{episode_number} (IMDb ID: {episode_imdb_id_to_save}, Title: '{episode_data['title']}') added/updated in series {series_imdb_id}.")
+                     flash(f'פרק "{episode_data["title"]}" (עונה {season_number}, פרק {episode_number}) נוסף/עודכן בהצלחה לסדרה!', 'success')
+                 else:
+                     flash('שגיאה: Firebase אינו מאותחל, לא ניתן לשמור את הפרק.', 'error')
+                     logging.error("Firebase not initialized, unable to save episode.")
 
 
             else:
@@ -1142,6 +1298,7 @@ def all_series():
                            )
 
 
+# --- Keep Alive Thread ---
 WEBSITE_URL = "https://moviesil.onrender.com/"  # כתובת האתר שלך
 INTERVAL_MINUTES = 4  # זמן בין בקשות בשביל לשמור על האתר ער (בדקות)
 
@@ -1177,61 +1334,59 @@ def keep_website_alive(url, interval_minutes):
 
 # יצירת אובייקט Thread
 # daemon=True גורם ל-thread להיסגר אוטומטית כשהתוכנית הראשית נסגרת
-keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_URL, INTERVAL_MINUTES), daemon=True)
-
-# התחלת ה-thread
-keep_alive_thread.start()
-
-
-
-
+# The Keep Alive thread should *not* be daemon if you want to ensure it tries to keep the app awake on platforms that stop non-daemon threads.
+# However, for simple hosting like Render/Heroku where the main process exiting kills everything, daemon is fine. Let's keep it daemon.
+# We will start this thread inside the conditional block for running the app.
 
 
 # --- TMDB API Functions (for Trailers) ---
 def get_trailer_from_imdb(imdb_id, tmdb_api_key):
     """Fetches a YouTube trailer URL for a given IMDb ID using TMDB API."""
     if not tmdb_api_key or tmdb_api_key == 'YOUR_TMDB_API_KEY':
-         logging.warning("TMDB_API_KEY is not set.")
+         logging.warning("TMDB_API_KEY is not set. Cannot fetch trailer.")
          return None
 
-    find_url = f"https://api.themoviedb.org/3/find/{imdb_id}?api_key={tmdb_api_key}&external_source=imdb_id"
-    try:
-        find_response = requests.get(find_url, timeout=10)
-        find_response.raise_for_status() # Raise HTTPError for bad responses
-        find_data = find_response.json()
+    find_url = f"https://api.themoviedb.org/3/find/{imdb_id}"
+    params = {'external_source': 'imdb_id'}
 
-        # Check if movie results are found
-        if not find_data.get('movie_results'):
-            logging.info(f"No movie results found on TMDB for IMDb ID: {imdb_id}")
-            return None
+    # Use the retry helper for the find request
+    find_data = fetch_tmdb_data_with_retry(find_url, params, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
 
-        # Get the first movie ID found (assuming it's the correct one)
-        movie_id = find_data['movie_results'][0].get('id')
-        if not movie_id:
-             logging.warning(f"TMDB find response for {imdb_id} did not contain movie ID.")
-             return None
-
-        videos_url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos?api_key={tmdb_api_key}"
-        videos_response = requests.get(videos_url, timeout=10)
-        videos_response.raise_for_status() # Raise HTTPError for bad responses
-        videos_data = videos_response.json()
-
-        # Search for a YouTube trailer
-        for video in videos_data.get('results', []):
-            if video.get('site') == 'YouTube' and video.get('type') == 'Trailer' and video.get('key'):
-                youtube_url = f"https://www.youtube.com/watch?v={video['key']}"
-                logging.info(f"Found trailer for {imdb_id}: {youtube_url}")
-                return youtube_url
-
-        logging.info(f"No YouTube trailer found on TMDB for movie ID: {movie_id} (IMDb ID: {imdb_id})")
-        return None # No suitable trailer found
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error calling TMDB API for IMDb ID {imdb_id}: {e}", exc_info=True)
+    if not find_data:
+        logging.warning(f"TMDB find failed or returned no data for IMDb ID: {imdb_id} after retries.")
         return None
-    except Exception as e:
-        logging.error(f"Unexpected error processing TMDB data for IMDb ID {imdb_id}: {e}", exc_info=True)
+
+    # Check if movie results are found
+    if not find_data.get('movie_results'):
+        logging.info(f"No movie results found on TMDB for IMDb ID: {imdb_id}")
         return None
+
+    # Get the first movie ID found (assuming it's the correct one)
+    movie_id = find_data['movie_results'][0].get('id')
+    if not movie_id:
+         logging.warning(f"TMDB find response for {imdb_id} did not contain movie ID.")
+         return None
+
+    videos_url = f"{TMDB_BASE_URL}/movie/{movie_id}/videos"
+    params = {} # No specific params needed for videos other than API key (added by helper)
+
+    # Use the retry helper for the videos request
+    videos_data = fetch_tmdb_data_with_retry(videos_url, params, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
+
+    if not videos_data:
+        logging.warning(f"TMDB videos fetch failed or returned no data for movie ID {movie_id} (IMDb ID: {imdb_id}) after retries.")
+        return None
+
+
+    # Search for a YouTube trailer
+    for video in videos_data.get('results', []):
+        if video.get('site') == 'YouTube' and video.get('type') == 'Trailer' and video.get('key'):
+            youtube_url = f"https://www.youtube.com/watch?v={video['key']}"
+            logging.info(f"Found trailer for {imdb_id}: {youtube_url}")
+            return youtube_url
+
+    logging.info(f"No YouTube trailer found on TMDB for movie ID: {movie_id} (IMDb ID: {imdb_id})")
+    return None # No suitable trailer found
 
 
 
@@ -1247,6 +1402,7 @@ def api_get_trailer(imdb_id):
          return jsonify({"error": "Invalid IMDb ID format"}), 400
 
     logging.info(f"Attempting to fetch trailer for IMDb ID: {imdb_id}")
+    # Pass the API key explicitly, although the helper adds it, this makes it clear
     trailer_url = get_trailer_from_imdb(imdb_id, TMDB_API_KEY)
 
     if trailer_url:
@@ -1259,17 +1415,22 @@ def api_get_trailer(imdb_id):
 
 
 
-# --- New TMDB API Helper Functions (for Hebrew data) ---
-# Using TMDB for finding Hebrew titles/posters as OMDB lacks good localization
+# --- New TMDB API Helper Functions (for Hebrew data and trending) ---
+# Using TMDB for finding Hebrew titles/posters and trending lists
 
 def fetch_tmdb_data_with_retry(url, params, max_retries, base_delay):
     """Fetches data from a TMDB URL with retry logic."""
     if not TMDB_API_KEY or TMDB_API_KEY == 'YOUR_TMDB_API_KEY':
-         logging.warning("TMDB_API_KEY is not set. Cannot fetch Hebrew data from TMDB.")
+         logging.warning("TMDB_API_KEY is not set. Cannot fetch data from TMDB.")
          return None
 
-    params['api_key'] = TMDB_API_KEY # Ensure API key is always included
-    params['language'] = params.get('language', 'en-US') # Default language if not specified
+    # Ensure API key is always included unless already in params (defensive)
+    if 'api_key' not in params:
+        params['api_key'] = TMDB_API_KEY
+
+    # Default language if not specified
+    if 'language' not in params:
+         params['language'] = 'en-US' # Default language
 
     for attempt in range(max_retries):
         try:
@@ -1282,8 +1443,11 @@ def fetch_tmdb_data_with_retry(url, params, max_retries, base_delay):
             logging.warning(f"Attempt {attempt + 1}/{max_retries} failed for {url}: {e}")
             if attempt < max_retries - 1:
                 # Exponential backoff with jitter
-                # Cap the delay to avoid excessive waiting in a web request
+                # Cap the delay to avoid excessive waiting in a web request context
+                # Use a minimum delay of 0.1s for jitter
                 delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), 10) # Cap delay at 10 seconds
+                # Ensure minimum delay
+                delay = max(delay, 0.1)
                 logging.info(f"Retrying in {delay:.2f} seconds...")
                 time.sleep(delay)
             else:
@@ -1303,15 +1467,21 @@ def get_tmdb_info(imdb_id):
 
     if data:
         if data.get('movie_results'):
-            tmdb_id = data['movie_results'][0].get('id')
-            if tmdb_id:
+            # Check if results list is not empty and has at least one item
+            if data['movie_results'] and data['movie_results'][0].get('id'):
+                 tmdb_id = data['movie_results'][0].get('id')
                  logging.debug(f"Found TMDB movie ID {tmdb_id} for IMDb ID {imdb_id}")
                  return tmdb_id, 'movie'
+            else:
+                logging.warning(f"TMDB find response for {imdb_id} movie results is empty or missing ID.")
         elif data.get('tv_results'):
-            tmdb_id = data['tv_results'][0].get('id')
-            if tmdb_id:
+            # Check if results list is not empty and has at least one item
+            if data['tv_results'] and data['tv_results'][0].get('id'):
+                 tmdb_id = data['tv_results'][0].get('id')
                  logging.debug(f"Found TMDB TV ID {tmdb_id} for IMDb ID {imdb_id}")
                  return tmdb_id, 'tv'
+            else:
+                logging.warning(f"TMDB find response for {imdb_id} TV results is empty or missing ID.")
         else:
             logging.info(f"No movie or TV results found on TMDB for IMDb ID: {imdb_id}")
     else:
@@ -1341,8 +1511,7 @@ def get_hebrew_details(tmdb_id, media_type):
 
         if not hebrew_name:
             logging.info(f"No Hebrew title found on TMDB for {media_type} ID {tmdb_id}.")
-        if not poster_path:
-             logging.info(f"No Hebrew poster path found on TMDB for {media_type} ID {tmdb_id}.")
+        # Poster path can be None even if data is successful
 
         # Construct full poster URL if path exists
         if poster_path:
@@ -1355,10 +1524,213 @@ def get_hebrew_details(tmdb_id, media_type):
 
     return hebrew_name, hebrew_poster_url
 
+# --- New functions for getting trending lists from TMDB ---
+def get_trending_movies_tmdb():
+    """Fetches trending movie TMDB IDs for the week."""
+    url = f'{TMDB_BASE_URL}/trending/movie/week'
+    params = {} # Language is not critical here, just getting the list
+
+    data = fetch_tmdb_data_with_retry(url, params, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
+
+    trending_ids = []
+    if data and data.get('results'):
+        today = datetime.date.today()
+        for item in data['results']:
+            # Check release date - only include movies released on or before today
+            release_date_str = item.get('release_date')
+            if release_date_str:
+                 try:
+                     release_date = datetime.strptime(release_date_str, "%Y-%m-%d").date()
+                     if release_date > today:
+                          logging.debug(f"Skipping trending movie {item.get('title')} ({item.get('id')}) - not yet released.")
+                          continue # Skip movies not yet released
+                 except ValueError:
+                      logging.warning(f"Invalid release date format for trending movie {item.get('id')}: {release_date_str}")
+                      # Decide whether to include or skip items with bad dates - let's include but log
+            else:
+                 logging.debug(f"No release date for trending movie {item.get('id')}. Including.") # Include if no date provided
+
+            tmdb_id = item.get('id')
+            if tmdb_id:
+                 trending_ids.append(tmdb_id)
+            if len(trending_ids) >= 15: # Limit to top 15
+                 break
+
+    logging.info(f"Fetched {len(trending_ids)} trending movie TMDB IDs from TMDB.")
+    return trending_ids # Returns list of TMDB IDs
+
+def get_trending_tv_tmdb():
+    """Fetches trending TV show TMDB IDs for the week."""
+    url = f'{TMDB_BASE_URL}/trending/tv/week'
+    params = {} # Language is not critical here
+
+    data = fetch_tmdb_data_with_retry(url, params, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
+
+    trending_ids = []
+    if data and data.get('results'):
+        today = datetime.date.today()
+        for item in data['results']:
+            # Check first air date - only include shows aired on or before today
+            first_air_date_str = item.get('first_air_date')
+            if first_air_date_str:
+                 try:
+                     first_air_date = datetime.strptime(first_air_date_str, "%Y-%m-%d").date()
+                     if first_air_date > today:
+                           logging.debug(f"Skipping trending TV show {item.get('name')} ({item.get('id')}) - not yet aired.")
+                           continue # Skip shows not yet aired
+                 except ValueError:
+                      logging.warning(f"Invalid first air date format for trending TV show {item.get('id')}: {first_air_date_str}")
+                      # Decide whether to include or skip items with bad dates - let's include but log
+            else:
+                 logging.debug(f"No first air date for trending TV show {item.get('id')}. Including.") # Include if no date provided
 
 
+            tmdb_id = item.get('id')
+            if tmdb_id:
+                 trending_ids.append(tmdb_id)
+            if len(trending_ids) >= 15: # Limit to top 15
+                 break
+
+    logging.info(f"Fetched {len(trending_ids)} trending TV TMDB IDs from TMDB.")
+    return trending_ids # Returns list of TMDB IDs
+
+# --- New function to get IMDb ID from TMDB ID ---
+def get_imdb_id_from_tmdb(tmdb_id, media_type):
+    """Gets the IMDb ID for a given TMDB ID and media type (movie/tv)."""
+    if not tmdb_id or media_type not in ['movie', 'tv']:
+         logging.error(f"Invalid TMDB ID ({tmdb_id}) or media type ({media_type}) passed to get_imdb_id_from_tmdb.")
+         return None
+
+    if media_type == 'movie':
+        # For movies, the main details endpoint includes imdb_id
+        url = f"{TMDB_BASE_URL}/movie/{tmdb_id}"
+        params = {} # No specific params needed
+        data = fetch_tmdb_data_with_retry(url, params, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
+        if data:
+            imdb_id = data.get('imdb_id')
+            if imdb_id:
+                 logging.debug(f"Got IMDb ID {imdb_id} for TMDB movie {tmdb_id}.")
+                 return imdb_id
+            else:
+                logging.warning(f"TMDB movie details for ID {tmdb_id} did not contain imdb_id.")
+                return None # imdb_id not found in response
+        else:
+            logging.warning(f"Failed to get TMDB movie details for ID {tmdb_id} after retries.")
+            return None # Fetch failed
 
 
+    elif media_type == 'tv':
+        # For TV, need the external_ids endpoint
+        url = f"{TMDB_BASE_URL}/tv/{tmdb_id}/external_ids"
+        params = {} # No specific params needed
+        data = fetch_tmdb_data_with_retry(url, params, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
+        if data:
+             imdb_id = data.get('imdb_id')
+             if imdb_id:
+                  logging.debug(f"Got IMDb ID {imdb_id} for TMDB TV {tmdb_id}.")
+                  return imdb_id
+             else:
+                  logging.warning(f"TMDB TV external IDs for ID {tmdb_id} did not contain imdb_id.")
+                  return None # imdb_id not found in response
+        else:
+            logging.warning(f"Failed to get TMDB TV external IDs for ID {tmdb_id} after retries.")
+            return None # Fetch failed
+
+    return None # Should not reach here
+
+# --- New function to update trending data in Firebase ---
+def update_trending_data_in_firebase():
+    """
+    Fetches trending data from TMDB, maps to IMDb IDs, clears existing /Top
+    and saves the new lists to Firebase. Designed for background thread.
+    """
+    if not FIREBASE_INITIALIZED:
+         logging.error("Firebase not initialized. Cannot update trending data.")
+         return
+
+    logging.info("Starting trending data update from TMDB...")
+    start_time = time.time()
+
+    trending_movies_tmdb_ids = get_trending_movies_tmdb()
+    trending_series_tmdb_ids = get_trending_tv_tmdb()
+
+    # Convert TMDB IDs to IMDb IDs
+    trending_movies_imdb_ids = []
+    for tmdb_id in trending_movies_tmdb_ids:
+        imdb_id = get_imdb_id_from_tmdb(tmdb_id, 'movie')
+        if imdb_id and imdb_id.startswith('tt'): # Basic validation
+             trending_movies_imdb_ids.append(imdb_id)
+        else:
+             logging.warning(f"Could not get valid IMDb ID for trending TMDB movie ID {tmdb_id}. Skipping.")
+
+    trending_series_imdb_ids = []
+    for tmdb_id in trending_series_tmdb_ids:
+        imdb_id = get_imdb_id_from_tmdb(tmdb_id, 'tv')
+        if imdb_id and imdb_id.startswith('tt'): # Basic validation
+             trending_series_imdb_ids.append(imdb_id)
+        else:
+             logging.warning(f"Could not get valid IMDb ID for trending TMDB TV ID {tmdb_id}. Skipping.")
+
+
+    logging.info(f"Mapped {len(trending_movies_imdb_ids)} trending movie IMDb IDs and {len(trending_series_imdb_ids)} trending series IMDb IDs.")
+
+    # Save to Firebase
+    try:
+        ref_top = db.reference('/Top')
+        # Clear existing data first as requested
+        ref_top.set({})
+        logging.info("Cleared existing /Top data in Firebase.")
+
+        # Save new lists
+        if trending_movies_imdb_ids:
+             db.reference('/Top/Movies').set(trending_movies_imdb_ids)
+             logging.info(f"Saved {len(trending_movies_imdb_ids)} trending movie IMDb IDs to Firebase /Top/Movies.")
+        else:
+             logging.warning("No trending movie IMDb IDs to save.")
+
+        if trending_series_imdb_ids:
+             db.reference('/Top/Series').set(trending_series_imdb_ids)
+             logging.info(f"Saved {len(trending_series_imdb_ids)} trending series IMDb IDs to Firebase /Top/Series.")
+        else:
+             logging.warning("No trending series IMDb IDs to save.")
+
+        end_time = time.time()
+        duration = end_time - start_time
+        logging.info(f"Trending data update complete. Took {duration:.2f} seconds.")
+
+    except Exception as e:
+        logging.error(f"Error saving trending data to Firebase: {e}", exc_info=True)
+        # Consider alerting on critical failure
+
+# --- New function for daily update thread ---
+def daily_trending_update_thread(interval_hours=24):
+    """Background thread function to update trending data daily."""
+    # Wait a bit on startup before the first update attempt, to allow app resources to settle
+    # Also avoids potential race condition if app starts before network is fully ready
+    initial_delay_seconds = 60 # Wait 1 minute initially
+    logging.info(f"Trending update thread starting. Initial delay of {initial_delay_seconds} seconds.")
+    time.sleep(initial_delay_seconds)
+
+    # Perform the first update on startup after delay
+    update_trending_data_in_firebase()
+
+    # Calculate interval in seconds
+    interval_seconds = interval_hours * 3600
+
+    logging.info(f"Daily trending update thread running. Next update in {interval_hours} hours ({interval_seconds} seconds).")
+    while True:
+        # Sleep for the interval, check Firebase status before attempting update
+        time.sleep(interval_seconds)
+        if FIREBASE_INITIALIZED:
+            logging.info("Performing scheduled daily trending data update.")
+            update_trending_data_in_firebase()
+            logging.info(f"Scheduled daily trending update complete. Next update in {interval_hours} hours.")
+        else:
+            logging.warning("Firebase not initialized. Skipping scheduled daily trending update.")
+
+# Start the daily update thread if Firebase is initialized
+# This will be called within the __main__ block
+trending_update_thread = threading.Thread(target=daily_trending_update_thread, daemon=True)
 
 
 # --- Error Handlers ---
@@ -1389,10 +1761,10 @@ def internal_server_error(e):
 
 
 if __name__ == '__main__':
-    # Ensure Firebase is initialized before running the app
+    # Ensure Firebase is initialized before running the app and starting threads
     # The try/except block with _apps check handles reloader
     # Also check if initialization actually succeeded before running
-    if firebase_admin._apps:
+    if firebase_admin._apps and FIREBASE_INITIALIZED:
         # Check if Firebase creds were successfully loaded
         # This check firebase_admin._apps['[DEFAULT]'].options.get('credential') is more robust
         # than just checking if firebase_admin._apps is not empty, as initialization might
@@ -1401,18 +1773,33 @@ if __name__ == '__main__':
             # Attempt to access the default app's options. This will raise an exception if not initialized correctly.
              default_app_creds = firebase_admin._apps['[DEFAULT]'].options.get('credential')
              if default_app_creds is not None:
-                logging.info("Firebase default app credential check passed.")
+                logging.info("Firebase default app credential check passed. Starting app.")
+
+                # Start the Keep Alive thread
+                keep_alive_thread = threading.Thread(target=keep_website_alive, args=(WEBSITE_URL, INTERVAL_MINUTES), daemon=True)
+                keep_alive_thread.start()
+                logging.info("Keep alive thread started.")
+
+                # Start the Daily Trending Update thread
+                # It will perform the first update after a short delay, then run daily
+                trending_update_thread.start()
+                logging.info("Daily trending update thread started.")
+
+                # Run the Flask application
                 port = int(os.environ.get('PORT', 5000))
                 # debug=True should only be used in development
                 app.run(host='0.0.0.0', port=port, debug=True)
              else:
                  logging.error("Application not started: Firebase default app credential is None.")
+                 sys.exit(1) # Exit if Firebase couldn't initialize credentials correctly
         except KeyError:
             # If firebase_admin._apps['[DEFAULT]'] doesn't exist, it wasn't initialized correctly.
             logging.error("Application not started: Firebase default app was not initialized.")
+            sys.exit(1) # Exit if Firebase initialization failed
         except Exception as e:
              logging.error(f"Application not started: Unexpected error during Firebase check: {e}", exc_info=True)
+             sys.exit(1) # Exit on other unexpected errors
 
     else:
         logging.error("Application not started because Firebase initialization failed.")
-        # You might want to sys.exit(1) here in a real application
+        sys.exit(1) # Exit if Firebase initialization failed upfront
