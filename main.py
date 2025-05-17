@@ -1142,7 +1142,7 @@ def all_series():
                            )
 
 
-WEBSITE_URL = "https://moviesisrael.onrender.com"  # כתובת האתר שלך
+WEBSITE_URL = "https://sratimil.onrender.com/"  # כתובת האתר שלך
 INTERVAL_MINUTES = 4  # זמן בין בקשות בשביל לשמור על האתר ער (בדקות)
 
 def keep_website_alive(url, interval_minutes):
