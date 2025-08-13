@@ -1142,7 +1142,7 @@ def all_series():
                            )
 
 
-WEBSITE_URL = "https://sratimil.onrender.com/"  # כתובת האתר שלך
+WEBSITE_URL = "https://freemoviesil.onrender.com/"  # כתובת האתר שלך
 INTERVAL_MINUTES = 4  # זמן בין בקשות בשביל לשמור על האתר ער (בדקות)
 
 def keep_website_alive(url, interval_minutes):
@@ -1416,3 +1416,4 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
