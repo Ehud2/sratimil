@@ -1360,6 +1360,120 @@ def get_hebrew_details(tmdb_id, media_type):
 
 
 
+def get_recommendations(watched_ids, limit=15):
+    all_movies = load_movies_data()
+    all_series = load_series_data_for_index()
+    all_content = {**all_movies, **all_series}
+
+    if not watched_ids or not all_content:
+        return []
+
+    watched_items_details = []
+    candidate_items = {}
+    for imdb_id, details in all_content.items():
+        if imdb_id in watched_ids:
+            if isinstance(details, dict):
+                watched_items_details.append(details)
+        else:
+            if isinstance(details, dict):
+                candidate_items[imdb_id] = details
+
+    if not watched_items_details or not candidate_items:
+        return []
+
+    profile = {
+        'categories': {},
+        'genres': {},
+        'ratings': []
+    }
+
+    for item in watched_items_details:
+        cat = item.get('category', 'ללא')
+        if cat != 'ללא':
+            profile['categories'][cat] = profile['categories'].get(cat, 0) + 1
+
+        genres_str = item.get('genre', '')
+        if genres_str and genres_str != 'N/A':
+            for genre in [g.strip() for g in genres_str.split(',')]:
+                profile['genres'][genre] = profile['genres'].get(genre, 0) + 1
+
+        rating_str = item.get('imdbRating', 'N/A')
+        if rating_str and rating_str != 'N/A':
+            try:
+                profile['ratings'].append(float(rating_str))
+            except (ValueError, TypeError):
+                pass
+
+    if not profile['ratings']:
+        avg_rating = 7.0
+    else:
+        avg_rating = sum(profile['ratings']) / len(profile['ratings'])
+
+    scored_candidates = []
+    for imdb_id, item in candidate_items.items():
+        score = 0
+        
+        cat = item.get('category', 'ללא')
+        if cat in profile['categories']:
+            score += profile['categories'][cat] * 3
+
+        genres_str = item.get('genre', '')
+        if genres_str and genres_str != 'N/A':
+            item_genres = {g.strip() for g in genres_str.split(',')}
+            for genre in item_genres:
+                if genre in profile['genres']:
+                    score += profile['genres'][genre] * 2
+
+        rating_str = item.get('imdbRating', 'N/A')
+        if rating_str and rating_str != 'N/A':
+            try:
+                item_rating = float(rating_str)
+                rating_diff = abs(item_rating - avg_rating)
+                rating_score = max(0, 1 - (rating_diff / 5))
+                score += rating_score * 1.5
+            except (ValueError, TypeError):
+                pass
+        
+        if score > 0:
+            item_details_for_card = {
+                "id": imdb_id,
+                "title": item.get('title', 'כותרת לא ידועה'),
+                "poster": item.get('poster', 'N/A'),
+                "HebrewName": item.get('HebrewName'),
+                "HebrewPoster": item.get('HebrewPoster'),
+                "type": item.get('type'),
+                "score": score
+            }
+            scored_candidates.append(item_details_for_card)
+
+    scored_candidates.sort(key=lambda x: x['score'], reverse=True)
+    return scored_candidates[:limit]
+
+
+
+
+
+
+@app.route('/api/recommendations', methods=['POST'])
+def api_recommendations():
+    if not session.get('user'):
+        return jsonify({"error": "User not authenticated"}), 401
+
+    data = request.get_json()
+    if not data or 'watched_ids' not in data:
+        return jsonify({"error": "Missing watched_ids"}), 400
+
+    watched_ids = data['watched_ids']
+    if not isinstance(watched_ids, list):
+        return jsonify({"error": "watched_ids must be a list"}), 400
+
+    recommendations = get_recommendations(watched_ids)
+    return jsonify(recommendations)
+
+
+
+
+
 
 # --- Error Handlers ---
 @app.errorhandler(403)
@@ -1386,7 +1500,6 @@ def internal_server_error(e):
     current_language = session.get('language', 'he') # Get language for error page
     current_year = datetime.datetime.utcnow().year
     return render_template('500.html', user=user, current_year=current_year, current_language=current_language), 500
-
 
 if __name__ == '__main__':
     # Ensure Firebase is initialized before running the app
@@ -1416,4 +1529,5 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
