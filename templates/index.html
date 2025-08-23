@@ -1,11 +1,8 @@
-<!-- index.html -->
-{# current_language is passed from Flask #}
 <!DOCTYPE html>
 <html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {# Use conditional title or always keep it fixed, depending on preference #}
     <title>סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,46 +10,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
-    {# Included loading spinner styles directly in style.css #}
 </head>
 <body>
-    <!-- Loading Spinner -->
     <div id="loading-spinner">
         <div class="spinner">
             {% if user and user.picture %}
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
-                {# Fallback to default profile image if user or picture is missing #}
-                {# Use url_for for your static image #}
                 <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
             {% endif %}
         </div>
         <p>
-            {# Spinner text always in Hebrew as per request #}
             טוען...
         </p>
     </div>
 
-
     <header class="site-header">
         <div class="container header-content">
-
-             {# --- Nav Toggle Button (for Mobile) --- #}
-             {# Placed first in HTML for potential flex order adjustment, hidden by default #}
              <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
-                 <i class="fas fa-bars"></i> {# Initial icon #}
+                 <i class="fas fa-bars"></i>
              </button>
 
              <div class="auth-container">
                  {% if user %}
                      <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
-                         {# Ensure this path is correct for your default image if user.picture is missing #}
                          <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
                      </a>
                  {% else %}
                      <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
-                          {# Replace the base64 string with your desired image URL or placeholder #}
-                          {# Use url_for for your static image #}
                           <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
                      </a>
                  {% endif %}
@@ -63,10 +48,7 @@
                <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
             </div>
 
-             {# --- Add Language Switcher Here (after Search) --- #}
              <div class="language-switcher">
-                 {# Link to the set_language route. Show the name of the *current* language as per request. #}
-                 {# The href points to the *target* language (opposite of current) #}
                  <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
                       <i class="fas fa-globe"></i>
                       {% if current_language == 'he' %}
@@ -77,9 +59,7 @@
                   </a>
              </div>
 
-
             <nav class="main-nav">
-                {# Update link text and aria-label based on language #}
                 <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
                 <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
                 <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
@@ -87,9 +67,6 @@
                     <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a>
                 {% endif %}
             </nav>
-
-
-            {# Removed the header-spacer div #}
         </div>
     </header>
 
@@ -108,17 +85,13 @@
 
     <main class="container main-content">
         <div class="page-greeting">
-            {# greeting is now language dependent again #}
             <h1>{{ greeting }}!</h1>
-            {# This phrase is now language dependent again #}
             <p>{{ 'מה נראה היום?' if current_language == 'he' else 'What should we watch today?' }}</p>
         </div>
 
-        {# The "Continue Watching" section will be added here by JavaScript if applicable #}
         <section id="continueWatchingSection" class="category-section" style="display: none;">
             <h2>{{ 'המשך צפייה' if current_language == 'he' else 'Continue Watching' }}</h2>
             <div class="item-row" id="continueWatchingRow">
-                {# Items will be populated here by JavaScript #}
             </div>
              <div id="noContinueWatchingMessage" style="display: none; color: #aaa; text-align: center; padding: 20px;">
                 {% if current_language == 'he' %}
@@ -129,22 +102,22 @@
              </div>
         </section>
 
+        <section id="recommendationsSection" class="category-section" style="display: none;">
+            <h2>{{ 'מומלץ בשבילך' if current_language == 'he' else 'Recommended for you' }}</h2>
+            <div class="item-row" id="recommendationsRow">
+            </div>
+        </section>
 
         {% for category_name, items_in_category in categories.items() %}
             {% if items_in_category %}
-                 {# Display category name based on language if you have translations #}
-                 {# For now, just display the Hebrew category name as CATEGORIES list is in Hebrew #}
                 <section class="category-section">
-                    <h2>{{ category_name }}</h2> {# Keep Hebrew category name as defined #}
+                    <h2>{{ category_name }}</h2>
                     <div class="item-row">
                         {% set is_ranked_category = category_name == "הסרטים הנצפים ביותר השבוע" or category_name == "הסדרות הנצפים ביותר השבוע" %}
                         {% for item in items_in_category %}
-                             {# Wrap the item card in an anchor tag to navigate to the movie/series page based on item.type #}
-                             {# Make sure the URL includes the language parameter if needed, but the backend sets session, so not strictly necessary in URL #}
-                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}"> {# Added data attributes for search with both languages #}
-                                <div class="item-card" tabindex="0"> {# Moved data-title/id/type to the link #}
+                            <a href="{{ url_for('movie_details', imdb_id=item.id) if item.type == 'movie' else url_for('series_details', imdb_id=item.id) }}" class="item-card-link catalog-item" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title-he="{{ item.get('HebrewName', item.get('title', '')) | lower }}" data-title-en="{{ item.get('title', item.get('HebrewName', '')) | lower }}">
+                                <div class="item-card" tabindex="0">
                                     <div class="card-image-container">
-                                        {# Use Hebrew poster if language is HE and Hebrew poster exists, otherwise use English poster, fallback to default #}
                                         {% set item_poster = (item.get('HebrewPoster') if current_language == 'he' and item.get('HebrewPoster') else item.get('poster')) %}
                                         <img src="{{ item_poster if item_poster and item_poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) }}" loading="lazy">
                                         {% if is_ranked_category and loop.index <= 15 %}
@@ -154,27 +127,21 @@
                                             </span>
                                         {% endif %}
                                         <div class="card-overlay">
-                                             {# The play button now also links to the movie/series page #}
                                             <button class="play-button" aria-label="{{ ('צפה ב' + (item.get('HebrewName', item.get('title', ''))) if current_language == 'he' else ('Watch ' + (item.get('title', item.get('HebrewName', ''))))) }}"><i class="fas fa-play"></i></button>
                                             <h3 class="card-title">
-                                                 {# Use Hebrew title if language is HE and Hebrew title exists, otherwise use English title, fallback to placeholder #}
                                                  {{ item.get('HebrewName', item.get('title', 'כותרת לא ידועה')) if current_language == 'he' else item.get('title', item.get('HebrewName', 'Unknown Title')) }}
                                             </h3>
-                                             {# Add subtitle for Series on index page (e.g., "Series") #}
                                              {% if item.type == 'series' %}
                                                  <p class="card-subtitle" style="font-size: 0.8em; color: #ccc; margin-top: 5px;">{{ 'סדרה' if current_language == 'he' else 'Series' }}</p>
                                              {% endif %}
                                             <div class="card-actions">
-                                                {# Added data attributes for JS to identify the item for adding/removing from lists #}
-                                                {# Pass both Hebrew and English details as data attributes #}
-                                                <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
-                                                 {# The info button might also link to the movie/series page #}
-                                                <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
+                                                <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.id }}" data-type="{{ item.type }}" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i></button>
+                                                <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </a> {# End of anchor tag wrapper #}
+                            </a>
                         {% endfor %}
                     </div>
                 </section>
@@ -196,93 +163,65 @@
     </footer>
 
     <script>
-        // Pass current_language from Flask to JavaScript
-        const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
+        const currentLanguage = {{ current_language | tojson }};
         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
 
-
-        // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded fired."); // Debug log
             const spinner = document.getElementById('loading-spinner');
-            // Delay before making spinner invisible (matches CSS transition duration)
-            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+            const visualHideDelay = 200;
 
             if (spinner) {
-                 console.log("Spinner element found, attempting to hide."); // Debug log
-                 // Step 1: Start the visual hiding transition (opacity/visibility)
                  spinner.classList.add('hidden');
-
-                // Use transitionend for reliable removal from layout after animation
                 spinner.addEventListener('transitionend', function handler(event) {
-                     // Ensure this handler only runs once for opacity transition
                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                          spinner.style.display = 'none';
-                         console.log("Spinner hidden via transitionend.");
-                         // Remove this listener to prevent it from firing on future transitions
                          spinner.removeEventListener('transitionend', handler);
                      }
                 });
-
-                 // Fallback timeout in case transitionend doesn't fire for some reason
                  setTimeout(() => {
                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
                           spinner.style.display = 'none';
-                          console.log("Spinner hidden via timeout fallback."); // Debug log
                      }
-                 }, visualHideDelay + 100); // Wait a bit longer than the transition
-            } else {
-                console.warn("Spinner element #loading-spinner not found."); // Debug log
+                 }, visualHideDelay + 100);
             }
 
-            // --- Show spinner on language switcher click ---
             const languageSwitcherLink = document.querySelector('.language-switcher a');
             if (languageSwitcherLink) {
                  languageSwitcherLink.addEventListener('click', function(event) {
-                      // Prevent default behavior immediately so we can show the spinner
-                      // event.preventDefault(); // Don't prevent default, let the browser navigate
-                      // Show the spinner
                       const spinner = document.getElementById('loading-spinner');
                       if (spinner) {
                           spinner.classList.remove('hidden');
-                          spinner.style.display = 'flex'; // Ensure it's flex for centering
-                           console.log("Spinner shown by language switcher click.");
+                          spinner.style.display = 'flex';
                       }
-                      // Allow the browser to proceed with the link navigation after showing spinner
                  });
             }
 
-            // --- Mobile Nav Toggle Functionality ---
             const navToggle = document.querySelector('.nav-toggle');
             const mainNav = document.querySelector('.main-nav');
-            const body = document.body; // Or document.documentElement for html
+            const body = document.body;
 
             if (navToggle && mainNav) {
                  navToggle.addEventListener('click', function() {
                       const isOpen = mainNav.classList.toggle('nav-open');
-                      // Also toggle a class on the body to prevent background scroll
                       body.classList.toggle('nav-open');
 
-                      // Change icon
                       const icon = navToggle.querySelector('i');
                       if (isOpen) {
                            icon.classList.remove('fa-bars');
-                           icon.classList.add('fa-times'); // Close icon
+                           icon.classList.add('fa-times');
                            navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'סגור תפריט ניווט' : 'Close Navigation Menu');
                       } else {
                            icon.classList.remove('fa-times');
-                           icon.classList.add('fa-bars'); // Hamburger icon
+                           icon.classList.add('fa-bars');
                            navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
                       }
                  });
 
-                 // Close nav when a link inside is clicked (optional, but good UX)
                  mainNav.querySelectorAll('a').forEach(link => {
                      link.addEventListener('click', function() {
                           if (mainNav.classList.contains('nav-open')) {
                                mainNav.classList.remove('nav-open');
                                body.classList.remove('nav-open');
-                               // Reset icon
                                const icon = navToggle.querySelector('i');
                                icon.classList.remove('fa-times');
                                icon.classList.add('fa-bars');
@@ -290,19 +229,11 @@
                           }
                      });
                  });
-                 // Close nav if clicking outside the nav (requires detecting clicks on the body/overlay)
-                 // A simple way is to add an overlay div when open, or check event target.
-                 // For now, clicking links is enough. Adding body click listener might interfere.
-            } else {
-                 console.warn("Nav toggle or main nav not found."); // Debug log
             }
 
-
-            // --- Search Filter Functionality ---
             const searchInput = document.getElementById('searchInput');
-            const noResultsMessage = document.getElementById('noResultsMessage'); // Get the message element
-            const catalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection) .item-card-link.catalog-item'); // Get all catalog items
-
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const catalogItems = document.querySelectorAll('.category-section:not(#continueWatchingSection):not(#recommendationsSection) .item-card-link.catalog-item');
 
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
@@ -310,56 +241,38 @@
                     let anyVisible = false;
 
                     catalogItems.forEach(link => {
-                         // Get title based on current language from data attributes
-                         // Fallback to the other language title if the preferred one is missing
                          const titleHe = link.dataset.titleHe || link.dataset.titleEn || '';
                          const titleEn = link.dataset.titleEn || link.dataset.titleHe || '';
-
                          const title = currentLanguage === 'he' ? titleHe : titleEn;
 
-
                          if (title.includes(searchTerm)) {
-                             link.style.display = ''; // Show the link (and thus the card)
+                             link.style.display = '';
                              anyVisible = true;
                          } else {
-                             link.style.display = 'none'; // Hide the link (and thus the card)
+                             link.style.display = 'none';
                          }
                     });
 
-                    // Update no results message visibility
                     if (noResultsMessage) {
                          noResultsMessage.style.display = anyVisible ? 'none' : 'block';
                     }
                 });
 
-                // Handle search button click (does the same as input for now)
                  document.querySelector('.search-container button').addEventListener('click', function() {
-                      // Trigger the input event manually to ensure filtering happens
                      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                  });
 
-                // Handle Enter key on search input
                 searchInput.addEventListener('keypress', function(event) {
                     if (event.key === 'Enter') {
-                        event.preventDefault(); // Prevent default form submission/page reload
-                         // Trigger the input event manually to ensure filtering happens
+                        event.preventDefault();
                          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                 });
-
-            } else {
-                 console.warn("Search input #searchInput not found.");
             }
 
-
-            // --- Continue Watching Functionality (Client-Side) ---
-            const user = {{ user | tojson }}; // Pass user object from Flask
-
-            // Corrected URL generation - get base paths and append dynamically in JS
-            const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id='') }}"; // Gets /movie/
-            const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id='') }}"; // Gets /series/
-
-
+            const user = {{ user | tojson }};
+            const movieDetailsBaseUrl = "{{ url_for('movie_details', imdb_id='') }}";
+            const seriesDetailsBaseUrl = "{{ url_for('series_details', imdb_id='') }}";
             const continueWatchingSection = document.getElementById('continueWatchingSection');
             const continueWatchingRow = document.getElementById('continueWatchingRow');
             const noContinueWatchingMessage = document.getElementById('noContinueWatchingMessage');
@@ -367,341 +280,253 @@
             if (user && user.google_id) {
                 const userId = user.google_id;
                 const localStorageKey = `continueWatching_${userId}`;
-
-                let continueWatchingItems = {}; // Raw data from localStorage
-                const uniqueValidItemsMap = new Map(); // Map to hold the cleaned, consolidated items (one entry per movie/series)
+                let continueWatchingItems = {};
+                const uniqueValidItemsMap = new Map();
 
                 try {
                     const storedData = localStorage.getItem(localStorageKey);
                     if (storedData) {
                         try {
                              continueWatchingItems = JSON.parse(storedData) || {};
-                              // Ensure it's an object, default to empty if parsing fails or results in non-object
                               if (typeof continueWatchingItems !== 'object' || continueWatchingItems === null) {
-                                  console.warn("CW: localStorage data is not an object. Resetting.");
                                    continueWatchingItems = {};
                               }
                         } catch (parseError) {
-                             console.error("CW: Error parsing continue watching data from localStorage:", parseError);
-                             continueWatchingItems = {}; // Reset on parse error
+                             continueWatchingItems = {};
                         }
                     }
 
-                    // --- Helper to determine season/episode, preferring latest_* ---
                     function getEpisodeInfo(item) {
                          const season = item.latest_season || item.season;
                          const episode = item.latest_episode || item.episode;
-                         // Return as numbers if possible, default to 0 if not valid
                          const seasonNum = season ? parseInt(season, 10) : 0;
                          const episodeNum = episode ? parseInt(episode, 10) : 0;
-
                          if (isNaN(seasonNum) || isNaN(episodeNum) || seasonNum < 1 || episodeNum < 1) {
-                              return null; // Invalid episode info
+                              return null;
                          }
                          return { season: seasonNum, episode: episodeNum };
                     }
 
-
-                    // --- Process and Consolidate Items ---
-                    // Iterate through all items found in localStorage (both old and new formats)
                     Object.values(continueWatchingItems).forEach(item => {
-                        // Basic validation: must be an object and have id, type, and title (or HebrewName)
                         if (!item || typeof item !== 'object' || !item.id || !item.type || !(item.title || item.HebrewName)) {
-                            console.warn("CW: Skipping invalid item (missing basics):", item);
-                            return; // Skip this item
+                            return;
                         }
 
-                        // Determine canonical key (movie_id or series_id)
                         const canonicalKey = `${item.type}_${item.id}`;
 
                         if (item.type === 'movie') {
-                             // For movies, just add/overwrite. The key is already unique per movie.
                             uniqueValidItemsMap.set(canonicalKey, {
                                 id: item.id,
                                 type: 'movie',
-                                title: item.title, // Keep both English
-                                poster: item.poster, // Keep both English
-                                HebrewName: item.HebrewName, // Keep Hebrew
-                                HebrewPoster: item.HebrewPoster, // Keep Hebrew
-                                timestamp: typeof item.timestamp === 'number' ? item.timestamp : 0, // Ensure timestamp is a number
-                                // Add other movie details needed for the card if any beyond title/poster
+                                title: item.title,
+                                poster: item.poster,
+                                HebrewName: item.HebrewName,
+                                HebrewPoster: item.HebrewPoster,
+                                timestamp: typeof item.timestamp === 'number' ? item.timestamp : 0,
                             });
-
                         } else if (item.type === 'series') {
-                            // For series, get episode info (prefers latest_*)
                             const episodeInfo = getEpisodeInfo(item);
-
-                            // Check if we have valid season and episode numbers from either format
                             if (!episodeInfo) {
-                                 console.warn("CW: Skipping series item missing valid season/episode data:", item);
-                                 return; // Skip this item if episode info is missing or invalid
+                                 return;
                             }
-
                              const seasonNum = episodeInfo.season;
                              const episodeNum = episodeInfo.episode;
                              const timestamp = typeof item.timestamp === 'number' ? item.timestamp : 0;
-
-
-                            // Check if we already have an entry for this series ID in the map
                             if (uniqueValidItemsMap.has(canonicalKey)) {
                                 const existingItem = uniqueValidItemsMap.get(canonicalKey);
-                                // Get episode info for the item currently in the map
-                                const existingEpisodeInfo = getEpisodeInfo(existingItem); // Should use latest_* from map item
-                                const existingSeason = existingEpisodeInfo ? existingEpisodeInfo.season : 0; // Default to 0 if no info
-                                const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0; // Default to 0 if no info
-
-
-                                // Compare the current episode with the one already in the map
-                                // Keep the one with the later season, or later episode if seasons are the same
+                                const existingEpisodeInfo = getEpisodeInfo(existingItem);
+                                const existingSeason = existingEpisodeInfo ? existingEpisodeInfo.season : 0;
+                                const existingEpisode = existingEpisodeInfo ? existingEpisodeInfo.episode : 0;
                                 if (seasonNum > existingSeason || (seasonNum === existingSeason && episodeNum > existingEpisode)) {
-                                     // The current item represents a *later* episode for this series
-                                     console.log(`CW: Updating series ${item.id} to S${seasonNum}E{episodeNum} (was S${existingSeason}E{existingEpisode}).`);
-                                    // Update the map entry with the later episode details
                                     uniqueValidItemsMap.set(canonicalKey, {
                                         id: item.id,
                                         type: 'series',
-                                        title: item.title, // Keep both English
-                                        poster: item.poster, // Keep both English
-                                        HebrewName: item.HebrewName, // Keep Hebrew
-                                        HebrewPoster: item.HebrewPoster, // Keep Hebrew
-                                        latest_season: seasonNum, // Store as latest_* in the canonical format
-                                        latest_episode: episodeNum, // Store as latest_* in the canonical format
-                                         // Use the timestamp from the *latest* episode found, even if it's from an old entry format
+                                        title: item.title,
+                                        poster: item.poster,
+                                        HebrewName: item.HebrewName,
+                                        HebrewPoster: item.HebrewPoster,
+                                        latest_season: seasonNum,
+                                        latest_episode: episodeNum,
                                         timestamp: timestamp,
-                                        // Add other series details needed for the card if any beyond title/poster
                                     });
-                                } else {
-                                    // The existing item in the map is already the latest or equal. Do nothing.
-                                     // console.log(`CW: Keeping S${existingSeason}E${existingEpisode} for series ${item.id} as it is not older than S${seasonNum}E{episodeNum}.`); // Debug log
                                 }
                             } else {
-                                // No entry for this series yet, add this one (converted to canonical format)
-                                 console.log(`CW: Adding series ${item.id} at S${seasonNum}E{episodeNum}.`);
                                 uniqueValidItemsMap.set(canonicalKey, {
                                     id: item.id,
                                     type: 'series',
-                                    title: item.title, // Keep both English
-                                    poster: item.poster, // Keep both English
-                                    HebrewName: item.HebrewName, // Keep Hebrew
-                                    HebrewPoster: item.HebrewPoster, // Keep Hebrew
-                                    latest_season: seasonNum, // Store as latest_*
-                                    latest_episode: episodeNum, // Store as latest_*
-                                     timestamp: timestamp, // Store timestamp
-                                    // Add other series details needed for the card if any beyond title/poster
+                                    title: item.title,
+                                    poster: item.poster,
+                                    HebrewName: item.HebrewName,
+                                    HebrewPoster: item.HebrewPoster,
+                                    latest_season: seasonNum,
+                                    latest_episode: episodeNum,
+                                    timestamp: timestamp,
                                 });
                             }
-
-                        } else {
-                            // Item has an unknown type, skip
-                            console.warn("CW: Skipping item with unknown type:", item);
-                            return; // Skip this item
                         }
                     });
 
-                    // --- Convert map values to an array for display and optionally save cleaned data ---
                     const validItemsToDisplay = Array.from(uniqueValidItemsMap.values());
-
-                    // Optional: Save the cleaned, consolidated data back to localStorage
-                    // This effectively migrates old per-episode data to the new per-series-latest format over time.
-                    // By converting the Map back to an object, keys like series_ttXXXXXXX_SxE are automatically discarded.
-                    const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap); // Convert Map back to object
+                    const cleanedContinueWatchingItems = Object.fromEntries(uniqueValidItemsMap);
                     try {
                          localStorage.setItem(localStorageKey, JSON.stringify(cleanedContinueWatchingItems));
-                         console.log(`CW: Saved cleaned continue watching data to localStorage.`);
                     } catch (e) {
-                         console.error("CW: Error saving cleaned continue watching data:", e);
+                         console.error("Error saving cleaned continue watching data:", e);
                     }
 
-
-                    // --- Display the items ---
                     if (validItemsToDisplay.length > 0) {
-                        // Sort items alphabetically by the *displayed* title
                          validItemsToDisplay.sort((a, b) => {
                              const titleA = (currentLanguage === 'he' ? a.HebrewName || a.title : a.title || a.HebrewName) || '';
                              const titleB = (currentLanguage === 'he' ? b.HebrewName || b.title : b.title || b.HebrewName) || '';
                              return titleA.localeCompare(titleB);
                          });
 
-                        // Clear previous content
                         continueWatchingRow.innerHTML = '';
 
                         validItemsToDisplay.forEach(item => {
                             const itemLink = document.createElement('a');
-                            let href = '#'; // Default fallback
+                            let href = '#';
                             let titleText = '';
                             let subtitleText = '';
-
-                            // Select title and poster based on current language
                             const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
                             const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
 
-
-                            // Construct the correct URL and subtitle based on item type (using canonical format)
                             if (item.type === 'movie') {
-                                 // Use the movie base URL and append IMDb ID
                                  href = `${movieDetailsBaseUrl}${item.id}`;
-                                 // Add timestamp hash if available (even if it's 0)
                                  if (item.timestamp && item.timestamp > 0) {
                                      href += `#timestamp=${item.timestamp}`;
-                                 } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
+                                 } else if (item.timestamp === 0) {
                                       href += `#timestamp=0`;
                                  }
                                  titleText = displayTitle || (currentLanguage === 'he' ? 'סרט לא ידוע' : 'Unknown Movie');
                                  subtitleText = currentLanguage === 'he' ? 'סרט' : 'Movie';
 
                             } else if (item.type === 'series' && item.id && item.latest_season && item.latest_episode) {
-                                 // Use the series base URL and append IMDb ID, season, episode
                                  href = `${seriesDetailsBaseUrl}${item.id}/${item.latest_season}/${item.latest_episode}`;
-
-                                 // Add timestamp hash if available (even if it's 0)
                                  if (item.timestamp && item.timestamp > 0) {
                                      href += `#timestamp=${item.timestamp}`;
-                                 } else if (item.timestamp === 0) { // Explicitly add timestamp=0 if saved as 0
+                                 } else if (item.timestamp === 0) {
                                      href += `#timestamp=0`;
                                  }
-
-                                 // Display series title as main title and latest episode info as subtitle
                                  titleText = displayTitle || (currentLanguage === 'he' ? 'סדרה לא ידועה' : 'Unknown Series');
                                  subtitleText = currentLanguage === 'he' ? `עונה ${item.latest_season}, פרק ${item.latest_episode}` : `Season ${item.latest_season}, Episode ${item.latest_episode}`;
-
                             } else {
-                                 // This case should not be reached if processing logic is correct, but defensive check.
-                                 console.warn("CW: Displaying invalid or incomplete item after processing:", item);
-                                 return; // Skip this item
+                                 return;
                             }
 
                             itemLink.href = href;
-                            itemLink.classList.add('item-card-link');
-                            itemLink.classList.add('continue-watching-item');
+                            itemLink.classList.add('item-card-link', 'continue-watching-item');
+                            
+                            const itemKeyToRemove = `${item.type}_${item.id}`;
+                            itemLink.innerHTML = `
+                                <div class="item-card" tabindex="0">
+                                    <div class="card-image-container">
+                                        <img src="${displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl}" alt="${titleText}" loading="lazy">
+                                        <div class="card-overlay">
+                                            <button class="play-button" aria-label="${(currentLanguage === 'he' ? 'המשך צפייה ב' : 'Continue watching ') + titleText}"><i class="fas fa-play"></i></button>
+                                            <h3 class="card-title">${titleText}</h3>
+                                            <p class="card-subtitle" style="font-size: 0.8em; color: #ccc; margin-top: 5px;">${subtitleText}</p>
+                                            <div class="card-actions">
+                                                <button class="remove-from-cw-button" aria-label="${currentLanguage === 'he' ? "הסר מ'המשך צפייה'" : 'Remove from Continue Watching'}" data-key-to-remove="${itemKeyToRemove}"><i class="fas fa-times"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
 
-                            // Create the item card structure (rest remains similar)
-                            const itemCard = document.createElement('div');
-                            itemCard.classList.add('item-card');
-                            itemCard.setAttribute('tabindex', '0');
-
-                            const imageContainer = document.createElement('div');
-                            imageContainer.classList.add('card-image-container');
-
-                            const img = document.createElement('img');
-                            img.src = displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl; // Use determined poster URL
-                            img.alt = titleText; // Use determined title for alt text
-                            img.setAttribute('loading', 'lazy');
-
-                            const overlay = document.createElement('div');
-                            overlay.classList.add('card-overlay');
-
-                             const playButton = document.createElement('button');
-                             playButton.classList.add('play-button');
-                             // Update aria-label based on language and title
-                             playButton.setAttribute('aria-label', (currentLanguage === 'he' ? 'המשך צפייה ב' : 'Continue watching ') + titleText);
-                             playButton.innerHTML = '<i class="fas fa-play"></i>';
-                             playButton.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
-
-
-                            const titleElement = document.createElement('h3');
-                            titleElement.classList.add('card-title');
-                            titleElement.textContent = titleText; // Use determined title
-
-
-                             const subtitleElement = document.createElement('p');
-                             subtitleElement.classList.add('card-subtitle');
-                             subtitleElement.textContent = subtitleText; // Use determined subtitle
-                             subtitleElement.style.fontSize = '0.8em';
-                             subtitleElement.style.color = '#ccc';
-                             subtitleElement.style.marginTop = '5px';
-
-
-                             const actionsDiv = document.createElement('div');
-                             actionsDiv.classList.add('card-actions');
-
-                             const removeButton = document.createElement('button');
-                              removeButton.classList.add('remove-from-cw-button');
-                              // Update aria-label based on language
-                              removeButton.setAttribute('aria-label', currentLanguage === 'he' ? 'הסר מ\'המשך צפייה\'' : 'Remove from Continue Watching');
-                              removeButton.innerHTML = '<i class="fas fa-times"></i>';
-                              removeButton.addEventListener('click', (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-
-                                   // Get the canonical key for this item to remove from the map
-                                   const itemKeyToRemove = `${item.type}_${item.id}`;
-
-                                   if (uniqueValidItemsMap.has(itemKeyToRemove)) {
-                                        uniqueValidItemsMap.delete(itemKeyToRemove); // Remove from the map
-                                        try {
-                                             // Save the *current state of the map* back to localStorage
-                                             // This is the cleaned state, so old keys won't be added back.
-                                             localStorage.setItem(localStorageKey, JSON.stringify(Object.fromEntries(uniqueValidItemsMap)));
-                                             itemLink.remove(); // Remove the element from the DOM
-                                             console.log(`CW: Removed item ${itemKeyToRemove} from continue watching.`);
-
-                                             // Check if the section should be hidden
-                                             if (uniqueValidItemsMap.size === 0) {
-                                                 continueWatchingSection.style.display = 'none';
-                                                  noContinueWatchingMessage.style.display = 'block';
-                                             }
-
-                                        } catch (e) {
-                                            console.error("CW: Error saving continue watching data after removing item:", e);
+                            itemLink.querySelector('.remove-from-cw-button').addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (uniqueValidItemsMap.has(itemKeyToRemove)) {
+                                    uniqueValidItemsMap.delete(itemKeyToRemove);
+                                    try {
+                                        localStorage.setItem(localStorageKey, JSON.stringify(Object.fromEntries(uniqueValidItemsMap)));
+                                        itemLink.remove();
+                                        if (uniqueValidItemsMap.size === 0) {
+                                            continueWatchingSection.style.display = 'none';
+                                            noContinueWatchingMessage.style.display = 'block';
+                                            document.getElementById('recommendationsSection').style.display = 'none';
                                         }
-                                   } else {
-                                       // This case should not happen if the display logic is correct,
-                                       // but if the item somehow exists in the DOM but not the map,
-                                       // it means something is out of sync. Log a warning.
-                                        console.warn("CW: Item element in DOM not found in uniqueValidItemsMap:", itemKeyToRemove, item);
-                                   }
-                              });
-                             actionsDiv.appendChild(removeButton);
-
-
-                            imageContainer.appendChild(img);
-                             overlay.appendChild(playButton);
-                            overlay.appendChild(titleElement);
-                             if (subtitleText) {
-                                overlay.appendChild(subtitleElement);
-                             }
-                            overlay.appendChild(actionsDiv);
-                            imageContainer.appendChild(overlay);
-                            itemCard.appendChild(imageContainer);
-                            itemLink.appendChild(itemCard);
+                                    } catch (err) {
+                                        console.error("Error saving data after removing item:", err);
+                                    }
+                                }
+                            });
                             continueWatchingRow.appendChild(itemLink);
                         });
 
-                        // Show/hide sections based on uniqueValidItemsMap size
                          if (uniqueValidItemsMap.size > 0) {
                              continueWatchingSection.style.display = 'block';
-                             noContinueWatchingMessage.style.display = 'none'; // Hide the "No items" message
+                             noContinueWatchingMessage.style.display = 'none';
                          } else {
                              continueWatchingSection.style.display = 'none';
-                             noContinueWatchingMessage.style.display = 'block'; // Show the "No items" message
-                             console.log("CW: No valid continue watching items to display after processing.");
+                             noContinueWatchingMessage.style.display = 'block';
                          }
 
-
                     } else {
-                        console.log("CW: No valid continue watching data found for this user.");
                          continueWatchingSection.style.display = 'none';
-                         noContinueWatchingMessage.style.display = 'block'; // Show "No items" message if no data
+                         noContinueWatchingMessage.style.display = 'block';
+                    }
+
+                    const recommendationsSection = document.getElementById('recommendationsSection');
+                    const recommendationsRow = document.getElementById('recommendationsRow');
+                    if (validItemsToDisplay && validItemsToDisplay.length > 0) {
+                        const watchedIds = validItemsToDisplay.map(item => item.id);
+                        fetch("{{ url_for('api_recommendations') }}", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ watched_ids: watchedIds }),
+                        })
+                        .then(response => response.ok ? response.json() : Promise.reject(response))
+                        .then(recommendations => {
+                            if (recommendations && recommendations.length > 0) {
+                                recommendationsSection.style.display = 'block';
+                                recommendationsRow.innerHTML = '';
+                                recommendations.forEach(item => {
+                                    const itemLink = document.createElement('a');
+                                    let href = item.type === 'movie' ? `${movieDetailsBaseUrl}${item.id}` : `${seriesDetailsBaseUrl}${item.id}`;
+                                    itemLink.href = href;
+                                    itemLink.classList.add('item-card-link', 'recommendation-item');
+                                    const displayTitle = currentLanguage === 'he' ? item.HebrewName || item.title : item.title || item.HebrewName;
+                                    const displayPoster = currentLanguage === 'he' ? item.HebrewPoster || item.poster : item.poster || item.HebrewPoster;
+                                    itemLink.innerHTML = `
+                                        <div class="item-card" tabindex="0">
+                                            <div class="card-image-container">
+                                                <img src="${displayPoster && displayPoster !== 'N/A' ? displayPoster : defaultPosterUrl}" alt="${displayTitle}" loading="lazy">
+                                                <div class="card-overlay">
+                                                    <button class="play-button" aria-label="${(currentLanguage === 'he' ? 'צפה ב' : 'Watch ') + displayTitle}"><i class="fas fa-play"></i></button>
+                                                    <h3 class="card-title">${displayTitle}</h3>
+                                                    ${item.type === 'series' ? `<p class="card-subtitle" style="font-size: 0.8em; color: #ccc; margin-top: 5px;">${currentLanguage === 'he' ? 'סדרה' : 'Series'}</p>` : ''}
+                                                    <div class="card-actions">
+                                                        <button aria-label="${currentLanguage === 'he' ? 'הוסף לרשימה' : 'Add to list'}" class="add-to-list-button" data-id="${item.id}" data-type="${item.type}" data-title="${item.title || ''}" data-poster="${item.poster || ''}" data-hebrew-name="${item.HebrewName || ''}" data-hebrew-poster="${item.HebrewPoster || ''}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i></button>
+                                                        <button class="info-button" aria-label="${currentLanguage === 'he' ? 'עוד פרטים' : 'More info'}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                    recommendationsRow.appendChild(itemLink);
+                                });
+                            } else {
+                                recommendationsSection.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching recommendations:', error);
+                            recommendationsSection.style.display = 'none';
+                        });
                     }
 
                 } catch (e) {
-                    console.error("CW: Error loading, processing or displaying continue watching data:", e);
-                    // Hide the section on error
+                    console.error("Error processing continue watching or recommendations:", e);
                     continueWatchingSection.style.display = 'none';
-                    noContinueWatchingMessage.style.display = 'block'; // Show empty message on error
+                    noContinueWatchingMessage.style.display = 'block';
                 }
-
             } else {
-                console.log("CW: User not logged in. Continue Watching hidden.");
                  continueWatchingSection.style.display = 'none';
-                 noContinueWatchingMessage.style.display = 'none'; // Hide empty message too if not logged in
+                 noContinueWatchingMessage.style.display = 'none';
             }
-
-
-        }); // End DOMContentLoaded
-
-        {# If you have a separate static/js/script.js, link it here AFTER this script block #}
-        {# <script src="{{ url_for('static', filename='js/script.js') }}"></script> #}
+        });
     </script>
 </body>
 </html>
