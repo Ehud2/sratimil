@@ -62,28 +62,25 @@ oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
-# --- Firebase Configuration ---
-# You need to download your service account key JSON file from
-# Firebase Project Settings -> Service accounts -> Generate new private key.
-# Store this file securely and provide the path here or via an environment variable.
-# Example path: 'path/to/your/serviceAccountKey.json'
-FIREBASE_SERVICE_ACCOUNT_KEY_PATH = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY_PATH', './firebase.json') # Placeholder path
 
-# Your Firebase Realtime Database URL
-FIREBASE_DATABASE_URL = os.environ.get('FIREBASE_DATABASE_URL', 'https://sratimsonline-default-rtdb.firebaseio.com/') # Replace if different
+FIREBASE_DATABASE_URL = os.environ.get('FIREBASE_DATABASE_URL', 'https://sratimsonline-default-rtdb.firebaseio.com/')
 
-# Initialize Firebase Admin SDK
 try:
-    # Check if app is already initialized (prevents errors in debug/reloader mode)
     if not firebase_admin._apps:
-        # Check if the service account file exists
-        if not os.path.exists(FIREBASE_SERVICE_ACCOUNT_KEY_PATH):
-            logging.error(f"Firebase service account key file not found at {FIREBASE_SERVICE_ACCOUNT_KEY_PATH}")
-            # You might want to exit or raise an exception here in production
-            # For now, just log and continue (will likely fail Firebase ops later)
-            cred = None # Set cred to None so initialization fails
+        cred = None
+        firebase_credentials_json = os.environ.get('FIREBASE_CREDENTIALS_JSON')
+        
+        if firebase_credentials_json:
+            logging.info("Found Firebase credentials in environment variable. Initializing from JSON string.")
+            cred_dict = json.loads(firebase_credentials_json)
+            cred = credentials.Certificate(cred_dict)
         else:
-            cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
+            logging.info("FIREBASE_CREDENTIALS_JSON env var not found. Falling back to local file path.")
+            FIREBASE_SERVICE_ACCOUNT_KEY_PATH = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY_PATH', './firebase.json')
+            if not os.path.exists(FIREBASE_SERVICE_ACCOUNT_KEY_PATH):
+                logging.error(f"Firebase service account key file not found at {FIREBASE_SERVICE_ACCOUNT_KEY_PATH}")
+            else:
+                cred = credentials.Certificate(FIREBASE_SERVICE_ACCOUNT_KEY_PATH)
 
         if cred:
             firebase_admin.initialize_app(cred, {
@@ -91,12 +88,11 @@ try:
             })
             logging.info("Firebase initialized successfully.")
         else:
-             logging.error("Firebase initialization failed due to missing credential file.")
+            logging.error("Firebase initialization failed: No valid credentials found.")
     else:
         logging.info("Firebase already initialized.")
 except Exception as e:
     logging.error(f"Error initializing Firebase: {e}", exc_info=True)
-    # Handle error - maybe abort app startup or provide a fallback
 
 
 # --- Categories ---
@@ -1529,6 +1525,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
