@@ -158,7 +158,13 @@
 
     <footer class="site-footer-bottom">
         <div class="container">
-             <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
+             <p>
+                {% if current_language == 'he' %}
+                    סרטים באתר: {{ num_movies }} | סדרות באתר: {{ num_series }}
+                {% else %}
+                    Movies on site: {{ num_movies }} | Series on site: {{ num_series }}
+                {% endif %}
+             </p>
         </div>
     </footer>
 
