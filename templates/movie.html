@@ -1,12 +1,11 @@
-<!-- movie.html -->
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>צפייה בסרט - {{ movie.title or 'סינמה פריים' }}</title> {# Use movie title #}
+    <title>צפייה בסרט - {{ movie.title or 'סינמה פריים' }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}"> {# Ensure this CSS is included #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movie.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
@@ -14,16 +13,15 @@
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
     <meta name="referrer" content="origin">
     <style>
-        /* Styles for the Vidsrc embed container (for the main movie) */
         .vidsrc-embed-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            padding-top: 56.25%;
             margin-bottom: 20px;
-            border-radius: var(--border-radius-md); /* Add border radius */
-            overflow: hidden; /* Ensure content respects border radius */
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4); /* Add subtle shadow */
-            background-color: #000; /* Black background while loading */
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+            background-color: #000;
         }
         .vidsrc-embed-container iframe {
             position: absolute;
@@ -39,19 +37,16 @@
             text-align: center;
             margin-top: 20px;
         }
-        /* Style for the timestamp display (optional) */
         #current-timestamp {
              margin-top: 10px;
              text-align: center;
              color: #ccc;
              font-size: 14px;
-             /* Moved loader styles from here to movie.css */
         }
 
-         /* Added loader spinner style (copy from previous movie.html style tag) */
         .loader {
-            border: 4px solid #f3f3f3; /* Light grey */
-            border-top: 4px solid var(--primary-accent-color); /* Blue */
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-accent-color);
             border-radius: 50%;
             width: 20px;
             height: 20px;
@@ -59,7 +54,7 @@
             display: inline-block;
             margin-left: 10px;
             vertical-align: middle;
-            display: none; /* Hidden by default */
+            display: none;
         }
 
         @keyframes spin {
@@ -79,46 +74,40 @@
             </div>
 
             <nav class="main-nav">
-                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> בית</a> {# Added icon #}
-                <a href="{{ url_for('all_movies') }}"><i class="fas fa-film"></i> סרטים</a> {# Added icon #}
-                <a href="{{ url_for('all_series') }}"><i class="fas fa-tv"></i> סדרות</a> {# Added icon #}
+                <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> בית</a>
+                <a href="{{ url_for('all_movies') }}"><i class="fas fa-film"></i> סרטים</a>
+                <a href="{{ url_for('all_series') }}"><i class="fas fa-tv"></i> סדרות</a>
                 {% if user and user.email in admin_emails %}
-                    <a href="{{ url_for('add_content') }}"><i class="fas fa-plus-circle"></i> הוספת תוכן</a> {# Added icon #}
+                    <a href="{{ url_for('add_content') }}"><i class="fas fa-plus-circle"></i> הוספת תוכן</a>
                 {% endif %}
             </nav>
 
             <div class="auth-container">
                 {% if user %}
                     <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
-                        {# Ensure this path is correct for your default image if user.picture is missing #}
                         <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }} פרופיל" loading="lazy">
                     </a>
                 {% else %}
                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="Sign In with Google" title="התחבר עם גוגל">
-                         {# Replace the base64 string with your desired image URL or placeholder #}
-                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
+                         <img src="data:image/png;base64,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" alt="Sign in with Google" loading="lazy">
                     </a>
                 {% endif %}
             </div>
 
-            {# Removed the header-spacer div #}
         </div>
     </header>
 
 <main class="container movie-details-page">
-    <h1 id="movie-title">{{ movie.title or 'צפייה בסרט' }}</h1> {# Use movie title #}
+    <h1 id="movie-title">{{ movie.title or 'צפייה בסרט' }}</h1>
 
     <div class="movie-grid">
         <div class="movie-poster">
-            <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר הסרט' }}" loading="lazy"> {# Use movie title for alt text #}
+            <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר הסרט' }}" loading="lazy">
         </div>
 
         <div class="movie-info">
-            {# --- MAIN MOVIE PLAYER CONTAINER --- #}
             <div class="vidsrc-embed-container" id="embed-container">
-                <!-- יוזן על ידי JS - נגן הסרט המלא -->
             </div>
-            {# Optional: Add a div to display current timestamp (debug/info) - relevant for main player #}
             <div id="current-timestamp" style="display: none;"></div>
 
 
@@ -126,24 +115,18 @@
                 <p><strong>שם:</strong> {{ movie.title or 'לא זמין' }}</p>
                 <p><strong>תיאור:</strong> {{ movie.plot or 'אין תיאור זמין' }}</p>
                 <p><strong>אורך:</strong> {{ movie.runtime or 'לא זמין' }}</p>
-                <p><strong>שנת יציאה:</strong> {{ movie.year or 'לא זמין' }}</p> {# Changed text for clarity #}
+                <p><strong>שנת יציאה:</strong> {{ movie.year or 'לא זמין' }}</p>
                 <p><strong>ז'אנר:</strong> {{ movie.genre or 'לא זמין' }}</p>
-                <p><strong>דירוג IMDb:</strong> {{ movie.imdbRating or 'לא זמין' }}</p> {# Changed text for clarity #}
+                <p><strong>דירוג IMDb:</strong> {{ movie.imdbRating or 'לא זמין' }}</p>
             </div>
 
             <div class="movie-actions">
-                 {# --- WATCH TRAILER BUTTON --- #}
-                 {# Use the correct class for CSS styling as updated in movie.css #}
                  <button id="watch-trailer-button" class="watch-trailer-button">
                      <i class="fas fa-play"></i> צפייה בטריילר
-                     <span class="loader"></span> {# Add loader span #}
+                     <span class="loader"></span>
                  </button>
-                 {# Optional: Add the "Add to list" button back if needed later #}
-                 {# <button class="add-to-list-button"><i class="fas fa-plus"></i> הוסף לרשימה שלי</button> #}
             </div>
 
-            {# --- TRAILER RELATED MESSAGES (These are for fetch errors, not the embed itself) --- #}
-            {# These messages should probably be placed somewhere logical, like below the actions #}
             <div id="no-trailer-message" class="no-video-message" style="display: none;">טריילר לא נמצא.</div>
             <div id="trailer-error-message" class="no-video-message" style="display: none; color: orange;">שגיאה באחזור הטריילר.</div>
 
@@ -159,7 +142,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Search functionality (same as index.html, navigate back to index with search term)
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('keypress', function(event) {
@@ -171,7 +153,6 @@
                     }
                 }
             });
-             // Optional: search button click
              document.querySelector('.search-container button').addEventListener('click', function() {
                  const term = searchInput.value.trim();
                  if (term) {
@@ -180,65 +161,49 @@
              });
         }
 
-        // --- Global Movie Data & Elements ---
-        const user = {{ user | tojson }}; // Pass user object from Flask
-        const movieData = {{ movie | tojson }}; // Pass movie object from Flask
+        const user = {{ user | tojson }};
+        const movieData = {{ movie | tojson }};
         const imdbId = movieData ? movieData.imdbID : null;
-        const movieType = 'movie'; // Explicitly set type for CW
+        const movieType = 'movie';
 
-        // Elements for Main Movie Player
-        const mainEmbedContainer = document.getElementById('embed-container'); // Original container for main movie
+        const mainEmbedContainer = document.getElementById('embed-container');
 
-        // Elements for Watch Trailer Button & Messages
         const watchTrailerButton = document.getElementById('watch-trailer-button');
         const loader = watchTrailerButton ? watchTrailerButton.querySelector('.loader') : null;
         const noTrailerMessageDiv = document.getElementById('no-trailer-message');
         const trailerErrorMessageDiv = document.getElementById('trailer-error-message');
 
 
-        // --- 1. Main Movie Playback and Continue Watching ---
         if (mainEmbedContainer && imdbId) {
             let continueWatchingItems = {};
-            let savedTimestamp = 0; // Default timestamp
+            let savedTimestamp = 0;
 
-            // Load existing continue watching data from localStorage if user is logged in
             if (user && user.google_id) {
                  const userId = user.google_id;
                  const localStorageKey = `continueWatching_${userId}`;
-                 const itemKey = `movie_${imdbId}`; // Unique key for this movie
+                 const itemKey = `movie_${imdbId}`;
 
                  try {
                      const storedData = localStorage.getItem(localStorageKey);
                      if (storedData) {
                          continueWatchingItems = JSON.parse(storedData) || {};
-                         // Check if this movie is already in the list and get its timestamp
                          if (continueWatchingItems[itemKey] && typeof continueWatchingItems[itemKey].timestamp === 'number') {
                              savedTimestamp = continueWatchingItems[itemKey].timestamp;
-                              console.log(`Loaded saved timestamp for movie ${imdbId}: ${savedTimestamp} seconds.`);
-                         } else {
-                              console.log(`No saved timestamp found for movie ${imdbId}. Starting from 0.`);
                          }
                      }
                  } catch (e) {
                      console.error("Error loading continue watching data from localStorage:", e);
-                      continueWatchingItems = {}; // Reset on error
+                      continueWatchingItems = {};
                  }
 
-                 // Check URL hash for initial timestamp - overrides localStorage if present
                  const urlHash = window.location.hash;
                  if (urlHash.startsWith('#timestamp=')) {
                      const hashTimestamp = parseInt(urlHash.substring('#timestamp='.length), 10);
                      if (!isNaN(hashTimestamp) && hashTimestamp >= 0) {
-                         savedTimestamp = hashTimestamp; // Use timestamp from URL hash if valid
-                          console.log(`Overriding saved timestamp with value from URL hash: ${savedTimestamp} seconds.`);
+                         savedTimestamp = hashTimestamp;
                      }
-                 } else {
-                      console.log("No #timestamp hash found in URL.");
                  }
 
-                 // Function to save the current item's details to localStorage
-                 // Note: Timestamp saving is unreliable with Vidsrc due to cross-origin restrictions.
-                 // We'll save the *item* and the timestamp we *started* with.
                  function saveContinueWatchingState(timestampToSave = savedTimestamp) {
                      if (!movieData || !movieData.imdbID) {
                           console.error("Cannot save continue watching state: Missing movie data.");
@@ -249,17 +214,15 @@
                          type: movieType,
                          title: movieData.title || 'כותרת לא ידועה',
                          poster: movieData.poster && movieData.poster !== 'N/A' ? movieData.poster : '{{ url_for('static', filename='images/no_poster.png') }}',
-                         timestamp: timestampToSave // Save the timestamp (likely the initial one loaded or 0)
-                         // Real-time timestamp updates are NOT possible here with standard Vidsrc iframe.
+                         HebrewName: movieData.HebrewName,
+                         HebrewPoster: movieData.HebrewPoster,
+                         timestamp: timestampToSave
                      };
 
                      try {
                          localStorage.setItem(localStorageKey, JSON.stringify(continueWatchingItems));
-                         console.log(`Saved movie ${imdbId} state to localStorage (timestamp: ${timestampToSave}).`);
-                          // Optional: Update the timestamp display
                           const currentTimestampDiv = document.getElementById('current-timestamp');
                           if (currentTimestampDiv) {
-                               // Format timestamp for display (HH:MM:SS)
                                 const formatTime = (seconds) => {
                                      if (isNaN(seconds) || seconds < 0) return '00:00';
                                      const h = Math.floor(seconds / 3600);
@@ -267,7 +230,7 @@
                                      const s = Math.floor(seconds % 60);
                                      return [h, m, s]
                                          .map(v => v < 10 ? '0' + v : v)
-                                         .filter((v, i) => v !== '00' || i > 0) // Keep hours only if not 00
+                                         .filter((v, i) => v !== '00' || i > 0)
                                          .join(':');
                                 };
                                currentTimestampDiv.textContent = `התחלת צפייה ב: ${formatTime(timestampToSave)}`;
@@ -279,40 +242,27 @@
                      }
                  }
 
-                 // Save the initial state when the page loads (or reloads from CW)
                  saveContinueWatchingState(savedTimestamp);
 
-                 // Save the current state when the user leaves the page
                  window.addEventListener('beforeunload', () => {
-                      // saveContinueWatchingState(savedTimestamp); // This saves the *initial* timestamp, not current progress
-                      console.log(`Page unload event for movie ${imdbId}. Saving initial state.`);
                  });
 
             } else {
-                 // User not logged in, Continue Watching tracking disabled
-                 console.log("User not logged in. Continue Watching tracking disabled for main movie player.");
-                 // Hide the timestamp display if user is not logged in
                  const currentTimestampDiv = document.getElementById('current-timestamp');
                  if (currentTimestampDiv) currentTimestampDiv.style.display = 'none';
             }
 
-            // Construct the Vidsrc URL for the MAIN movie player
-            // Include timestamp ONLY if greater than 0 and user is logged in
             const vidsrcUrl = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}${(user && user.google_id && savedTimestamp > 0) ? '#timestamp=' + savedTimestamp : ''}`;
-            console.log(`Constructed Vidsrc URL for main movie: ${vidsrcUrl}`);
 
-            // Embed the iframe for the main movie
             const iframe = document.createElement('iframe');
             iframe.src = vidsrcUrl;
             iframe.allowFullscreen = true;
             iframe.setAttribute("allow", "autoplay; encrypted-media");
             iframe.setAttribute("referrerpolicy", "origin");
-            mainEmbedContainer.innerHTML = ''; // Clear any placeholder content
+            mainEmbedContainer.innerHTML = '';
             mainEmbedContainer.appendChild(iframe);
 
         } else {
-             console.error("Main movie embed container or IMDb ID not found. Cannot embed main video.");
-             // Show a message if main movie player cannot be embedded
              if(mainEmbedContainer){
                  const message = document.createElement('div');
                  message.className = 'no-video-message';
@@ -322,71 +272,50 @@
              }
         }
 
-        // --- 2. Watch Trailer Functionality ---
-        // This part remains largely the same as the previous step
         if (watchTrailerButton && imdbId) {
             watchTrailerButton.addEventListener('click', function() {
-                // Disable button and show loader while fetching
                 watchTrailerButton.disabled = true;
                 if (loader) loader.style.display = 'inline-block';
-                noTrailerMessageDiv.style.display = 'none'; // Hide previous messages
+                noTrailerMessageDiv.style.display = 'none';
                 trailerErrorMessageDiv.style.display = 'none';
 
-                console.log(`Fetching trailer for IMDb ID: ${imdbId}`);
-
-                // Call the API endpoint to get the trailer URL
                 fetch(`/api/get_trailer/${imdbId}`)
                     .then(response => {
-                        // Re-enable button and hide loader regardless of success/failure
                         watchTrailerButton.disabled = false;
                         if (loader) loader.style.display = 'none';
 
                         if (!response.ok) {
-                            // Handle HTTP errors (e.g., 404 if trailer not found)
-                            console.error(`HTTP error fetching trailer: ${response.status}`);
                             trailerErrorMessageDiv.textContent = `שגיאה באחזור הטריילר: סטטוס ${response.status}`;
                             trailerErrorMessageDiv.style.display = 'block';
-                            return null; // Signal error to the next then block
+                            return null;
                         }
                         return response.json();
                     })
                     .then(data => {
                         if (data && data.trailer_url) {
-                            console.log(`Opening trailer in new tab: ${data.trailer_url}`);
-                            // Open in a new tab
                             window.open(data.trailer_url, '_blank');
-
                         } else if (data && data.error) {
-                            console.log(`API reported error: ${data.error}`);
-                            noTrailerMessageDiv.textContent = `לא נמצא טריילר עבור סרט זה.`; // Show default "not found" message
+                            noTrailerMessageDiv.textContent = `לא נמצא טריילר עבור סרט זה.`;
                             noTrailerMessageDiv.style.display = 'block';
-
                         } else {
-                            // Handle unexpected response format
-                            console.error("Unexpected response format from trailer API:", data);
                             trailerErrorMessageDiv.textContent = 'שגיאה: קבלת תגובה לא צפויה.';
                             trailerErrorMessageDiv.style.display = 'block';
                         }
                     })
                     .catch(error => {
-                        // Handle network errors or issues before the response
-                        console.error("Fetch error:", error);
-                        watchTrailerButton.disabled = false; // Ensure button is re-enabled
+                        watchTrailerButton.disabled = false;
                         if (loader) loader.style.display = 'none';
                         trailerErrorMessageDiv.textContent = `שגיאה ברשת: ${error.message}`;
                         trailerErrorMessageDiv.style.display = 'block';
                     });
             });
         } else {
-            console.warn("Watch Trailer button or IMDb ID not found. Hiding trailer button.");
-            if(watchTrailerButton) watchTrailerButton.style.display = 'none'; // Hide button if no IMDb ID
-             // No need to show "Trailer not available" message automatically, as the main video is shown
+            if(watchTrailerButton) watchTrailerButton.style.display = 'none';
         }
 
 
-    }); // End DOMContentLoaded
+    });
 
-     // Search functionality (same as index.html, navigate back to index with search term) - outside DOMContentLoaded for access
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keypress', function(event) {
@@ -398,7 +327,6 @@
                 }
             }
         });
-         // Optional: search button click
         document.querySelector('.search-container button').addEventListener('click', function() {
              const term = searchInput.value.trim();
              if (term) {
