@@ -1446,10 +1446,6 @@ def get_recommendations(watched_ids, limit=15):
     return scored_candidates[:limit]
 
 
-
-
-
-
 @app.route('/api/recommendations', methods=['POST'])
 def api_recommendations():
     if not session.get('user'):
@@ -1525,6 +1521,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
