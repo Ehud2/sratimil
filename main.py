@@ -572,29 +572,30 @@ def set_language(lang_code):
 @app.route('/')
 def index():
     user = session.get('user')
-    current_language = session.get('language', 'he')
-    greeting = get_greeting(user, current_language)
+    current_language = session.get('language', 'he') # Get language from session, default to 'he'
+    greeting = get_greeting(user, current_language) # Pass language to greeting function again
 
-    movies_data = load_movies_data()
-    series_data_for_index = load_series_data_for_index()
+    # Load all content from Firebase for the index page
+    movies_data = load_movies_data() # Includes type: 'movie' and Hebrew fields if exist
+    series_data_for_index = load_series_data_for_index() # Includes type: 'series' and Hebrew fields if exist
 
-    # Calculate the counts for the footer
-    num_movies = len(movies_data)
-    num_series = len(series_data_for_index)
-
+    # Categorize them for standard display sections
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
+    # Pass the list of admin emails to the template if needed (though index.html might not use it)
+    # If admin status is only checked server-side, passing the list isn't strictly necessary here.
+    # However, keeping it consistent with previous logic of passing *something* related to admin.
 
+    # Pass the user object, categorized data, and current language to the template.
+    # The 'continue watching' logic is handled client-side using localStorage.
     return render_template('index.html',
                            greeting=greeting,
-                           categories=categories,
+                           categories=categories, # All categoried content for display and JS lookup
                            current_year=current_year,
                            user=user,
-                           admin_emails=ADMIN_EMAILS,
-                           current_language=current_language,
-                           num_movies=num_movies,  # Pass movie count
-                           num_series=num_series   # Pass series count
+                           admin_emails=ADMIN_EMAILS, # Pass the list of admin emails
+                           current_language=current_language # Pass the current language
                            )
 
 # --- Route for Single Movie Page ---
@@ -1520,8 +1521,6 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
-
-
 
 
 
