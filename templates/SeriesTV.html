@@ -1,16 +1,10 @@
-<!-- SeriesTV.html -->
-{# current_language is passed from Flask #}
 <!DOCTYPE html>
 <html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {# Use conditional title #}
     <title>{{ 'כל הסדרות' if current_language == 'he' else 'All Series' }}</title>
-    {# Link the main style sheet first for shared styles like header, footer, etc. #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {# Link the specific movie page style sheet after the main one (grid styles are useful) #}
-    {# This file now also includes styles for the load more button and mobile adjustments #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movies.css') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,14 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
-    {# Included loading spinner styles directly in style.css #}
-
-    {# REMOVED INLINE STYLES - Moved to movies.css #}
-    {# <style> ... </style> #}
 
 </head>
 <body>
-    <!-- Loading Spinner - Copy from movies.html -->
     <div id="loading-spinner">
         <div class="spinner">
             {% if user and user.picture %}
@@ -43,25 +32,20 @@
         </p>
     </div>
 
-    <!-- Header - Copy from movies.html, ADDED Nav Toggle -->
     <header class="site-header">
         <div class="container header-content">
 
-             {# --- Nav Toggle Button (for Mobile) - Copy from movies.html --- #}
              <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
-                 <i class="fas fa-bars"></i> {# Initial icon #}
+                 <i class="fas fa-bars"></i>
              </button>
 
              <div class="auth-container">
                  {% if user %}
                      <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
-                         {# Ensure this path is correct for your default image if user.picture is missing #}
                          <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
                      </a>
                  {% else %}
                      <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
-                          {# Replace the base64 string with your desired image URL or placeholder #}
-                          {# Use url_for for your static image #}
                           <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
                      </a>
                  {% endif %}
@@ -72,7 +56,6 @@
                <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
             </div>
 
-             {# --- Add Language Switcher Here (after Search) - Copy from movies.html --- #}
              <div class="language-switcher">
                  <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
                       <i class="fas fa-globe"></i>
@@ -86,7 +69,6 @@
 
 
             <nav class="main-nav">
-                {# Update link text and aria-label based on language #}
                 <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
                 <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
                 <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
@@ -98,7 +80,6 @@
         </div>
     </header>
 
-    <!-- Flash Messages - Copy from movies.html -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="container flash-messages">
@@ -112,66 +93,42 @@
         {% endif %}
     {% endwith %}
 
-    {# Reusing the main content structure and grid class #}
-    <main class="container main-content movies-page-content"> {# Use same margin class #}
-        <div class="page-heading"> {# Use same heading class #}
-            {# Update heading based on language #}
-            <h1>{{ 'כל הסדרות' if current_language == 'he' else 'All Series' }}</h1> {# Changed Heading #}
-            <p>{{ 'צפה בכל הסדרות הזמינות באתר.' if current_language == 'he' else 'View all available series on the site.' }}</p> {# Changed description #}
+    <main class="container main-content movies-page-content">
+        <div class="page-heading">
+            <h1>{{ 'כל הסדרות' if current_language == 'he' else 'All Series' }}</h1>
+            <p>{{ 'צפה בכל הסדרות הזמינות באתר.' if current_language == 'he' else 'View all available series on the site.' }}</p>
         </div>
 
-        {# Filters are not implemented on this page, so skip the filter container #}
-        {# <!-- Filter Container ... --> #}
-
-
-        {# Container for the series grid - Reusing the movies grid class #}
-        <div class="all-movies-grid"> {# Reusing the same grid layout class #}
-            {# Iterate through the 'series' dictionary passed from main.py #}
-            {# Changed variable name from 'movies' to 'series' #}
+        <div class="all-movies-grid">
             {% for imdb_id, item in series.items() %}
-                 {# Ensure item has basic properties needed for display and linking #}
                  {% if item and item.get('imdbID') and (item.get('title') or item.get('HebrewName')) %}
-                     {# Determine display title and poster based on current language #}
                      {% set display_title = item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) %}
                      {% set display_poster = item.get('HebrewPoster', item.get('poster', '')) if current_language == 'he' else item.get('poster', item.get('HebrewPoster', '')) %}
                      {% set alt_text = item.get('HebrewName', item.get('title', 'Unknown Title')) if current_language == 'he' else item.get('title', item.get('HebrewName', 'Unknown Title')) %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
-
-                     {# Wrap card in an anchor tag linking to the series details page #}
-                     {# Add data attributes for search with both languages #}
-                     {# The 'hidden-item-by-pagination' class will be added by JS initially #}
                     <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link catalog-item hidden-item-by-pagination" data-id="{{ item.imdbID }}" data-type="series" data-title-he="{{ item.get('HebrewName', '') | lower }}" data-title-en="{{ item.get('title', '') | lower }}">
-                        {# Use the same item-card structure as index.html/movies.html #}
                         <div class="item-card" tabindex="0">
                             <div class="card-image-container">
-                                {# Use determined poster, fall back to default #}
                                 <img src="{{ display_poster if display_poster and display_poster != 'N/A' else default_poster_url }}" alt="{{ alt_text }}" loading="lazy">
-                                {# No rank number on this page #}
                                 <div class="card-overlay">
-                                     {# The play button now links to the series details page #}
                                      <button class="play-button" aria-label="{{ ('צפה ב' + display_title) if current_language == 'he' else ('Watch ' + display_title) }}"><i class="fas fa-play"></i></button>
                                     <h3 class="card-title">
-                                         {# Use determined display title #}
                                          {{ display_title if display_title else ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
                                     </h3>
                                     <div class="card-actions">
-                                        {# Add to list button - pass both Hebrew and English details #}
-                                        <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.imdbID }}" data-type="series" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button>
-                                         {# The info button also links to the series details page #}
-                                        <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
+                                        <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.imdbID }}" data-type="series" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i></button>
+                                        <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </a> {# End of anchor tag wrapper #}
+                    </a>
                 {% endif %}
             {% endfor %}
 
-            {# Add the "Load More" button/area directly inside the grid #}
-            {# It will be styled to look like a card and occupy a grid cell #}
              <div id="loadMoreButton" class="load-more-button" role="button" aria-label="{{ 'טען עוד סדרות' if current_language == 'he' else 'Load More Series' }}" tabindex="0">
-                 <i class="fas fa-sync-alt"></i> {# Or another suitable icon like fa-arrow-down #}
+                 <i class="fas fa-sync-alt"></i>
                  <span>{{ 'טען עוד' if current_language == 'he' else 'Load More' }}</span>
              </div>
 
@@ -187,7 +144,6 @@
         </div>
     </main>
 
-    <!-- Footer - Copy from movies.html -->
     <footer class="site-footer-bottom">
         <div class="container">
              <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
@@ -195,18 +151,16 @@
     </footer>
 
     <script>
-        // Pass current_language and items_per_page from Flask to JavaScript
-        const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
+        const currentLanguage = {{ current_language | tojson }};
         const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
-        const itemsPerPage = {{ items_per_page | tojson }}; // Get items per page from Flask
+        const itemsPerPage = {{ items_per_page | tojson }};
 
-        let currentlyDisplayedCount = 0; // Keep track of how many items are displayed *by pagination*
+        let currentlyDisplayedCount = 0;
 
-        // JavaScript to hide the loading spinner once the page is loaded (Copy from movies.html)
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded fired on series page."); // Debug log
+            console.log("DOMContentLoaded fired on series page.");
             const spinner = document.getElementById('loading-spinner');
-            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+            const visualHideDelay = 200;
 
             if (spinner) {
                  console.log("Spinner element found, attempting to hide.");
@@ -219,7 +173,6 @@
                      }
                 });
                  setTimeout(() => {
-                     // Fallback in case transitionend doesn't fire
                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
                           spinner.style.display = 'none';
                           console.log("Spinner hidden via timeout fallback on series page.");
@@ -229,50 +182,44 @@
                 console.warn("Spinner element #loading-spinner not found on series page.");
             }
 
-            // --- Show spinner on language switcher click (Copy from movies.html) ---
             const languageSwitcherLink = document.querySelector('.language-switcher a');
             if (languageSwitcherLink) {
                  languageSwitcherLink.addEventListener('click', function(event) {
                       const spinner = document.getElementById('loading-spinner');
                       if (spinner) {
                           spinner.classList.remove('hidden');
-                          spinner.style.display = 'flex'; // Ensure it's flex for centering
+                          spinner.style.display = 'flex';
                            console.log("Spinner shown by language switcher click.");
                       }
                  });
             }
 
-            // --- Mobile Nav Toggle Functionality (Copy from movies.html) ---
             const navToggle = document.querySelector('.nav-toggle');
             const mainNav = document.querySelector('.main-nav');
-            const body = document.body; // Or document.documentElement for html
+            const body = document.body;
 
             if (navToggle && mainNav) {
                  navToggle.addEventListener('click', function() {
                       const isOpen = mainNav.classList.toggle('nav-open');
-                      // Also toggle a class on the body to prevent background scroll
                       body.classList.toggle('nav-open');
 
-                      // Change icon
                       const icon = navToggle.querySelector('i');
                       if (isOpen) {
                            icon.classList.remove('fa-bars');
-                           icon.classList.add('fa-times'); // Close icon
+                           icon.classList.add('fa-times');
                            navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'סגור תפריט ניווט' : 'Close Navigation Menu');
                       } else {
                            icon.classList.remove('fa-times');
-                           icon.classList.add('fa-bars'); // Hamburger icon
+                           icon.classList.add('fa-bars');
                            navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
                       }
                  });
 
-                 // Close nav when a link inside is clicked (optional, but good UX)
                  mainNav.querySelectorAll('a').forEach(link => {
                      link.addEventListener('click', function() {
                           if (mainNav.classList.contains('nav-open')) {
                                mainNav.classList.remove('nav-open');
                                body.classList.remove('nav-open');
-                               // Reset icon
                                const icon = navToggle.querySelector('i');
                                icon.classList.remove('fa-times');
                                icon.classList.add('fa-bars');
@@ -281,104 +228,78 @@
                      });
                  });
             } else {
-                 console.warn("Nav toggle or main nav not found."); // Debug log
+                 console.warn("Nav toggle or main nav not found.");
             }
-
-
-            // --- Pagination and Search Filter Functionality ---
 
             const searchInput = document.getElementById('searchInput');
             const noResultsMessage = document.getElementById('noResultsMessage');
-            // Select ALL series card links once (excluding the load more button)
             const allItemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item');
-            const loadMoreButton = document.getElementById('loadMoreButton'); // Select the button
+            const loadMoreButton = document.getElementById('loadMoreButton');
 
             console.log(`Found ${allItemCardLinks.length} series items in the DOM.`);
 
-            // Function to show a range of items
             function showItems(startIndex, endIndex) {
                  let itemsShownInBatch = 0;
                  for (let i = startIndex; i < endIndex && i < allItemCardLinks.length; i++) {
-                      // Only show items that are NOT hidden by the search filter
-                      // This check prevents pagination from showing items that shouldn't be visible based on search
-                      if (allItemCardLinks[i].style.display !== 'none') { // Check if the item is currently hidden by search
-                           allItemCardLinks[i].classList.remove('hidden-item-by-pagination'); // Make visible by removing pagination hidden class
+                      if (allItemCardLinks[i].style.display !== 'none') {
+                           allItemCardLinks[i].classList.remove('hidden-item-by-pagination');
                             itemsShownInBatch++;
                       }
                  }
                  console.log(`Attempted to display batch from index ${startIndex} to ${endIndex}. Shown in batch: ${itemsShownInBatch}`);
-                 currentlyDisplayedCount += itemsShownInBatch; // Update the global count based on items actually shown
+                 currentlyDisplayedCount += itemsShownInBatch;
             }
 
-            // Function to hide all series items for pagination reset
             function hideAllSeriesItemsForPagination() {
                  allItemCardLinks.forEach(link => {
-                      // Only hide items if they are NOT already hidden by the search filter
-                      // This ensures search-hidden items remain hidden
                       if (link.style.display !== 'none') {
-                           link.classList.add('hidden-item-by-pagination'); // Hide by adding pagination hidden class
+                           link.classList.add('hidden-item-by-pagination');
                       }
                  });
-                 currentlyDisplayedCount = 0; // Reset count when hiding all for pagination
+                 currentlyDisplayedCount = 0;
                  console.log("Hid all series items for pagination.");
             }
 
 
-            // Function to update the visibility of the Load More button
             function updateLoadMoreButtonVisibility() {
                  const isSearching = searchInput.value.trim() !== '';
-                 // Count how many items are currently *visible* (not hidden by search AND not hidden by pagination)
                  const visibleItemsCount = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none' && !link.classList.contains('hidden-item-by-pagination')).length;
-                 // Count total items *not* hidden by search
                  const totalSearchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none').length;
 
-
-                 // Hide the button if searching OR if all search-visible items are currently displayed by pagination
                  if (isSearching || currentlyDisplayedCount >= totalSearchVisibleItems) {
                       if (loadMoreButton) loadMoreButton.style.display = 'none';
                       console.log(`Hide Load More: Searching=${isSearching}, currentlyDisplayedCount=${currentlyDisplayedCount}, totalSearchVisibleItems=${totalSearchVisibleItems}`);
                  } else {
-                      if (loadMoreButton) loadMoreButton.style.display = ''; // Restore display
+                      if (loadMoreButton) loadMoreButton.style.display = '';
                        console.log(`Show Load More: currentlyDisplayedCount=${currentlyDisplayedCount}, totalSearchVisibleItems=${totalSearchVisibleItems}`);
                  }
             }
 
-
-            // --- Initial Load (Pagination) ---
-            // Add the initial 'hidden-item-by-pagination' class to all items initially
-            hideAllSeriesItemsForPagination(); // This also resets currentlyDisplayedCount
-            // Display the first batch of items
+            hideAllSeriesItemsForPagination();
             showItems(0, itemsPerPage);
-            // Update the Load More button visibility
             updateLoadMoreButtonVisibility();
 
-
-            // --- Load More Button Click Handler ---
             if (loadMoreButton) {
                  loadMoreButton.addEventListener('click', function() {
-                      // Calculate the index to start showing from.
-                      // We need to find the index *among the items not hidden by search*
                       const searchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none');
-                      const nextBatchStartIndexInVisibleList = currentlyDisplayedCount; // Index within the search-visible list
+                      const nextBatchStartIndexInVisibleList = currentlyDisplayedCount;
                       const nextBatchEndIndexInVisibleList = currentlyDisplayedCount + itemsPerPage;
 
                       let itemsShownInBatch = 0;
                       for (let i = nextBatchStartIndexInVisibleList; i < nextBatchEndIndexInVisibleList && i < searchVisibleItems.length; i++) {
-                           searchVisibleItems[i].classList.remove('hidden-item-by-pagination'); // Make visible
+                           searchVisibleItems[i].classList.remove('hidden-item-by-pagination');
                            itemsShownInBatch++;
                       }
 
-                      currentlyDisplayedCount += itemsShownInBatch; // Update the global count
+                      currentlyDisplayedCount += itemsShownInBatch;
 
-                      // Check if the button should be hidden *after* showing the new batch
                       updateLoadMoreButtonVisibility();
                  });
 
-                 // Also handle keyboard activation for accessibility
                  loadMoreButton.addEventListener('keypress', function(event) {
-                     if (event.key === 'Enter' || event.key === ' ') { // Enter or Space key
-                         event.preventDefault(); // Prevent default scroll/action
-                         loadMoreButton.click(); // Trigger the click handler
+                     if (event.key === 'Enter' || event.key === ' ') {
+                         event.preventDefault();
+                         loadMoreButton.click();
                      }
                  });
 
@@ -386,62 +307,50 @@
                  console.warn("Load More button #loadMoreButton not found on series page.");
             }
 
-
-            // --- Search Filter Functionality ---
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase().trim(); // Trim whitespace
+                    const searchTerm = this.value.toLowerCase().trim();
 
-                    let searchMatchCount = 0; // Count how many items match the search
+                    let searchMatchCount = 0;
 
-                    // Iterate through ALL series items
                     allItemCardLinks.forEach(link => {
-                         // Get title based on current language from data attributes
                          const titleHe = link.dataset.titleHe || '';
                          const titleEn = link.dataset.titleEn || '';
 
-                         // Check if the item matches the search term
                          const matchesSearch = searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm);
 
                          if (matchesSearch) {
-                             link.style.display = ''; // Show the item via direct style manipulation
+                             link.style.display = '';
                              searchMatchCount++;
                          } else {
-                             link.style.display = 'none'; // Hide the item via direct style manipulation
+                             link.style.display = 'none';
                          }
                     });
 
-                    // Update the "No results found" message based on search results
                     if (noResultsMessage) {
                          noResultsMessage.style.display = searchMatchCount === 0 ? 'block' : 'none';
                     }
 
-                     // --- Re-apply Pagination after Search ---
-                     // Regardless of search term (empty or not), reset pagination state
-                     hideAllSeriesItemsForPagination(); // This hides all items with the pagination class and resets currentlyDisplayedCount
-                     // Now, show the first batch *among the items currently visible by search*
+                     hideAllSeriesItemsForPagination();
                      const searchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none');
                      let itemsShownInBatch = 0;
                      for(let i = 0; i < itemsPerPage && i < searchVisibleItems.length; i++) {
-                          searchVisibleItems[i].classList.remove('hidden-item-by-pagination'); // Make visible via pagination
+                          searchVisibleItems[i].classList.remove('hidden-item-by-pagination');
                           itemsShownInBatch++;
                      }
-                     currentlyDisplayedCount = itemsShownInBatch; // Update count based on what was just shown
+                     currentlyDisplayedCount = itemsShownInBatch;
 
-                     // Update Load More button visibility based on the new state
                      updateLoadMoreButtonVisibility();
 
                 });
 
-                 // Handle search button click (triggers the input event)
                  document.querySelector('.search-container button').addEventListener('click', function() {
                       searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                  });
 
-                 // Handle Enter key on search input
                  searchInput.addEventListener('keypress', function(event) {
                      if (event.key === 'Enter') {
-                         event.preventDefault(); // Prevent default form submission/page reload
+                         event.preventDefault();
                           searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                      }
                  });
@@ -450,7 +359,7 @@
                  console.warn("Search input #searchInput not found on series page.");
             }
 
-        }); // End DOMContentLoaded
+        });
     </script>
 </body>
 </html>
