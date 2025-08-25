@@ -134,29 +134,22 @@ def load_movies_data():
         return {}
 
 def load_series_data_for_index():
-    """Loads basic series data for index/all_series display from Firebase, adding 'type: series'.
-       Excludes nested Season/Episode data for performance."""
     try:
-        # We need top-level series info for the index/all_series card
-        # Fetch all top-level series data first
         ref = db.reference('/Series')
         series_dict = ref.get()
 
-        series_for_display = {} # Use a different name to avoid confusion with old logic
+        series_for_display = {}
         if series_dict:
             for imdb_id, details in series_dict.items():
-                 # Only include basic details for the card
-                 # Explicitly exclude the 'Seasons' key if it exists
                 if isinstance(details, dict):
                     basic_details = {
                         'imdbID': imdb_id,
                         'title': details.get('title', 'כותרת לא ידועה'),
                         'poster': details.get('poster', 'N/A'),
-                        'HebrewName': details.get('HebrewName'), # Include Hebrew name
-                        'HebrewPoster': details.get('HebrewPoster'), # Include Hebrew poster
-                        'category': details.get('category', 'ללא'), # Include category
-                        'type': 'series', # Add type identifier
-                         # Do NOT include 'Seasons' or other large nested structures here
+                        'HebrewName': details.get('HebrewName'),
+                        'HebrewPoster': details.get('HebrewPoster'),
+                        'category': details.get('category', 'ללא'),
+                        'type': 'series',
                     }
                     series_for_display[imdb_id] = basic_details
                 else:
@@ -167,6 +160,7 @@ def load_series_data_for_index():
     except Exception as e:
         logging.error(f"Error loading basic series data for display from Firebase: {e}", exc_info=True)
         return {}
+
 
 
 def load_series_list_for_add_page():
@@ -1109,32 +1103,27 @@ def all_movies():
 
 
 
-@app.route('/series') # Define the new route
+@app.route('/series')
 def all_series():
-    """Displays all series (basic details) from Firebase in a grid with pagination."""
     user = session.get('user')
-    current_language = session.get('language', 'he') # Get language from session, default to 'he'
+    current_language = session.get('language', 'he')
     current_year = datetime.datetime.utcnow().year
 
-    # Load ALL basic series data from Firebase (excluding seasons/episodes)
-    all_series_data = load_series_data_for_index() # This function is now optimized
+    all_series_data = load_series_data_for_index()
 
-    # Define how many items to show per page initially and on "Load More"
-    items_per_page = 15 # You can adjust this number
+    items_per_page = 15
 
-    # Log how many series were loaded (basic details)
     logging.info(f"Rendering all_series page with {len(all_series_data)} series (basic details). Initial {items_per_page} items will be shown.")
 
-
-    # Render the new template, passing the series data, items_per_page, and current language
     return render_template('SeriesTV.html',
-                           series=all_series_data, # Pass all series basic data to the template
+                           series=all_series_data,
                            user=user,
                            current_year=current_year,
                            admin_emails=ADMIN_EMAILS,
-                           current_language=current_language, # Pass the current language
-                           items_per_page=items_per_page # Pass the number of items per page
+                           current_language=current_language,
+                           items_per_page=items_per_page
                            )
+
 
 
 WEBSITE_URL = "https://freemoviesil.onrender.com/"  # כתובת האתר שלך
@@ -1520,6 +1509,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
