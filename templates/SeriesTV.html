@@ -102,9 +102,15 @@
         <div class="all-movies-grid">
             {% for imdb_id, item in series.items() %}
                  {% if item and item.get('imdbID') and (item.get('title') or item.get('HebrewName')) %}
-                     {% set display_title = item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) %}
-                     {% set display_poster = item.get('HebrewPoster', item.get('poster', '')) if current_language == 'he' else item.get('poster', item.get('HebrewPoster', '')) %}
-                     {% set alt_text = item.get('HebrewName', item.get('title', 'Unknown Title')) if current_language == 'he' else item.get('title', item.get('HebrewName', 'Unknown Title')) %}
+                     {% if current_language == 'he' %}
+                         {% set display_title = item.get('HebrewName') or item.get('title') or '' %}
+                         {% set display_poster = item.get('HebrewPoster') or item.get('poster') or '' %}
+                         {% set alt_text = item.get('HebrewName') or item.get('title') or 'Unknown Title' %}
+                     {% else %}
+                         {% set display_title = item.get('title') or item.get('HebrewName') or '' %}
+                         {% set display_poster = item.get('poster') or item.get('HebrewPoster') or '' %}
+                         {% set alt_text = item.get('title') or item.get('HebrewName') or 'Unknown Title' %}
+                     {% endif %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
                     <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}" class="item-card-link catalog-item hidden-item-by-pagination" data-id="{{ item.imdbID }}" data-type="series" data-title-he="{{ item.get('HebrewName', '') | lower }}" data-title-en="{{ item.get('title', '') | lower }}">
@@ -158,28 +164,22 @@
         let currentlyDisplayedCount = 0;
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded fired on series page.");
             const spinner = document.getElementById('loading-spinner');
             const visualHideDelay = 200;
 
             if (spinner) {
-                 console.log("Spinner element found, attempting to hide.");
                  spinner.classList.add('hidden');
                  spinner.addEventListener('transitionend', function handler(event) {
                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                          spinner.style.display = 'none';
-                         console.log("Spinner hidden via transitionend on series page.");
                          spinner.removeEventListener('transitionend', handler);
                      }
                 });
                  setTimeout(() => {
                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
                           spinner.style.display = 'none';
-                          console.log("Spinner hidden via timeout fallback on series page.");
                      }
                  }, visualHideDelay + 100);
-            } else {
-                console.warn("Spinner element #loading-spinner not found on series page.");
             }
 
             const languageSwitcherLink = document.querySelector('.language-switcher a');
@@ -189,7 +189,6 @@
                       if (spinner) {
                           spinner.classList.remove('hidden');
                           spinner.style.display = 'flex';
-                           console.log("Spinner shown by language switcher click.");
                       }
                  });
             }
@@ -227,16 +226,12 @@
                           }
                      });
                  });
-            } else {
-                 console.warn("Nav toggle or main nav not found.");
             }
 
             const searchInput = document.getElementById('searchInput');
             const noResultsMessage = document.getElementById('noResultsMessage');
             const allItemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item');
             const loadMoreButton = document.getElementById('loadMoreButton');
-
-            console.log(`Found ${allItemCardLinks.length} series items in the DOM.`);
 
             function showItems(startIndex, endIndex) {
                  let itemsShownInBatch = 0;
@@ -246,7 +241,6 @@
                             itemsShownInBatch++;
                       }
                  }
-                 console.log(`Attempted to display batch from index ${startIndex} to ${endIndex}. Shown in batch: ${itemsShownInBatch}`);
                  currentlyDisplayedCount += itemsShownInBatch;
             }
 
@@ -257,21 +251,17 @@
                       }
                  });
                  currentlyDisplayedCount = 0;
-                 console.log("Hid all series items for pagination.");
             }
 
 
             function updateLoadMoreButtonVisibility() {
                  const isSearching = searchInput.value.trim() !== '';
-                 const visibleItemsCount = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none' && !link.classList.contains('hidden-item-by-pagination')).length;
                  const totalSearchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none').length;
 
                  if (isSearching || currentlyDisplayedCount >= totalSearchVisibleItems) {
                       if (loadMoreButton) loadMoreButton.style.display = 'none';
-                      console.log(`Hide Load More: Searching=${isSearching}, currentlyDisplayedCount=${currentlyDisplayedCount}, totalSearchVisibleItems=${totalSearchVisibleItems}`);
                  } else {
                       if (loadMoreButton) loadMoreButton.style.display = '';
-                       console.log(`Show Load More: currentlyDisplayedCount=${currentlyDisplayedCount}, totalSearchVisibleItems=${totalSearchVisibleItems}`);
                  }
             }
 
@@ -303,20 +293,16 @@
                      }
                  });
 
-            } else {
-                 console.warn("Load More button #loadMoreButton not found on series page.");
             }
 
             if (searchInput) {
                 searchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase().trim();
-
                     let searchMatchCount = 0;
 
                     allItemCardLinks.forEach(link => {
                          const titleHe = link.dataset.titleHe || '';
                          const titleEn = link.dataset.titleEn || '';
-
                          const matchesSearch = searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm);
 
                          if (matchesSearch) {
@@ -339,9 +325,7 @@
                           itemsShownInBatch++;
                      }
                      currentlyDisplayedCount = itemsShownInBatch;
-
                      updateLoadMoreButtonVisibility();
-
                 });
 
                  document.querySelector('.search-container button').addEventListener('click', function() {
@@ -354,11 +338,7 @@
                           searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                      }
                  });
-
-            } else {
-                 console.warn("Search input #searchInput not found on series page.");
             }
-
         });
     </script>
 </body>
