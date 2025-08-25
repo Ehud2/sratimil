@@ -134,6 +134,8 @@ def load_movies_data():
         return {}
 
 def load_series_data_for_index():
+    """Loads basic series data for index/all_series display from Firebase, adding 'type: series'.
+       Excludes nested Season/Episode data for performance."""
     try:
         ref = db.reference('/Series')
         series_dict = ref.get()
@@ -150,6 +152,10 @@ def load_series_data_for_index():
                         'HebrewPoster': details.get('HebrewPoster'),
                         'category': details.get('category', 'ללא'),
                         'type': 'series',
+                        # Add fields required for filtering
+                        'genre': details.get('genre', 'N/A'),
+                        'imdbRating': details.get('imdbRating', 'N/A'),
+                        'year': details.get('year', 'N/A')
                     }
                     series_for_display[imdb_id] = basic_details
                 else:
@@ -1509,6 +1515,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
