@@ -61,6 +61,41 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .movie-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Assistant', sans-serif;
+            color: #ffffff;
+            background-color: var(--primary-accent-color);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .action-button.group {
+            background-color: #5865F2;
+        }
+
     </style>
 </head>
 <body>
