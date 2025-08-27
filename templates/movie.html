@@ -61,6 +61,25 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .watch-group-button {
+            background-color: #2ecc71;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s ease;
+        }
+        .watch-group-button:hover {
+            background-color: #27ae60;
+        }
     </style>
 </head>
 <body>
@@ -125,6 +144,11 @@
                      <i class="fas fa-play"></i> צפייה בטריילר
                      <span class="loader"></span>
                  </button>
+                 {% if user %}
+                 <a href="{{ url_for('create_group', imdb_id=movie.imdbID) }}" class="watch-group-button">
+                    <i class="fas fa-users"></i> יצירת קבוצה
+                 </a>
+                 {% endif %}
             </div>
 
             <div id="no-trailer-message" class="no-video-message" style="display: none;">טריילר לא נמצא.</div>
