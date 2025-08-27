@@ -275,6 +275,55 @@ def get_greeting(user=None, language='he'): # Added language parameter back
         return f"{greeting_text} {'אורח' if language == 'he' else 'Guest'}"
 
 
+
+
+def categorize_content(movies_data, series_data):
+    categorized_items = {}
+    for cat in CATEGORIES:
+        if cat != "ללא":
+            categorized_items[cat] = []
+
+    all_items = {}
+    if movies_data:
+        all_items.update(movies_data)
+    if series_data:
+        all_items.update(series_data)
+
+    if not all_items:
+        logging.info("No movies or series data to categorize.")
+        return {cat: [] for cat in CATEGORIES if cat != "ללא"}
+
+    for imdb_id, item_details in all_items.items():
+        if not isinstance(item_details, dict):
+            logging.warning(f"Skipping non-dict entry in all_items: {imdb_id}")
+            continue
+
+        title = item_details.get('title', 'כותרת לא ידועה')
+        poster = item_details.get('poster', 'N/A')
+        hebrew_name = item_details.get('HebrewName')
+        hebrew_poster = item_details.get('HebrewPoster')
+        category = item_details.get('category', 'ללא')
+        item_type = item_details.get('type')
+
+        if category in CATEGORIES and category != "ללא" and item_type in ['movie', 'series']:
+             categorized_items[category].append({
+                "id": imdb_id,
+                "title": title,
+                "poster": poster,
+                "HebrewName": hebrew_name,
+                "HebrewPoster": hebrew_poster,
+                "type": item_type
+             })
+        elif category == "ללא":
+            pass
+        else:
+             logging.warning(f"Item {imdb_id} ('{title}') has invalid/unknown category '{category}' or type '{item_type}'. Skipping index display.")
+             pass
+
+    return categorized_items
+
+
+
 # --- OMDB API Functions ---
 OMDB_BASE_URL = 'http://www.omdbapi.com/'
 
@@ -1486,6 +1535,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
