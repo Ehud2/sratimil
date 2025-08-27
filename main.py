@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 import datetime
 import traceback
 import os
@@ -1768,6 +1771,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
