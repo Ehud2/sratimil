@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>צפייה קבוצתית: {{ movie.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stream.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
+    <meta name="referrer" content="origin">
+</head>
+<body>
+    <div class="stream-container">
+        <div class="video-section">
+            <div class="video-header">
+                <h1>צופים כעת ב: {{ movie.HebrewName or movie.title }}</h1>
+                <a href="{{ url_for('index') }}" class="back-button"><i class="fas fa-arrow-right"></i> חזרה לאתר</a>
+            </div>
+            <div class="vidsrc-embed-container" id="embed-container">
+                <iframe src="https://vidsrc.xyz/embed/movie?imdb={{ movie.imdbID }}" allowfullscreen allow="autoplay; encrypted-media" referrerpolicy="origin"></iframe>
+            </div>
+            <div class="sync-info">
+                 <p>כדי לסנכרן את הצפייה, מומלץ שכל המשתתפים יתחילו את הסרט באותו הזמן. השתמשו בצ'אט כדי לתאם!</p>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="participants-widget">
+                <h3>משתתפים (<span id="participant-count">0</span>)</h3>
+                <ul id="participants-list">
+                </ul>
+                <button id="invite-button"><i class="fas fa-user-plus"></i> הזמנת משתתפים</button>
+            </div>
+
+            <div class="chat-widget">
+                <h3>צ'אט קבוצתי</h3>
+                <div id="chat-messages" class="chat-messages">
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="הקלד הודעה..." autocomplete="off">
+                    <button id="send-chat-button"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="context-menu" class="context-menu">
+        <ul>
+            <li id="promote-host-option"><i class="fas fa-crown"></i> הפוך למנהל</li>
+            <li id="kick-user-option"><i class="fas fa-user-slash"></i> הוצא מהקבוצה</li>
+        </ul>
+    </div>
+    
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUser = {{ user | tojson }};
+            const groupId = "{{ group_id }}";
+
+            if (!currentUser || !currentUser.google_id) {
+                alert("עליך להתחבר למשתמש כדי להצטרף לקבוצת צפייה.");
+                window.location.href = "{{ url_for('index') }}";
+                return;
+            }
+
+            const socket = io();
+
+            const participantsList = document.getElementById('participants-list');
+            const participantCount = document.getElementById('participant-count');
+            const chatMessages = document.getElementById('chat-messages');
+            const chatInput = document.getElementById('chat-input');
+            const sendChatButton = document.getElementById('send-chat-button');
+            const inviteButton = document.getElementById('invite-button');
+            const contextMenu = document.getElementById('context-menu');
+            
+            let contextMenuTargetUserId = null;
+
+            socket.on('connect', () => {
+                socket.emit('join', { group_id: groupId });
+            });
+
+            socket.on('group_update', (groupData) => {
+                updateParticipants(groupData.participants, groupData.host_id);
+                updateChat(groupData.chat);
+            });
+
+            socket.on('kicked', (data) => {
+                alert(data.reason || "הוצאת מהקבוצה.");
+                window.location.href = "{{ url_for('index') }}";
+            });
+
+            socket.on('group_dissolved', (data) => {
+                alert(data.reason || "הקבוצה נסגרה.");
+                window.location.href = "{{ url_for('index') }}";
+            });
+            
+            function updateParticipants(participants, hostId) {
+                participantsList.innerHTML = '';
+                const participantIds = Object.keys(participants);
+                participantCount.textContent = participantIds.length;
+                
+                const sortedIds = participantIds.sort((a, b) => {
+                    if (a === hostId) return -1;
+                    if (b === hostId) return 1;
+                    return 0;
+                });
+
+                sortedIds.forEach(userId => {
+                    const participant = participants[userId];
+                    const li = document.createElement('li');
+                    li.dataset.userId = userId;
+
+                    const img = document.createElement('img');
+                    img.src = participant.picture;
+                    img.alt = participant.name;
+                    li.appendChild(img);
+                    
+                    const span = document.createElement('span');
+                    span.textContent = participant.name;
+                    li.appendChild(span);
+                    
+                    if (userId === hostId) {
+                        const crown = document.createElement('i');
+                        crown.className = 'fas fa-crown host-icon';
+                        li.appendChild(crown);
+                    }
+                    
+                    if (currentUser.google_id === hostId && currentUser.google_id !== userId) {
+                        li.classList.add('clickable');
+                        li.addEventListener('click', (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            contextMenuTargetUserId = userId;
+                            contextMenu.style.top = `${event.clientY}px`;
+                            contextMenu.style.left = `${event.clientX - contextMenu.offsetWidth}px`;
+                            contextMenu.classList.add('active');
+                        });
+                    }
+                    participantsList.appendChild(li);
+                });
+            }
+
+            function updateChat(chatHistory) {
+                chatMessages.innerHTML = '';
+                chatHistory.forEach(msg => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.classList.add('chat-message');
+                    if (msg.sender_id === currentUser.google_id) {
+                        msgDiv.classList.add('my-message');
+                    }
+                    
+                    const senderSpan = document.createElement('strong');
+                    senderSpan.textContent = msg.sender_name;
+                    
+                    const textP = document.createElement('p');
+                    textP.textContent = msg.message;
+                    
+                    msgDiv.appendChild(senderSpan);
+                    msgDiv.appendChild(textP);
+                    chatMessages.appendChild(msgDiv);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    socket.emit('send_message', { group_id: groupId, message: message });
+                    chatInput.value = '';
+                }
+            }
+
+            sendChatButton.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            inviteButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('קישור ההזמנה הועתק!');
+                }).catch(err => {
+                    alert('שגיאה בהעתקת הקישור.');
+                });
+            });
+
+            document.getElementById('promote-host-option').addEventListener('click', () => {
+                if (contextMenuTargetUserId) {
+                    socket.emit('promote_host', { group_id: groupId, user_id: contextMenuTargetUserId });
+                }
+                contextMenu.classList.remove('active');
+            });
+
+            document.getElementById('kick-user-option').addEventListener('click', () => {
+                if (contextMenuTargetUserId) {
+                    socket.emit('kick_user', { group_id: groupId, user_id: contextMenuTargetUserId });
+                }
+                contextMenu.classList.remove('active');
+            });
+
+            window.addEventListener('click', () => {
+                if (contextMenu.classList.contains('active')) {
+                    contextMenu.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
