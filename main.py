@@ -1588,6 +1588,10 @@ def stream_page(group_id):
                            movie=movie_info,
                            current_year=datetime.datetime.utcnow().year)
 
+
+connected_users = {}
+
+
 @socketio.on('join')
 def on_join(data):
     user = session.get('user')
@@ -1600,10 +1604,12 @@ def on_join(data):
 
     if not group:
         return
+    
+    connected_users[request.sid] = {'user_id': user['google_id'], 'group_id': group_id, 'email': user['email']}
 
     join_room(group_id)
     socketio.emit('group_update', group, room=group_id)
-    logging.info(f"User {user['email']} joined room {group_id}")
+    logging.info(f"User {user['email']} (sid: {request.sid}) joined room {group_id}")
 
 @socketio.on('send_message')
 def handle_send_message(data):
@@ -1668,30 +1674,35 @@ def handle_promote_host(data):
 
 @socketio.on('disconnect')
 def on_disconnect():
-    user = session.get('user')
-    if not user:
+    if request.sid not in connected_users:
         return
 
-    user_id = user['google_id']
-    groups = get_groups()
-    group_id_to_update = None
-    group_to_update = None
-    
+    user_info = connected_users.pop(request.sid)
+    user_id = user_info['user_id']
+    group_id = user_info['group_id']
+    user_email = user_info['email']
+
     with groups_lock:
-        groups_copy = dict(groups)
-        for g_id, group in groups_copy.items():
-            if user_id in group.get('participants', {}):
-                if group.get('host_id') == user_id:
-                    del groups[g_id]
-                    socketio.emit('group_dissolved', {'reason': 'המנהל עזב, הקבוצה נסגרה.'}, room=g_id)
-                    logging.info(f"Host {user['email']} disconnected, dissolving group {g_id}")
-                else:
-                    del group['participants'][user_id]
-                    groups[g_id] = group
-                    socketio.emit('group_update', group, room=g_id)
-                    logging.info(f"User {user['email']} disconnected from group {g_id}")
-                save_groups(groups)
-                break
+        groups = get_groups()
+        group = groups.get(group_id)
+        
+        if not group:
+            logging.info(f"User {user_email} disconnected from a non-existent group {group_id}")
+            return
+
+        is_host = group.get('host_id') == user_id
+        participant_left = user_id in group.get('participants', {})
+
+        if is_host:
+            del groups[group_id]
+            socketio.emit('group_dissolved', {'reason': 'המנהל עזב, הקבוצה נסגרה.'}, room=group_id)
+            logging.info(f"Host {user_email} disconnected, dissolving group {group_id}")
+        elif participant_left:
+            del group['participants'][user_id]
+            socketio.emit('group_update', group, room=group_id)
+            logging.info(f"User {user_email} disconnected from group {group_id}")
+
+        save_groups(groups)
 
 
 
@@ -1737,6 +1748,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
