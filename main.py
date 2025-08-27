@@ -12,6 +12,7 @@ from firebase_admin import credentials, db
 import logging # Import logging for better error handling
 import threading
 import time
+import string
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -1466,6 +1467,238 @@ def api_recommendations():
 
 
 
+
+GROUPS_FILE = 'groups.json'
+GROUPS_DATA = {}
+
+def initialize_groups_file():
+    global GROUPS_DATA
+    try:
+        with open(GROUPS_FILE, 'w', encoding='utf-8') as f:
+            json.dump({}, f)
+        GROUPS_DATA = {}
+        logging.info(f"Initialized and cleared {GROUPS_FILE}.")
+    except Exception as e:
+        logging.error(f"Could not initialize groups file {GROUPS_FILE}: {e}", exc_info=True)
+        if not os.path.exists(GROUPS_FILE):
+             with open(GROUPS_FILE, 'w', encoding='utf-8') as f:
+                json.dump({}, f)
+
+def save_groups_data():
+    global GROUPS_DATA
+    try:
+        with open(GROUPS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(GROUPS_DATA, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        logging.error(f"Error saving groups data to {GROUPS_FILE}: {e}", exc_info=True)
+
+def generate_group_id(length=8):
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+def find_user_group(email):
+    for group_id, group_data in GROUPS_DATA.items():
+        if email in group_data.get('participants', {}):
+            return group_id
+    return None
+
+@app.route('/stream/create/<imdb_id>')
+def create_stream_group(imdb_id):
+    user = session.get('user')
+    if not user:
+        flash('עליך להתחבר כדי ליצור קבוצת צפייה.', 'warning')
+        return redirect(url_for('google_login'))
+
+    user_email = user.get('email')
+    if find_user_group(user_email):
+        flash('אתה כבר חבר בקבוצת צפייה. עזוב את הקבוצה הנוכחית כדי ליצור אחת חדשה.', 'warning')
+        return redirect(url_for('index'))
+
+    movie = load_movie_details(imdb_id)
+    if not movie:
+        abort(404)
+
+    group_id = generate_group_id()
+    while group_id in GROUPS_DATA:
+        group_id = generate_group_id()
+
+    GROUPS_DATA[group_id] = {
+        'imdb_id': imdb_id,
+        'host_email': user_email,
+        'participants': {
+            user_email: {
+                'name': user.get('name'),
+                'picture': user.get('picture')
+            }
+        }
+    }
+    save_groups_data()
+    logging.info(f"User {user_email} created group {group_id} for movie {imdb_id}.")
+    return redirect(url_for('view_stream', group_id=group_id))
+
+@app.route('/stream/join/<group_id>')
+def join_stream_group(group_id):
+    user = session.get('user')
+    if not user:
+        flash('עליך להתחבר כדי להצטרף לקבוצת צפייה.', 'warning')
+        return redirect(url_for('index'))
+
+    if group_id not in GROUPS_DATA:
+        flash('קבוצת הצפייה שאתה מנסה להצטרף אליה אינה קיימת.', 'error')
+        return redirect(url_for('index'))
+
+    user_email = user.get('email')
+    if find_user_group(user_email):
+        flash('אתה כבר חבר בקבוצת צפייה.', 'warning')
+        return redirect(url_for('index'))
+
+    GROUPS_DATA[group_id]['participants'][user_email] = {
+        'name': user.get('name'),
+        'picture': user.get('picture')
+    }
+    save_groups_data()
+    logging.info(f"User {user_email} joined group {group_id}.")
+    return redirect(url_for('view_stream', group_id=group_id))
+
+@app.route('/stream/view/<group_id>')
+def view_stream(group_id):
+    user = session.get('user')
+    if not user:
+        flash('עליך להתחבר כדי לצפות.', 'warning')
+        return redirect(url_for('index'))
+
+    if group_id not in GROUPS_DATA:
+        flash('קבוצת הצפייה אינה קיימת או שהסתיימה.', 'error')
+        return redirect(url_for('index'))
+
+    group_data = GROUPS_DATA[group_id]
+    user_email = user.get('email')
+    if user_email not in group_data.get('participants', {}):
+        flash('אינך חבר בקבוצת צפייה זו.', 'error')
+        return redirect(url_for('index'))
+
+    movie = load_movie_details(group_data['imdb_id'])
+    if not movie:
+        flash('הסרט המשויך לקבוצה זו לא נמצא.', 'error')
+        del GROUPS_DATA[group_id]
+        save_groups_data()
+        return redirect(url_for('index'))
+
+    return render_template('stream.html',
+                           user=user,
+                           movie=movie,
+                           group_id=group_id,
+                           group_data=group_data,
+                           current_year=datetime.datetime.utcnow().year,
+                           admin_emails=ADMIN_EMAILS)
+
+
+@app.route('/api/stream/<group_id>/status')
+def stream_status(group_id):
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if group_id not in GROUPS_DATA:
+        return jsonify({"error": "Group not found"}), 404
+
+    group = GROUPS_DATA[group_id]
+    user_email = user.get('email')
+
+    if user_email not in group.get('participants', {}):
+        return jsonify({"error": "Not a member of this group"}), 403
+
+    return jsonify(group)
+
+@app.route('/api/stream/<group_id>/leave', methods=['POST'])
+def leave_stream(group_id):
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if group_id not in GROUPS_DATA:
+        return jsonify({}), 200
+
+    user_email = user.get('email')
+    group = GROUPS_DATA[group_id]
+
+    if user_email in group['participants']:
+        del group['participants'][user_email]
+
+        if not group['participants']:
+            del GROUPS_DATA[group_id]
+            logging.info(f"Group {group_id} dissolved as last participant left.")
+        elif user_email == group['host_email']:
+            new_host_email = next(iter(group['participants']))
+            group['host_email'] = new_host_email
+            logging.info(f"Host left group {group_id}. New host is {new_host_email}.")
+
+        save_groups_data()
+        return jsonify({"success": True}), 200
+
+    return jsonify({"error": "User not in group"}), 400
+
+@app.route('/api/stream/<group_id>/kick', methods=['POST'])
+def kick_from_stream(group_id):
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if group_id not in GROUPS_DATA:
+        return jsonify({"error": "Group not found"}), 404
+
+    requester_email = user.get('email')
+    group = GROUPS_DATA[group_id]
+
+    if requester_email != group['host_email']:
+        return jsonify({"error": "Only the host can kick participants."}), 403
+
+    data = request.get_json()
+    email_to_kick = data.get('email')
+
+    if not email_to_kick or email_to_kick not in group['participants']:
+        return jsonify({"error": "Participant not found"}), 400
+
+    if email_to_kick == requester_email:
+        return jsonify({"error": "Host cannot kick themselves"}), 400
+
+    del group['participants'][email_to_kick]
+    save_groups_data()
+    logging.info(f"Host {requester_email} kicked {email_to_kick} from group {group_id}.")
+    return jsonify({"success": True}), 200
+
+@app.route('/api/stream/<group_id>/make_host', methods=['POST'])
+def make_stream_host(group_id):
+    user = session.get('user')
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if group_id not in GROUPS_DATA:
+        return jsonify({"error": "Group not found"}), 404
+
+    requester_email = user.get('email')
+    group = GROUPS_DATA[group_id]
+
+    if requester_email != group['host_email']:
+        return jsonify({"error": "Only the host can transfer ownership."}), 403
+
+    data = request.get_json()
+    new_host_email = data.get('email')
+
+    if not new_host_email or new_host_email not in group['participants']:
+        return jsonify({"error": "Participant not found"}), 400
+
+    if new_host_email == requester_email:
+        return jsonify({"error": "User is already the host"}), 400
+
+    group['host_email'] = new_host_email
+    save_groups_data()
+    logging.info(f"Host {requester_email} made {new_host_email} the new host of group {group_id}.")
+    return jsonify({"success": True}), 200
+
+
+
+
+
 # --- Error Handlers ---
 @app.errorhandler(403)
 def forbidden(e):
@@ -1535,6 +1768,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
