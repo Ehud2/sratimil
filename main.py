@@ -1615,24 +1615,37 @@ def on_join(data):
 def handle_send_message(data):
     user = session.get('user')
     if not user:
+        logging.warning("Received send_message from unauthenticated user.")
         return
 
-    group_id = data['group_id']
-    message_text = data['message']
+    group_id = data.get('group_id')
+    message_text = data.get('message')
     
-    groups = get_groups()
-    group = groups.get(group_id)
+    if not all([group_id, message_text]):
+        logging.warning(f"send_message event missing data from user {user.get('email')}")
+        return
 
-    if group and user['google_id'] in group['participants']:
-        chat_message = {
-            'sender_id': user['google_id'],
-            'sender_name': user['name'],
-            'message': message_text,
-            'timestamp': datetime.datetime.utcnow().isoformat()
-        }
-        group['chat'].append(chat_message)
-        save_groups(groups)
-        socketio.emit('group_update', group, room=group_id)
+    with groups_lock:
+        groups = get_groups()
+        group = groups.get(group_id)
+
+        if group and user['google_id'] in group['participants']:
+            chat_message = {
+                'sender_id': user['google_id'],
+                'sender_name': user['name'],
+                'message': message_text,
+                'timestamp': datetime.datetime.utcnow().isoformat()
+            }
+            if 'chat' not in group:
+                group['chat'] = []
+            group['chat'].append(chat_message)
+            save_groups(groups)
+            
+            # Emit to the entire room
+            socketio.emit('group_update', group, room=group_id)
+            logging.info(f"User {user.get('email')} sent message in group {group_id}")
+        else:
+            logging.warning(f"User {user.get('email')} tried to send message to group {group_id} but is not a participant.")
 
 @socketio.on('kick_user')
 def handle_kick_user(data):
@@ -1748,6 +1761,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
