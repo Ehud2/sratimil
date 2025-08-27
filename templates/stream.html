@@ -3,210 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>צפייה קבוצתית: {{ movie.title }}</title>
+    <title>צפייה קבוצתית ב-{{ movie.title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/stream.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
-    <meta name="referrer" content="origin">
 </head>
 <body>
-    <div class="stream-container">
-        <div class="video-section">
-            <div class="video-header">
-                <h1>צופים כעת ב: {{ movie.HebrewName or movie.title }}</h1>
-                <a href="{{ url_for('index') }}" class="back-button"><i class="fas fa-arrow-right"></i> חזרה לאתר</a>
+
+<header class="site-header">
+    <div class="container header-content">
+        <a href="{{ url_for('index') }}" class="logo-link">
+            <img src="{{ url_for('static', filename='images/MoviesIL Logo.png') }}" alt="סינמה פריים לוגו" class="logo">
+        </a>
+        <nav class="main-nav">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> בית</a>
+            <a href="{{ url_for('all_movies') }}"><i class="fas fa-film"></i> סרטים</a>
+            <a href="{{ url_for('all_series') }}"><i class="fas fa-tv"></i> סדרות</a>
+        </nav>
+        <div class="auth-container">
+            {% if user %}
+                <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
+                    <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }}">
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<main class="container stream-page">
+    <div class="stream-layout">
+        <div class="video-container">
+            <h1>צופים ב: {{ movie.title }}</h1>
+            <div class="vidsrc-embed-container">
+                <iframe src="https://vidsrc.xyz/embed/movie?imdb={{ movie.imdbID }}" allowfullscreen referrerpolicy="origin"></iframe>
             </div>
-            <div class="vidsrc-embed-container" id="embed-container">
-                <iframe src="https://vidsrc.xyz/embed/movie?imdb={{ movie.imdbID }}" allowfullscreen allow="autoplay; encrypted-media" referrerpolicy="origin"></iframe>
-            </div>
-            <div class="sync-info">
-                 <p>כדי לסנכרן את הצפייה, מומלץ שכל המשתתפים יתחילו את הסרט באותו הזמן. השתמשו בצ'אט כדי לתאם!</p>
+            <div class="sync-controls">
+                <p>כדי לסנכרן את הצפייה, מומלץ שכולם יתחילו את הסרט באותו הזמן. השתמשו בצ'אט כדי לתאם!</p>
             </div>
         </div>
 
-        <div class="sidebar-section">
-            <div class="participants-widget">
+        <div class="sidebar">
+            <div class="participants-container">
                 <h3>משתתפים (<span id="participant-count">0</span>)</h3>
                 <ul id="participants-list">
                 </ul>
-                <button id="invite-button"><i class="fas fa-user-plus"></i> הזמנת משתתפים</button>
+                <button id="invite-button" class="invite-btn"><i class="fas fa-user-plus"></i> הזמנת משתתפים</button>
             </div>
 
-            <div class="chat-widget">
+            <div class="chat-container">
                 <h3>צ'אט קבוצתי</h3>
-                <div id="chat-messages" class="chat-messages">
+                <div class="chat-messages" id="chat-messages">
                 </div>
-                <div class="chat-input-area">
-                    <input type="text" id="chat-input" placeholder="הקלד הודעה..." autocomplete="off">
+                <div class="chat-input-container">
+                    <input type="text" id="chat-input" placeholder="כתוב הודעה...">
                     <button id="send-chat-button"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
         </div>
     </div>
+</main>
 
-    <div id="context-menu" class="context-menu">
-        <ul>
-            <li id="promote-host-option"><i class="fas fa-crown"></i> הפוך למנהל</li>
-            <li id="kick-user-option"><i class="fas fa-user-slash"></i> הוצא מהקבוצה</li>
-        </ul>
-    </div>
-    
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentUser = {{ user | tojson }};
-            const groupId = "{{ group_id }}";
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const currentUser = {{ user | tojson }};
+        const groupId = {{ group_id | tojson }};
+        let groupData = {{ group_data | tojson }};
+        let userSids = {};
 
-            if (!currentUser || !currentUser.google_id) {
-                alert("עליך להתחבר למשתמש כדי להצטרף לקבוצת צפייה.");
-                window.location.href = "{{ url_for('index') }}";
-                return;
-            }
+        const socket = io();
 
-            const socket = io();
+        socket.on('connect', () => {
+            socket.emit('join_group_room', { group_id: groupId });
+        });
 
-            const participantsList = document.getElementById('participants-list');
-            const participantCount = document.getElementById('participant-count');
-            const chatMessages = document.getElementById('chat-messages');
-            const chatInput = document.getElementById('chat-input');
-            const sendChatButton = document.getElementById('send-chat-button');
-            const inviteButton = document.getElementById('invite-button');
-            const contextMenu = document.getElementById('context-menu');
+        const participantsList = document.getElementById('participants-list');
+        const participantCount = document.getElementById('participant-count');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatButton = document.getElementById('send-chat-button');
+        const inviteButton = document.getElementById('invite-button');
+
+        function renderParticipants() {
+            participantsList.innerHTML = '';
+            const participants = groupData.participants || {};
+            const participantIds = Object.keys(participants);
+            participantCount.textContent = participantIds.length;
             
-            let contextMenuTargetUserId = null;
-
-            socket.on('connect', () => {
-                socket.emit('join', { group_id: groupId });
+            const sortedParticipants = participantIds.sort((a, b) => {
+                if (a === groupData.host_id) return -1;
+                if (b === groupData.host_id) return 1;
+                return participants[a].name.localeCompare(participants[b].name);
             });
 
-            socket.on('group_update', (groupData) => {
-                updateParticipants(groupData.participants, groupData.host_id);
-                updateChat(groupData.chat);
+            sortedParticipants.forEach(id => {
+                const isHost = id === groupData.host_id;
+                participantsList.appendChild(createParticipantElement(id, participants[id], isHost));
             });
+        }
 
-            socket.on('kicked', (data) => {
-                alert(data.reason || "הוצאת מהקבוצה.");
-                window.location.href = "{{ url_for('index') }}";
-            });
-
-            socket.on('group_dissolved', (data) => {
-                alert(data.reason || "הקבוצה נסגרה.");
-                window.location.href = "{{ url_for('index') }}";
-            });
+        function createParticipantElement(id, participant, isHost) {
+            const li = document.createElement('li');
+            li.dataset.userId = id;
+            li.innerHTML = `
+                <img src="${participant.picture}" alt="${participant.name}" class="participant-avatar">
+                <span class="participant-name">${participant.name}</span>
+                ${isHost ? '<i class="fas fa-crown host-icon"></i>' : ''}
+            `;
             
-            function updateParticipants(participants, hostId) {
-                participantsList.innerHTML = '';
-                const participantIds = Object.keys(participants);
-                participantCount.textContent = participantIds.length;
+            if (currentUser.google_id === groupData.host_id && !isHost) {
+                const actions = document.createElement('div');
+                actions.className = 'participant-actions';
+                actions.innerHTML = `
+                    <button class="action-btn promote-btn" title="הפוך למנהל"><i class="fas fa-user-shield"></i></button>
+                    <button class="action-btn kick-btn" title="הוצא מהקבוצה"><i class="fas fa-user-times"></i></button>
+                `;
+                li.appendChild(actions);
+
+                actions.querySelector('.kick-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm(`האם אתה בטוח שברצונך להוציא את ${participant.name}?`)) {
+                        socket.emit('kick_participant', { group_id: groupId, target_user_id: id, sid: userSids[id] });
+                    }
+                });
                 
-                const sortedIds = participantIds.sort((a, b) => {
-                    if (a === hostId) return -1;
-                    if (b === hostId) return 1;
-                    return 0;
-                });
-
-                sortedIds.forEach(userId => {
-                    const participant = participants[userId];
-                    const li = document.createElement('li');
-                    li.dataset.userId = userId;
-
-                    const img = document.createElement('img');
-                    img.src = participant.picture;
-                    img.alt = participant.name;
-                    li.appendChild(img);
-                    
-                    const span = document.createElement('span');
-                    span.textContent = participant.name;
-                    li.appendChild(span);
-                    
-                    if (userId === hostId) {
-                        const crown = document.createElement('i');
-                        crown.className = 'fas fa-crown host-icon';
-                        li.appendChild(crown);
+                actions.querySelector('.promote-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                     if (confirm(`האם אתה בטוח שברצונך להפוך את ${participant.name} למנהל החדש?`)) {
+                        socket.emit('promote_to_host', { group_id: groupId, target_user_id: id });
                     }
-                    
-                    if (currentUser.google_id === hostId && currentUser.google_id !== userId) {
-                        li.classList.add('clickable');
-                        li.addEventListener('click', (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            contextMenuTargetUserId = userId;
-                            contextMenu.style.top = `${event.clientY}px`;
-                            contextMenu.style.left = `${event.clientX - contextMenu.offsetWidth}px`;
-                            contextMenu.classList.add('active');
-                        });
-                    }
-                    participantsList.appendChild(li);
                 });
             }
-
-            function updateChat(chatHistory) {
-                chatMessages.innerHTML = '';
-                chatHistory.forEach(msg => {
-                    const msgDiv = document.createElement('div');
-                    msgDiv.classList.add('chat-message');
-                    if (msg.sender_id === currentUser.google_id) {
-                        msgDiv.classList.add('my-message');
-                    }
-                    
-                    const senderSpan = document.createElement('strong');
-                    senderSpan.textContent = msg.sender_name;
-                    
-                    const textP = document.createElement('p');
-                    textP.textContent = msg.message;
-                    
-                    msgDiv.appendChild(senderSpan);
-                    msgDiv.appendChild(textP);
-                    chatMessages.appendChild(msgDiv);
-                });
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+            return li;
+        }
+        
+        function addChatMessage(data) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'chat-message';
+            const isCurrentUser = data.user_name === currentUser.name;
+            if (isCurrentUser) {
+                messageElement.classList.add('current-user');
             }
 
-            function sendMessage() {
-                const message = chatInput.value.trim();
-                if (message) {
-                    socket.emit('send_message', { group_id: groupId, message: message });
-                    chatInput.value = '';
-                }
+            messageElement.innerHTML = `
+                <img src="${data.user_picture}" alt="${data.user_name}" class="chat-avatar">
+                <div class="message-content">
+                    <span class="chat-user-name">${data.user_name}</span>
+                    <p class="message-text">${escapeHTML(data.message)}</p>
+                </div>
+            `;
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message) {
+                socket.emit('send_chat_message', { group_id: groupId, message: message });
+                chatInput.value = '';
             }
+        }
 
-            sendChatButton.addEventListener('click', sendMessage);
-            chatInput.addEventListener('keypress', (event) => {
-                if (event.key === 'Enter') {
-                    sendMessage();
-                }
-            });
+        sendChatButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
 
-            inviteButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(window.location.href).then(() => {
-                    alert('קישור ההזמנה הועתק!');
-                }).catch(err => {
-                    alert('שגיאה בהעתקת הקישור.');
-                });
-            });
-
-            document.getElementById('promote-host-option').addEventListener('click', () => {
-                if (contextMenuTargetUserId) {
-                    socket.emit('promote_host', { group_id: groupId, user_id: contextMenuTargetUserId });
-                }
-                contextMenu.classList.remove('active');
-            });
-
-            document.getElementById('kick-user-option').addEventListener('click', () => {
-                if (contextMenuTargetUserId) {
-                    socket.emit('kick_user', { group_id: groupId, user_id: contextMenuTargetUserId });
-                }
-                contextMenu.classList.remove('active');
-            });
-
-            window.addEventListener('click', () => {
-                if (contextMenu.classList.contains('active')) {
-                    contextMenu.classList.remove('active');
-                }
+        inviteButton.addEventListener('click', () => {
+            const joinUrl = `${window.location.origin}/stream/join/${groupId}`;
+            navigator.clipboard.writeText(joinUrl).then(() => {
+                alert('קישור ההזמנה הועתק!');
+            }, () => {
+                alert('שגיאה בהעתקת הקישור.');
             });
         });
-    </script>
+
+        socket.on('user_joined', (data) => {
+            groupData.participants[data.user_id] = data.user_info;
+            userSids[data.user_id] = data.sid;
+            renderParticipants();
+            addSystemMessage(`${data.user_info.name} הצטרף לקבוצה.`);
+        });
+
+        socket.on('update_group_data', (data) => {
+            if (!data.group_data.participants) {
+                addSystemMessage("הקבוצה התפרקה.");
+                setTimeout(() => window.location.href = "{{ url_for('index') }}", 2000);
+                return;
+            }
+            
+            const oldParticipants = new Set(Object.keys(groupData.participants || {}));
+            const newParticipants = new Set(Object.keys(data.group_data.participants || {}));
+
+            const joined = [...newParticipants].filter(x => !oldParticipants.has(x));
+            const left = [...oldParticipants].filter(x => !newParticipants.has(x));
+
+            groupData = data.group_data;
+            renderParticipants();
+
+            if (left.length > 0) {
+                 addSystemMessage("משתמש עזב את הקבוצה.");
+            }
+        });
+        
+        socket.on('new_chat_message', (data) => {
+            addChatMessage(data);
+        });
+
+        socket.on('you_were_kicked', (data) => {
+            if(data.group_id === groupId) {
+                alert('הוצאת מהקבוצה על ידי המנהל.');
+                window.location.href = "{{ url_for('index') }}";
+            }
+        });
+
+        function addSystemMessage(text) {
+             const messageElement = document.createElement('div');
+             messageElement.className = 'chat-message system-message';
+             messageElement.textContent = text;
+             chatMessages.appendChild(messageElement);
+             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        renderParticipants();
+    });
+</script>
 </body>
 </html>
