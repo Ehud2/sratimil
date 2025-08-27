@@ -1731,42 +1731,24 @@ def initialize_data_cache():
         refresh_data_from_firebase()
 
 initialize_data_cache()
-
+initialize_groups_file()
 
 if __name__ == '__main__':
-    # Ensure Firebase is initialized before running the app
-    # The try/except block with _apps check handles reloader
-    # Also check if initialization actually succeeded before running
     if firebase_admin._apps:
-        # Check if Firebase creds were successfully loaded
-        # This check firebase_admin._apps['[DEFAULT]'].options.get('credential') is more robust
-        # than just checking if firebase_admin._apps is not empty, as initialization might
-        # have failed without raising an immediate exception if cred was None.
         try:
-            # Attempt to access the default app's options. This will raise an exception if not initialized correctly.
              default_app_creds = firebase_admin._apps['[DEFAULT]'].options.get('credential')
              if default_app_creds is not None:
                 logging.info("Firebase default app credential check passed.")
                 port = int(os.environ.get('PORT', 5000))
-                # debug=True should only be used in development
-                app.run(host='0.0.0.0', port=port, debug=True)
+                socketio.run(app, host='0.0.0.0', port=port, debug=True)
              else:
                  logging.error("Application not started: Firebase default app credential is None.")
         except KeyError:
-            # If firebase_admin._apps['[DEFAULT]'] doesn't exist, it wasn't initialized correctly.
             logging.error("Application not started: Firebase default app was not initialized.")
         except Exception as e:
              logging.error(f"Application not started: Unexpected error during Firebase check: {e}", exc_info=True)
-
     else:
         logging.error("Application not started because Firebase initialization failed.")
-        # You might want to sys.exit(1) here in a real application
-
-
-
-
-
-
 
 
 
