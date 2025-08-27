@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>צפייה קבוצתית ב-{{ movie.title }}</title>
+    <title>צפייה קבוצתית - {{ movie.title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/stream.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,240 +11,202 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
+    <meta name="referrer" content="origin">
 </head>
 <body>
 
-<header class="site-header">
-    <div class="container header-content">
-        <a href="{{ url_for('index') }}" class="logo-link">
-            <img src="{{ url_for('static', filename='images/MoviesIL Logo.png') }}" alt="סינמה פריים לוגו" class="logo">
-        </a>
-        <nav class="main-nav">
-            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> בית</a>
-            <a href="{{ url_for('all_movies') }}"><i class="fas fa-film"></i> סרטים</a>
-            <a href="{{ url_for('all_series') }}"><i class="fas fa-tv"></i> סדרות</a>
-        </nav>
-        <div class="auth-container">
-            {% if user %}
-                <a href="{{ url_for('logout') }}" class="profile-button" title="התנתק">
-                    <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or 'משתמש' }}">
-                </a>
-            {% endif %}
-        </div>
-    </div>
-</header>
+<div class="stream-container">
+    <main class="stream-main-content">
+        <h1>{{ movie.HebrewName or movie.title }}</h1>
+        <p class="movie-meta">{{ movie.year }} | {{ movie.runtime }} | {{ movie.genre }}</p>
 
-<main class="container stream-page">
-    <div class="stream-layout">
-        <div class="video-container">
-            <h1>צופים ב: {{ movie.title }}</h1>
-            <div class="vidsrc-embed-container">
-                <iframe src="https://vidsrc.xyz/embed/movie?imdb={{ movie.imdbID }}" allowfullscreen referrerpolicy="origin"></iframe>
-            </div>
-            <div class="sync-controls">
-                <p>כדי לסנכרן את הצפייה, מומלץ שכולם יתחילו את הסרט באותו הזמן. השתמשו בצ'אט כדי לתאם!</p>
-            </div>
+        <div class="vidsrc-embed-container">
+            <iframe
+                src="https://vidsrc.xyz/embed/movie?imdb={{ movie.imdbID }}"
+                allowfullscreen
+                allow="autoplay; encrypted-media"
+                referrerpolicy="origin">
+            </iframe>
         </div>
 
-        <div class="sidebar">
-            <div class="participants-container">
-                <h3>משתתפים (<span id="participant-count">0</span>)</h3>
-                <ul id="participants-list">
-                </ul>
-                <button id="invite-button" class="invite-btn"><i class="fas fa-user-plus"></i> הזמנת משתתפים</button>
-            </div>
-
-            <div class="chat-container">
-                <h3>צ'אט קבוצתי</h3>
-                <div class="chat-messages" id="chat-messages">
-                </div>
-                <div class="chat-input-container">
-                    <input type="text" id="chat-input" placeholder="כתוב הודעה...">
-                    <button id="send-chat-button"><i class="fas fa-paper-plane"></i></button>
-                </div>
-            </div>
+        <div class="stream-actions">
+            <button id="invite-btn" class="stream-btn invite"><i class="fas fa-user-plus"></i> הזמן חברים</button>
+            <button id="leave-btn" class="stream-btn leave"><i class="fas fa-sign-out-alt"></i> עזוב קבוצה</button>
         </div>
-    </div>
-</main>
+    </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <aside class="stream-sidebar">
+        <h2>משתתפים (<span id="participant-count">0</span>)</h2>
+        <div id="participants-list" class="participants-list">
+        </div>
+    </aside>
+</div>
+
+<div id="context-menu" class="context-menu">
+    <ul>
+        <li id="context-make-host"><i class="fas fa-crown"></i> הפוך למנהל</li>
+        <li id="context-kick"><i class="fas fa-user-slash"></i> הוצא מהקבוצה</li>
+    </ul>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const currentUser = {{ user | tojson }};
         const groupId = {{ group_id | tojson }};
-        let groupData = {{ group_data | tojson }};
-
-        const socket = io();
-
-        socket.on('connect', () => {
-            socket.emit('join_group_room', { group_id: groupId });
-        });
-
+        const currentUser = {{ user | tojson }};
         const participantsList = document.getElementById('participants-list');
         const participantCount = document.getElementById('participant-count');
-        const chatMessages = document.getElementById('chat-messages');
-        const chatInput = document.getElementById('chat-input');
-        const sendChatButton = document.getElementById('send-chat-button');
-        const inviteButton = document.getElementById('invite-button');
+        const inviteBtn = document.getElementById('invite-btn');
+        const leaveBtn = document.getElementById('leave-btn');
+        const contextMenu = document.getElementById('context-menu');
+        let pollingInterval;
 
-        function renderParticipants() {
-            if (!participantsList) return;
+        function renderParticipants(groupData) {
             participantsList.innerHTML = '';
             const participants = groupData.participants || {};
-            const participantIds = Object.keys(participants);
-            participantCount.textContent = participantIds.length;
-            
-            const sortedParticipants = participantIds.sort((a, b) => {
-                if (a === groupData.host_id) return -1;
-                if (b === groupData.host_id) return 1;
+            const hostEmail = groupData.host_email;
+            const participantEmails = Object.keys(participants);
+            participantCount.textContent = participantEmails.length;
+
+            const sortedEmails = participantEmails.sort((a, b) => {
+                if (a === hostEmail) return -1;
+                if (b === hostEmail) return 1;
                 return participants[a].name.localeCompare(participants[b].name);
             });
 
-            sortedParticipants.forEach(id => {
-                const isHost = id === groupData.host_id;
-                participantsList.appendChild(createParticipantElement(id, participants[id], isHost));
+            sortedEmails.forEach(email => {
+                const participant = participants[email];
+                const isHost = email === hostEmail;
+                const isCurrentUser = email === currentUser.email;
+
+                const participantDiv = document.createElement('div');
+                participantDiv.className = 'participant-item';
+                participantDiv.dataset.email = email;
+                if (isCurrentUser) {
+                    participantDiv.classList.add('current-user');
+                }
+
+                const img = document.createElement('img');
+                img.src = participant.picture || '/static/images/default-profile.png';
+                img.alt = participant.name;
+                participantDiv.appendChild(img);
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = participant.name;
+                participantDiv.appendChild(nameSpan);
+
+                if (isHost) {
+                    const hostIcon = document.createElement('i');
+                    hostIcon.className = 'fas fa-crown host-icon';
+                    hostIcon.title = 'מנהל הקבוצה';
+                    participantDiv.appendChild(hostIcon);
+                }
+
+                participantsList.appendChild(participantDiv);
             });
         }
 
-        function createParticipantElement(id, participant, isHost) {
-            const li = document.createElement('li');
-            li.dataset.userId = id;
-            li.innerHTML = `
-                <img src="${participant.picture}" alt="${participant.name}" class="participant-avatar">
-                <span class="participant-name">${participant.name}</span>
-                ${isHost ? '<i class="fas fa-crown host-icon"></i>' : ''}
-            `;
-            
-            if (currentUser.google_id === groupData.host_id && !isHost) {
-                const actions = document.createElement('div');
-                actions.className = 'participant-actions';
-                actions.innerHTML = `
-                    <button class="action-btn promote-btn" title="הפוך למנהל"><i class="fas fa-user-shield"></i></button>
-                    <button class="action-btn kick-btn" title="הוצא מהקבוצה"><i class="fas fa-user-times"></i></button>
-                `;
-                li.appendChild(actions);
+        async function fetchGroupStatus() {
+            try {
+                const response = await fetch(`/api/stream/${groupId}/status`);
+                if (response.status === 404 || response.status === 403) {
+                    clearInterval(pollingInterval);
+                    alert('הקבוצה התפרקה או שהוצאת ממנה.');
+                    window.location.href = "{{ url_for('index') }}";
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                renderParticipants(data);
+            } catch (error) {
+                console.error("Failed to fetch group status:", error);
+                clearInterval(pollingInterval);
+            }
+        }
 
-                actions.querySelector('.kick-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (confirm(`האם אתה בטוח שברצונך להוציא את ${participant.name}?`)) {
-                        socket.emit('kick_participant', { group_id: groupId, target_user_id: id });
-                    }
+        async function performAction(url, body) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
                 });
-                
-                actions.querySelector('.promote-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                     if (confirm(`האם אתה בטוח שברצונך להפוך את ${participant.name} למנהל החדש?`)) {
-                        socket.emit('promote_to_host', { group_id: groupId, target_user_id: id });
-                    }
-                });
-            }
-            return li;
-        }
-        
-        function addChatMessage(data) {
-            const messageElement = document.createElement('div');
-            messageElement.className = 'chat-message';
-            const isCurrentUser = data.user_name === currentUser.name;
-            if (isCurrentUser) {
-                messageElement.classList.add('current-user');
-            }
-
-            messageElement.innerHTML = `
-                <img src="${data.user_picture}" alt="${data.user_name}" class="chat-avatar">
-                <div class="message-content">
-                    <span class="chat-user-name">${data.user_name}</span>
-                    <p class="message-text">${escapeHTML(data.message)}</p>
-                </div>
-            `;
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function loadChatHistory() {
-            const history = groupData.chat_history || [];
-            history.forEach(msg => addChatMessage(msg));
-        }
-
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
-        }
-
-        function sendMessage() {
-            const message = chatInput.value.trim();
-            if (message) {
-                socket.emit('send_chat_message', { group_id: groupId, message: message });
-                chatInput.value = '';
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(`שגיאה: ${errorData.error || 'פעולה נכשלה'}`);
+                }
+                return response.json();
+            } catch (error) {
+                console.error('Action failed:', error);
+                alert('שגיאת רשת. נסה שוב.');
             }
         }
 
-        sendChatButton.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        inviteButton.addEventListener('click', () => {
-            const joinUrl = `${window.location.origin}/stream/join/${groupId}`;
+        inviteBtn.addEventListener('click', () => {
+            const joinUrl = `${window.location.origin}{{ url_for('join_stream_group', group_id='') }}${groupId}`;
             navigator.clipboard.writeText(joinUrl).then(() => {
                 alert('קישור ההזמנה הועתק!');
-            }, () => {
+            }, (err) => {
+                console.error('Could not copy text: ', err);
                 alert('שגיאה בהעתקת הקישור.');
             });
         });
 
-        socket.on('user_joined', (data) => {
-            groupData.participants[data.user_id] = data.user_info;
-            renderParticipants();
-            addSystemMessage(`${data.user_info.name} הצטרף לקבוצה.`);
-        });
-
-        socket.on('update_group_data', (data) => {
-            if (!data.group_data || !data.group_data.participants) {
-                addSystemMessage("הקבוצה התפרקה.");
-                setTimeout(() => window.location.href = "{{ url_for('index') }}", 2000);
-                return;
-            }
-            
-            const oldHost = groupData.host_id;
-            const leftUser = Object.keys(groupData.participants).find(id => !data.group_data.participants[id]);
-            
-            groupData = data.group_data;
-            renderParticipants();
-
-            if (leftUser) {
-                 addSystemMessage(`משתמש עזב את הקבוצה.`);
-            }
-            if (groupData.host_id !== oldHost) {
-                 addSystemMessage(`${groupData.participants[groupData.host_id].name} הוא המנהל החדש.`);
-            }
-        });
-        
-        socket.on('new_chat_message', (data) => {
-            addChatMessage(data);
-        });
-
-        socket.on('you_were_kicked', (data) => {
-            if(data.kicked_user_id === currentUser.google_id) {
-                alert('הוצאת מהקבוצה על ידי המנהל.');
+        leaveBtn.addEventListener('click', async () => {
+            if (confirm('האם אתה בטוח שברצונך לעזוב את הקבוצה?')) {
+                clearInterval(pollingInterval);
+                await performAction(`/api/stream/${groupId}/leave`, {});
                 window.location.href = "{{ url_for('index') }}";
             }
         });
+        
+        window.addEventListener('beforeunload', () => {
+            navigator.sendBeacon(`/api/stream/${groupId}/leave`, new Blob());
+        });
 
-        function addSystemMessage(text) {
-             const messageElement = document.createElement('div');
-             messageElement.className = 'chat-message system-message';
-             messageElement.textContent = text;
-             chatMessages.appendChild(messageElement);
-             chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+        document.addEventListener('click', (e) => {
+            contextMenu.style.display = 'none';
+        });
 
-        // --- Inicjalizacja ---
-        renderParticipants();
-        loadChatHistory();
+        participantsList.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const targetParticipant = e.target.closest('.participant-item');
+            if (!targetParticipant) return;
+
+            fetch(`/api/stream/${groupId}/status`).then(res => res.json()).then(groupData => {
+                 if (currentUser.email !== groupData.host_email) return;
+
+                 const targetEmail = targetParticipant.dataset.email;
+                 if (targetEmail === currentUser.email) return;
+
+                contextMenu.style.top = `${e.clientY}px`;
+                contextMenu.style.left = `${e.clientX}px`;
+                contextMenu.style.display = 'block';
+                contextMenu.dataset.targetEmail = targetEmail;
+            });
+        });
+        
+        document.getElementById('context-make-host').addEventListener('click', async () => {
+            const email = contextMenu.dataset.targetEmail;
+            if (email) {
+                await performAction(`/api/stream/${groupId}/make_host`, { email });
+                fetchGroupStatus();
+            }
+        });
+        
+        document.getElementById('context-kick').addEventListener('click', async () => {
+            const email = contextMenu.dataset.targetEmail;
+            if (email) {
+                 await performAction(`/api/stream/${groupId}/kick`, { email });
+                 fetchGroupStatus();
+            }
+        });
+
+        fetchGroupStatus();
+        pollingInterval = setInterval(fetchGroupStatus, 3000);
     });
 </script>
+
 </body>
 </html>
