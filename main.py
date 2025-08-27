@@ -1443,6 +1443,21 @@ def internal_server_error(e):
     current_year = datetime.datetime.utcnow().year
     return render_template('500.html', user=user, current_year=current_year, current_language=current_language), 500
 
+
+
+
+def initialize_data_cache():
+    if os.path.exists(DATA_FILE):
+        logging.info(f"Loading initial data from {DATA_FILE}...")
+        load_data_from_json()
+    else:
+        logging.info(f"{DATA_FILE} not found. Creating it by fetching initial data from Firebase...")
+        time.sleep(2)
+        refresh_data_from_firebase()
+
+initialize_data_cache()
+
+
 if __name__ == '__main__':
     # Ensure Firebase is initialized before running the app
     # The try/except block with _apps check handles reloader
@@ -1471,6 +1486,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
