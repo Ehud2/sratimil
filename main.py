@@ -372,16 +372,15 @@ def add_content():
                 if not omdb_details or omdb_details.get('Response') == 'False' or omdb_details.get('Type', '').lower() != 'movie':
                     flash(f'שגיאה: לא נמצא סרט עבור IMDb ID "{imdb_id}".', 'error')
                     return redirect(url_for('add_content'))
-                movie_data = {k: omdb_details.get(k, 'N/A') for k in ['Title', 'Year', 'Rated', 'Released', 'Runtime', 'Genre', 'Director', 'Writer', 'Actors', 'Plot', 'Language', 'Country', 'Awards', 'Poster', 'Metascore', 'imdbRating', 'imdbVotes', 'DVD', 'BoxOffice', 'Production', 'Website']}
-                movie_data.update({'imdbID': omdb_details.get('imdbID', imdb_id), 'ratings': omdb_details.get('Ratings', []), 'type': 'movie', 'video_url': '', 'category': request.form.get('movie_category', 'ללא')})
+                movie_data = {k.capitalize(): omdb_details.get(k.capitalize(), 'N/A') for k in ['title', 'year', 'rated', 'released', 'runtime', 'genre', 'director', 'writer', 'actors', 'plot', 'language', 'country', 'awards', 'poster', 'metascore', 'imdbRating', 'imdbVotes', 'dVD', 'boxOffice', 'production', 'website']}
+                movie_data.update({'imdbID': omdb_details.get('imdbID', imdb_id), 'Ratings': omdb_details.get('Ratings', []), 'type': 'movie', 'video_url': '', 'category': request.form.get('movie_category', 'ללא')})
                 tmdb_id, tmdb_type = get_tmdb_info(imdb_id)
                 if tmdb_id and tmdb_type == 'movie':
                     hebrew_name, hebrew_poster_url = get_hebrew_details(tmdb_id, tmdb_type)
                     if hebrew_name: movie_data['HebrewName'] = hebrew_name
                     if hebrew_poster_url: movie_data['HebrewPoster'] = hebrew_poster_url
-                ref = db.reference(f'/Movies/{imdb_id}')
-                ref.set(movie_data)
-                flash(f'סרט "{movie_data.get("title", imdb_id)}" נוסף בהצלחה!', 'success')
+                db.reference(f'/Movies/{imdb_id}').set(movie_data)
+                flash(f'סרט "{movie_data.get("Title", imdb_id)}" נוסף בהצלחה!', 'success')
             elif content_type == 'series':
                 series_imdb_id = request.form.get('series_imdb_id', '').strip()
                 if not series_imdb_id:
@@ -392,8 +391,8 @@ def add_content():
                     flash(f'שגיאה: לא נמצאה סדרה עבור IMDb ID "{series_imdb_id}".', 'error')
                     return redirect(url_for('add_content'))
                 total_seasons = int(omdb_details.get('totalSeasons', '1'))
-                series_data = {k: omdb_details.get(k, 'N/A') for k in ['Title', 'Year', 'Rated', 'Released', 'Runtime', 'Genre', 'Director', 'Writer', 'Actors', 'Plot', 'Language', 'Country', 'Awards', 'Poster', 'Metascore', 'imdbRating', 'imdbVotes']}
-                series_data.update({'imdbID': omdb_details.get('imdbID', series_imdb_id), 'ratings': omdb_details.get('Ratings', []), 'type': 'series', 'totalSeasons': str(total_seasons), 'category': request.form.get('series_category', 'ללא')})
+                series_data = {k.capitalize(): omdb_details.get(k.capitalize(), 'N/A') for k in ['title', 'year', 'rated', 'released', 'runtime', 'genre', 'director', 'writer', 'actors', 'plot', 'language', 'country', 'awards', 'poster', 'metascore', 'imdbRating', 'imdbVotes']}
+                series_data.update({'imdbID': omdb_details.get('imdbID', series_imdb_id), 'Ratings': omdb_details.get('Ratings', []), 'type': 'series', 'totalSeasons': str(total_seasons), 'category': request.form.get('series_category', 'ללא')})
                 tmdb_id, tmdb_type = get_tmdb_info(series_imdb_id)
                 if tmdb_id and tmdb_type == 'tv':
                     hebrew_name, hebrew_poster_url = get_hebrew_details(tmdb_id, tmdb_type)
@@ -405,15 +404,15 @@ def add_content():
                     if season_details and season_details.get('Response') == 'True' and season_details.get('Episodes'):
                         episodes_data = {}
                         for ep_detail in season_details.get('Episodes', []):
-                            ep_num = int(ep_detail.get('Episode', 0))
-                            if ep_num > 0:
+                            try:
+                                ep_num = int(ep_detail.get('Episode'))
                                 episodes_data[str(ep_num)] = {'episode_imdb_id': ep_detail.get('imdbID'), 'title': ep_detail.get('Title'), 'season_number': season_num, 'episode_number': ep_num, 'video_url': ''}
-                        if episodes_data:
-                            seasons_data[str(season_num)] = {'Episodes': episodes_data}
+                            except (ValueError, TypeError):
+                                continue
+                        if episodes_data: seasons_data[str(season_num)] = {'Episodes': episodes_data}
                 if seasons_data: series_data['Seasons'] = seasons_data
-                ref = db.reference(f'/Series/{series_imdb_id}')
-                ref.update(series_data)
-                flash(f'סדרה "{series_data.get("title", series_imdb_id)}" נוספה/עודכנה בהצלחה!', 'success')
+                db.reference(f'/Series/{series_imdb_id}').update(series_data)
+                flash(f'סדרה "{series_data.get("Title", series_imdb_id)}" נוספה/עודכנה בהצלחה!', 'success')
         except Exception as e:
             logging.error(f"Error processing add content POST: {e}", exc_info=True)
             flash('אירעה שגיאה בעת שמירת התוכן.', 'error')
@@ -441,7 +440,7 @@ def all_series():
                            current_year=datetime.datetime.utcnow().year, admin_emails=ADMIN_EMAILS,
                            current_language=session.get('language', 'he'), items_per_page=15)
 
-WEBSITE_URL = "https://freemoviesil.onrender.com/"
+WEBSITE_URL = "https://sratims.online/"
 INTERVAL_MINUTES = 4
 def keep_website_alive(url, interval_minutes):
     interval_seconds = interval_minutes * 60
@@ -454,7 +453,7 @@ def keep_website_alive(url, interval_minutes):
             if response.status_code == 200:
                 print(f"[{current_time}] Keep-alive request to {url} successful. Status: {response.status_code}")
             else:
-                print(f"[{current_time}] Keep-alive request to {url} failed or returned non-200 status. Status: {response.status_code}")
+                print(f"[{current_time}] Keep-alive request to {url} failed. Status: {response.status_code}")
         except requests.exceptions.RequestException as e:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"[{current_time}] Error in keep-alive request to {url}: {e}")
@@ -500,21 +499,17 @@ def fetch_tmdb_data_with_retry(url, params, max_retries, base_delay):
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            logging.warning(f"Attempt {attempt + 1}/{max_retries} failed for {url}: {e}")
             if attempt < max_retries - 1:
                 time.sleep(min(base_delay * (2 ** attempt) + random.uniform(0, 1), 10))
-            else:
-                return None
+            else: return None
     return None
 
 def get_tmdb_info(imdb_id):
     url = f"{TMDB_BASE_URL}/find/{imdb_id}"
     data = fetch_tmdb_data_with_retry(url, {'external_source': 'imdb_id'}, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
     if data:
-        if data.get('movie_results'):
-            return data['movie_results'][0].get('id'), 'movie'
-        elif data.get('tv_results'):
-            return data['tv_results'][0].get('id'), 'tv'
+        if data.get('movie_results'): return data['movie_results'][0].get('id'), 'movie'
+        elif data.get('tv_results'): return data['tv_results'][0].get('id'), 'tv'
     return None, None
 
 def get_hebrew_details(tmdb_id, media_type):
@@ -522,8 +517,7 @@ def get_hebrew_details(tmdb_id, media_type):
     endpoint = f"movie/{tmdb_id}" if media_type == 'movie' else f"tv/{tmdb_id}"
     url = f"{TMDB_BASE_URL}/{endpoint}"
     data = fetch_tmdb_data_with_retry(url, {'language': 'he-IL'}, TMDB_MAX_RETRIES, TMDB_BASE_DELAY_SECONDS)
-    hebrew_name = None
-    hebrew_poster_url = None
+    hebrew_name, hebrew_poster_url = None, None
     if data:
         hebrew_name = data.get('title') if media_type == 'movie' else data.get('name')
         poster_path = data.get('poster_path')
@@ -533,15 +527,14 @@ def get_hebrew_details(tmdb_id, media_type):
 def get_recommendations(watched_ids, limit=15):
     all_content = {**load_movies_data(), **load_series_data_for_index()}
     if not watched_ids or not all_content: return []
-    watched_items_details = [details for imdb_id, details in all_content.items() if imdb_id in watched_ids and isinstance(details, dict)]
-    candidate_items = {imdb_id: details for imdb_id, details in all_content.items() if imdb_id not in watched_ids and isinstance(details, dict)}
+    watched_items_details = [d for i, d in all_content.items() if i in watched_ids and isinstance(d, dict)]
+    candidate_items = {i: d for i, d in all_content.items() if i not in watched_ids and isinstance(d, dict)}
     if not watched_items_details or not candidate_items: return []
     profile = {'categories': {}, 'genres': {}, 'ratings': []}
     for item in watched_items_details:
         cat = item.get('category', 'ללא')
         if cat != 'ללא': profile['categories'][cat] = profile['categories'].get(cat, 0) + 1
-        for genre in [g.strip() for g in item.get('genre', '').split(',') if g.strip()]:
-            profile['genres'][genre] = profile['genres'].get(genre, 0) + 1
+        for g in [g.strip() for g in item.get('genre', '').split(',') if g.strip()]: profile['genres'][g] = profile['genres'].get(g, 0) + 1
         try: profile['ratings'].append(float(item.get('imdbRating')))
         except (ValueError, TypeError): pass
     avg_rating = sum(profile['ratings']) / len(profile['ratings']) if profile['ratings'] else 7.0
@@ -549,14 +542,13 @@ def get_recommendations(watched_ids, limit=15):
     for imdb_id, item in candidate_items.items():
         score = 0
         if item.get('category', 'ללא') in profile['categories']: score += profile['categories'][item.get('category')] * 3
-        for genre in [g.strip() for g in item.get('genre', '').split(',') if g.strip()]:
-            if genre in profile['genres']: score += profile['genres'][genre] * 2
+        for g in [g.strip() for g in item.get('genre', '').split(',') if g.strip()]:
+            if g in profile['genres']: score += profile['genres'][g] * 2
         try:
-            item_rating = float(item.get('imdbRating'))
-            score += max(0, 1 - (abs(item_rating - avg_rating) / 5)) * 1.5
+            score += max(0, 1 - (abs(float(item.get('imdbRating')) - avg_rating) / 5)) * 1.5
         except (ValueError, TypeError): pass
         if score > 0:
-            scored_candidates.append({"id": imdb_id, "title": item.get('title'), "poster": item.get('poster'), "HebrewName": item.get('HebrewName'), "HebrewPoster": item.get('HebrewPoster'), "type": item.get('type'), "score": score})
+            scored_candidates.append({k: item.get(k) for k in ["id", "title", "poster", "HebrewName", "HebrewPoster", "type"]} | {"score": score, "id": imdb_id})
     return sorted(scored_candidates, key=lambda x: x['score'], reverse=True)[:limit]
 
 @app.route('/api/recommendations', methods=['POST'])
@@ -608,7 +600,11 @@ def create_stream(imdb_id):
     if not movie: abort(404)
     group_id = uuid.uuid4().hex
     groups = load_groups()
-    groups[group_id] = {'movie_id': imdb_id, 'host_id': user_id, 'participants': {user_id: {'name': user['name'], 'picture': user['picture']}}}
+    groups[group_id] = {
+        'movie_id': imdb_id, 'host_id': user_id,
+        'participants': {user_id: {'name': user['name'], 'picture': user['picture']}},
+        'chat_history': []
+    }
     save_groups(groups)
     return redirect(url_for('watch_stream', group_id=group_id))
 
@@ -628,9 +624,11 @@ def join_stream(group_id):
         if current_group == group_id: return redirect(url_for('watch_stream', group_id=group_id))
         flash('אתה כבר חבר בקבוצה אחרת.', 'error')
         return redirect(url_for('index'))
-    groups[group_id]['participants'][user_id] = {'name': user['name'], 'picture': user['picture']}
+    
+    user_info = {'name': user['name'], 'picture': user['picture']}
+    groups[group_id]['participants'][user_id] = user_info
     save_groups(groups)
-    user_info = groups[group_id]['participants'][user_id]
+    
     socketio.emit('user_joined', {'user_id': user_id, 'user_info': user_info}, room=group_id)
     return redirect(url_for('watch_stream', group_id=group_id))
 
@@ -642,7 +640,7 @@ def watch_stream(group_id):
         return redirect(url_for('index'))
     groups = load_groups()
     if group_id not in groups or user['google_id'] not in groups[group_id].get('participants', {}):
-        flash('אינך חבר בקבוצה זו.', 'error')
+        flash('אינך חבר בקבוצה זו או שהיא נסגרה.', 'error')
         return redirect(url_for('index'))
     movie = load_movie_details(groups[group_id]['movie_id'])
     if not movie:
@@ -666,11 +664,19 @@ def handle_chat_message(data):
     user = session.get('user')
     if not user: return
     group_id = data.get('group_id')
-    message = data.get('message')
-    if group_id and message:
+    message_text = data.get('message')
+    if group_id and message_text:
         groups = load_groups()
         if group_id in groups and user['google_id'] in groups[group_id]['participants']:
-            emit('new_chat_message', {'user_name': user['name'], 'user_picture': user['picture'], 'message': message}, room=group_id)
+            message_data = {
+                'user_name': user['name'],
+                'user_picture': user['picture'],
+                'message': message_text,
+                'timestamp': datetime.datetime.utcnow().isoformat()
+            }
+            groups[group_id].setdefault('chat_history', []).append(message_data)
+            save_groups(groups)
+            emit('new_chat_message', message_data, room=group_id)
 
 @socketio.on('kick_participant')
 def handle_kick_participant(data):
@@ -684,8 +690,7 @@ def handle_kick_participant(data):
             del groups[group_id]['participants'][target_user_id]
             save_groups(groups)
             emit('update_group_data', {'group_data': groups[group_id]}, room=group_id)
-            # Cannot target a specific SID here as it's not readily available.
-            # Client-side logic will handle updates for all.
+            emit('you_were_kicked', {'kicked_user_id': target_user_id}, room=group_id)
 
 @socketio.on('promote_to_host')
 def handle_promote_to_host(data):
@@ -731,14 +736,13 @@ def handle_disconnect():
                             logging.info(f"Host was the last participant. Group {group_id} deleted.")
                     save_groups(groups)
                     if group_id in groups:
-                        emit('update_group_data', {'group_data': groups[group_id]}, room=group_id, include_self=False)
+                        emit('update_group_data', {'group_data': groups[group_id]}, room=group_id)
 
 if __name__ == '__main__':
     if firebase_admin._apps:
         try:
              default_app_creds = firebase_admin._apps['[DEFAULT]'].options.get('credential')
              if default_app_creds is not None:
-                logging.info("Firebase default app credential check passed.")
                 port = int(os.environ.get('PORT', 5000))
                 socketio.run(app, host='0.0.0.0', port=port, debug=False)
              else:
