@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 import datetime
 import traceback
 import os
@@ -1721,8 +1724,15 @@ def handle_disconnect():
     group_id = get_user_current_group(user_id)
     
     if group_id:
-        time.sleep(5)
+        # השתמש ב-socketio.sleep הלא-חוסם במקום time.sleep
+        socketio.sleep(5) 
+        
+        # בדוק אם המשתמש עדיין לא מחובר לאף קבוצה (אולי התחבר מחדש בינתיים)
+        if get_user_current_group(user_id) is None:
+            return
+
         groups = load_groups()
+        # ודא שהקבוצה עדיין קיימת ושהמשתמש עדיין רשום בה לפני שתנסה להסיר
         if group_id in groups and user_id in groups[group_id]['participants']:
             group = groups[group_id]
             
@@ -1732,16 +1742,22 @@ def handle_disconnect():
                 del groups[group_id]
                 logging.info(f"Group {group_id} is empty and has been deleted.")
             elif group['host_id'] == user_id:
-                new_host_id = next(iter(group['participants']))
-                group['host_id'] = new_host_id
-                logging.info(f"Host {user['email']} left group {group_id}. New host is {new_host_id}.")
-            
+                # בחר מארח חדש רק אם נשארו משתתפים
+                if group['participants']:
+                    new_host_id = next(iter(group['participants']))
+                    group['host_id'] = new_host_id
+                    logging.info(f"Host {user['email']} left group {group_id}. New host is {new_host_id}.")
+                else: # המארח עזב והיה האחרון
+                    del groups[group_id]
+                    logging.info(f"Host was the last participant. Group {group_id} deleted.")
+
             save_groups(groups)
             
+            # שלח עדכון רק אם הקבוצה עדיין קיימת
             if group_id in groups:
                 emit('update_group_data', {'group_data': groups[group_id]}, room=group_id, include_self=False)
-            else:
-                 emit('update_group_data', {'group_data': {}}, room=group_id, include_self=False)
+
+
 if __name__ == '__main__':
     if firebase_admin._apps:
         try:
@@ -1759,6 +1775,7 @@ if __name__ == '__main__':
 
     else:
         logging.error("Application not started because Firebase initialization failed.")
+
 
 
 
