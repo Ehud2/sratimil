@@ -73,7 +73,6 @@
         const currentUser = {{ user | tojson }};
         const groupId = {{ group_id | tojson }};
         let groupData = {{ group_data | tojson }};
-        let userSids = {};
 
         const socket = io();
 
@@ -89,6 +88,7 @@
         const inviteButton = document.getElementById('invite-button');
 
         function renderParticipants() {
+            if (!participantsList) return;
             participantsList.innerHTML = '';
             const participants = groupData.participants || {};
             const participantIds = Object.keys(participants);
@@ -127,7 +127,7 @@
                 actions.querySelector('.kick-btn').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (confirm(`האם אתה בטוח שברצונך להוציא את ${participant.name}?`)) {
-                        socket.emit('kick_participant', { group_id: groupId, target_user_id: id, sid: userSids[id] });
+                        socket.emit('kick_participant', { group_id: groupId, target_user_id: id });
                     }
                 });
                 
@@ -160,11 +160,14 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        function loadChatHistory() {
+            const history = groupData.chat_history || [];
+            history.forEach(msg => addChatMessage(msg));
+        }
+
         function escapeHTML(str) {
             return str.replace(/[&<>'"]/g, 
-                tag => ({
-                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-                }[tag] || tag)
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
             );
         }
 
@@ -194,29 +197,28 @@
 
         socket.on('user_joined', (data) => {
             groupData.participants[data.user_id] = data.user_info;
-            userSids[data.user_id] = data.sid;
             renderParticipants();
             addSystemMessage(`${data.user_info.name} הצטרף לקבוצה.`);
         });
 
         socket.on('update_group_data', (data) => {
-            if (!data.group_data.participants) {
+            if (!data.group_data || !data.group_data.participants) {
                 addSystemMessage("הקבוצה התפרקה.");
                 setTimeout(() => window.location.href = "{{ url_for('index') }}", 2000);
                 return;
             }
             
-            const oldParticipants = new Set(Object.keys(groupData.participants || {}));
-            const newParticipants = new Set(Object.keys(data.group_data.participants || {}));
-
-            const joined = [...newParticipants].filter(x => !oldParticipants.has(x));
-            const left = [...oldParticipants].filter(x => !newParticipants.has(x));
-
+            const oldHost = groupData.host_id;
+            const leftUser = Object.keys(groupData.participants).find(id => !data.group_data.participants[id]);
+            
             groupData = data.group_data;
             renderParticipants();
 
-            if (left.length > 0) {
-                 addSystemMessage("משתמש עזב את הקבוצה.");
+            if (leftUser) {
+                 addSystemMessage(`משתמש עזב את הקבוצה.`);
+            }
+            if (groupData.host_id !== oldHost) {
+                 addSystemMessage(`${groupData.participants[groupData.host_id].name} הוא המנהל החדש.`);
             }
         });
         
@@ -225,7 +227,7 @@
         });
 
         socket.on('you_were_kicked', (data) => {
-            if(data.group_id === groupId) {
+            if(data.kicked_user_id === currentUser.google_id) {
                 alert('הוצאת מהקבוצה על ידי המנהל.');
                 window.location.href = "{{ url_for('index') }}";
             }
@@ -239,7 +241,9 @@
              chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        // --- Inicjalizacja ---
         renderParticipants();
+        loadChatHistory();
     });
 </script>
 </body>
