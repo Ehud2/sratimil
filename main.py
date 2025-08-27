@@ -12,17 +12,16 @@ from firebase_admin import credentials, db
 import logging # Import logging for better error handling
 import threading
 import time
-from flask_socketio import SocketIO, join_room, leave_room, emit
 import uuid
+from flask_socketio import SocketIO, join_room, leave_room, emit
+import threading
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 
-
-
-
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moviesilsuperdupersecretkey')
 socketio = SocketIO(app)
 
 GROUPS_FILE = 'groups.json'
@@ -32,9 +31,9 @@ def initialize_groups_file():
     with groups_lock:
         with open(GROUPS_FILE, 'w') as f:
             json.dump({}, f)
-    logging.info(f"{GROUPS_FILE} has been cleared for the new session.")
+    logging.info(f"{GROUPS_FILE} has been cleared and initialized.")
 
-def get_groups():
+def load_groups():
     with groups_lock:
         try:
             with open(GROUPS_FILE, 'r') as f:
@@ -42,13 +41,10 @@ def get_groups():
         except (FileNotFoundError, json.JSONDecodeError):
             return {}
 
-def save_groups(groups):
+def save_groups(data):
     with groups_lock:
         with open(GROUPS_FILE, 'w') as f:
-            json.dump(groups, f, indent=4)
-
-
-
+            json.dump(data, f, indent=4)
 
 
 # --- Security Warning: Do NOT hardcode secrets in production ---
@@ -1499,6 +1495,7 @@ def api_recommendations():
 
 
 
+
 # --- Error Handlers ---
 @app.errorhandler(403)
 def forbidden(e):
@@ -1528,200 +1525,8 @@ def internal_server_error(e):
 
 
 
-
-
-@app.route('/create_group/<imdb_id>')
-def create_group(imdb_id):
-    user = session.get('user')
-    if not user:
-        flash('עליך להתחבר כדי ליצור קבוצה.', 'warning')
-        return redirect(url_for('google_login'))
-
-    group_id = str(uuid.uuid4())
-    groups = get_groups()
-
-    groups[group_id] = {
-        'imdb_id': imdb_id,
-        'host_id': user['google_id'],
-        'participants': {
-            user['google_id']: {
-                'name': user['name'],
-                'picture': user['picture']
-            }
-        },
-        'chat': []
-    }
-
-    save_groups(groups)
-    logging.info(f"User {user['email']} created group {group_id} for movie {imdb_id}.")
-    return redirect(url_for('stream_page', group_id=group_id))
-
-@app.route('/stream/<group_id>')
-def stream_page(group_id):
-    user = session.get('user')
-    if not user:
-        flash('עליך להתחבר כדי להצטרף לקבוצת צפייה.', 'error')
-        return redirect(url_for('index'))
-
-    groups = get_groups()
-    group = groups.get(group_id)
-
-    if not group:
-        flash('קבוצת הצפייה לא נמצאה או נסגרה.', 'error')
-        return redirect(url_for('index'))
-
-    if user['google_id'] not in group['participants']:
-        group['participants'][user['google_id']] = {
-            'name': user['name'],
-            'picture': user['picture']
-        }
-        save_groups(groups)
-    
-    movie_info = load_movie_details(group['imdb_id'])
-    if not movie_info:
-        flash('פרטי הסרט עבור קבוצה זו לא נמצאו.', 'error')
-        return redirect(url_for('index'))
-
-    return render_template('stream.html',
-                           user=user,
-                           group_id=group_id,
-                           movie=movie_info,
-                           current_year=datetime.datetime.utcnow().year)
-
-
-connected_users = {}
-
-
-@socketio.on('join')
-def on_join(data):
-    user = session.get('user')
-    if not user:
-        return
-
-    group_id = data['group_id']
-    groups = get_groups()
-    group = groups.get(group_id)
-
-    if not group:
-        return
-    
-    connected_users[request.sid] = {'user_id': user['google_id'], 'group_id': group_id, 'email': user['email']}
-
-    join_room(group_id)
-    socketio.emit('group_update', group, room=group_id)
-    logging.info(f"User {user['email']} (sid: {request.sid}) joined room {group_id}")
-
-@socketio.on('send_message')
-def handle_send_message(data):
-    user = session.get('user')
-    if not user:
-        logging.warning("Received send_message from unauthenticated user.")
-        return
-
-    group_id = data.get('group_id')
-    message_text = data.get('message')
-    
-    if not all([group_id, message_text]):
-        logging.warning(f"send_message event missing data from user {user.get('email')}")
-        return
-
-    with groups_lock:
-        groups = get_groups()
-        group = groups.get(group_id)
-
-        if group and user['google_id'] in group['participants']:
-            chat_message = {
-                'sender_id': user['google_id'],
-                'sender_name': user['name'],
-                'message': message_text,
-                'timestamp': datetime.datetime.utcnow().isoformat()
-            }
-            if 'chat' not in group:
-                group['chat'] = []
-            group['chat'].append(chat_message)
-            save_groups(groups)
-            
-            # Emit to the entire room
-            socketio.emit('group_update', group, room=group_id)
-            logging.info(f"User {user.get('email')} sent message in group {group_id}")
-        else:
-            logging.warning(f"User {user.get('email')} tried to send message to group {group_id} but is not a participant.")
-
-@socketio.on('kick_user')
-def handle_kick_user(data):
-    user = session.get('user')
-    if not user:
-        return
-
-    group_id = data['group_id']
-    user_to_kick_id = data['user_id']
-    
-    groups = get_groups()
-    group = groups.get(group_id)
-
-    if group and group['host_id'] == user['google_id'] and user_to_kick_id in group['participants']:
-        if user_to_kick_id != group['host_id']:
-            del group['participants'][user_to_kick_id]
-            save_groups(groups)
-            socketio.emit('group_update', group, room=group_id)
-            socketio.emit('kicked', {'reason': 'הוצאת מהקבוצה על ידי המנהל.'}, to=user_to_kick_id)
-            logging.info(f"Host {user['email']} kicked user {user_to_kick_id} from group {group_id}")
-
-@socketio.on('promote_host')
-def handle_promote_host(data):
-    user = session.get('user')
-    if not user:
-        return
-
-    group_id = data['group_id']
-    new_host_id = data['user_id']
-    
-    groups = get_groups()
-    group = groups.get(group_id)
-
-    if group and group['host_id'] == user['google_id'] and new_host_id in group['participants']:
-        group['host_id'] = new_host_id
-        save_groups(groups)
-        socketio.emit('group_update', group, room=group_id)
-        logging.info(f"Host {user['email']} promoted {new_host_id} to host in group {group_id}")
-
-@socketio.on('disconnect')
-def on_disconnect():
-    if request.sid not in connected_users:
-        return
-
-    user_info = connected_users.pop(request.sid)
-    user_id = user_info['user_id']
-    group_id = user_info['group_id']
-    user_email = user_info['email']
-
-    with groups_lock:
-        groups = get_groups()
-        group = groups.get(group_id)
-        
-        if not group:
-            logging.info(f"User {user_email} disconnected from a non-existent group {group_id}")
-            return
-
-        is_host = group.get('host_id') == user_id
-        participant_left = user_id in group.get('participants', {})
-
-        if is_host:
-            del groups[group_id]
-            socketio.emit('group_dissolved', {'reason': 'המנהל עזב, הקבוצה נסגרה.'}, room=group_id)
-            logging.info(f"Host {user_email} disconnected, dissolving group {group_id}")
-        elif participant_left:
-            del group['participants'][user_id]
-            socketio.emit('group_update', group, room=group_id)
-            logging.info(f"User {user_email} disconnected from group {group_id}")
-
-        save_groups(groups)
-
-
-
-
-
-def initialize_data_cache():
+def initialize_app_data():
+    initialize_groups_file()
     if os.path.exists(DATA_FILE):
         logging.info(f"Loading initial data from {DATA_FILE}...")
         load_data_from_json()
@@ -1730,9 +1535,213 @@ def initialize_data_cache():
         time.sleep(2)
         refresh_data_from_firebase()
 
-initialize_data_cache()
-initialize_groups_file()
+initialize_app_data()
 
+
+
+def get_user_current_group(user_id):
+    groups = load_groups()
+    for group_id, group_data in groups.items():
+        if user_id in group_data.get('participants', {}):
+            return group_id
+    return None
+
+@app.route('/stream/create/<imdb_id>')
+def create_stream(imdb_id):
+    user = session.get('user')
+    if not user:
+        flash('עליך להתחבר כדי ליצור קבוצת צפייה.', 'warning')
+        return redirect(url_for('google_login'))
+
+    user_id = user['google_id']
+    if get_user_current_group(user_id):
+        flash('אתה כבר חבר בקבוצת צפייה. עזוב את הקבוצה הנוכחית כדי ליצור חדשה.', 'error')
+        return redirect(request.referrer or url_for('index'))
+
+    movie = load_movie_details(imdb_id)
+    if not movie:
+        abort(404)
+
+    group_id = uuid.uuid4().hex
+    groups = load_groups()
+    groups[group_id] = {
+        'movie_id': imdb_id,
+        'host_id': user_id,
+        'participants': {
+            user_id: {
+                'name': user['name'],
+                'picture': user['picture']
+            }
+        }
+    }
+    save_groups(groups)
+    logging.info(f"User {user['email']} created a new stream group {group_id} for movie {imdb_id}")
+    return redirect(url_for('watch_stream', group_id=group_id))
+
+@app.route('/stream/join/<group_id>')
+def join_stream(group_id):
+    user = session.get('user')
+    if not user:
+        flash('עליך להתחבר כדי להצטרף לקבוצת צפייה.', 'warning')
+        return redirect(url_for('google_login'))
+
+    user_id = user['google_id']
+    groups = load_groups()
+
+    if group_id not in groups:
+        flash('קבוצת הצפייה שאתה מנסה להצטרף אליה אינה קיימת.', 'error')
+        return redirect(url_for('index'))
+
+    current_group = get_user_current_group(user_id)
+    if current_group is not None:
+        if current_group == group_id:
+            return redirect(url_for('watch_stream', group_id=group_id))
+        else:
+            flash('אתה כבר חבר בקבוצת צפייה. אינך יכול להצטרף לקבוצה נוספת.', 'error')
+            return redirect(url_for('index'))
+
+    groups[group_id]['participants'][user_id] = {
+        'name': user['name'],
+        'picture': user['picture']
+    }
+    save_groups(groups)
+    logging.info(f"User {user['email']} joined stream group {group_id}")
+    
+    user_info = groups[group_id]['participants'][user_id]
+    socketio.emit('user_joined', {'user_id': user_id, 'user_info': user_info}, room=group_id)
+
+    return redirect(url_for('watch_stream', group_id=group_id))
+
+
+@app.route('/stream/watch/<group_id>')
+def watch_stream(group_id):
+    user = session.get('user')
+    if not user:
+        flash('עליך להתחבר כדי לצפות.', 'warning')
+        return redirect(url_for('index'))
+
+    user_id = user['google_id']
+    groups = load_groups()
+
+    if group_id not in groups or user_id not in groups[group_id].get('participants', {}):
+        flash('אינך חבר בקבוצת צפייה זו או שהיא אינה קיימת.', 'error')
+        return redirect(url_for('index'))
+
+    group_data = groups[group_id]
+    movie = load_movie_details(group_data['movie_id'])
+    if not movie:
+        flash('הסרט המשויך לקבוצה זו לא נמצא.', 'error')
+        return redirect(url_for('index'))
+
+    return render_template(
+        'stream.html',
+        user=user,
+        group_id=group_id,
+        group_data=group_data,
+        movie=movie
+    )
+
+@socketio.on('join_group_room')
+def handle_join_group_room(data):
+    user = session.get('user')
+    if not user:
+        return
+    
+    group_id = data.get('group_id')
+    if group_id:
+        join_room(group_id)
+        logging.info(f"Socket connection: User {user.get('email')} joined room for group {group_id}")
+
+@socketio.on('send_chat_message')
+def handle_chat_message(data):
+    user = session.get('user')
+    if not user:
+        return
+        
+    group_id = data.get('group_id')
+    message = data.get('message')
+    
+    if not group_id or not message:
+        return
+
+    groups = load_groups()
+    if group_id in groups and user['google_id'] in groups[group_id]['participants']:
+        emit('new_chat_message', {
+            'user_name': user['name'],
+            'user_picture': user['picture'],
+            'message': message
+        }, room=group_id)
+
+@socketio.on('kick_participant')
+def handle_kick_participant(data):
+    user = session.get('user')
+    if not user:
+        return
+
+    group_id = data.get('group_id')
+    target_user_id = data.get('target_user_id')
+    target_sid = data.get('sid')
+    groups = load_groups()
+
+    if group_id in groups and groups[group_id]['host_id'] == user['google_id']:
+        if target_user_id in groups[group_id]['participants']:
+            del groups[group_id]['participants'][target_user_id]
+            save_groups(groups)
+            
+            emit('update_group_data', {'group_data': groups[group_id]}, room=group_id)
+            if target_sid:
+                emit('you_were_kicked', {'group_id': group_id}, to=target_sid)
+
+
+@socketio.on('promote_to_host')
+def handle_promote_to_host(data):
+    user = session.get('user')
+    if not user:
+        return
+
+    group_id = data.get('group_id')
+    target_user_id = data.get('target_user_id')
+    groups = load_groups()
+
+    if group_id in groups and groups[group_id]['host_id'] == user['google_id']:
+        if target_user_id in groups[group_id]['participants']:
+            groups[group_id]['host_id'] = target_user_id
+            save_groups(groups)
+            
+            emit('update_group_data', {'group_data': groups[group_id]}, room=group_id)
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    user = session.get('user')
+    if not user:
+        return
+
+    user_id = user['google_id']
+    group_id = get_user_current_group(user_id)
+    
+    if group_id:
+        time.sleep(5)
+        groups = load_groups()
+        if group_id in groups and user_id in groups[group_id]['participants']:
+            group = groups[group_id]
+            
+            del group['participants'][user_id]
+            
+            if not group['participants']:
+                del groups[group_id]
+                logging.info(f"Group {group_id} is empty and has been deleted.")
+            elif group['host_id'] == user_id:
+                new_host_id = next(iter(group['participants']))
+                group['host_id'] = new_host_id
+                logging.info(f"Host {user['email']} left group {group_id}. New host is {new_host_id}.")
+            
+            save_groups(groups)
+            
+            if group_id in groups:
+                emit('update_group_data', {'group_data': groups[group_id]}, room=group_id, include_self=False)
+            else:
+                 emit('update_group_data', {'group_data': {}}, room=group_id, include_self=False)
 if __name__ == '__main__':
     if firebase_admin._apps:
         try:
@@ -1747,8 +1756,11 @@ if __name__ == '__main__':
             logging.error("Application not started: Firebase default app was not initialized.")
         except Exception as e:
              logging.error(f"Application not started: Unexpected error during Firebase check: {e}", exc_info=True)
+
     else:
         logging.error("Application not started because Firebase initialization failed.")
+
+
 
 
 
