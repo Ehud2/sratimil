@@ -1,82 +1,66 @@
-<!-- add.html -->
-{# current_language is passed from Flask #}
-{# This page will always be in Hebrew (RTL), but header/footer will respect the session language #}
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {# Title always in Hebrew #}
     <title>הוספת תוכן - סינמה פריים</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {# Ensure your add.css exists and is linked if needed for page-specific layout beyond base styles #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/add.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
-    {# Included loading spinner styles directly in style.css #}
     <style>
-        /* Add specific styles for add.html if needed, e.g., for form layout */
          .hidden-form-section {
              display: none;
          }
          .omdb-details-display img {
-             max-width: 100px; /* Limit size of displayed poster */
+             max-width: 100px;
              height: auto;
              margin-top: 10px;
-              /* Added margin-right for RTL layout */
              margin-right: 10px;
              margin-left: 0;
          }
           .omdb-search-results {
-              max-height: 200px; /* Limit height of search results list */
-              overflow-y: auto; /* Add scrollbar if needed */
-              /* Use border color from CSS variables */
+              max-height: 200px;
+              overflow-y: auto;
               border: 1px solid var(--border-color);
               list-style: none;
               padding: 0;
               margin-top: 10px;
-              /* Ensure results list is LTR */
               direction: ltr;
               text-align: left;
           }
           .omdb-search-results li {
               padding: 8px;
               cursor: pointer;
-               /* Use border color from CSS variables */
               border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-              /* Use card background color */
               background-color: var(--card-bg-color);
-              display: flex; /* Use flexbox to align title and id */
-              justify-content: space-between; /* Space out title and id */
+              display: flex;
+              justify-content: space-between;
               align-items: center;
-               /* Match text color */
               color: var(--text-color);
                transition: background-color var(--transition-fast);
           }
            .omdb-search-results li:hover {
-               /* Use a hover background color */
                background-color: rgba(40, 40, 40, 0.7);
            }
             .omdb-search-results li.selected-result {
-               /* Use accent color for selected */
                background-color: var(--primary-accent-color);
-               color: var(--bg-color); /* Change text color for contrast */
+               color: var(--bg-color);
            }
             .omdb-search-results li.selected-result span {
-                color: var(--bg-color); /* Ensure span text color is also updated */
+                color: var(--bg-color);
             }
 
            .result-id {
                font-size: 0.8em;
-                /* Use muted text color */
                color: var(--text-muted-color);
-               flex-shrink: 0; /* Prevent id from shrinking */
+               flex-shrink: 0;
            }
             .omdb-search-results li.selected-result .result-id {
-                 color: rgba(11, 12, 16, 0.8); /* Darker color for selected ID */
+                 color: rgba(11, 12, 16, 0.8);
             }
 
            .omdb-search-input {
@@ -85,7 +69,6 @@
            }
             .omdb-search-input input[type="text"] {
                 flex-grow: 1;
-                 /* Force LTR for English input */
                  direction: ltr;
                  text-align: left;
             }
@@ -97,30 +80,26 @@
             .omdb-search-section {
                 margin-top: 20px;
                 padding-top: 20px;
-                 /* Use border color from CSS variables */
                 border-top: 1px solid rgba(102, 252, 241, 0.3);
             }
             .hidden-manual-series-id {
-                display: none; /* Initially hidden */
+                display: none;
             }
-             /* Style for dynamic season/episode inputs - KEEPING CSS RULES but removing HTML/JS generation */
             .season-episode-inputs {
                  margin-top: 15px;
                  padding: 15px;
                  border: 1px dashed #555;
                  border-radius: 5px;
                  background-color: #333;
-                 display: none; /* Hide this div as it's no longer used for input */
+                 display: none;
             }
             .season-episode-inputs .form-group {
                  margin-bottom: 10px;
             }
              .season-episode-inputs label {
-                  font-weight: normal; /* Less emphasis than main labels */
-                  margin-left: 5px; /* Add some space */
+                  font-weight: normal;
+                  margin-left: 5px;
              }
-
-         /* Specific styles for add.html form container */
          .add-content-form-container {
              max-width: 700px;
              margin: 40px auto;
@@ -128,7 +107,7 @@
              background-color: var(--bg-secondary);
              border-radius: var(--border-radius-md);
              box-shadow: 0 5px 15px var(--shadow-color);
-             direction: rtl; /* Explicitly keep RTL for the form */
+             direction: rtl;
          }
          .add-content-form-container h1 {
              font-family: var(--font-heading);
@@ -158,8 +137,8 @@
              font-family: var(--font-body);
              font-size: 1em;
              transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-             direction: rtl; /* Explicitly keep RTL for inputs by default */
-             text-align: right; /* Explicitly keep right alignment by default */
+             direction: rtl;
+             text-align: right;
          }
           .form-group input[type="text"]:focus,
           .form-group input[type="url"]:focus,
@@ -188,38 +167,28 @@
              background-color: var(--secondary-accent-color);
              transform: translateY(-2px);
          }
-
-
     </style>
 </head>
 <body>
-     <!-- Loading Spinner - Copy from index.html -->
-     {# Spinner text always in Hebrew on this page #}
      <div id="loading-spinner">
          <div class="spinner">
              {% if user and user.picture %}
                  <img src="{{ user.picture }}" alt="User profile picture">
              {% else %}
-                 {# Fallback to default profile image if user or picture is missing #}
                  <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
              {% endif %}
          </div>
          <p>טוען סינמה פריים...</p>
      </div>
-
-     <!-- Header - Copy from index.html -->
      <header class="site-header">
          <div class="container header-content">
-
               <div class="auth-container">
                   {% if user %}
                       <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
-                          {# Ensure this path is correct for your default image if user.picture is missing #}
                           <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
                       </a>
                   {% else %}
                       <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
-                           {# Use url_for for your static image #}
                            <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
                       </a>
                   {% endif %}
@@ -229,11 +198,7 @@
                 <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
                 <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
              </div>
-
-              {# --- Add Language Switcher Here (after Search) --- #}
               <div class="language-switcher">
-                  {# Link to the set_language route. Show the name of the *current* language as per request. #}
-                  {# The href points to the *target* language (opposite of current) #}
                   <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
                        <i class="fas fa-globe"></i>
                        {% if current_language == 'he' %}
@@ -243,10 +208,7 @@
                        {% endif %}
                    </a>
               </div>
-
-
              <nav class="main-nav">
-                 {# Update link text and aria-label based on language #}
                  <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
                  <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
                  <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
@@ -254,13 +216,8 @@
                      <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a>
                  {% endif %}
              </nav>
-
-
-             {# Removed the header-spacer div #}
          </div>
      </header>
-
-     {# Flash Messages - Copy from index.html #}
      {% with messages = get_flashed_messages(with_categories=true) %}
          {% if messages %}
          <div class="container flash-messages">
@@ -276,11 +233,9 @@
      {% endwith %}
 
     <main class="container main-content">
-        <div class="add-content-form-container"> {# Changed class name to be more general #}
-            {# Heading always in Hebrew #}
+        <div class="add-content-form-container">
             <h1>הוספת תוכן חדש</h1>
 
-            {# Ensure form method is POST and action is correct #}
             <form method="POST" action="{{ url_for('add_content') }}">
                 <div class="form-group content-type-selector">
                     <label>סוג התוכן:</label><br>
@@ -293,48 +248,33 @@
                 </div>
 
                 <div id="movie-form" class="content-form-section">
-                     {# IMDb ID and Title will be populated from OMDB search results #}
                      <div class="form-group">
-                        {# Labels always in Hebrew #}
-                        <label for="movie_imdb_id">IMDb ID של הסרט (יושלם אוטומטית מ-OMDb או ניתן להזנה ידנית):</label> {# Updated label #}
+                        <label for="movie_imdb_id">IMDb ID של הסרט (יושלם אוטומטית מ-OMDb או ניתן להזנה ידנית):</label>
                         <input type="text" id="movie_imdb_id" name="movie_imdb_id" required pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
                      <div class="form-group">
-                        {# Labels always in Hebrew #}
                         <label for="movie_title">שם הסרט (יושלם אוטומטית מ-OMDb):</label>
-                        {# Kept readonly #}
                         <input type="text" id="movie_title" name="movie_title" readonly>
                     </div>
-
                     <div class="form-group">
-                         {# Labels always in Hebrew #}
                          <label for="movie_category">קטגוריה:</label>
                          <select id="movie_category" name="movie_category" required>
-                              {# Categories are in Hebrew #}
                               {% for category in categories %}
                                    <option value="{{ category }}">{{ category }}</option>
                               {% endfor %}
                               <option value="ללא">ללא</option>
                          </select>
                     </div>
-                    {# REMOVED: Video URL input for movies #}
                      <div class="omdb-search-section">
-                        {# Headings always in Hebrew #}
                         <h3>חיפוש אוטומטי ב-OMDb (סרטים):</h3>
                         <div class="omdb-search-input">
-                             {# Placeholder always in Hebrew #}
                              <input type="text" id="omdb_movie_search_term" placeholder="חפש סרט לפי שם...">
-                             {# Button text always in Hebrew #}
                              <button type="button" id="search_movie_omdb_button">חפש</button>
                         </div>
-                         {# Use a distinct class for results list #}
                          <ul id="omdbMovieResults" class="omdb-search-results">
                          </ul>
-                         {# Display area for selected OMDB movie details #}
                          <div id="selectedOmdbMovieDetails" class="omdb-details-display" style="display: none;">
-                             {# Headings always in Hebrew #}
                              <h4>פרטים נבחרים מ-OMDb:</h4>
-                              {# Labels always in Hebrew #}
                               <p><strong>כותרת:</strong> <span id="omdbMovieTitleDisplay"></span></p>
                              <p><strong>שנת יציאה:</strong> <span id="omdbMovieYearDisplay"></span></p>
                               <p><strong>דירוג IMDb:</strong> <span id="omdbMovieRatingDisplay"></span></p>
@@ -346,60 +286,39 @@
                 </div>
 
                 <div id="series-form" class="content-form-section hidden-form-section">
-                     {# IMDb ID and Title will be populated from OMDB search results #}
                      <div class="form-group">
-                         {# Labels always in Hebrew #}
-                        <label for="series_imdb_id">IMDb ID של הסדרה (יושלם אוטומטית מ-OMDb או ניתן להזנה ידנית):</label> {# Updated label #}
-                         {# REMOVED readonly - Kept required and pattern #}
+                        <label for="series_imdb_id">IMDb ID של הסדרה (יושלם אוטומטית מ-OMDb או ניתן להזנה ידנית):</label>
                         <input type="text" id="series_imdb_id" name="series_imdb_id" required pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
                     <div class="form-group">
-                        {# Labels always in Hebrew #}
                         <label for="series_title">שם הסדרה (יושלם אוטומטית מ-OMDb):</label>
-                         {# Kept readonly #}
                         <input type="text" id="series_title" name="series_title" readonly>
                     </div>
-
-                     {# Added category for series #}
                      <div class="form-group">
-                          {# Labels always in Hebrew #}
                          <label for="series_category">קטגוריה:</label>
                          <select id="series_category" name="series_category" required>
-                              {# Categories are in Hebrew #}
                               {% for category in categories %}
                                    <option value="{{ category }}">{{ category }}</option>
                               {% endfor %}
                               <option value="ללא">ללא</option>
                          </select>
                     </div>
-
-                     {# REMOVED: Fields for total seasons and dynamic episode counts #}
-                     {# The server will now fetch total seasons and episode counts from OMDB #}
-
-
                      <div class="omdb-search-section">
-                        {# Headings always in Hebrew #}
                         <h3>חיפוש אוטומטי ב-OMDb (סדרות):</h3>
                         <div class="omdb-search-input">
-                             {# Placeholder always in Hebrew #}
                              <input type="text" id="omdb_series_search_term" placeholder="חפש סדרה לפי שם...">
-                             {# Button text always in Hebrew #}
                              <button type="button" id="search_series_omdb_button">חפש</button>
                         </div>
-                         {# Use a distinct class for results list #}
                          <ul id="omdbSeriesResults" class="omdb-search-results">
                          </ul>
-                         {# Display area for selected OMDB series details #}
                          <div id="selectedOmdbSeriesDetails" class="omdb-details-display" style="display: none;">
-                             {# Headings always in Hebrew #}
                              <h4>פרטים נבחרים מ-OMDb:</h4>
-                             {# Labels always in Hebrew #}
                               <p><strong>כותרת:</strong> <span id="omdbSeriesTitleDisplay"></span></p>
-                             <p><strong>שנות שידור:</strong> <span id="omdbSeriesYearDisplay"></span></p> {# Changed from year to year range #}
+                             <p><strong>שנות שידור:</strong> <span id="omdbSeriesYearDisplay"></span></p>
                               <p><strong>דירוג IMDb:</strong> <span id="omdbSeriesRatingDisplay"></span></p>
                               <p><strong>תקציר:</strong> <span id="omdbSeriesPlotDisplay"></span></p>
                              <p><strong>IMDb ID:</strong> <span id="omdbSeriesIdDisplay"></span></p>
-                              <p><strong>סה"כ עונות (מ-OMDb):</strong> <span id="omdbSeriesTotalSeasonsDisplay"></span></p> {# Added total seasons display #}
+                              <p><strong>סה"כ עונות (מ-OMDb):</strong> <span id="omdbSeriesTotalSeasonsDisplay"></span></p>
                               <img id="omdbSeriesPosterDisplay" src="" alt="פוסטר" style="display: none;">
                          </div>
                     </div>
@@ -407,105 +326,76 @@
 
                 <div id="episode-form" class="content-form-section hidden-form-section">
                     <div class="form-group">
-                        {# Labels always in Hebrew #}
                         <label for="episode_series_id">בחר סדרה קיימת:</label>
                         <select id="episode_series_id" name="episode_series_id">
-                            {# Option text always in Hebrew #}
                             <option value="">-- בחר סדרה --</option>
-                            {# available_series list is loaded from Firebase in the Flask route #}
-                            {# Titles in dropdown are Hebrew if available (handled in main.py) #}
                             {% for series in available_series %}
                                 <option value="{{ series.id }}">{{ series.title }}</option>
                             {% endfor %}
-                            {# Option text always in Hebrew #}
                             <option value="manual">-- סדרה לא ברשימה (הזן ידנית) --</option>
                         </select>
                     </div>
                     <div class="form-group hidden-manual-series-id" id="manual_series_id_group">
-                         {# Labels always in Hebrew #}
                          <label for="manual_episode_series_id">IMDb ID של הסדרה (הזנה ידנית):</label>
                          <input type="text" id="manual_episode_series_id" name="manual_episode_series_id" pattern="tt\d{7,}" title="IMDb ID חייב להתחיל ב-'tt' ואחריו 7 ספרות או יותר">
                     </div>
-
-                     {# REMOVED: Episode IMDb ID input #}
-
                     <div class="form-group">
-                         {# Labels always in Hebrew #}
-                        <label for="episode_title">שם הפרק (אופציונלי, אם לא יסופק יאוחזר מ-OMDb):</label> {# Updated label #}
-                        <input type="text" id="episode_title" name="episode_title"> {# Removed required #}
+                        <label for="episode_title">שם הפרק (אופציונלי, אם לא יסופק יאוחזר מ-OMDb):</label>
+                        <input type="text" id="episode_title" name="episode_title">
                     </div>
                      <div class="form-group">
-                         {# Labels always in Hebrew #}
                         <label for="episode_season">מספר עונה:</label>
                         <input type="number" id="episode_season" name="episode_season" min="1" required>
                     </div>
                     <div class="form-group">
-                         {# Labels always in Hebrew #}
                         <label for="episode_number">מספר הפרק:</label>
                         <input type="number" id="episode_number" name="episode_number" min="1" required>
                     </div>
-                    {# REMOVED: Video URL input for episodes #}
                 </div>
 
-                {# Button text always in Hebrew #}
                 <button type="submit" class="form-submit-button">הוסף תוכן</button>
+                <button type="button" id="refresh-data-button" class="form-submit-button" style="background-color: #f0ad4e; margin-top: 15px;">עדכון קובץ אחסון נתונים</button>
             </form>
         </div>
     </main>
 
-     {# Footer - Copy from index.html #}
      <footer class="site-footer-bottom">
          <div class="container">
-              {# Footer text is language dependent #}
               <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
          </div>
      </footer>
 
     <script>
-        // JavaScript to hide the loading spinner once the page is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded fired on add page."); // Debug log
             const spinner = document.getElementById('loading-spinner');
-            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+            const visualHideDelay = 200;
 
             if (spinner) {
-                 console.log("Spinner element found, attempting to hide.");
                  spinner.classList.add('hidden');
                  spinner.addEventListener('transitionend', function handler(event) {
                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                          spinner.style.display = 'none';
-                         console.log("Spinner hidden via transitionend on add page.");
                          spinner.removeEventListener('transitionend', handler);
                      }
                 });
                  setTimeout(() => {
                      if (spinner.classList.contains('hidden') && getComputedStyle(spinner).visibility === 'hidden') {
                           spinner.style.display = 'none';
-                          console.log("Spinner hidden via timeout fallback on add page.");
                      }
                  }, visualHideDelay + 100);
-            } else {
-                console.warn("Spinner element #loading-spinner not found on add page.");
             }
 
-            // --- Show spinner on language switcher click ---
             const languageSwitcherLink = document.querySelector('.language-switcher a');
             if (languageSwitcherLink) {
                  languageSwitcherLink.addEventListener('click', function(event) {
-                      // Show the spinner
                       const spinner = document.getElementById('loading-spinner');
                       if (spinner) {
                           spinner.classList.remove('hidden');
-                          spinner.style.display = 'flex'; // Ensure it's flex for centering
-                           console.log("Spinner shown by language switcher click.");
+                          spinner.style.display = 'flex';
                       }
-                      // Allow the browser to proceed with the link navigation after showing spinner
                  });
             }
 
-
-            // Search functionality (same as index.html, navigate back to index with search term)
-             // Search functionality (same as index.html, navigate back to index with search term) - outside DOMContentLoaded for access
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('keypress', function(event) {
@@ -517,7 +407,6 @@
                         }
                     }
                 });
-                 // Optional: search button click
                 document.querySelector('.search-container button').addEventListener('click', function() {
                      const term = searchInput.value.trim();
                      if (term) {
@@ -526,12 +415,10 @@
                  });
             }
 
-
             const contentTypes = document.querySelectorAll('input[name="content_type"]');
             const formSections = document.querySelectorAll('.content-form-section');
             const episodeSeriesSelect = document.getElementById('episode_series_id');
             const manualSeriesIdGroup = document.getElementById('manual_series_id_group');
-
             const searchMovieOmdbButton = document.getElementById('search_movie_omdb_button');
             const searchSeriesOmdbButton = document.getElementById('search_series_omdb_button');
             const omdbMovieSearchTermInput = document.getElementById('omdb_movie_search_term');
@@ -540,85 +427,52 @@
             const omdbSeriesResultsUl = document.getElementById('omdbSeriesResults');
             const selectedOmdbMovieDetailsDiv = document.getElementById('selectedOmdbMovieDetails');
             const selectedOmdbSeriesDetailsDiv = document.getElementById('selectedOmdbSeriesDetails');
-
             const movieTitleInput = document.getElementById('movie_title');
             const movieImdbIdInput = document.getElementById('movie_imdb_id');
-             const seriesTitleInput = document.getElementById('series_title');
-             const seriesImdbIdInput = document.getElementById('series_imdb_id');
-
-             const episodeTitleInput = document.getElementById('episode_title'); // KEPT INPUT (Optional)
-             const episodeSeasonInput = document.getElementById('episode_season');
-             const episodeNumberInput = document.getElementById('episode_number');
-             const manualEpisodeSeriesIdInput = document.getElementById('manual_episode_series_id'); // Get manual input
+            const seriesTitleInput = document.getElementById('series_title');
+            const seriesImdbIdInput = document.getElementById('series_imdb_id');
+            const episodeTitleInput = document.getElementById('episode_title');
+            const episodeSeasonInput = document.getElementById('episode_season');
+            const episodeNumberInput = document.getElementById('episode_number');
+            const manualEpisodeSeriesIdInput = document.getElementById('manual_episode_series_id');
 
 
             function showFormSection(type) {
                 formSections.forEach(section => {
                     section.classList.add('hidden-form-section');
                 });
-
-                // Clear OMDB search results and selection displays for *all* types when switching form
                 clearOmdbSearch('Movie');
                 clearOmdbSearch('Series');
 
-                // Clear main form inputs that might be populated by OMDB or user
-                // Only clear inputs relevant to the sections being hidden/shown for robustness.
-
-                // Clear movie inputs
                 if(movieTitleInput) movieTitleInput.value = '';
-                // movieImdbIdInput is no longer readonly, clear its value too
                 if(movieImdbIdInput) movieImdbIdInput.value = '';
-
-
-                // Clear series inputs
                 if(seriesTitleInput) seriesTitleInput.value = '';
-                 // seriesImdbIdInput is no longer readonly, clear its value too
                 if(seriesImdbIdInput) seriesImdbIdInput.value = '';
-
-
-                 // Clear episode inputs
-                 if(episodeTitleInput) episodeTitleInput.value = '';
-                 if(episodeSeasonInput) episodeSeasonInput.value = '';
-                 if(episodeNumberInput) episodeNumberInput.value = '';
-
-                 // Reset episode series selection
-                 if(episodeSeriesSelect) episodeSeriesSelect.value = '';
-                 if(manualSeriesIdGroup) manualSeriesIdGroup.style.display = 'none';
-                 if(manualEpisodeSeriesIdInput) manualEpisodeSeriesIdInput.value = '';
-
+                if(episodeTitleInput) episodeTitleInput.value = '';
+                if(episodeSeasonInput) episodeSeasonInput.value = '';
+                if(episodeNumberInput) episodeNumberInput.value = '';
+                if(episodeSeriesSelect) episodeSeriesSelect.value = '';
+                if(manualSeriesIdGroup) manualSeriesIdGroup.style.display = 'none';
+                if(manualEpisodeSeriesIdInput) manualEpisodeSeriesIdInput.value = '';
 
                 const activeSection = document.getElementById(type + '-form');
                 if (activeSection) {
                     activeSection.classList.remove('hidden-form-section');
                 }
-
-                // Set required attributes based on the active form
-                // First, set all relevant inputs in *all* form sections to not required
                 document.querySelectorAll('.content-form-section input:not([type="button"]), .content-form-section select').forEach(input => {
                      input.required = false;
                  });
-
-                // Then, set required only for the active form's inputs
                  if (activeSection) {
                       activeSection.querySelectorAll('input:not([type="button"]):not([type="radio"]), select').forEach(input => {
-                          // Add specific exclusions here if certain fields within the form shouldn't be required
-                          // OMDB search terms are not required for form submission
-                          // episode_series_id and manual_episode_series_id required state is handled by updateEpisodeSeriesRequiredState
-                          // episode_title is now optional
-                          // movie_imdb_id and series_imdb_id are required for form submission
                           if (input.id !== 'omdb_movie_search_term' && input.id !== 'omdb_series_search_term' && input.id !== 'manual_episode_series_id' && input.id !== 'episode_series_id' && input.id !== 'episode_title') {
                               input.required = true;
                           }
                       });
-
-                      // Handle episode series ID required state specifically
                       if (type === 'episode') {
                            updateEpisodeSeriesRequiredState();
                       }
                  }
-
             }
-
             contentTypes.forEach(radio => {
                 radio.addEventListener('change', function() {
                     showFormSection(this.value);
@@ -629,114 +483,80 @@
                  const manualInput = document.getElementById('manual_episode_series_id');
                  const seriesSelect = document.getElementById('episode_series_id');
                  const manualIdGroup = document.getElementById('manual_series_id_group');
-
                  if (!seriesSelect || !manualIdGroup || !manualInput) return;
-
                  const isManualSelected = seriesSelect.value === 'manual';
-
                  manualIdGroup.style.display = isManualSelected ? 'block' : 'none';
-
-                 // These will be checked by the form submit listener for combined validation
                  manualInput.required = false;
                  seriesSelect.required = false;
-
-                 // Ensure the required state is updated visually if needed (e.g. asterisk)
-                 // CSS might handle this based on [required] attribute, but since we set it to false
-                 // here and rely on JS validation, you might need custom CSS classes if visual required
-                 // indicators are important.
             }
 
             if (episodeSeriesSelect) {
                  episodeSeriesSelect.addEventListener('change', updateEpisodeSeriesRequiredState);
             }
 
-            // Initial state setup based on checked radio button
-            // Moved this block INSIDE the DOMContentLoaded listener and ensure it's not duplicated
             const initiallyCheckedType = document.querySelector('input[name="content_type"]:checked');
             if (initiallyCheckedType) {
                  showFormSection(initiallyCheckedType.value);
             } else {
-                 // Default to movie if nothing is checked on load
                  const defaultMovieRadio = document.getElementById('type_movie');
                  if (defaultMovieRadio) defaultMovieRadio.checked = true;
                  showFormSection('movie');
             }
 
-
-            // Function to clear OMDB search results and details display
             function clearOmdbSearch(type) {
                  const resultsUl = document.getElementById(`omdb${type}Results`);
                  const detailsDiv = document.getElementById(`selectedOmdb${type}Details`);
-
                  if (resultsUl) resultsUl.innerHTML = '';
                  if (detailsDiv) {
                      detailsDiv.style.display = 'none';
-                     // Clear display spans and image
                      detailsDiv.querySelectorAll('span').forEach(span => span.textContent = '');
                      const img = detailsDiv.querySelector(`#omdb${type}PosterDisplay`);
                      if(img) { img.src = ''; img.style.display = 'none'; }
-                      // Clear series specific display if it exists
                      const totalSeasonsDisplay = detailsDiv.querySelector(`#omdb${type}TotalSeasonsDisplay`);
                       if (totalSeasonsDisplay) totalSeasonsDisplay.textContent = '';
                  }
-
-                 // Clear inputs related to the search term itself
                  const searchInput = document.getElementById(`omdb_${type.toLowerCase()}_search_term`);
                  if(searchInput) searchInput.value = '';
             }
-
 
             function performOmdbSearch(searchTerm, contentType, resultsUl, detailsDiv, type) {
                  if (!searchTerm) {
                      clearOmdbSearch(type);
                      return;
                  }
-
                  resultsUl.innerHTML = '<li><i class="fas fa-spinner fa-spin"></i> מחפש...</li>';
                  detailsDiv.style.display = 'none';
-                 // Don't clear main inputs here, let the user potentially mix manual + OMDB
 
                  fetch(`/api/search_omdb?s=${encodeURIComponent(searchTerm)}&type=${contentType}`)
                      .then(response => {
                          if (!response.ok) {
-                             console.error(`OMDb Search HTTP error: ${response.status}`);
                              resultsUl.innerHTML = '<li>שגיאה בחיפוש (שגיאת שרת או בעיה ב-API).</li>';
                              detailsDiv.style.display = 'none';
-                             return Promise.reject('HTTP error'); // Propagate error type
+                             return Promise.reject('HTTP error');
                          }
                          return response.json();
                      })
                      .then(data => {
-                         resultsUl.innerHTML = ''; // Clear loading message
+                         resultsUl.innerHTML = '';
                          if (data && data.length > 0) {
                              data.forEach(result => {
                                  const li = document.createElement('li');
                                   li.dataset.imdbId = result.imdbID;
                                   li.dataset.title = result.Title;
-                                  li.dataset.year = result.Year; // OMDB search results include Year
-
+                                  li.dataset.year = result.Year;
                                  li.innerHTML = `<span>${result.Title} (${result.Year})</span> <span class="result-id">${result.imdbID}</span>`;
                                  li.addEventListener('click', function() {
-                                     // Remove selection from previous results
                                      resultsUl.querySelectorAll('li').forEach(item => item.classList.remove('selected-result'));
-                                     // Add selection to the clicked item
                                      this.classList.add('selected-result');
-
-                                     // Populate the main IMDb ID and Title fields for the relevant form
-                                     // These fields are no longer readonly, so this should work correctly.
                                      if (type === 'Movie' && movieImdbIdInput && movieTitleInput) {
                                          movieImdbIdInput.value = this.dataset.imdbId;
                                          movieTitleInput.value = this.dataset.title;
                                      } else if (type === 'Series' && seriesImdbIdInput && seriesTitleInput) {
                                           seriesImdbIdInput.value = this.dataset.imdbId;
                                           seriesTitleInput.value = this.dataset.title;
-                                          // Clear total seasons display if it exists in the details section
                                            const omdbSeriesTotalSeasonsDisplay = selectedOmdbSeriesDetailsDiv.querySelector(`#omdbSeriesTotalSeasonsDisplay`);
                                            if (omdbSeriesTotalSeasonsDisplay) omdbSeriesTotalSeasonsDisplay.textContent = '';
-
                                      }
-
-                                     // Fetch and display full details (plot, poster, rating, total seasons etc.)
                                      fetchAndDisplayOmdbDetails(this.dataset.imdbId, detailsDiv, type);
                                  });
                                  resultsUl.appendChild(li);
@@ -748,7 +568,6 @@
                          }
                      })
                      .catch(error => {
-                         // Error message already set in the fetch block, just prevent further action
                          console.error('OMDB Search Error:', error);
                      });
             }
@@ -760,28 +579,22 @@
                  const plotDisplay = detailsDiv.querySelector(`#omdb${type}PlotDisplay`);
                  const idDisplay = detailsDiv.querySelector(`#omdb${type}IdDisplay`);
                  const posterImg = detailsDiv.querySelector(`#omdb${type}PosterDisplay`);
-                 const totalSeasonsDisplay = detailsDiv.querySelector(`#omdb${type}TotalSeasonsDisplay`); // For series
-
-
-                 // Clear previous display
+                 const totalSeasonsDisplay = detailsDiv.querySelector(`#omdb${type}TotalSeasonsDisplay`);
                  titleDisplay.textContent = 'טוען...';
                  yearDisplay.textContent = '';
                  ratingDisplay.textContent = '';
                  plotDisplay.textContent = '';
                  idDisplay.textContent = '';
-                  if (totalSeasonsDisplay) totalSeasonsDisplay.textContent = ''; // Clear series specific display
+                  if (totalSeasonsDisplay) totalSeasonsDisplay.textContent = '';
                  if (posterImg) {
                     posterImg.style.display = 'none';
                     posterImg.src = '';
                  }
-
-                 detailsDiv.style.display = 'block'; // Show the details block
-
+                 detailsDiv.style.display = 'block';
 
                  fetch(`/api/get_omdb_details?i=${encodeURIComponent(imdbId)}`)
                       .then(response => {
                          if (!response.ok) {
-                             console.error(`OMDB Details HTTP error: ${response.status}`);
                               titleDisplay.textContent = 'שגיאה בטעינת פרטים (שגיאת שרת).';
                              yearDisplay.textContent = ''; ratingDisplay.textContent = ''; plotDisplay.textContent = ''; idDisplay.textContent = '';
                               if (totalSeasonsDisplay) totalSeasonsDisplay.textContent = '';
@@ -797,27 +610,18 @@
                              const displayRating = details.imdbRating || 'N/A';
                              const displayPlot = details.Plot || 'N/A';
                              const displayId = details.imdbID || 'N/A';
-                             // Use a placeholder if Poster is "N/A" or empty
                              const displayPoster = (details.Poster && details.Poster !== 'N/A') ? details.Poster : '{{ url_for("static", filename="images/no_poster.png") }}';
-                              const displayTotalSeasons = details.totalSeasons || 'N/A'; // Specific to series
-
-
+                              const displayTotalSeasons = details.totalSeasons || 'N/A';
                              titleDisplay.textContent = displayTitle;
                              yearDisplay.textContent = displayYear;
                              ratingDisplay.textContent = displayRating;
                              plotDisplay.textContent = displayPlot;
                              idDisplay.textContent = displayId;
-
-                              if (totalSeasonsDisplay) totalSeasonsDisplay.textContent = displayTotalSeasons; // Display total seasons for series
-
+                              if (totalSeasonsDisplay) totalSeasonsDisplay.textContent = displayTotalSeasons;
                               if (posterImg) {
-                                   // Always set src to display either actual poster or placeholder
                                   posterImg.src = displayPoster;
                                   posterImg.style.display = 'block';
                               }
-
-                             // Auto-populate total seasons input is removed. Server fetches it now.
-
                          } else {
                               titleDisplay.textContent = 'לא נמצאו פרטים עבור ID זה.';
                               yearDisplay.textContent = ''; ratingDisplay.textContent = ''; plotDisplay.textContent = ''; idDisplay.textContent = '';
@@ -826,12 +630,10 @@
                          }
                      })
                      .catch(error => {
-                         // Error message already set in the fetch block, just prevent further action
                          console.error('OMDB Details Error:', error);
                      });
              }
 
-            // Event listeners for OMDB search buttons
             if (searchMovieOmdbButton) {
                  searchMovieOmdbButton.addEventListener('click', function() {
                      const searchTerm = omdbMovieSearchTermInput.value.trim();
@@ -846,11 +648,10 @@
                  });
              }
 
-             // Allow pressing Enter to trigger search
              if (omdbMovieSearchTermInput) {
                   omdbMovieSearchTermInput.addEventListener('keypress', function(event) {
                       if (event.key === 'Enter') {
-                          event.preventDefault(); // Prevent form submission
+                          event.preventDefault();
                           searchMovieOmdbButton.click();
                       }
                   });
@@ -858,46 +659,34 @@
               if (omdbSeriesSearchTermInput) {
                   omdbSeriesSearchTermInput.addEventListener('keypress', function(event) {
                       if (event.key === 'Enter') {
-                           event.preventDefault(); // Prevent form submission
+                           event.preventDefault();
                           searchSeriesOmdbButton.click();
                       }
                   });
              }
 
-            // Add event listener for the form submission to do final client-side checks
-            const addContentForm = document.querySelector('.add-content-form-container form'); // Use the updated container class
+            const addContentForm = document.querySelector('.add-content-form-container form');
 
             if (addContentForm) {
                  addContentForm.addEventListener('submit', function(event) {
-                     console.log("Form submitting...");
                      const contentType = document.querySelector('input[name="content_type"]:checked').value;
-
                      if (contentType === 'episode') {
                           const seriesSelectValue = episodeSeriesSelect.value;
                           const manualId = manualEpisodeSeriesIdInput.value.trim();
-
-                          // Check if *either* a series is selected from the dropdown
-                          // OR manual is selected and a manual ID is provided.
                           const isSeriesIdProvided = (seriesSelectValue !== '' && seriesSelectValue !== 'manual') || (seriesSelectValue === 'manual' && manualId !== '');
-
                           if (!isSeriesIdProvided) {
-                               // Using hardcoded Hebrew for flash messages as requested for this page
                                flash('שגיאה: אנא בחר סדרה קיימת מהרשימה או הזן IMDb ID ידנית.', 'error');
-                               event.preventDefault(); // Stop submission
-                                // Optional: Focus the relevant input/select
-                                if (seriesSelectValue === 'manual') {
+                               event.preventDefault();
+                               if (seriesSelectValue === 'manual') {
                                     manualEpisodeSeriesIdInput.focus();
                                 } else {
                                      episodeSeriesSelect.focus();
                                 }
-                                return; // Stop further validation for episode form
+                                return;
                           }
-
-                          // Validate manual series ID format if manual is selected
                           if (seriesSelectValue === 'manual' && manualId !== '') {
                               const imdbIdPattern = /^tt\d{7,}$/;
                                if (!imdbIdPattern.test(manualId)) {
-                                   // Using hardcoded Hebrew for flash messages as requested for this page
                                    flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error');
                                    event.preventDefault();
                                    manualEpisodeSeriesIdInput.focus();
@@ -905,95 +694,88 @@
                                }
                           }
 
-
-                          // Validate other required fields for episode (title is now optional)
                            const seasonNumber = episodeSeasonInput.value.trim();
                            const episodeNumber = episodeNumberInput.value.trim();
-
-                           // Build a list of missing fields for a clearer message
                            const missingFields = [];
-                           // Removed episode IMDb ID missing field check
                            if (!seasonNumber) missingFields.push('מספר עונה');
                            if (!episodeNumber) missingFields.push('מספר פרק');
-                           // Removed video URL missing field check
-
                            if (missingFields.length > 0) {
-                                // Using hardcoded Hebrew for flash messages as requested for this page
                                 flash(`שגיאה: אנא מלא את כל שדות החובה לפרק: ${missingFields.join(', ')}.`, 'error');
-                                event.preventDefault(); // Stop submission
+                                event.preventDefault();
                                 return;
                            }
-
-                            // Validate season and episode are positive numbers
                             try {
                                 const seasonNumInt = parseInt(seasonNumber, 10);
                                 const episodeNumInt = parseInt(episodeNumber, 10);
                                 if (seasonNumInt < 1 || episodeNumInt < 1) {
-                                     // Using hardcoded Hebrew for flash messages as requested for this page
                                      flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים שלמים חיוביים.', 'error');
                                      event.preventDefault();
                                      return;
                                 }
                             } catch (e) {
-                                 // Using hardcoded Hebrew for flash messages as requested for this page
                                  flash('שגיאה: מספרי עונה ופרק חייבים להיות מספרים תקינים.', 'error');
                                  event.preventDefault();
                                  return;
                             }
-
-
                      } else if (contentType === 'series') {
-                          // Client-side validation for Series form
                           const seriesImdbId = seriesImdbIdInput.value.trim();
-                          // Total seasons is now fetched server-side, no need to validate here
-
-                           // Check IMDb ID is provided and format is correct
                            const imdbIdPattern = /^tt\d{7,}$/;
                             if (!seriesImdbId) {
-                                // Using hardcoded Hebrew for flash messages as requested for this page
                                 flash('שגיאה: שדה חובה (IMDb ID של הסדרה) חסר.', 'error');
                                 event.preventDefault();
                                 seriesImdbIdInput.focus();
                                 return;
                             }
                             if (!imdbIdPattern.test(seriesImdbId)) {
-                                // Using hardcoded Hebrew for flash messages as requested for this page
                                 flash('שגיאה: פורמט IMDb ID של הסדרה לא תקין. ודא שהוא מתחיל ב-"tt" ואחריו 7 ספרות או יותר.', 'error');
                                 event.preventDefault();
                                 seriesImdbIdInput.focus();
                                 return;
                             }
-
-                           // Client-side validation for dynamic episode counts per season is removed
-
-                           // All client-side checks passed for series form (basic ID/category validation)
-                           console.log("Series form client-side validation passed.");
-
-
-                     } // End if contentType === 'series'
-                     // Movie form has basic 'required' attributes handled by the browser.
-
-                 }); // End form submit listener
+                     }
+                 });
             }
 
-
-            // Re-evaluate required state if page is loaded with 'manual' selected due to back button or refresh
-            // This ensures manual ID is visible if needed on load.
             if (episodeSeriesSelect && episodeSeriesSelect.value === 'manual') {
                  manualSeriesIdGroup.style.display = 'block';
             }
 
+            const refreshDataButton = document.getElementById('refresh-data-button');
+            if (refreshDataButton) {
+                refreshDataButton.addEventListener('click', function() {
+                    const originalText = this.textContent;
+                    this.textContent = 'מעדכן...';
+                    this.disabled = true;
 
-        }); // End DOMContentLoaded listener correctly closed here.
-
+                    fetch('/api/refresh_data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error || 'תגובה לא תקינה מהשרת') });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        flash('קובץ הנתונים עודכן בהצלחה מהשרת!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error refreshing data:', error);
+                        flash(`שגיאה בעדכון הנתונים: ${error.message}`, 'error');
+                    })
+                    .finally(() => {
+                        this.textContent = originalText;
+                        this.disabled = false;
+                    });
+                });
+            }
+        });
     </script>
-    {# Add a simple flash message display function if you're not using a Flask-specific one #}
     <script>
-        // Dummy flash function if needed for client-side validation messages
-        // This function is used by the client-side form validation in add.html
         function flash(message, category) {
-            console.log(`FLASH (${category}): ${message}`);
-             // A real implementation would add a div to the .flash-messages container
              const flashMessagesDiv = document.querySelector('.flash-messages');
              if (flashMessagesDiv) {
                  const alertDiv = document.createElement('div');
