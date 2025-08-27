@@ -111,10 +111,10 @@ CATEGORIES = [
     "ללא"
 ]
 
-# --- Data Loading Functions (from Firebase) ---
+DATA_FILE = 'data.json'
+APP_DATA = {'movies': {}, 'series': {}}
 
-def load_movies_data():
-    """Loads all movies from Firebase, adding 'type: movie'."""
+def _fetch_movies_from_firebase():
     try:
         ref = db.reference('/Movies')
         movies = ref.get()
@@ -122,165 +122,105 @@ def load_movies_data():
         if movies:
             for imdb_id, details in movies.items():
                 if isinstance(details, dict):
-                    details['type'] = 'movie' # Add type identifier
+                    details['type'] = 'movie'
                     movies_with_type[imdb_id] = details
                 else:
-                    logging.warning(f"Skipping non-dict movie entry: {imdb_id}")
-
-        logging.info(f"Loaded {len(movies_with_type)} movies from Firebase.")
-        return movies_with_type if movies_with_type is not None else {} # Ensure returns dict even if empty
+                    logging.warning(f"Skipping non-dict movie entry during Firebase fetch: {imdb_id}")
+        return movies_with_type if movies_with_type is not None else {}
     except Exception as e:
-        logging.error(f"Error loading movies from Firebase: {e}", exc_info=True)
+        logging.error(f"Error fetching movies directly from Firebase: {e}", exc_info=True)
         return {}
+
+def _fetch_series_from_firebase():
+    try:
+        ref = db.reference('/Series')
+        series_data = ref.get()
+        series_with_type = {}
+        if series_data:
+            for imdb_id, details in series_data.items():
+                 if isinstance(details, dict):
+                    details['type'] = 'series'
+                    series_with_type[imdb_id] = details
+                 else:
+                    logging.warning(f"Skipping non-dict series entry during Firebase fetch: {imdb_id}")
+        return series_with_type if series_with_type is not None else {}
+    except Exception as e:
+        logging.error(f"Error fetching series directly from Firebase: {e}", exc_info=True)
+        return {}
+
+def refresh_data_from_firebase():
+    global APP_DATA
+    logging.info("Starting data refresh from Firebase...")
+    movies = _fetch_movies_from_firebase()
+    series = _fetch_series_from_firebase()
+
+    combined_data = {
+        'movies': movies,
+        'series': series
+    }
+
+    try:
+        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(combined_data, f, ensure_ascii=False, indent=4)
+        logging.info(f"Successfully saved combined data to {DATA_FILE}.")
+        APP_DATA = combined_data
+        return True
+    except Exception as e:
+        logging.error(f"Failed to write data to {DATA_FILE}: {e}", exc_info=True)
+        return False
+
+def load_data_from_json():
+    global APP_DATA
+    try:
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            APP_DATA = json.load(f)
+        logging.info(f"Successfully loaded data from {DATA_FILE} into memory.")
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logging.error(f"Error loading {DATA_FILE}: {e}. Will attempt to rebuild from Firebase.", exc_info=True)
+        refresh_data_from_firebase()
+
+def load_movies_data():
+    return APP_DATA.get('movies', {})
 
 def load_series_data_for_index():
-    """Loads basic series data for index/all_series display from Firebase, adding 'type: series'.
-       Excludes nested Season/Episode data for performance."""
-    try:
-        ref = db.reference('/Series')
-        series_dict = ref.get()
-
-        series_for_display = {}
-        if series_dict:
-            for imdb_id, details in series_dict.items():
-                if isinstance(details, dict):
-                    basic_details = {
-                        'imdbID': imdb_id,
-                        'title': details.get('title', 'כותרת לא ידועה'),
-                        'poster': details.get('poster', 'N/A'),
-                        'HebrewName': details.get('HebrewName'),
-                        'HebrewPoster': details.get('HebrewPoster'),
-                        'category': details.get('category', 'ללא'),
-                        'type': 'series',
-                        # Add fields required for filtering
-                        'genre': details.get('genre', 'N/A'),
-                        'imdbRating': details.get('imdbRating', 'N/A'),
-                        'year': details.get('year', 'N/A')
-                    }
-                    series_for_display[imdb_id] = basic_details
-                else:
-                    logging.warning(f"Skipping non-dict series entry in /Series: {imdb_id}")
-
-        logging.info(f"Loaded basic details for {len(series_for_display)} series from Firebase for display.")
-        return series_for_display if series_for_display is not None else {}
-    except Exception as e:
-        logging.error(f"Error loading basic series data for display from Firebase: {e}", exc_info=True)
-        return {}
-
-
+    series_dict = APP_DATA.get('series', {})
+    series_for_display = {}
+    if series_dict:
+        for imdb_id, details in series_dict.items():
+            if isinstance(details, dict):
+                basic_details = {
+                    'imdbID': imdb_id,
+                    'title': details.get('title', 'כותרת לא ידועה'),
+                    'poster': details.get('poster', 'N/A'),
+                    'HebrewName': details.get('HebrewName'),
+                    'HebrewPoster': details.get('HebrewPoster'),
+                    'category': details.get('category', 'ללא'),
+                    'type': 'series',
+                    'genre': details.get('genre', 'N/A'),
+                    'imdbRating': details.get('imdbRating', 'N/A'),
+                    'year': details.get('year', 'N/A')
+                }
+                series_for_display[imdb_id] = basic_details
+    return series_for_display
 
 def load_series_list_for_add_page():
-    """Loads basic series info for the add page dropdown."""
-    try:
-        ref = db.reference('/Series')
-        series_dict = ref.get() # Gets dictionary {imdb_id: series_details}
-        available_series_list = []
-        if series_dict:
-             # Convert to the list format expected by the add.html dropdown
-            for imdb_id, details in series_dict.items():
-                 if isinstance(details, dict):
-                     # Use Hebrew name if available, otherwise English title for dropdown
-                     display_title = details.get('HebrewName') or details.get('title', 'Untitled Series')
-                     available_series_list.append({
-                        "id": imdb_id,
-                        "title": display_title # Use the determined display title
-                     })
-        logging.info(f"Loaded {len(available_series_list)} series for dropdown from Firebase.")
-        return available_series_list
-    except Exception as e:
-        logging.error(f"Error loading series list from Firebase: {e}", exc_info=True)
-        # Return dummy data or empty list on error
-        return []
-
+    series_dict = APP_DATA.get('series', {})
+    available_series_list = []
+    if series_dict:
+        for imdb_id, details in series_dict.items():
+             if isinstance(details, dict):
+                 display_title = details.get('HebrewName') or details.get('title', 'Untitled Series')
+                 available_series_list.append({
+                    "id": imdb_id,
+                    "title": display_title
+                 })
+    return available_series_list
 
 def load_full_series_details(imdb_id):
-    """Loads all details for a single series, including seasons and episodes."""
-    try:
-        ref = db.reference(f'/Series/{imdb_id}')
-        series_details = ref.get()
-        if series_details:
-             logging.info(f"Loaded full series details for ID {imdb_id} from Firebase.")
-        else:
-             logging.info(f"No full details found for series ID {imdb_id} in Firebase.")
-        return series_details
-    except Exception as e:
-        logging.error(f"Error loading full series details for ID {imdb_id}: {e}", exc_info=True)
-        return None
-
+    return APP_DATA.get('series', {}).get(imdb_id)
 
 def load_movie_details(imdb_id):
-    """Loads details for a single movie from Firebase."""
-    try:
-        ref = db.reference(f'/Movies/{imdb_id}')
-        movie_details = ref.get()
-        if movie_details:
-             logging.info(f"Loaded details for movie ID {imdb_id} from Firebase.")
-        else:
-             logging.info(f"No details found for movie ID {imdb_id} in Firebase.")
-        return movie_details
-    except Exception as e:
-        logging.error(f"Error loading movie details for ID {imdb_id}: {e}", exc_info=True)
-        return None
-
-
-def categorize_content(movies_data, series_data):
-    """Categorizes movies and series loaded from Firebase for index display."""
-    categorized_items = {}
-    # Initialize categories excluding "ללא" as it's typically not a display category
-    for cat in CATEGORIES:
-        if cat != "ללא":
-            categorized_items[cat] = []
-
-    all_items = {}
-    if movies_data:
-        all_items.update(movies_data)
-    if series_data:
-        all_items.update(series_data)
-
-    if not all_items:
-        logging.info("No movies or series data to categorize.")
-        # Ensure all display categories exist, even if empty
-        return {cat: [] for cat in CATEGORIES if cat != "ללא"}
-
-
-    # all_items now contains {imdb_id: {details_including_type}}
-    for imdb_id, item_details in all_items.items():
-        if not isinstance(item_details, dict):
-            logging.warning(f"Skipping non-dict entry in all_items: {imdb_id}")
-            continue
-
-        # Ensure required fields exist, provide defaults
-        # Get both English and Hebrew names/posters
-        title = item_details.get('title', 'כותרת לא ידועה')
-        poster = item_details.get('poster', 'N/A')
-        hebrew_name = item_details.get('HebrewName')
-        hebrew_poster = item_details.get('HebrewPoster')
-
-        category = item_details.get('category', 'ללא') # Default to 'ללא'
-        item_type = item_details.get('type') # Get the type ('movie' or 'series')
-
-        # Add to the correct category list if category is valid and not "ללא"
-        # We need id, title, poster, type, and Hebrew fields for the item cards on index.html
-        if category in CATEGORIES and category != "ללא" and item_type in ['movie', 'series']:
-             categorized_items[category].append({
-                "id": imdb_id,
-                "title": title, # Include English title
-                "poster": poster, # Include English poster
-                "HebrewName": hebrew_name, # Include Hebrew name
-                "HebrewPoster": hebrew_poster, # Include Hebrew poster
-                "type": item_type # Include type here
-             })
-        elif category == "ללא":
-            pass # Don't display 'ללא' category on index
-        else:
-             logging.warning(f"Item {imdb_id} ('{title}') has invalid/unknown category '{category}' or type '{item_type}'. Skipping index display.")
-             pass # Skip invalid categories or types
-
-    # Optional: If you want to ensure categories with no items are still shown,
-    # you might add checks here. But usually, you only show categories with items.
-    # return {cat: items for cat, items in categorized_items.items() if items} # Only return categories with items
-
-    return categorized_items
+    return APP_DATA.get('movies', {}).get(imdb_id)
 
 
 def get_greeting(user=None, language='he'): # Added language parameter back
@@ -1109,6 +1049,22 @@ def all_movies():
 
 
 
+
+@app.route('/api/refresh_data', methods=['POST'])
+def api_refresh_data():
+    user = session.get('user')
+    if not user or user.get('email') not in ADMIN_EMAILS:
+        logging.warning(f"Unauthorized access attempt to /api/refresh_data by {user.get('email') if user else 'anonymous'}")
+        abort(403)
+
+    logging.info(f"Data refresh initiated by admin: {user.get('email')}")
+    success = refresh_data_from_firebase()
+    if success:
+        return jsonify({"message": "Data cache updated successfully from Firebase."}), 200
+    else:
+        return jsonify({"error": "Failed to update data cache."}), 500
+
+
 @app.route('/series')
 def all_series():
     user = session.get('user')
@@ -1515,6 +1471,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
