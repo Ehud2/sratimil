@@ -56,19 +56,6 @@
             vertical-align: middle;
             display: none;
         }
-        .create-group-button {
-            background-color: #2c3e50;
-            color: white;
-        }
-        .create-group-button:hover {
-            background-color: #34495e;
-        }
-        .movie-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
 
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -111,11 +98,11 @@
     </header>
 
 <main class="container movie-details-page">
-    <h1 id="movie-title">{{ movie.title or 'צפייה בסרט' }}</h1>
+    <h1 id="movie-title">{{ movie.HebrewName or movie.title }}</h1>
 
     <div class="movie-grid">
         <div class="movie-poster">
-            <img src="{{ movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}" alt="{{ movie.title or 'פוסטר הסרט' }}" loading="lazy">
+            <img src="{{ movie.HebrewPoster if movie and movie.HebrewPoster and movie.HebrewPoster != 'N/A' else (movie.poster if movie and movie.poster and movie.poster != 'N/A' else url_for('static', filename='images/no_poster.png')) }}" alt="{{ movie.title or 'פוסטר הסרט' }}" loading="lazy">
         </div>
 
         <div class="movie-info">
@@ -134,15 +121,15 @@
             </div>
 
             <div class="movie-actions">
-                 <button id="watch-trailer-button" class="watch-trailer-button">
+                 <button id="watch-trailer-button" class="action-button">
                      <i class="fas fa-play"></i> צפייה בטריילר
                      <span class="loader"></span>
                  </button>
                  {% if user %}
-                 <a href="{{ url_for('create_stream', imdb_id=movie.imdbID) }}" class="watch-trailer-button create-group-button">
+                 <a href="{{ url_for('create_stream_group', imdb_id=movie.imdbID) }}" id="create-group-button" class="action-button group">
                     <i class="fas fa-users"></i> יצירת קבוצה
-                 </a>
-                 {% endif %}
+                </a>
+                {% endif %}
             </div>
 
             <div id="no-trailer-message" class="no-video-message" style="display: none;">טריילר לא נמצא.</div>
@@ -303,8 +290,13 @@
                         if (loader) loader.style.display = 'none';
 
                         if (!response.ok) {
-                            trailerErrorMessageDiv.textContent = `שגיאה באחזור הטריילר: סטטוס ${response.status}`;
-                            trailerErrorMessageDiv.style.display = 'block';
+                            if (response.status === 404) {
+                                noTrailerMessageDiv.textContent = `לא נמצא טריילר עבור סרט זה.`;
+                                noTrailerMessageDiv.style.display = 'block';
+                            } else {
+                                trailerErrorMessageDiv.textContent = `שגיאה באחזור הטריילר: סטטוס ${response.status}`;
+                                trailerErrorMessageDiv.style.display = 'block';
+                            }
                             return null;
                         }
                         return response.json();
@@ -315,9 +307,6 @@
                         } else if (data && data.error) {
                             noTrailerMessageDiv.textContent = `לא נמצא טריילר עבור סרט זה.`;
                             noTrailerMessageDiv.style.display = 'block';
-                        } else {
-                            trailerErrorMessageDiv.textContent = 'שגיאה: קבלת תגובה לא צפויה.';
-                            trailerErrorMessageDiv.style.display = 'block';
                         }
                     })
                     .catch(error => {
@@ -333,26 +322,6 @@
 
 
     });
-
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const term = this.value.trim();
-                if (term) {
-                    window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
-                }
-            }
-        });
-        document.querySelector('.search-container button').addEventListener('click', function() {
-             const term = searchInput.value.trim();
-             if (term) {
-                  window.location.href = "{{ url_for('index') }}?s=" + encodeURIComponent(term);
-             }
-         });
-    }
-
 </script>
 
 </body>
