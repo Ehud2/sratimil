@@ -98,19 +98,19 @@
                         <h1 class="hero-title">{{ hero_item.get('HebrewName', hero_item.get('title', '')) if current_language == 'he' else hero_item.get('title', hero_item.get('HebrewName', '')) }}</h1>
                         {% if current_language == 'he' %}
                             {% set descriptions = [
-                                "ההרפתקה הגדולה של השנה מחכה לכם עכשיו.",
-                                "גלו עולם חדש של מתח וריגוש.",
-                                "הכוכבים הגדולים על המסך שלכם.",
-                                "חוויה קולנועית בלתי נשכחת.",
-                                "הצטרפו למסע עוצר נשימה."
+                                "כבר צפית בסרט הזה? אולי הגיע הזמן.",
+                                "המלצה חמה במיוחד בשבילך!",
+                                "אל תחמיץ את ההרפתקה הזו.",
+                                "זה יכול להיות הסרט האהוב עליך.",
+                                "סיפור עוצר נשימה שמומלץ לך לראות."
                             ] %}
                         {% else %}
                             {% set descriptions = [
-                                "The biggest adventure of the year is waiting for you.",
-                                "Discover a new world of suspense and excitement.",
-                                "The biggest stars on your screen.",
-                                "An unforgettable cinematic experience.",
-                                "Join a breathtaking journey."
+                                "Have you watched this one yet? Maybe it's time.",
+                                "A hot recommendation just for you!",
+                                "Don't miss this thrilling adventure.",
+                                "This might be your new favorite movie.",
+                                "A breathtaking story recommended for you."
                             ] %}
                         {% endif %}
                         <p class="hero-description">{{ descriptions | random }}</p>
