@@ -168,13 +168,6 @@
 
     <footer class="site-footer-bottom">
         <div class="container">
-             <p>
-                {% if current_language == 'he' %}
-                    סרטים באתר: {{ num_movies }} | סדרות באתר: {{ num_series }}
-                {% else %}
-                    Movies on site: {{ num_movies }} | Series on site: {{ num_series }}
-                {% endif %}
-             </p>
              <p>&copy; 2024 Cinema Prime. All Rights Reserved.</p>
         </div>
     </footer>
@@ -281,7 +274,7 @@
                  for (let i = startIndex; i < endIndex && i < currentlySearchVisibleItems.length; i++) {
                       currentlySearchVisibleItems[i].classList.remove('hidden-item-by-pagination');
                  }
-                 currentlyDisplayedCount = document.querySelectorAll('.item-card-link.catalog-item:not(.hidden-item-by-pagination)').length;
+                 currentlyDisplayedCount = document.querySelectorAll('.item-card-link.catalog-item:not(.hidden-item-by-pagination):not([style*="display: none"])').length;
             }
 
             function hideAllMovieItemsForPagination() {
@@ -325,12 +318,15 @@
                     });
                 }
                 if (yearFilter) {
-                    let maxYear = 1888;
+                    const currentYear = new Date().getFullYear();
+                    let earliestYear = currentYear;
                     Object.values(allMoviesData).forEach(movie => {
                         const year = parseInt((movie.year || '').trim(), 10);
-                        if (!isNaN(year) && year > maxYear) maxYear = year;
+                        if (!isNaN(year) && year > 1888 && year < earliestYear) {
+                            earliestYear = year;
+                        }
                     });
-                    for (let year = new Date().getFullYear(); year >= maxYear; year--) {
+                    for (let year = currentYear; year >= earliestYear; year--) {
                          const option = document.createElement('option');
                          option.value = year;
                          option.textContent = year;
