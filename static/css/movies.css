@@ -1,365 +1,131 @@
-/* movies.css */
-/* This file is linked AFTER style.css in the HTML */
-/* It provides specific styles for the movies and series grid pages */
-
-/* Ensure main content padding and margin on these pages */
-.movies-page-content {
-    padding-top: 40px; /* Same as index */
-    padding-bottom: 50px; /* Same as index */
-    flex-grow: 1; /* Same as index */
+.main-content {
+    padding-top: 60px;
 }
 
-/* Style for the page heading */
-.page-heading {
-    margin-bottom: 20px; /* Reduced margin to make space for filters/content */
-    /* Border and padding controlled by global/direction-specific rules in style.css */
-    /* The [dir] rules for .page-greeting in style.css define the border side */
-    /* Example: [dir="rtl"] .page-greeting sets border-right */
+.page-header {
+    margin-bottom: 40px;
 }
 
-
-.page-heading h1 {
+.page-header h1 {
     font-family: var(--font-heading);
-    font-size: 2.4em; /* Slightly smaller than index main heading, or keep same */
+    font-size: 2.4em;
     font-weight: 700;
     color: var(--text-heading-color);
     margin-bottom: 5px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.page-heading p {
+.page-header p {
     font-size: 1.1em;
     color: var(--text-color);
-     margin-bottom: 20px; /* Add margin below paragraph */
+    margin-top: 10px;
 }
 
-
-/* Styles for the filter container (movies page only, but defined here) */
 .filter-container {
-    display: flex; /* Use flexbox for layout */
-    flex-wrap: wrap; /* Allow items to wrap to the next line on smaller screens */
-    gap: 20px; /* Space between filter groups */
-    margin-bottom: 40px; /* Space below the filters */
-    padding: 0 10px; /* Match padding of page heading - adjust if page padding changes */
-    justify-content: flex-start; /* Align items to the start */
-    align-items: center; /* Align items vertically */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 40px;
+    padding: 20px;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
 }
 
-/* Styles for individual filter groups (label + select) */
 .filter-group {
     display: flex;
-    align-items: center; /* Align label and select vertically */
-    gap: 10px; /* Space between label and select */
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
 }
 
 .filter-group label {
     font-weight: 600;
-    color: var(--text-heading-color);
-    font-size: 1em;
-    white-space: nowrap; /* Prevent label from wrapping */
+    color: var(--text-color);
+    font-size: 0.9em;
 }
 
 .filter-group select {
-    padding: 8px 12px;
+    width: 100%;
+    padding: 10px;
     border: 1px solid var(--border-color);
-    border-radius: 5px;
-    /* Use a background from root variables */
-    background-color: var(--bg-secondary); /* Using secondary bg for filter dropdowns */
+    border-radius: var(--border-radius-sm);
+    background-color: var(--bg-color);
     color: var(--text-color);
     font-size: 1em;
     cursor: pointer;
-    outline: none; /* Remove default outline on focus */
-    min-width: 120px; /* Minimum width for dropdowns */
-     max-width: 200px; /* Maximum width */
-    /* Inherit text direction */
-    direction: inherit;
-    text-align: inherit;
+    outline: none;
+    transition: all var(--transition-fast);
 }
 
-.filter-group select option {
-     /* Ensure option text direction follows page direction */
-     direction: inherit;
-     text-align: inherit;
-}
-
-
-.filter-group select:focus {
+.filter-group select:focus,
+.filter-group select:hover {
     border-color: var(--primary-accent-color);
-    /* Use root variable for shadow color */
-    box-shadow: 0 0 5px rgba(102, 252, 241, 0.5); /* Manual RGBA from primary-accent-color */
+    box-shadow: 0 0 8px rgba(0, 223, 252, 0.3);
 }
 
-
-/* Styles for the movie/series grid container */
 .all-movies-grid {
     display: grid;
-    /* Use grid-template-columns for responsive layout */
-    /* minmax(var(--card-width), 1fr) allows items to be at least card-width wide, growing up to 1fr */
-    /* auto-fill fills the available space with as many columns as possible */
     grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
-    gap: var(--card-gap); /* Use the same gap defined in style.css */
-    justify-content: center; /* Center items horizontally if they don't fill the grid */
-    padding-bottom: 30px; /* Add padding similar to index item-row */
-    margin-bottom: -30px; /* Counteract the padding */
+    gap: var(--card-gap);
+    padding: calc(var(--card-gap) / 2);
 }
 
-/* The item-card-link wraps the item-card */
-/* Ensure it doesn't add extra layout properties */
-.all-movies-grid .item-card-link {
-    display: block; /* Important for the card to take grid space */
-    text-decoration: none; /* Remove underline from the link */
-    color: inherit; /* Inherit text color */
+.item-card-link.hidden-item-by-pagination {
+    display: none;
 }
 
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
 
-/* --- Styles for the Load More Button (Series Page) --- */
 .load-more-button {
-    /* Re-use item-card dimensions */
-    width: var(--card-width); /* Match card width from root variable */
-    height: var(--card-height); /* Match card height from root variable */
-
-    /* Grid item properties */
-    display: flex; /* Keep flex for centering content inside */
-    flex-direction: column; /* Stack icon and text */
-    justify-content: center; /* Center vertically */
-    align-items: center; /* Center horizontally */
-     /* Needs to occupy a grid cell */
-    grid-column: auto; /* Default, but ensures it behaves as a grid item */
-    grid-row: auto; /* Default */
-
-    /* Appearance */
-    border: 2px dashed var(--primary-accent-color); /* Dashed border to indicate action */
-    border-radius: var(--border-radius-md); /* Use standard border-radius variable */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 30px;
+    font-family: var(--font-heading);
+    font-size: 1em;
+    font-weight: 700;
+    border-radius: 50px;
+    border: 2px solid var(--primary-accent-color);
+    background-color: transparent;
+    color: var(--primary-accent-color);
     cursor: pointer;
-    transition: border-color var(--transition-fast), transform var(--transition-fast), background-color var(--transition-fast); /* Add transition for background */
-    background-color: var(--card-bg-color); /* Match card background or slightly different */
-    color: var(--primary-accent-color); /* Use accent color for text/icon */
-    font-family: var(--font-body);
-    font-size: 1.2em;
-    font-weight: 600;
-    text-align: center;
-    user-select: none; /* Prevent text selection */
-    outline: none; /* Remove default outline on focus */
-
-    position: relative;
-    z-index: 1; /* Ensure it's above background if needed */
-     /* Add a small lift on focus */
-     &:focus {
-         border-color: var(--text-heading-color);
-         transform: translateY(-2px);
-         background-color: rgba(102, 252, 241, 0.1); /* Subtle background change on focus */
-     }
+    transition: all var(--transition-medium);
 }
 
 .load-more-button:hover {
-    border-color: var(--text-heading-color); /* Change border on hover */
-    transform: translateY(-2px); /* Slight lift effect */
-    background-color: rgba(102, 252, 241, 0.1); /* Subtle background change on hover */
+    background-color: var(--primary-accent-color);
+    color: var(--bg-color);
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(0, 223, 252, 0.5);
 }
 
 .load-more-button i {
-    font-size: 2em; /* Larger icon */
-    margin-bottom: 10px;
-    color: var(--primary-accent-color); /* Ensure icon color */
-     transition: color var(--transition-fast);
+    transition: transform var(--transition-medium);
 }
 
 .load-more-button:hover i {
-     color: var(--text-heading-color); /* Change icon color on hover */
+    transform: rotate(180deg);
 }
-
-
-/* Style for items hidden by pagination script */
-/* This class is added/removed by JavaScript to control visibility */
-.item-card-link.hidden-item-by-pagination {
-    display: none; /* Hide the item */
-}
-
-
-/* Style for the "No results found" message specific to this page if needed */
-/* #noResultsMessage { ... } */
-/* (The style is already in style.css and applies globally, which is fine) */
-
-
-/* ========================================= */
-/* --- Responsive Styles for Smaller Screens --- */
-/* ========================================= */
 
 @media (max-width: 768px) {
-    /* Adjustments copied from style.css and movies.css */
-    /* Note: These override values from style.css :root and outside this media query */
-    :root {
-        --container-padding: 15px;
-        --card-width: 180px;
-        --card-height: 270px;
-        --card-gap: 15px;
-        --header-height: 60px;
+    .main-content {
+        padding-top: 40px;
     }
-
-    .container { padding: 0 var(--container-padding); }
-    .site-header { height: var(--header-height); }
-    .header-content {
-        flex-wrap: wrap; justify-content: space-between; align-items: center;
-        padding: 0 10px; gap: 10px;
+    .page-header h1 {
+        font-size: 1.8em;
     }
-
-    /* Mobile Nav Toggle - Show button */
-    .nav-toggle {
-        display: flex;
-        background: none; border: none; color: var(--text-color);
-        font-size: 1.5em; cursor: pointer; padding: 5px;
-        align-items: center; justify-content: center;
-        transition: color var(--transition-fast); flex-shrink: 0;
-    }
-    .nav-toggle:hover { color: var(--primary-accent-color); }
-
-    .auth-container { flex-shrink: 0; }
-
-    .search-container {
-        flex-grow: 1; order: 3;
-        max-width: calc(100% - (40px + 10px) * 2 - 10px);
-        flex-basis: 150px;
-    }
-    #searchInput { width: 100%; max-width: none; padding: 8px 12px; }
-    #searchInput:focus { width: 100%; }
-    /* Text alignment for search input in mobile - handled by global rules in style.css */
-    /* [dir="rtl"] #searchInput { text-align: right; } - Defined in style.css */
-    /* [dir="ltr"] #searchInput { text-align: left; } - Defined in style.css */
-
-
-    .language-switcher { flex-shrink: 0; }
-
-    /* Mobile Nav - Styles for overlay and appearance */
-    .main-nav {
-        display: none; /* Hidden by default */
-        position: fixed; top: var(--header-height); left: 0;
-        width: 100%; height: calc(100vh - var(--header-height));
-        background-color: var(--bg-secondary);
-        flex-direction: column; align-items: center; padding: 20px 0;
-        overflow-y: auto; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); z-index: 999;
-        transition: transform var(--transition-medium), opacity var(--transition-medium);
-        opacity: 0; transform: translateX(100%); /* LTR default */
-    }
-    /* RTL slide animation start position */
-    [dir="rtl"] .main-nav { transform: translateX(-100%); }
-    /* Slide into view state for both directions */
-    .main-nav.nav-open { display: flex; opacity: 1; transform: translateX(0); }
-
-
-    .main-nav a {
-        width: 100%; text-align: center; padding: 15px 20px; font-size: 1.2em;
-        border-bottom: 1px solid rgba(69, 162, 158, 0.2); border-radius: 0; gap: 10px;
-        justify-content: center; direction: inherit;
-    }
-    .main-nav a:last-child { border-bottom: none; }
-
-
-    /* Movies/Series page specific adjustments for mobile */
-    .movies-page-content {
-         padding-top: 20px; padding-bottom: 30px; /* Adjust padding */
-    }
-
-    .page-heading {
-        margin-bottom: 15px; /* Adjust margin */
-        /* Border and padding handled by global/direction-specific rules in style.css */
-        /* [dir="rtl"] .page-greeting sets border-right and padding - applies here */
-        /* [dir="ltr"] .page-greeting sets border-left and padding - applies here */
-        /* Only adjust padding here if needed, but global rule is likely fine */
-         padding-left: 15px; padding-right: 15px; /* Adjust padding for mobile page heading */
-    }
-
-    .page-heading h1 { font-size: 1.8em; /* Smaller font size */ }
-    .page-heading p { font-size: 1em; margin-bottom: 15px; /* Adjust margin */ }
-
-    /* Filter container adjustments for mobile (Applies only to movies page) */
     .filter-container {
-        flex-direction: column; align-items: flex-start; gap: 15px;
-        margin-bottom: 30px; padding: 0 15px;
+        flex-direction: column;
+        gap: 15px;
     }
-    .filter-group { flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; }
-    .filter-group label { width: 100%; font-size: 0.9em; color: var(--text-color); }
-    .filter-group select { width: 100%; max-width: none; padding: 8px; font-size: 0.9em; }
-
-
-    /* Movie/Series grid adjustments for mobile */
     .all-movies-grid {
-        /* Use mobile card size and gap from :root overridden above */
         grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
         gap: var(--card-gap);
-        padding-bottom: 20px; /* Adjust padding */
-        margin-bottom: -20px; /* Adjust margin */
     }
-
-     /* Item Card adjustments for mobile */
-    .item-card { width: var(--card-width); }
-    .card-image-container { height: var(--card-height); }
-
-    .card-overlay { padding: 10px; }
-
-    .play-button { width: 40px; height: 40px; font-size: 1.2em; }
-    .play-button:hover { transform: translate(-50%, -50%) scale(1.1); }
-
-    .card-title {
-        font-size: 1em; margin-bottom: 5px;
-        transition: transform 0.2s 0.05s ease, opacity 0.2s 0.05s ease;
-    }
-    .item-card:hover .card-title, .item-card:focus-within .card-title { transform: translateY(0); opacity: 1; }
-
-    .card-subtitle { font-size: 0.7em; margin-top: 3px; margin-bottom: 8px; }
-
-    .card-actions {
-        gap: 8px;
-        transition: opacity 0.2s 0.1s ease;
-        /* justify-content handled by global rule based on [dir] in style.css */
-        /* [dir="rtl"] .card-actions { justify-content: flex-end; } - Defined in style.css */
-        /* [dir="ltr"] .card-actions { justify-content: flex-start; } - Defined in style.css */
-    }
-    .item-card:hover .card-actions, .item-card:focus-within .card-actions { opacity: 1; }
-
-    .card-actions button { width: 28px; height: 28px; font-size: 0.7em; }
-    .card-actions button:hover { transform: scale(1.1); }
-
-    /* Rank number adjustment - handled by global [dir] rules, adjust size/bottom here */
-    .rank-number { width: 50px; height: 50px; bottom: 8px; }
-    /* left/right position handled by global [dir] rules in style.css */
-    /* [dir="rtl"] .rank-number { left: -15px; right: auto; } - Defined in style.css */
-    /* [dir="ltr"] .rank-number { left: auto; right: -15px; } - Defined in style.css */
-
-    .rank-text { font-size: 1.5em; }
-
-    /* Load More Button adjustments for mobile */
-    .load-more-button {
-        width: var(--card-width); /* Keep same size as other cards */
-        height: var(--card-height);
-         /* Other styles are proportional */
-         font-size: 1em; /* Adjust font size */
-         border-radius: var(--border-radius-md); /* Use standard radius */
-    }
-     .load-more-button i {
-         font-size: 1.8em; /* Adjust icon size */
-         margin-bottom: 8px; /* Adjust margin */
-     }
-
-    /* No results message adjustment */
-    #noResultsMessage { margin: 40px auto; padding: 20px; font-size: 1em; max-width: 90%; }
-
-     /* Flash message adjustments */
-     .flash-messages { padding: 10px 0; }
-     .alert { padding: 10px 15px; margin-bottom: 10px; font-size: 0.9em; }
-     /* close-flash position handled by global [dir] rules in style.css */
-     /* [dir="rtl"] .close-flash { left: auto; right: 15px; } - Defined in style.css */
-     /* [dir="ltr"] .close-flash { left: auto; right: 15px; } - Defined in style.css */
-
-
-} /* End of @media (max-width: 768px) */
-
-/* ========================================= */
-/* --- Optional: Adjustments for slightly larger tablets (e.g., > 768px and <= 1024px) --- */
-/* ========================================= */
-/* You could add another media query here if needed */
-/* @media (min-width: 769px) and (max-width: 1024px) {
-    .all-movies-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); # Example adjustment
-        gap: 20px;
-    }
-    #searchInput:focus { width: 200px; } # Example adjustment
-} */
+}
