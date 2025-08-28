@@ -579,6 +579,15 @@ def index():
 
     current_year = datetime.datetime.utcnow().year
 
+
+    all_content = []
+    for category_items in categories.values():
+        all_content.extend(category_items)
+
+    random_hero_item = None
+    if all_content:
+        random_hero_item = random.choice(all_content)
+
     return render_template('index.html',
                            greeting=greeting,
                            categories=categories,
@@ -586,6 +595,7 @@ def index():
                            user=user,
                            admin_emails=ADMIN_EMAILS,
                            current_language=current_language,
+                           hero_item=random_hero_item,
                            num_movies=num_movies,  # Pass movie count
                            num_series=num_series   # Pass series count
                            )
@@ -1771,6 +1781,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
