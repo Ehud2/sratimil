@@ -88,16 +88,32 @@
     {% endwith %}
 
     <main>
-        {% set first_category_items = (categories.values() | list | first) if categories else [] %}
-        {% if first_category_items %}
-            {% set hero_item = first_category_items[0] %}
+        {% set hero_item = hero_item if hero_item else (categories.values() | list | first)[0] if categories and (categories.values() | list | first) else None %}
+        {% if hero_item %}
             <section class="hero-section">
                 {% set hero_poster = (hero_item.get('HebrewPoster') if current_language == 'he' and hero_item.get('HebrewPoster') else hero_item.get('poster')) %}
                 <div class="hero-background" style="background-image: url('{{ hero_poster if hero_poster and hero_poster != 'N/A' else url_for('static', filename='images/no_poster.png') }}');"></div>
                 <div class="hero-content container">
                     <div class="hero-text-content">
                         <h1 class="hero-title">{{ hero_item.get('HebrewName', hero_item.get('title', '')) if current_language == 'he' else hero_item.get('title', hero_item.get('HebrewName', '')) }}</h1>
-                        <p class="hero-description">{{ random_description }}</p>
+                        {% if current_language == 'he' %}
+                            {% set descriptions = [
+                                "ההרפתקה הגדולה של השנה מחכה לכם עכשיו.",
+                                "גלו עולם חדש של מתח וריגוש.",
+                                "הכוכבים הגדולים על המסך שלכם.",
+                                "חוויה קולנועית בלתי נשכחת.",
+                                "הצטרפו למסע עוצר נשימה."
+                            ] %}
+                        {% else %}
+                            {% set descriptions = [
+                                "The biggest adventure of the year is waiting for you.",
+                                "Discover a new world of suspense and excitement.",
+                                "The biggest stars on your screen.",
+                                "An unforgettable cinematic experience.",
+                                "Join a breathtaking journey."
+                            ] %}
+                        {% endif %}
+                        <p class="hero-description">{{ descriptions | random }}</p>
                     </div>
                     <div class="hero-actions">
                         <a href="{{ url_for('movie_details', imdb_id=hero_item.id) if hero_item.type == 'movie' else url_for('series_details', imdb_id=hero_item.id) }}" class="hero-button-primary"><i class="fas fa-play"></i> <span>{{ 'צפה עכשיו' if current_language == 'he' else 'Watch Now' }}</span></a>
