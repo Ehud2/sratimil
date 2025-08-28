@@ -21,53 +21,55 @@
                 <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
             {% endif %}
         </div>
-        <p>
-             {% if current_language == 'he' %}
-             טוען...
-             {% else %}
-             Loading...
-             {% endif %}
-        </p>
+        <p>{{ 'טוען...' if current_language == 'he' else 'Loading...' }}</p>
     </div>
 
     <header class="site-header">
         <div class="container header-content">
-             <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
-                 <i class="fas fa-bars"></i>
-             </button>
-             <div class="auth-container">
-                 {% if user %}
-                     <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
-                         <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
-                     </a>
-                 {% else %}
-                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
-                          <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
-                     </a>
-                 {% endif %}
+             <div class="logo">
+                 <a href="{{ url_for('index') }}">
+                     <img src="/static/images/MoviesIL Logo.png" alt="Cinema Prime Logo">
+                     <span>CINEMA PRIME</span>
+                 </a>
              </div>
-            <div class="search-container">
-               <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
-               <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
-            </div>
-             <div class="language-switcher">
-                 <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
-                      <i class="fas fa-globe"></i>
-                      {% if current_language == 'he' %}
-                          עברית
-                      {% else %}
-                          English
-                      {% endif %}
-                  </a>
-             </div>
-            <nav class="main-nav">
-                <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
-                <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
-                <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
+             
+             <nav class="main-nav">
+                <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> <span>{{ 'בית' if current_language == 'he' else 'Home' }}</span></a>
+                <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> <span>{{ 'סרטים' if current_language == 'he' else 'Movies' }}</span></a>
+                <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> <span>{{ 'סדרות' if current_language == 'he' else 'Series' }}</span></a>
                 {% if user and user.email in admin_emails %}
-                    <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a>
+                    <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> <span>{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</span></a>
                 {% endif %}
             </nav>
+
+            <div class="header-actions">
+                <div class="search-container">
+                   <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
+                   <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
+                </div>
+    
+                 <div class="language-switcher">
+                     <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
+                          <i class="fas fa-globe"></i>
+                      </a>
+                 </div>
+    
+                 <div class="auth-container">
+                     {% if user %}
+                         <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
+                             <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
+                         </a>
+                     {% else %}
+                         <a href="{{ url_for('google_login') }}" class="google-login-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
+                              <span>{{ 'התחברות' if current_language == 'he' else 'Sign In' }}</span>
+                         </a>
+                     {% endif %}
+                 </div>
+            </div>
+
+            <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
+                 <i class="fas fa-bars"></i>
+            </button>
         </div>
     </header>
 
@@ -84,8 +86,8 @@
         {% endif %}
     {% endwith %}
 
-    <main class="container main-content movies-page-content">
-        <div class="page-heading">
+    <main class="main-content container">
+        <div class="page-header">
             <h1>{{ 'כל הסדרות' if current_language == 'he' else 'All Series' }}</h1>
             <p>{{ 'צפה בכל הסדרות הזמינות באתר וסנן לפי ז\'אנר, דירוג IMDb ושנת יציאה.' if current_language == 'he' else 'View all available series on the site and filter by genre, IMDb rating, and release year.' }}</p>
         </div>
@@ -114,15 +116,9 @@
         <div class="all-movies-grid">
             {% for imdb_id, item in series.items() %}
                  {% if item and item.get('imdbID') and (item.get('title') or item.get('HebrewName')) %}
-                     {% if current_language == 'he' %}
-                         {% set display_title = item.get('HebrewName') or item.get('title') or '' %}
-                         {% set display_poster = item.get('HebrewPoster') or item.get('poster') or '' %}
-                         {% set alt_text = item.get('HebrewName') or item.get('title') or 'Unknown Title' %}
-                     {% else %}
-                         {% set display_title = item.get('title') or item.get('HebrewName') or '' %}
-                         {% set display_poster = item.get('poster') or item.get('HebrewPoster') or '' %}
-                         {% set alt_text = item.get('title') or item.get('HebrewName') or 'Unknown Title' %}
-                     {% endif %}
+                     {% set display_title = item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) %}
+                     {% set display_poster = item.get('HebrewPoster', item.get('poster', '')) if current_language == 'he' else item.get('poster', item.get('HebrewPoster', '')) %}
+                     {% set alt_text = display_title %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
                     <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}"
@@ -136,15 +132,16 @@
                         data-year="{{ item.get('year', '') | trim }}">
                         <div class="item-card" tabindex="0">
                             <div class="card-image-container">
-                                <img src="{{ display_poster if display_poster and display_poster != 'N/A' else default_poster_url }}" alt="{{ alt_text }}" loading="lazy">
+                                <img src="{{ display_poster if display_poster and display_poster not in ['N/A', 'N/a', 'N/A.'] else default_poster_url }}" alt="{{ alt_text }}" loading="lazy">
                                 <div class="card-overlay">
-                                     <button class="play-button" aria-label="{{ ('צפה ב' + display_title) if current_language == 'he' else ('Watch ' + display_title) }}"><i class="fas fa-play"></i></button>
-                                    <h3 class="card-title">
-                                         {{ display_title if display_title else ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
-                                    </h3>
-                                    <div class="card-actions">
-                                        <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.imdbID }}" data-type="series" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i></button>
+                                    <div class="card-top-actions">
                                         <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button>
+                                    </div>
+                                    <div class="card-bottom-content">
+                                        <button class="play-button" aria-label="{{ ('צפה ב' + display_title) if current_language == 'he' else ('Watch ' + display_title) }}"><i class="fas fa-play"></i></button>
+                                        <h3 class="card-title">{{ display_title }}</h3>
+                                        <p class="card-subtitle">{{ 'סדרה' if current_language == 'he' else 'Series' }}</p>
+                                        <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.imdbID }}" data-type="series" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -152,13 +149,16 @@
                     </a>
                 {% endif %}
             {% endfor %}
-             <div id="loadMoreButton" class="load-more-button" role="button" aria-label="{{ 'טען עוד סדרות' if current_language == 'he' else 'Load More Series' }}" tabindex="0">
-                 <i class="fas fa-sync-alt"></i>
-                 <span>{{ 'טען עוד' if current_language == 'he' else 'Load More' }}</span>
-             </div>
         </div>
 
-        <div id="noResultsMessage" style="display: none; text-align: center; margin-top: 20px;">
+        <div class="load-more-container">
+            <button id="loadMoreButton" class="load-more-button" aria-label="{{ 'טען עוד סדרות' if current_language == 'he' else 'Load More Series' }}">
+                <span>{{ 'טען עוד' if current_language == 'he' else 'Load More' }}</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+
+        <div id="noResultsMessage" class="empty-list-message" style="display: none;">
             {% if current_language == 'he' %}
             לא נמצאו תוצאות התואמות את הסינון או החיפוש שלך.
             {% else %}
@@ -169,7 +169,7 @@
 
     <footer class="site-footer-bottom">
         <div class="container">
-             <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
+             <p>&copy; 2024 Cinema Prime. All Rights Reserved.</p>
         </div>
     </footer>
 
@@ -180,17 +180,13 @@
         let currentlyDisplayedCount = 0;
         const allSeriesData = {{ series | tojson }};
         const availableGenres = [
-            { english: "Action", hebrew: "פעולה" }, { english: "Adventure", hebrew: "הרפתקאות" },
-            { english: "Animation", hebrew: "אנימציה" }, { english: "Biography", hebrew: "ביוגרפיה" },
-            { english: "Comedy", hebrew: "קומדיה" }, { english: "Crime", hebrew: "פשע" },
-            { english: "Documentary", hebrew: "דוקומנטרי" }, { english: "Drama", hebrew: "דרמה" },
-            { english: "Family", hebrew: "משפחה" }, { english: "Fantasy", hebrew: "פנטזיה" },
-            { english: "Film-Noir", hebrew: "פילם נואר" }, { english: "History", hebrew: "היסטוריה" },
-            { english: "Horror", hebrew: "אימה" }, { english: "Music", hebrew: "מוזיקה" },
-            { english: "Musical", hebrew: "מחזמר" }, { english: "Mystery", hebrew: "מיסתורין" },
-            { english: "Romance", hebrew: "רומנטיקה" }, { english: "Sci-Fi", hebrew: "מדע בדיוני" },
-            { english: "Sport", hebrew: "ספורט" }, { english: "Thriller", hebrew: "מתח" },
-            { english: "War", hebrew: "מלחמה" }, { english: "Western", hebrew: "מערבון" }
+            { english: "Action", hebrew: "פעולה" }, { english: "Adventure", hebrew: "הרפתקאות" }, { english: "Animation", hebrew: "אנימציה" },
+            { english: "Biography", hebrew: "ביוגרפיה" }, { english: "Comedy", hebrew: "קומדיה" }, { english: "Crime", hebrew: "פשע" },
+            { english: "Documentary", hebrew: "דוקומנטרי" }, { english: "Drama", hebrew: "דרמה" }, { english: "Family", hebrew: "משפחה" },
+            { english: "Fantasy", hebrew: "פנטזיה" }, { english: "Film-Noir", hebrew: "פילם נואר" }, { english: "History", hebrew: "היסטוריה" },
+            { english: "Horror", hebrew: "אימה" }, { english: "Music", hebrew: "מוזיקה" }, { english: "Musical", hebrew: "מחזמר" },
+            { english: "Mystery", hebrew: "מיסתורין" }, { english: "Romance", hebrew: "רומנטיקה" }, { english: "Sci-Fi", hebrew: "מדע בדיוני" },
+            { english: "Sport", hebrew: "ספורט" }, { english: "Thriller", hebrew: "מתח" }, { english: "War", hebrew: "מלחמה" }, { english: "Western", hebrew: "מערבון" }
         ];
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -198,7 +194,7 @@
             const visualHideDelay = 200;
             if (spinner) {
                  spinner.classList.add('hidden');
-                 spinner.addEventListener('transitionend', function handler(event) {
+                spinner.addEventListener('transitionend', function handler(event) {
                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                          spinner.style.display = 'none';
                          spinner.removeEventListener('transitionend', handler);
@@ -225,30 +221,46 @@
             const navToggle = document.querySelector('.nav-toggle');
             const mainNav = document.querySelector('.main-nav');
             const body = document.body;
+            const header = document.querySelector('.site-header');
+
             if (navToggle && mainNav) {
                  navToggle.addEventListener('click', function() {
                       const isOpen = mainNav.classList.toggle('nav-open');
                       body.classList.toggle('nav-open');
+                      header.classList.toggle('nav-open');
                       const icon = navToggle.querySelector('i');
                       if (isOpen) {
-                           icon.classList.remove('fa-bars'); icon.classList.add('fa-times');
+                           icon.classList.remove('fa-bars');
+                           icon.classList.add('fa-times');
                            navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'סגור תפריט ניווט' : 'Close Navigation Menu');
                       } else {
-                           icon.classList.remove('fa-times'); icon.classList.add('fa-bars');
+                           icon.classList.remove('fa-times');
+                           icon.classList.add('fa-bars');
                            navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
                       }
                  });
                  mainNav.querySelectorAll('a').forEach(link => {
                      link.addEventListener('click', function() {
                           if (mainNav.classList.contains('nav-open')) {
-                               mainNav.classList.remove('nav-open'); body.classList.remove('nav-open');
+                               mainNav.classList.remove('nav-open');
+                               body.classList.remove('nav-open');
+                               header.classList.remove('nav-open');
                                const icon = navToggle.querySelector('i');
-                               icon.classList.remove('fa-times'); icon.classList.add('fa-bars');
+                               icon.classList.remove('fa-times');
+                               icon.classList.add('fa-bars');
                                navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
                           }
                      });
                  });
             }
+            
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
 
             const searchInput = document.getElementById('searchInput');
             const ratingFilter = document.getElementById('ratingFilter');
@@ -259,20 +271,16 @@
             const loadMoreButton = document.getElementById('loadMoreButton');
 
             function showItems(startIndex, endIndex) {
-                 let itemsShownInBatch = 0;
                  const currentlySearchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none');
                  for (let i = startIndex; i < endIndex && i < currentlySearchVisibleItems.length; i++) {
                       currentlySearchVisibleItems[i].classList.remove('hidden-item-by-pagination');
-                       itemsShownInBatch++;
                  }
-                 currentlyDisplayedCount += itemsShownInBatch;
+                 currentlyDisplayedCount = document.querySelectorAll('.item-card-link.catalog-item:not(.hidden-item-by-pagination):not([style*="display: none"])').length;
             }
 
             function hideAllItemsForPagination() {
                  allItemCardLinks.forEach(link => {
-                      if (link.style.display !== 'none') {
-                           link.classList.add('hidden-item-by-pagination');
-                      }
+                    link.classList.add('hidden-item-by-pagination');
                  });
                  currentlyDisplayedCount = 0;
             }
@@ -280,15 +288,15 @@
             function updateLoadMoreButtonVisibility() {
                  const totalSearchFilterVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none').length;
                  if (totalSearchFilterVisibleItems === 0 || currentlyDisplayedCount >= totalSearchFilterVisibleItems) {
-                      if (loadMoreButton) loadMoreButton.style.display = 'none';
+                      if (loadMoreButton) loadMoreButton.parentElement.style.display = 'none';
                  } else {
-                      if (loadMoreButton) loadMoreButton.style.display = '';
+                      if (loadMoreButton) loadMoreButton.parentElement.style.display = 'flex';
                  }
             }
 
             function populateFilters() {
                 if (ratingFilter) {
-                     for (let i = 1; i <= 10; i++) {
+                     for (let i = 9; i >= 1; i--) {
                          const option = document.createElement('option');
                          option.value = i;
                          option.textContent = i + "+";
@@ -298,8 +306,7 @@
                 if (genreFilter) {
                     const uniqueGenres = new Set();
                     Object.values(allSeriesData).forEach(item => {
-                         const itemGenres = (item.genre || '').split(',').map(g => g.trim()).filter(g => g !== '');
-                         itemGenres.forEach(g => uniqueGenres.add(g.toLowerCase()));
+                         (item.genre || '').split(',').map(g => g.trim()).filter(Boolean).forEach(g => uniqueGenres.add(g.toLowerCase()));
                     });
                     const sortedGenres = Array.from(uniqueGenres).sort();
                     sortedGenres.forEach(englishGenre => {
@@ -312,20 +319,19 @@
                     });
                 }
                 if (yearFilter) {
-                    let currentYear = new Date().getFullYear();
-                    let minYear = currentYear;
+                    const currentYear = new Date().getFullYear();
+                    let earliestYear = currentYear;
                     Object.values(allSeriesData).forEach(item => {
-                        const yearStr = (item.year || '').trim().split('–')[0]; // Handle year ranges like "2008–2013"
-                        const itemYear = parseInt(yearStr, 10);
-                        if (!isNaN(itemYear) && itemYear > 1888) {
-                             if (itemYear < minYear) minYear = itemYear;
+                        const yearStr = (item.year || '').trim().split('–')[0];
+                        const year = parseInt(yearStr, 10);
+                        if (!isNaN(year) && year > 1888 && year < earliestYear) {
+                            earliestYear = year;
                         }
                     });
-                    if (minYear === currentYear && Object.keys(allSeriesData).length > 0) minYear = 1950;
-                    for (let year = currentYear; year >= minYear; year--) {
+                    for (let year = currentYear; year >= earliestYear; year--) {
                          const option = document.createElement('option');
                          option.value = year;
-                         option.textContent = year + "+";
+                         option.textContent = year;
                          yearFilter.appendChild(option);
                     }
                 }
@@ -333,78 +339,53 @@
 
             function applyFiltersAndSearch() {
                 const searchTerm = searchInput.value.toLowerCase().trim();
-                const selectedRatingValue = parseFloat(ratingFilter ? ratingFilter.value : "");
-                const selectedGenreValue = genreFilter ? genreFilter.value : "";
-                const selectedYearValue = parseInt(yearFilter ? yearFilter.value : "", 10);
+                const selectedRating = parseFloat(ratingFilter.value || "0");
+                const selectedGenre = genreFilter.value;
+                const selectedYear = parseInt(yearFilter.value || "0", 10);
                 let visibleCount = 0;
 
-                allItemCardLinks.forEach(cardElement => {
-                    const itemData = allSeriesData[cardElement.dataset.id];
-                    if (!itemData) {
-                         cardElement.style.display = 'none';
-                         return;
-                    }
+                allItemCardLinks.forEach(card => {
+                    const titleHe = card.dataset.titleHe;
+                    const titleEn = card.dataset.titleEn;
+                    const rating = parseFloat(card.dataset.imdbRating || "0");
+                    const genres = card.dataset.genre;
+                    const yearStr = (card.dataset.year || '').trim().split('–')[0];
+                    const year = parseInt(yearStr, 10);
 
-                    const titleHe = (itemData.HebrewName || itemData.title || '').toLowerCase().trim();
-                    const titleEn = (itemData.title || itemData.HebrewName || '').toLowerCase().trim();
-                    const passesSearch = (searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
+                    const searchMatch = searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm);
+                    const ratingMatch = !selectedRating || rating >= selectedRating;
+                    const genreMatch = !selectedGenre || genres.includes(selectedGenre);
+                    const yearMatch = !selectedYear || (!isNaN(year) && year >= selectedYear);
 
-                    let passesRating = true;
-                    if (!isNaN(selectedRatingValue)) {
-                        const itemRating = parseFloat(itemData.imdbRating);
-                        passesRating = !isNaN(itemRating) && itemRating >= selectedRatingValue;
-                    }
-
-                    let passesGenre = true;
-                    if (selectedGenreValue) {
-                        const itemGenres = (itemData.genre || '').toLowerCase().split(',').map(g => g.trim());
-                        passesGenre = itemGenres.includes(selectedGenreValue);
-                    }
-
-                    let passesYear = true;
-                    if (!isNaN(selectedYearValue)) {
-                        const yearStr = (itemData.year || '').trim().split('–')[0];
-                        const itemYear = parseInt(yearStr, 10);
-                        passesYear = !isNaN(itemYear) && itemYear >= selectedYearValue;
-                    }
-
-                    if (passesSearch && passesRating && passesGenre && passesYear) {
-                        cardElement.style.display = '';
+                    if (searchMatch && ratingMatch && genreMatch && yearMatch) {
+                        card.style.display = '';
                         visibleCount++;
                     } else {
-                        cardElement.style.display = 'none';
+                        card.style.display = 'none';
                     }
                 });
 
-                if (noResultsMessage) noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
                 hideAllItemsForPagination();
                 showItems(0, itemsPerPage);
                 updateLoadMoreButtonVisibility();
             }
 
             populateFilters();
-            const filterElements = [searchInput, ratingFilter, genreFilter, yearFilter];
-            filterElements.forEach(el => {
-                if(el) el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', applyFiltersAndSearch);
-            });
-            if(searchInput) {
-                document.querySelector('.search-container button').addEventListener('click', applyFiltersAndSearch);
-                searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyFiltersAndSearch(); } });
-            }
-            
-            hideAllItemsForPagination();
             applyFiltersAndSearch();
+
+            if (searchInput) {
+                 searchInput.addEventListener('input', applyFiltersAndSearch);
+                 document.querySelector('.search-container button').addEventListener('click', () => searchInput.focus());
+            }
+            if (ratingFilter) ratingFilter.addEventListener('change', applyFiltersAndSearch);
+            if (genreFilter) genreFilter.addEventListener('change', applyFiltersAndSearch);
+            if (yearFilter) yearFilter.addEventListener('change', applyFiltersAndSearch);
 
             if (loadMoreButton) {
                  loadMoreButton.addEventListener('click', function() {
                       showItems(currentlyDisplayedCount, currentlyDisplayedCount + itemsPerPage);
                       updateLoadMoreButtonVisibility();
-                 });
-                 loadMoreButton.addEventListener('keypress', function(event) {
-                     if (event.key === 'Enter' || event.key === ' ') {
-                         event.preventDefault();
-                         loadMoreButton.click();
-                     }
                  });
             }
         });
