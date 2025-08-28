@@ -176,7 +176,6 @@
             const seasonSelect = document.getElementById('season-select');
             const episodeListUl = document.getElementById('episode-list');
             const episodeEmbedContainer = document.getElementById('episode-embed-container');
-            const embedMessageDiv = document.getElementById('embed-message');
             
             let continueWatchingItems = {};
             const userId = user ? user.google_id : null;
@@ -237,15 +236,21 @@
                     return;
                 }
                 const episodeNumbers = Object.keys(seasonData.Episodes).map(Number).sort((a, b) => a - b);
+                
                 episodeNumbers.forEach(epNum => {
                     const episode = seasonData.Episodes[epNum];
-                    const li = document.createElement('li');
-                    li.className = 'episode-item';
-                    li.dataset.season = seasonNumber;
-                    li.dataset.episode = epNum;
-                    li.innerHTML = `<span class="episode-number">${epNum}</span> <span class="episode-title">${episode.title || 'Episode ' + epNum}</span>`;
-                    li.addEventListener('click', () => handleEpisodeClick(seasonNumber, epNum));
-                    episodeListUl.appendChild(li);
+                    // --- FIX IS HERE ---
+                    if (episode && typeof episode === 'object') {
+                        const li = document.createElement('li');
+                        li.className = 'episode-item';
+                        li.dataset.season = seasonNumber;
+                        li.dataset.episode = epNum;
+                        li.innerHTML = `<span class="episode-number">${epNum}</span> <span class="episode-title">${episode.title || 'Episode ' + epNum}</span>`;
+                        li.addEventListener('click', () => handleEpisodeClick(seasonNumber, epNum));
+                        episodeListUl.appendChild(li);
+                    } else {
+                        console.warn(`Skipping invalid or null episode data for S${seasonNumber}E${epNum}`);
+                    }
                 });
 
                 if (episodeToSelect) {
