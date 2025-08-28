@@ -115,10 +115,11 @@
 
         <div class="all-movies-grid">
             {% for imdb_id, item in series.items() %}
-                 {% if item and item.get('imdbID') and (item.get('title') or item.get('HebrewName')) %}
-                     {% set display_title = item.get('HebrewName', item.get('title', '')) if current_language == 'he' else item.get('title', item.get('HebrewName', '')) %}
-                     {% set display_poster = item.get('HebrewPoster', item.get('poster', '')) if current_language == 'he' else item.get('poster', item.get('HebrewPoster', '')) %}
-                     {% set alt_text = display_title %}
+                 {% if item and item.get('imdbID') %}
+                     {% set fallback_title = 'כותרת לא ידועה' if current_language == 'he' else 'Unknown Title' %}
+                     {% set display_title = (item.get('HebrewName') or item.get('title')) if current_language == 'he' else (item.get('title') or item.get('HebrewName')) %}
+                     {% set display_poster = (item.get('HebrewPoster') or item.get('poster')) if current_language == 'he' else (item.get('poster') or item.get('HebrewPoster')) %}
+                     {% set alt_text = display_title or fallback_title %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
                     <a href="{{ url_for('series_details', imdb_id=item.imdbID) }}"
@@ -138,8 +139,8 @@
                                         <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button>
                                     </div>
                                     <div class="card-bottom-content">
-                                        <button class="play-button" aria-label="{{ ('צפה ב' + display_title) if current_language == 'he' else ('Watch ' + display_title) }}"><i class="fas fa-play"></i></button>
-                                        <h3 class="card-title">{{ display_title }}</h3>
+                                        <button class="play-button" aria-label="{{ ('צפה ב' + (display_title or '')) if current_language == 'he' else ('Watch ' + (display_title or '')) }}"><i class="fas fa-play"></i></button>
+                                        <h3 class="card-title">{{ display_title or fallback_title }}</h3>
                                         <p class="card-subtitle">{{ 'סדרה' if current_language == 'he' else 'Series' }}</p>
                                         <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ item.imdbID }}" data-type="series" data-title="{{ item.get('title', '') }}" data-poster="{{ item.get('poster', '') }}" data-hebrew-name="{{ item.get('HebrewName', '') }}" data-hebrew-poster="{{ item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i></button>
                                     </div>
