@@ -99,7 +99,6 @@
                     <p class="hero-description">{{ 'צפו עכשיו בלהיט החדש שכבש את העולם. חוויה קולנועית מובטחת.' if current_language == 'he' else 'Watch the new hit that has taken the world by storm. A cinematic experience is guaranteed.' }}</p>
                     <div class="hero-actions">
                         <a href="{{ url_for('movie_details', imdb_id=hero_item.id) if hero_item.type == 'movie' else url_for('series_details', imdb_id=hero_item.id) }}" class="hero-button-primary"><i class="fas fa-play"></i> {{ 'צפה עכשיו' if current_language == 'he' else 'Watch Now' }}</a>
-                        <button class="hero-button-secondary add-to-list-button" data-id="{{ hero_item.id }}" data-type="{{ hero_item.type }}" data-title="{{ hero_item.get('title', '') }}" data-poster="{{ hero_item.get('poster', '') }}" data-hebrew-name="{{ hero_item.get('HebrewName', '') }}" data-hebrew-poster="{{ hero_item.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i> {{ 'הוסף לרשימה' if current_language == 'he' else 'Add to List' }}</button>
                     </div>
                 </div>
             </section>
