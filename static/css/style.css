@@ -101,7 +101,9 @@ main { padding-top: var(--header-height); }
 .hero-background::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, var(--bg-color) 5%, transparent 50%), linear-gradient(to right, var(--bg-color) 5%, transparent 60%); }
 [dir="rtl"] .hero-background::before { background: linear-gradient(to top, var(--bg-color) 5%, transparent 50%), linear-gradient(to left, var(--bg-color) 5%, transparent 60%); }
 
-.hero-content { position: relative; z-index: 2; max-width: 50%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 30px 0; }
+.hero-content { position: relative; z-index: 2; max-width: 45%; display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 30px 0; }
+[dir="rtl"] .hero-content.container { margin: 0 5% 0 auto; }
+[dir="ltr"] .hero-content.container { margin: 0 auto 0 5%; }
 .hero-text-content { text-align: inherit; }
 .hero-title { font-family: var(--font-heading); font-size: 3.2em; font-weight: 700; color: var(--text-heading-color); line-height: 1.1; margin-bottom: 15px; text-shadow: 0 4px 15px var(--shadow-color); }
 .hero-description { font-size: 1.2em; color: var(--text-heading-color); margin-bottom: 30px; line-height: 1.7; max-width: 500px; font-weight: 400; text-shadow: 0 2px 8px var(--shadow-color); }
@@ -193,7 +195,8 @@ main { padding-top: var(--header-height); }
     .auth-container { order: 3; }
     .search-container:focus-within #searchInput, #searchInput:not(:placeholder-shown) { width: 150px; }
     .hero-section { height: 50vh; min-height: 380px; }
-    .hero-content { max-width: 100%; text-align: center; justify-content: center; }
+    .hero-content.container { margin: 0 auto; max-width: 100%; }
+    .hero-content { text-align: center; justify-content: center; }
     .hero-text-content { margin-bottom: 20px; }
     .hero-actions { align-self: center; }
     .hero-title { font-size: 2.2em; }
