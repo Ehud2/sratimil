@@ -1,105 +1,78 @@
-<!-- movies.html -->
-{# current_language is passed from Flask #}
 <!DOCTYPE html>
 <html lang="{{ current_language }}" dir="{{ 'rtl' if current_language == 'he' else 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {# Use conditional title #}
     <title>{{ 'כל הסרטים' if current_language == 'he' else 'All Movies' }}</title>
-    {# Link the main style sheet first for shared styles like header, footer, etc. #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {# Link the specific movie page style sheet after the main one #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/movies.css') }}">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <link rel="icon" href="/static/images/MoviesIL Logo.png" type="image/png">
-    {# Included loading spinner styles directly in style.css #}
 </head>
 <body>
-    <!-- Loading Spinner - Copy from index.html -->
     <div id="loading-spinner">
         <div class="spinner">
             {% if user and user.picture %}
                 <img src="{{ user.picture }}" alt="User profile picture">
             {% else %}
-                {# Fallback to default profile image if user or picture is missing #}
                 <img src="{{ url_for('static', filename='images/default-profile.png') }}" alt="Default profile picture" loading="lazy">
             {% endif %}
         </div>
-        <p>
-             {% if current_language == 'he' %}
-             טוען...
-             {% else %}
-             Loading...
-             {% endif %}
-        </p>
+        <p>{{ 'טוען...' if current_language == 'he' else 'Loading...' }}</p>
     </div>
 
-    <!-- Header - Copy from index.html -->
     <header class="site-header">
         <div class="container header-content">
-
-             {# --- Nav Toggle Button (for Mobile) --- #}
-             {# Placed first in HTML for potential flex order adjustment, hidden by default #}
-             <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
-                 <i class="fas fa-bars"></i> {# Initial icon #}
-             </button>
-
-             <div class="auth-container">
-                 {% if user %}
-                     <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
-                         {# Ensure this path is correct for your default image if user.picture is missing #}
-                         <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
-                     </a>
-                 {% else %}
-                     <a href="{{ url_for('google_login') }}" class="profile-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
-                          {# Replace the base64 string with your desired image URL or placeholder #}
-                          {# Use url_for for your static image #}
-                          <img src="{{ url_for('static', filename='images/sign_in_with_google.png') }}" alt="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" loading="lazy">
-                     </a>
-                 {% endif %}
+             <div class="logo">
+                 <a href="{{ url_for('index') }}">
+                     <img src="/static/images/MoviesIL Logo.png" alt="Cinema Prime Logo">
+                     <span>CINEMA PRIME</span>
+                 </a>
              </div>
-
-            <div class="search-container">
-               <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
-               <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
-            </div>
-
-             {# --- Add Language Switcher Here (after Search) --- #}
-             <div class="language-switcher">
-                 {# Link to the set_language route. Show the name of the *current* language as per request. #}
-                 {# The href points to the *target* language (opposite of current) #}
-                 <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
-                      <i class="fas fa-globe"></i>
-                      {% if current_language == 'he' %}
-                          עברית
-                      {% else %}
-                          English
-                      {% endif %}
-                  </a>
-             </div>
-
-
-            <nav class="main-nav">
-                {# Update link text and aria-label based on language #}
-                <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> {{ 'בית' if current_language == 'he' else 'Home' }}</a>
-                <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> {{ 'סרטים' if current_language == 'he' else 'Movies' }}</a>
-                <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> {{ 'סדרות' if current_language == 'he' else 'Series' }}</a>
+             
+             <nav class="main-nav">
+                <a href="{{ url_for('index') }}" aria-label="{{ 'בית' if current_language == 'he' else 'Home' }}"><i class="fas fa-home"></i> <span>{{ 'בית' if current_language == 'he' else 'Home' }}</span></a>
+                <a href="{{ url_for('all_movies') }}" aria-label="{{ 'סרטים' if current_language == 'he' else 'Movies' }}"><i class="fas fa-film"></i> <span>{{ 'סרטים' if current_language == 'he' else 'Movies' }}</span></a>
+                <a href="{{ url_for('all_series') }}" aria-label="{{ 'סדרות' if current_language == 'he' else 'Series' }}"><i class="fas fa-tv"></i> <span>{{ 'סדרות' if current_language == 'he' else 'Series' }}</span></a>
                 {% if user and user.email in admin_emails %}
-                    <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> {{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</a>
+                    <a href="{{ url_for('add_content') }}" aria-label="{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}"><i class="fas fa-plus-circle"></i> <span>{{ 'הוספת תוכן' if current_language == 'he' else 'Add Content' }}</span></a>
                 {% endif %}
             </nav>
 
+            <div class="header-actions">
+                <div class="search-container">
+                   <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
+                   <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
+                </div>
+    
+                 <div class="language-switcher">
+                     <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
+                          <i class="fas fa-globe"></i>
+                      </a>
+                 </div>
+    
+                 <div class="auth-container">
+                     {% if user %}
+                         <a href="{{ url_for('logout') }}" class="profile-button" title="{{ 'התנתק' if current_language == 'he' else 'Sign Out' }}">
+                             <img src="{{ user.picture or url_for('static', filename='images/default-profile.png') }}" alt="{{ user.name or ('משתמש' if current_language == 'he' else 'User') }} פרופיל" loading="lazy">
+                         </a>
+                     {% else %}
+                         <a href="{{ url_for('google_login') }}" class="google-login-button" aria-label="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}" title="{{ 'התחבר עם גוגל' if current_language == 'he' else 'Sign In with Google' }}">
+                              <span>{{ 'התחברות' if current_language == 'he' else 'Sign In' }}</span>
+                         </a>
+                     {% endif %}
+                 </div>
+            </div>
 
-            {# Removed the header-spacer div #}
+            <button class="nav-toggle" aria-label="{{ 'פתח/סגור תפריט ניווט' if current_language == 'he' else 'Open/Close Navigation Menu' }}">
+                 <i class="fas fa-bars"></i>
+            </button>
         </div>
     </header>
 
-    <!-- Flash Messages - Copy from index.html -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="container flash-messages">
@@ -113,110 +86,78 @@
         {% endif %}
     {% endwith %}
 
-    <main class="container main-content movies-page-content"> {# Added class for page-specific margin #}
-        <div class="page-heading"> {# Use a slightly different class for heading #}
-            {# Update heading based on language #}
+    <main class="main-content container">
+        <div class="page-header">
             <h1>{{ 'כל הסרטים' if current_language == 'he' else 'All Movies' }}</h1>
-            {# Updated description #}
             <p>{{ 'צפה בכל הסרטים הזמינים באתר וסנן לפי ז\'אנר, דירוג IMDb ושנת יציאה.' if current_language == 'he' else 'View all available movies on the site and filter by genre, IMDb rating, and release year.' }}</p>
         </div>
 
-        <!-- Filter Container - Includes Rating, Genre, and Year filters -->
         <div class="filter-container">
             <div class="filter-group">
-                 <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMDb):' }}</label> {# Corrected typo 'IMdb' -> 'IMDb' #}
+                 <label for="ratingFilter">{{ 'דירוג (IMDb):' if current_language == 'he' else 'Rating (IMDb):' }}</label>
                  <select id="ratingFilter">
                       <option value="">{{ 'כל הדירוגים' if current_language == 'he' else 'All Ratings' }}</option>
-                     {# Options will be populated by JavaScript #}
                  </select>
              </div>
-
-             {# --- ADDED GENRE FILTER GROUP --- #}
              <div class="filter-group">
                  <label for="genreFilter">{{ 'ז\'אנר:' if current_language == 'he' else 'Genre:' }}</label>
                  <select id="genreFilter">
                       <option value="">{{ 'כל הז\'אנרים' if current_language == 'he' else 'All Genres' }}</option>
-                     {# Options will be populated by JavaScript #}
                  </select>
              </div>
-             {# --- END ADDED GENRE FILTER GROUP --- #}
-
-             {# --- ADDED YEAR FILTER GROUP --- #}
              <div class="filter-group">
-                 <label for="yearFilter">{{ 'שנת יציאה מ:' if current_language == 'he' else 'Release Year From:' }}</label> {# Changed label to indicate minimum year #}
+                 <label for="yearFilter">{{ 'שנת יציאה מ:' if current_language == 'he' else 'Release Year From:' }}</label>
                  <select id="yearFilter">
                       <option value="">{{ 'כל השנים' if current_language == 'he' else 'All Years' }}</option>
-                     {# Options will be populated by JavaScript #}
                  </select>
              </div>
-             {# --- END ADDED YEAR FILTER GROUP --- #}
-
          </div>
 
-
-        {# Container for the movie grid #}
         <div class="all-movies-grid">
-            {# Iterate through the 'movies' dictionary passed from main.py #}
             {% for imdb_id, movie in movies.items() %}
-                 {# Ensure item has basic properties needed for display and linking ##}
                  {% if movie and movie.get('imdbID') and (movie.get('title') or movie.get('HebrewName')) %}
-                     {# Determine display title and poster based on current language #}
                      {% set display_title = movie.get('HebrewName', movie.get('title', '')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', '')) %}
                      {% set display_poster = movie.get('HebrewPoster', movie.get('poster', '')) if current_language == 'he' else movie.get('poster', movie.get('HebrewPoster', '')) %}
-                     {% set alt_text = movie.get('HebrewName', movie.get('title', 'Unknown Title')) if current_language == 'he' else movie.get('title', movie.get('HebrewName', 'Unknown Title')) %}
+                     {% set alt_text = display_title %}
                      {% set default_poster_url = url_for('static', filename='images/no_poster.png') %}
 
-                     {# data-id is crucial for JS mapping. Other data attributes are added just in case other scripts use them. #}
-                     {# data-genre is already there, ADDED data-year attribute #}
-                     {# ADDED hidden-item-by-pagination class for JS pagination #}
                      <a href="{{ url_for('movie_details', imdb_id=movie.imdbID) }}"
-                        class="item-card-link catalog-item hidden-item-by-pagination" {# ADDED class here #}
+                        class="item-card-link catalog-item hidden-item-by-pagination"
                         data-id="{{ movie.imdbID }}"
                         data-type="movie"
                         data-title-he="{{ movie.get('HebrewName', movie.get('title', '')) | lower | trim }}"
                         data-title-en="{{ movie.get('title', movie.get('HebrewName', '')) | lower | trim }}"
                         data-imdb-rating="{{ movie.get('imdbRating', '') | lower | trim }}"
-                        data-genre="{{ movie.get('genre', '') | lower | trim }}" {# genre data attribute - still stores English lowercase #}
-                        data-year="{{ movie.get('year', '') | trim }}"> {# ADDED year data attribute - stores the year string as is #}
-
-                        {# Use the same item-card structure as index.html for consistent look, but movies.css will handle grid layout #}
+                        data-genre="{{ movie.get('genre', '') | lower | trim }}"
+                        data-year="{{ movie.get('year', '') | trim }}">
                         <div class="item-card" tabindex="0">
                             <div class="card-image-container">
-                                {# Use determined poster, fall back to default #}
-                                <img src="{{ display_poster if display_poster and display_poster != 'N/A' and display_poster != 'N/a' and display_poster != 'N/A.' else default_poster_url }}" alt="{{ alt_text }}" loading="lazy"> {# Added checks for common 'missing poster' strings #}
-                                {# No rank number on this page #}
+                                <img src="{{ display_poster if display_poster and display_poster not in ['N/A', 'N/a', 'N/A.'] else default_poster_url }}" alt="{{ alt_text }}" loading="lazy">
                                 <div class="card-overlay">
-                                     {# The play button now links to the movie details page #}
-                                     <button class="play-button" aria-label="{{ ('צפה ב' + display_title) if current_language == 'he' else ('Watch ' + display_title) }}"><i class="fas fa-play"></i></button>
-                                    <h3 class="card-title">
-                                         {# Use determined display title #}
-                                         {{ display_title if display_title else ('כותרת לא ידועה' if current_language == 'he' else 'Unknown Title') }}
-                                    </h3>
-                                    <div class="card-actions">
-                                        {# Add to list button - pass both Hebrew and English details #}
-                                        <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ movie.imdbID }}" data-type="movie" data-title="{{ movie.get('title', '') }}" data-poster="{{ movie.get('poster', '') }}" data-hebrew-name="{{ movie.get('HebrewName', '') }}" data-hebrew-poster="{{ movie.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();">{# Prevent link click #}<i class="fas fa-plus"></i></button> {# TODO: Implement add to list #}
-                                         {# The info button also links to the movie details page #}
-                                        <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button> {# Explicitly navigate #}
+                                    <div class="card-top-actions">
+                                        <button class="info-button" aria-label="{{ 'עוד פרטים' if current_language == 'he' else 'More info' }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href = this.closest('.item-card-link').href;"><i class="fas fa-info-circle"></i></button>
+                                    </div>
+                                    <div class="card-bottom-content">
+                                        <button class="play-button" aria-label="{{ ('צפה ב' + display_title) if current_language == 'he' else ('Watch ' + display_title) }}"><i class="fas fa-play"></i></button>
+                                        <h3 class="card-title">{{ display_title }}</h3>
+                                        <button aria-label="{{ 'הוסף לרשימה' if current_language == 'he' else 'Add to list' }}" class="add-to-list-button" data-id="{{ movie.imdbID }}" data-type="movie" data-title="{{ movie.get('title', '') }}" data-poster="{{ movie.get('poster', '') }}" data-hebrew-name="{{ movie.get('HebrewName', '') }}" data-hebrew-poster="{{ movie.get('HebrewPoster', '') }}" onclick="event.preventDefault(); event.stopPropagation();"><i class="fas fa-plus"></i></button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </a> {# End of anchor tag wrapper #}
+                    </a>
                 {% endif %}
             {% endfor %}
-
-             {# ADDED Load More Button #}
-             <div id="loadMoreButton" class="load-more-button" role="button" aria-label="{{ 'טען עוד סרטים' if current_language == 'he' else 'Load More Movies' }}" tabindex="0">
-                 <i class="fas fa-sync-alt"></i> {# Or another suitable icon like fa-arrow-down #}
-                 <span>{{ 'טען עוד' if current_language == 'he' else 'Load More' }}</span>
-             </div>
-
-
         </div>
 
-        {# --- Moved No Results Message outside grid but still within main content --- #}
-        {# This ensures it doesn't take up a grid space when displayed #}
-        <div id="noResultsMessage" style="display: none; text-align: center; margin-top: 20px;"> {# Added basic styling #}
+        <div class="load-more-container">
+            <button id="loadMoreButton" class="load-more-button" aria-label="{{ 'טען עוד סרטים' if current_language == 'he' else 'Load More Movies' }}">
+                <span>{{ 'טען עוד' if current_language == 'he' else 'Load More' }}</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+
+        <div id="noResultsMessage" class="empty-list-message" style="display: none;">
             {% if current_language == 'he' %}
             לא נמצאו תוצאות התואמות את הסינון או החיפוש שלך.
             {% else %}
@@ -225,64 +166,41 @@
         </div>
     </main>
 
-    <!-- Footer - Copy from index.html -->
     <footer class="site-footer-bottom">
         <div class="container">
-             <p>© {{ current_year }} סינמה פריים{% if current_language == 'en' %} | Cinema Prime{% endif %}. {{ 'כל הזכויות שמורות.' if current_language == 'he' else 'All rights reserved.' }}</p>
+             <p>
+                {% if current_language == 'he' %}
+                    סרטים באתר: {{ num_movies }} | סדרות באתר: {{ num_series }}
+                {% else %}
+                    Movies on site: {{ num_movies }} | Series on site: {{ num_series }}
+                {% endif %}
+             </p>
+             <p>&copy; 2024 Cinema Prime. All Rights Reserved.</p>
         </div>
     </footer>
 
     <script>
-         // Pass current_language and items_per_page from Flask to JavaScript
-         const currentLanguage = {{ current_language | tojson }}; // 'he' or 'en'
+         const currentLanguage = {{ current_language | tojson }};
          const defaultPosterUrl = "{{ url_for('static', filename='images/no_poster.png') }}";
-         const itemsPerPage = {{ items_per_page | tojson }}; // ADDED: Get items per page from Flask
-
-         let currentlyDisplayedCount = 0; // ADDED: Keep track of how many items are displayed *by pagination*
-
-         // Pass the full movie data from Flask to JavaScript
-         // Note: This converts the Python dictionary to a JavaScript object
-         // This was here before, needed for filtering logic
+         const itemsPerPage = {{ items_per_page | tojson }};
+         let currentlyDisplayedCount = 0;
          const allMoviesData = {{ movies | tojson }};
-         console.log("Loaded allMoviesData:", allMoviesData); // Log the loaded data
-
-         // Define the list of available genres with English (value) and Hebrew (text) names
-         // This was here before, needed for genre filter
          const availableGenres = [
-            { english: "Action", hebrew: "פעולה" },
-            { english: "Adventure", hebrew: "הרפתקאות" },
-            { english: "Animation", hebrew: "אנימציה" },
-            { english: "Biography", hebrew: "ביוגרפיה" },
-            { english: "Comedy", hebrew: "קומדיה" },
-            { english: "Crime", hebrew: "פשע" },
-            { english: "Documentary", hebrew: "דוקומנטרי" },
-            { english: "Drama", hebrew: "דרמה" },
-            { english: "Family", hebrew: "משפחה" },
-            { english: "Fantasy", hebrew: "פנטזיה" },
-            { english: "Film-Noir", hebrew: "פילם נואר" },
-            { english: "History", hebrew: "היסטוריה" },
-            { english: "Horror", hebrew: "אימה" },
-            { english: "Music", hebrew: "מוזיקה" },
-            { english: "Musical", hebrew: "מחזמר" },
-            { english: "Mystery", hebrew: "מיסתורין" },
-            { english: "Romance", hebrew: "רומנטיקה" },
-            { english: "Sci-Fi", hebrew: "מדע בדיוני" },
-            { english: "Sport", hebrew: "ספורט" },
-            { english: "Thriller", hebrew: "מתח" },
-            { english: "War", hebrew: "מלחמה" },
-            { english: "Western", hebrew: "מערבון" }
+            { english: "Action", hebrew: "פעולה" }, { english: "Adventure", hebrew: "הרפתקאות" }, { english: "Animation", hebrew: "אנימציה" },
+            { english: "Biography", hebrew: "ביוגרפיה" }, { english: "Comedy", hebrew: "קומדיה" }, { english: "Crime", hebrew: "פשע" },
+            { english: "Documentary", hebrew: "דוקומנטרי" }, { english: "Drama", hebrew: "דרמה" }, { english: "Family", hebrew: "משפחה" },
+            { english: "Fantasy", hebrew: "פנטזיה" }, { english: "Film-Noir", hebrew: "פילם נואר" }, { english: "History", hebrew: "היסטוריה" },
+            { english: "Horror", hebrew: "אימה" }, { english: "Music", hebrew: "מוזיקה" }, { english: "Musical", hebrew: "מחזמר" },
+            { english: "Mystery", hebrew: "מיסתורין" }, { english: "Romance", hebrew: "רומנטיקה" }, { english: "Sci-Fi", hebrew: "מדע בדיוני" },
+            { english: "Sport", hebrew: "ספורט" }, { english: "Thriller", hebrew: "מתח" }, { english: "War", hebrew: "מלחמה" }, { english: "Western", hebrew: "מערבון" }
          ];
 
-
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded fired on movies page.");
-
-            // --- Loading Spinner Logic (Copy from index.html) ---
             const spinner = document.getElementById('loading-spinner');
-            const visualHideDelay = 200; // Corresponds to var(--transition-fast)
+            const visualHideDelay = 200;
             if (spinner) {
                  spinner.classList.add('hidden');
-                 spinner.addEventListener('transitionend', function handler(event) {
+                spinner.addEventListener('transitionend', function handler(event) {
                      if (event.propertyName === 'opacity' && getComputedStyle(spinner).opacity == 0) {
                          spinner.style.display = 'none';
                          spinner.removeEventListener('transitionend', handler);
@@ -295,49 +213,44 @@
                  }, visualHideDelay + 100);
             }
 
-            // --- Language Switcher Spinner (Copy from index.html) ---
             const languageSwitcherLink = document.querySelector('.language-switcher a');
             if (languageSwitcherLink) {
                  languageSwitcherLink.addEventListener('click', function(event) {
                       const spinner = document.getElementById('loading-spinner');
                       if (spinner) {
                           spinner.classList.remove('hidden');
-                          spinner.style.display = 'flex'; // Ensure it's flex for centering
+                          spinner.style.display = 'flex';
                       }
                  });
             }
 
-            // --- Mobile Nav Toggle Functionality (Copy from index.html) ---
             const navToggle = document.querySelector('.nav-toggle');
             const mainNav = document.querySelector('.main-nav');
-            const body = document.body; // Or document.documentElement for html
+            const body = document.body;
+            const header = document.querySelector('.site-header');
 
             if (navToggle && mainNav) {
                  navToggle.addEventListener('click', function() {
                       const isOpen = mainNav.classList.toggle('nav-open');
-                      // Also toggle a class on the body to prevent background scroll
                       body.classList.toggle('nav-open');
-
-                      // Change icon
+                      header.classList.toggle('nav-open');
                       const icon = navToggle.querySelector('i');
                       if (isOpen) {
                            icon.classList.remove('fa-bars');
-                           icon.classList.add('fa-times'); // Close icon
+                           icon.classList.add('fa-times');
                            navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'סגור תפריט ניווט' : 'Close Navigation Menu');
                       } else {
                            icon.classList.remove('fa-times');
-                           icon.classList.add('fa-bars'); // Hamburger icon
+                           icon.classList.add('fa-bars');
                            navToggle.setAttribute('aria-label', currentLanguage === 'he' ? 'פתח תפריט ניווט' : 'Open Navigation Menu');
                       }
                  });
-
-                 // Close nav when a link inside is clicked (optional, but good UX)
                  mainNav.querySelectorAll('a').forEach(link => {
                      link.addEventListener('click', function() {
                           if (mainNav.classList.contains('nav-open')) {
                                mainNav.classList.remove('nav-open');
                                body.classList.remove('nav-open');
-                               // Reset icon
+                               header.classList.remove('nav-open');
                                const icon = navToggle.querySelector('i');
                                icon.classList.remove('fa-times');
                                icon.classList.add('fa-bars');
@@ -345,319 +258,138 @@
                           }
                      });
                  });
-            } else {
-                 console.warn("Nav toggle or main nav not found."); // Debug log
             }
+            
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 30) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
 
-
-            // --- Filtering, Search, AND Pagination Functionality ---
             const searchInput = document.getElementById('searchInput');
             const ratingFilter = document.getElementById('ratingFilter');
             const genreFilter = document.getElementById('genreFilter');
             const yearFilter = document.getElementById('yearFilter');
             const noResultsMessage = document.getElementById('noResultsMessage');
-            // Select ALL movie card links once (excluding the load more button)
-            const allItemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item'); // Changed to movie items
-            const loadMoreButton = document.getElementById('loadMoreButton'); // ADDED: Select the button
+            const allItemCardLinks = document.querySelectorAll('.all-movies-grid .item-card-link.catalog-item');
+            const loadMoreButton = document.getElementById('loadMoreButton');
 
-
-            // Map IMDb IDs to their corresponding DOM elements for quick access
-            // This was here before for filtering
-            const movieCardElements = {};
-            allItemCardLinks.forEach(card => { // Use allItemCardLinks here
-                 movieCardElements[card.dataset.id] = card;
-            });
-
-            console.log(`Found ${allItemCardLinks.length} movie items in the DOM.`);
-
-
-             // ADDED: Function to show a range of items (handles pagination)
             function showItems(startIndex, endIndex) {
-                 let itemsShownInBatch = 0;
-                 // Filter for items that are currently *not* hidden by the search/filter styles
                  const currentlySearchVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none');
-
                  for (let i = startIndex; i < endIndex && i < currentlySearchVisibleItems.length; i++) {
-                      // For pagination, we remove the 'hidden-item-by-pagination' class
                       currentlySearchVisibleItems[i].classList.remove('hidden-item-by-pagination');
-                       itemsShownInBatch++;
                  }
-                 console.log(`Attempted to display batch for pagination from index ${startIndex} to ${endIndex} among search-visible. Shown in batch: ${itemsShownInBatch}`);
-                 currentlyDisplayedCount += itemsShownInBatch; // Update the global count based on items actually shown *by pagination*
+                 currentlyDisplayedCount = document.querySelectorAll('.item-card-link.catalog-item:not(.hidden-item-by-pagination)').length;
             }
 
-             // ADDED: Function to hide all series items for pagination reset
             function hideAllMovieItemsForPagination() {
                  allItemCardLinks.forEach(link => {
-                      // Only hide items by adding the pagination class if they are currently visible (not hidden by style.display)
-                      if (link.style.display !== 'none') {
-                           link.classList.add('hidden-item-by-pagination'); // Hide by adding pagination hidden class
-                      }
+                    link.classList.add('hidden-item-by-pagination');
                  });
-                 currentlyDisplayedCount = 0; // Reset count when hiding all for pagination
-                 console.log("Hid all movie items for pagination.");
+                 currentlyDisplayedCount = 0;
             }
 
-            // ADDED: Function to update the visibility of the Load More button
             function updateLoadMoreButtonVisibility() {
-                 const isFilteringOrSearching = searchInput.value.trim() !== '' || ratingFilter.value !== '' || (genreFilter && genreFilter.value !== '') || (yearFilter && yearFilter.value !== '');
-
-                 // Count total items *not* hidden by search/filters (using style.display)
                  const totalSearchFilterVisibleItems = Array.from(allItemCardLinks).filter(link => link.style.display !== 'none').length;
-
-                 // Hide the button if no items are visible *after* filtering OR if all search/filter visible items are currently displayed by pagination
                  if (totalSearchFilterVisibleItems === 0 || currentlyDisplayedCount >= totalSearchFilterVisibleItems) {
-                      if (loadMoreButton) loadMoreButton.style.display = 'none';
-                      console.log(`Hide Load More: Total search/filter visible=${totalSearchFilterVisibleItems}, currentlyDisplayedCount=${currentlyDisplayedCount}`);
+                      if (loadMoreButton) loadMoreButton.parentElement.style.display = 'none';
                  } else {
-                      if (loadMoreButton) loadMoreButton.style.display = ''; // Restore display
-                       console.log(`Show Load More: currentlyDisplayedCount=${currentlyDisplayedCount}, totalSearchFilterVisibleItems=${totalSearchFilterVisibleItems}`);
+                      if (loadMoreButton) loadMoreButton.parentElement.style.display = 'flex';
                  }
             }
 
-
-            // Function to populate filter dropdowns (Exists from previous version)
             function populateFilters() {
-                // Populate Rating Filter (1-10)
-                if (ratingFilter) { // Ensure element exists
-                     for (let i = 1; i <= 10; i++) {
+                if (ratingFilter) {
+                     for (let i = 9; i >= 1; i--) {
                          const option = document.createElement('option');
-                         option.value = i; // Numerical value
-                         option.textContent = i + "+"; // Display "1+", "2+", etc.
+                         option.value = i;
+                         option.textContent = i + "+";
                          ratingFilter.appendChild(option);
                      }
-                    console.log("Rating filter populated.");
-                } else { console.warn("Rating filter element not found."); }
-
-
-                // Populate Genre Filter (using Hebrew for text, English for value) (Exists from previous version)
+                }
                 if (genreFilter) {
-                    // Get all unique genres from the loaded movies data
                     const uniqueGenres = new Set();
                     Object.values(allMoviesData).forEach(movie => {
-                         const movieGenres = (movie.genre || '').split(',').map(g => g.trim()).filter(g => g !== '');
-                         movieGenres.forEach(g => uniqueGenres.add(g.toLowerCase()));
+                         (movie.genre || '').split(',').map(g => g.trim()).filter(Boolean).forEach(g => uniqueGenres.add(g.toLowerCase()));
                     });
-
-                    // Find matching Hebrew names for the unique English genres
-                    const sortedGenres = Array.from(uniqueGenres).sort(); // Sort English values alphabetically
-
+                    const sortedGenres = Array.from(uniqueGenres).sort();
                     sortedGenres.forEach(englishGenre => {
                          const genreObj = availableGenres.find(g => g.english.toLowerCase() === englishGenre);
-                         const displayGenre = genreObj ? genreObj.hebrew : englishGenre.charAt(0).toUpperCase() + englishGenre.slice(1); // Use Hebrew if found, else Capitalize English
+                         const displayGenre = genreObj ? genreObj.hebrew : englishGenre.charAt(0).toUpperCase() + englishGenre.slice(1);
                          const option = document.createElement('option');
-                         option.value = englishGenre; // Use lowercase English for value
-                         option.textContent = displayGenre; // Use Hebrew or Capitalized English for display text
+                         option.value = englishGenre;
+                         option.textContent = displayGenre;
                          genreFilter.appendChild(option);
                     });
-
-                    console.log("Genre filter populated with unique genres from data.");
-                } else { console.warn("Genre filter element not found.");}
-
-
-                // --- Populate Year Filter --- (Exists from previous version)
+                }
                 if (yearFilter) {
-                    let currentYear = new Date().getFullYear();
-                    let minYear = currentYear; // Initialize with current year
-
-                    // Find the minimum valid year in the loaded movie data
+                    let maxYear = 1888;
                     Object.values(allMoviesData).forEach(movie => {
-                        const movieYearStr = (movie.year || '').trim();
-                        const movieYear = parseInt(movieYearStr, 10);
-                        if (!isNaN(movieYear) && movieYear > 1888) { // Consider years after the first known movie
-                             if (movieYear < minYear) {
-                                minYear = movieYear;
-                            }
-                        }
+                        const year = parseInt((movie.year || '').trim(), 10);
+                        if (!isNaN(year) && year > maxYear) maxYear = year;
                     });
-
-                    // If no valid years found, default to a reasonable past year like 1900
-                    if (minYear === currentYear && Object.values(allMoviesData).length > 0) {
-                         // No valid year found in data, but there are movies. Maybe set a default range?
-                         // Or just populate from a reasonable start year if data years are messy.
-                         // Let's populate from 1900 down to current year if no minYear found.
-                         if (Object.values(allMoviesData).every(movie => isNaN(parseInt((movie.year || '').trim(), 10)) || parseInt((movie.year || '').trim(), 10) <= 0 || parseInt((movie.year || '').trim(), 10) < 1888 )) {
-                              minYear = 1900; // Fallback if no valid years are found in data
-                         }
-                    } else if (Object.values(allMoviesData).length === 0) {
-                         minYear = currentYear; // No movies, no years needed, but populate dropdown anyway? Maybe from 1900.
-                         minYear = 1900; // Populate from 1900 even if no movies
-                    }
-
-
-                     console.log(`Calculated min year from data: ${minYear}, Current Year: ${currentYear}`);
-
-
-                    // Populate dropdown from current year down to calculated minYear (inclusive)
-                    for (let year = currentYear; year >= minYear; year--) {
+                    for (let year = new Date().getFullYear(); year >= maxYear; year--) {
                          const option = document.createElement('option');
-                         option.value = year; // Value is the year number (e.g., 2023)
-                          // Display text is year + "+" (e.g., "2023+")
-                         option.textContent = year + "+";
+                         option.value = year;
+                         option.textContent = year;
                          yearFilter.appendChild(option);
                     }
-                    console.log("Year filter populated with year+ text.");
-                } else { console.warn("Year filter element not found."); }
-                // --- END Populate Year Filter ---
-            }
-
-
-            // Function to perform filtering and search (Modified to integrate with pagination)
-            function applyFiltersAndSearch() {
-                console.log("Applying filters and search...");
-                const searchTerm = searchInput.value.toLowerCase().trim();
-                const selectedRatingValue = parseFloat(ratingFilter ? ratingFilter.value : "");
-                const selectedGenreValue = genreFilter ? genreFilter.value : "";
-                const selectedYearValueStr = yearFilter ? yearFilter.value : "";
-                const selectedYearValue = selectedYearValueStr ? parseInt(selectedYearValueStr, 10) : NaN;
-
-
-                console.log(`Filter Values - Search: "${searchTerm}", Rating: ${selectedRatingValue}, Genre (Value): "${selectedGenreValue}", Year (Value): "${selectedYearValueStr}" (${selectedYearValue})`);
-
-                let totalSearchFilterVisibleCount = 0; // Count items that pass search and filters (before pagination hides them)
-
-                // Iterate through ALL movie items
-                 allItemCardLinks.forEach(cardElement => { // Loop through the DOM elements directly
-                    const movieImdbID = cardElement.dataset.id;
-                    const movie = allMoviesData[movieImdbID]; // Get the full data from the JS object
-
-                    if (!movie) {
-                         console.warn(`Data not found for movie ID: ${movieImdbID}. Skipping filter check.`);
-                         cardElement.style.display = 'none'; // Hide the element if data is missing
-                         return;
-                    }
-
-                    const titleHe = (movie.HebrewName || movie.title || '').toLowerCase().trim();
-                    const titleEn = (movie.title || movie.HebrewName || '').toLowerCase().trim();
-                    const movieImdbRatingStr = (movie.imdbRating || '').toLowerCase().trim();
-                    const movieGenreStr = (movie.genre || '').toLowerCase().trim();
-                    const movieYearStr = (movie.year || '').trim();
-
-
-                    // --- Apply Search Filter ---
-                    const passesSearch = (searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm));
-
-
-                    // --- Apply Rating Filter (IMDb Rating) ---
-                    let passesRatingFilter = true;
-                    let movieImdbRating = NaN;
-                    if (movieImdbRatingStr && movieImdbRatingStr !== 'n/a') {
-                         movieImdbRating = parseFloat(movieImdbRatingStr);
-                    }
-                    // Only apply if a valid rating number is selected (NaN check)
-                    if (!isNaN(selectedRatingValue)) {
-                         passesRatingFilter = (!isNaN(movieImdbRating) && movieImdbRating >= selectedRatingValue);
-                    }
-
-
-                    // --- Apply Genre Filter ---
-                    let passesGenreFilter = true;
-                    // Only apply if a genre is selected
-                    if (selectedGenreValue && selectedGenreValue !== "") {
-                         const movieGenresArray = movieGenreStr.split(',').map(g => g.trim());
-                         // Check if the movie's genre string contains the selected genre value
-                         // Use .split(',').map().includes() for more robust checking against comma-separated genres
-                         passesGenreFilter = movieGenresArray.includes(selectedGenreValue);
-                    }
-
-                    // --- Apply Year Filter ---
-                    let passesYearFilter = true;
-                    // Apply only if a valid year number is selected (NaN check)
-                    if (!isNaN(selectedYearValue)) {
-                         const movieYear = parseInt(movieYearStr, 10);
-                         // Check if movie year is a valid number AND is greater than or equal to the selected year
-                         passesYearFilter = (!isNaN(movieYear) && movieYear >= selectedYearValue);
-                    }
-
-
-                    // Determine if the item passes all filters and search
-                    const passesAllFiltersAndSearch = passesSearch && passesRatingFilter && passesGenreFilter && passesYearFilter;
-
-                    // --- IMPORTANT: Update the DOM element's display property based SOLELY on filters/search ---
-                    // This property will be used by the pagination logic to know which items *can* be shown
-                    if (passesAllFiltersAndSearch) {
-                        cardElement.style.display = ''; // Show the element
-                        totalSearchFilterVisibleCount++;
-                    } else {
-                        cardElement.style.display = 'none'; // Hide the element
-                    }
-
-                 });
-
-                // Update the "No results" message based on how many items passed filters/search
-                if (noResultsMessage) {
-                     noResultsMessage.style.display = totalSearchFilterVisibleCount === 0 ? 'block' : 'none';
                 }
-                 console.log(`Filtering and search complete. Total items passing filters/search: ${totalSearchFilterVisibleCount}.`);
-
-                // --- Re-apply Pagination after Filter/Search ---
-                // Regardless of filter/search terms, reset pagination state
-                hideAllMovieItemsForPagination(); // This hides all items currently NOT hidden by style.display and resets currentlyDisplayedCount
-                // Now, show the first batch *among the items currently visible by style.display* (those that passed filters/search)
-                showItems(0, itemsPerPage); // showItems function automatically works only on visible ones
-                 // currentlyDisplayedCount is updated inside showItems
-
-                // Update Load More button visibility based on the new state
-                updateLoadMoreButtonVisibility();
-
             }
 
-            // Populate filters on page load
-            populateFilters();
+            function applyFiltersAndSearch() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const selectedRating = parseFloat(ratingFilter.value || "0");
+                const selectedGenre = genreFilter.value;
+                const selectedYear = parseInt(yearFilter.value || "0", 10);
+                let visibleCount = 0;
 
-            // Add event listeners to filters and search input
+                allItemCardLinks.forEach(card => {
+                    const titleHe = card.dataset.titleHe;
+                    const titleEn = card.dataset.titleEn;
+                    const rating = parseFloat(card.dataset.imdbRating || "0");
+                    const genres = card.dataset.genre;
+                    const year = parseInt(card.dataset.year || "0", 10);
+
+                    const searchMatch = searchTerm === '' || titleHe.includes(searchTerm) || titleEn.includes(searchTerm);
+                    const ratingMatch = !selectedRating || rating >= selectedRating;
+                    const genreMatch = !selectedGenre || genres.includes(selectedGenre);
+                    const yearMatch = !selectedYear || year >= selectedYear;
+
+                    if (searchMatch && ratingMatch && genreMatch && yearMatch) {
+                        card.style.display = '';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                hideAllMovieItemsForPagination();
+                showItems(0, itemsPerPage);
+                updateLoadMoreButtonVisibility();
+            }
+
+            populateFilters();
+            applyFiltersAndSearch();
+
             if (searchInput) {
                  searchInput.addEventListener('input', applyFiltersAndSearch);
-                 document.querySelector('.search-container button').addEventListener('click', applyFiltersAndSearch);
-                 searchInput.addEventListener('keypress', function(event) {
-                     if (event.key === 'Enter') {
-                         event.preventDefault();
-                         applyFiltersAndSearch();
-                     }
-                 });
-                 console.log("Search input listeners added.");
+                 document.querySelector('.search-container button').addEventListener('click', () => searchInput.focus());
             }
+            if (ratingFilter) ratingFilter.addEventListener('change', applyFiltersAndSearch);
+            if (genreFilter) genreFilter.addEventListener('change', applyFiltersAndSearch);
+            if (yearFilter) yearFilter.addEventListener('change', applyFiltersAndSearch);
 
-            // Ensure filter listeners exist before adding them
-            if (ratingFilter) { ratingFilter.addEventListener('change', applyFiltersAndSearch); console.log("Rating filter listener added."); }
-            if (genreFilter) { genreFilter.addEventListener('change', applyFiltersAndSearch); console.log("Genre filter listener added."); }
-            if (yearFilter) { yearFilter.addEventListener('change', applyFiltersAndSearch); console.log("Year filter listener added."); }
-
-
-             // --- ADDED: Initial Load (Pagination) ---
-             // Add the initial 'hidden-item-by-pagination' class to all items initially
-             // This is done after populating filters but before applying them, so all items start hidden by pagination
-             hideAllMovieItemsForPagination(); // This also resets currentlyDisplayedCount
-             // Display the first batch of items (showItems will only show those not hidden by initial search/filters, if any were set)
-             // Call applyFiltersAndSearch to first handle any initial filter/search state and then trigger the initial showItems within it.
-             applyFiltersAndSearch();
-
-
-            // --- ADDED: Load More Button Click Handler ---
             if (loadMoreButton) {
                  loadMoreButton.addEventListener('click', function() {
-                      // showItems function handles getting the list of items that are currently NOT hidden by style.display
-                      // and continues showing from the current currentlyDisplayedCount index.
                       showItems(currentlyDisplayedCount, currentlyDisplayedCount + itemsPerPage);
-
-                      // Check if the button should be hidden *after* showing the new batch
                       updateLoadMoreButtonVisibility();
                  });
-
-                 // Also handle keyboard activation for accessibility
-                 loadMoreButton.addEventListener('keypress', function(event) {
-                     if (event.key === 'Enter' || event.key === ' ') { // Enter or Space key
-                         event.preventDefault(); // Prevent default scroll/action
-                         loadMoreButton.click(); // Trigger the click handler
-                     }
-                 });
-
-            } else {
-                 console.warn("Load More button #loadMoreButton not found on movies page.");
             }
-
-
-        }); // End DOMContentLoaded
+        });
     </script>
 </body>
 </html>
