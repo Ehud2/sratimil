@@ -194,9 +194,9 @@
         <div class="container">
              <p>
                 {% if current_language == 'he' %}
-                    סרטים באתר: {{ num_movies }} | סדרות באתר: {{ num_series }}
+                    סרטים באתר: {{ num_movies }} | סדרות באתר: {{ num_series }} | משתמשים פעילים: <span id="active-users-count">{{ active_users }}</span>
                 {% else %}
-                    Movies on site: {{ num_movies }} | Series on site: {{ num_series }}
+                    Movies on site: {{ num_movies }} | Series on site: {{ num_series }} | Active Users: <span id="active-users-count">{{ active_users }}</span>
                 {% endif %}
              </p>
              <p>&copy; 2024 Sratims Israel. All Rights Reserved.</p>
@@ -589,6 +589,20 @@
                  continueWatchingSection.style.display = 'none';
                  noContinueWatchingMessage.style.display = 'none';
             }
+
+            function updateActiveUsers() {
+                fetch("{{ url_for('active_users_count') }}")
+                    .then(response => response.json())
+                    .then(data => {
+                        const countElement = document.getElementById('active-users-count');
+                        if (countElement && typeof data.active_users !== 'undefined') {
+                            countElement.textContent = data.active_users;
+                        }
+                    })
+                    .catch(error => console.error('Error fetching active users count:', error));
+            }
+
+            setInterval(updateActiveUsers, 30000);
         });
     </script>
 </body>
