@@ -43,6 +43,11 @@
             </nav>
 
             <div class="header-actions">
+                <div class="search-container">
+                   <input type="search" id="searchInput" placeholder="{{ 'חיפוש...' if current_language == 'he' else 'Search...' }}">
+                   <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
+                </div>
+    
                  <div class="language-switcher">
                      <a href="{{ url_for('set_language', lang_code='en' if current_language == 'he' else 'he') }}" title="{{ 'החלף שפה' if current_language == 'he' else 'Switch Language' }}" aria-label="{{ 'החלף שפה לעברית' if current_language == 'en' else 'Switch language to English' }}">
                           <i class="fas fa-globe"></i>
@@ -85,11 +90,6 @@
         <div class="page-header">
             <h1>{{ 'כל הסרטים' if current_language == 'he' else 'All Movies' }}</h1>
             <p>{{ 'צפה בכל הסרטים הזמינים באתר וסנן לפי ז\'אנר, דירוג IMDb ושנת יציאה.' if current_language == 'he' else 'View all available movies on the site and filter by genre, IMDb rating, and release year.' }}</p>
-        </div>
-
-        <div class="main-search-container">
-            <input type="search" id="searchInput" placeholder="{{ 'חיפוש סרטים...' if current_language == 'he' else 'Search movies...' }}">
-            <button aria-label="{{ 'חיפוש' if current_language == 'he' else 'Search' }}"><i class="fas fa-search"></i></button>
         </div>
 
         <div class="filter-container">
@@ -373,7 +373,7 @@
 
             if (searchInput) {
                  searchInput.addEventListener('input', applyFiltersAndSearch);
-                 document.querySelector('.main-search-container button').addEventListener('click', () => searchInput.focus());
+                 document.querySelector('.search-container button').addEventListener('click', () => searchInput.focus());
             }
             if (ratingFilter) ratingFilter.addEventListener('change', applyFiltersAndSearch);
             if (genreFilter) genreFilter.addEventListener('change', applyFiltersAndSearch);
