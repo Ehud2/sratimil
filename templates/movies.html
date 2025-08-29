@@ -373,10 +373,7 @@
 
             if (searchInput) {
                  searchInput.addEventListener('input', applyFiltersAndSearch);
-                 const searchButton = document.querySelector('.main-search-container button');
-                 if (searchButton) {
-                     searchButton.addEventListener('click', () => searchInput.focus());
-                 }
+                 document.querySelector('.main-search-container button').addEventListener('click', () => searchInput.focus());
             }
             if (ratingFilter) ratingFilter.addEventListener('change', applyFiltersAndSearch);
             if (genreFilter) genreFilter.addEventListener('change', applyFiltersAndSearch);
