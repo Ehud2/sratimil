@@ -22,6 +22,52 @@
     margin-top: 10px;
 }
 
+.main-search-container {
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.main-search-container input[type="search"] {
+    width: 100%;
+    padding: 15px 50px 15px 20px;
+    font-size: 1.2em;
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    transition: all var(--transition-fast);
+    box-sizing: border-box;
+}
+
+html[dir="rtl"] .main-search-container input[type="search"] {
+    padding-right: 20px;
+    padding-left: 50px;
+}
+
+.main-search-container input[type="search"]:focus {
+    outline: none;
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 8px rgba(0, 223, 252, 0.3);
+}
+
+.main-search-container button {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-color-muted);
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 5px;
+}
+
+html[dir="rtl"] .main-search-container button {
+    right: auto;
+    left: 15px;
+}
+
 .filter-container {
     display: flex;
     flex-wrap: wrap;
