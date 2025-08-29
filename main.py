@@ -16,6 +16,7 @@ import logging # Import logging for better error handling
 import threading
 import time
 import string
+import uuid
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -114,6 +115,21 @@ CATEGORIES = [
     "ספיידרמן",
     "ללא"
 ]
+
+ACTIVE_USERS = {}
+ACTIVITY_TIMEOUT_SECONDS = 300
+
+
+
+@app.before_request
+def track_user_activity():
+    if '_id' not in session:
+        session['_id'] = str(uuid.uuid4())
+    
+    session_id = session['_id']
+    ACTIVE_USERS[session_id] = time.time()
+
+
 
 DATA_FILE = 'data.json'
 APP_DATA = {'movies': {}, 'series': {}}
@@ -571,14 +587,12 @@ def index():
     movies_data = load_movies_data()
     series_data_for_index = load_series_data_for_index()
 
-    # Calculate the counts for the footer
     num_movies = len(movies_data)
     num_series = len(series_data_for_index)
 
     categories = categorize_content(movies_data, series_data_for_index)
 
     current_year = datetime.datetime.utcnow().year
-
 
     all_content = []
     for category_items in categories.values():
@@ -596,9 +610,30 @@ def index():
                            admin_emails=ADMIN_EMAILS,
                            current_language=current_language,
                            hero_item=random_hero_item,
-                           num_movies=num_movies,  # Pass movie count
-                           num_series=num_series   # Pass series count
+                           num_movies=num_movies,
+                           num_series=num_series,
+                           active_users=len(ACTIVE_USERS)
                            )
+
+
+@app.route('/api/active_users')
+def active_users_count():
+    return jsonify({"active_users": len(ACTIVE_USERS)})
+
+
+def cleanup_inactive_users():
+    while True:
+        time.sleep(60)
+        current_time = time.time()
+        inactive_sessions = [
+            sid for sid, last_seen in list(ACTIVE_USERS.items())
+            if current_time - last_seen > ACTIVITY_TIMEOUT_SECONDS
+        ]
+        for sid in inactive_sessions:
+            ACTIVE_USERS.pop(sid, None)
+
+cleanup_thread = threading.Thread(target=cleanup_inactive_users, daemon=True)
+cleanup_thread.start()
 
 # --- Route for Single Movie Page ---
 @app.route('/movie/<imdb_id>')
@@ -1781,6 +1816,7 @@ if __name__ == '__main__':
     else:
         logging.error("Application not started because Firebase initialization failed.")
         # You might want to sys.exit(1) here in a real application
+
 
 
 
