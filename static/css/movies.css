@@ -22,62 +22,6 @@
     margin-top: 10px;
 }
 
-.main-search-container {
-    display: flex;
-    align-items: center;
-    margin-bottom: 30px;
-    position: relative;
-    max-width: 100%;
-}
-
-.main-search-container input[type="search"] {
-    width: 100%;
-    padding: 15px 55px 15px 20px;
-    font-size: 1.1em;
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    outline: none;
-    transition: all var(--transition-fast);
-}
-
-[dir="rtl"] .main-search-container input[type="search"] {
-    padding: 15px 20px 15px 55px;
-}
-
-.main-search-container input[type="search"]:focus {
-    border-color: var(--primary-accent-color);
-    box-shadow: 0 0 15px rgba(0, 223, 252, 0.3);
-}
-
-.main-search-container input[type="search"]::placeholder {
-    color: var(--text-muted-color);
-}
-
-.main-search-container button {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--text-muted-color);
-    font-size: 1.2em;
-    cursor: pointer;
-    padding: 5px;
-    transition: color var(--transition-fast);
-}
-
-[dir="rtl"] .main-search-container button {
-    right: auto;
-    left: 15px;
-}
-
-.main-search-container button:hover {
-    color: var(--primary-accent-color);
-}
-
 .filter-container {
     display: flex;
     flex-wrap: wrap;
@@ -176,10 +120,12 @@
     .page-header h1 {
         font-size: 1.8em;
     }
-    .main-search-container input[type="search"] {
-        padding: 12px 45px 12px 15px;
-        font-size: 1em;
+    .filter-container {
+        flex-direction: column;
+        gap: 15px;
     }
-    
-    [dir="rtl"] .main-search-container input[type="search"] {
-        padding: 12px 15px 12px 45px
+    .all-movies-grid {
+        grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
+        gap: var(--card-gap);
+    }
+}
