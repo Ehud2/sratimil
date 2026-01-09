@@ -203,7 +203,7 @@
                     })();
                 }
 
-                const vidsrcUrl = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}${savedTimestamp > 0 ? `#t=${savedTimestamp}` : ''}`;
+                const vidsrcUrl = `https://vidsrc-embed.ru/embed/movie?imdb=${imdbId}${savedTimestamp > 0 ? `#t=${savedTimestamp}` : ''}`;
                 const iframe = document.createElement('iframe');
                 iframe.src = vidsrcUrl;
                 iframe.allowFullscreen = true;
