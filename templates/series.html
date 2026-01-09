@@ -222,7 +222,7 @@
 
                 history.replaceState(null, '', `/series/${seriesImdbId}/${season}/${episode}${timestamp > 0 ? '#timestamp=' + timestamp : ''}`);
                 
-                const vidsrcUrl = `https://vidsrc.xyz/embed/tv?imdb=${seriesImdbId}&season=${season}&episode=${episode}${timestamp > 0 ? `#t=${timestamp}` : ''}`;
+                const vidsrcUrl = `https://vidsrc-embed.ru/embed/tv?imdb=${seriesImdbId}&season=${season}&episode=${episode}${timestamp > 0 ? `#t=${timestamp}` : ''}`;
                 episodeEmbedContainer.innerHTML = `<iframe src="${vidsrcUrl}" allowfullscreen allow="autoplay; encrypted-media" referrerpolicy="origin"></iframe>`;
                 
                 saveContinueWatchingState(season, episode, timestamp);
